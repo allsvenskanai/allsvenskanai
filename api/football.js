@@ -17,12 +17,13 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(url, {
-      headers: {
-        'x-apisports-key': apiKey,
-      },
+      headers: { 'x-apisports-key': apiKey },
     });
     const data = await response.json();
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
+
+    // Ingen cache — alltid färsk data
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
