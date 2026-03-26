@@ -180,15 +180,16 @@ async function sm(endpoint, params={}) {
 async function boot() {
   const el = document.getElementById('mc');
   try {
-    // Allsvenskan: league 573, fetch latest season
+    // Allsvenskan: league 573
     el.innerHTML = '<div class="loading"><div class="spinner"></div>Hämtar Allsvenskan…</div>';
     S.LEAGUE_ID = 573;
-    const leagueDetail = await sm('leagues/573', {include: 'seasons'});
-    const allSeasons = (leagueDetail.data?.seasons || [])
+    // Fetch all seasons and filter by league_id 573
+    const seasonD = await sm('seasons', {per_page: 50});
+    const allSeasons = (seasonD.data || [])
       .filter(s => s.league_id === 573)
       .sort((a,b) => b.id - a.id);
     const current = allSeasons.find(s => s.is_current) || allSeasons[0];
-    if (!current) throw new Error('Ingen säsong hittades för Allsvenskan (league 573).');
+    if (!current) throw new Error('Ingen säsong hittades. Säsonger tillgängliga: ' + (seasonD.data||[]).map(s=>s.name+'('+s.league_id+')').join(', '));
     S.SEASON_ID = current.id;
     S.SEASON_NAME = current.name || '2025';
     console.log('Allsvenskan season:', S.SEASON_ID, S.SEASON_NAME);
