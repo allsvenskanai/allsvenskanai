@@ -34,35 +34,28 @@ main{flex:1;overflow-y:auto;padding:1.75rem 2rem}
 .page-title span{font-size:13px;color:var(--muted)}
 .back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:1.25rem;display:flex;align-items:center;gap:5px;padding:0;transition:color .15s;font-family:'DM Sans',sans-serif}
 .back-btn:hover{color:var(--text)}
-/* TEAM GRID */
 .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .team-card{background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;cursor:pointer;transition:border-color .2s,background .2s;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;text-decoration:none;color:var(--text)}
 .team-card:hover{border-color:var(--border-hi);background:var(--dark3)}
 .team-card img{width:64px;height:64px;object-fit:contain}
 .team-card .tname{font-size:13px;font-weight:500;line-height:1.3}
-.team-card .tsub{font-size:11px;color:var(--muted)}
-/* HERO */
 .hero{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap}
 .hero-logo{width:90px;height:90px;object-fit:contain;flex-shrink:0;border-radius:8px;background:var(--dark3);padding:8px}
 .hero-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--dark3);border:2px solid var(--border)}
 .hero-info{flex:1;min-width:200px}
 .hero-info h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--gold);line-height:1}
 .hero-meta{font-size:12px;color:var(--muted);margin:.3rem 0 .75rem;display:flex;flex-wrap:wrap;gap:0 14px;line-height:1.9}
-/* STAT PILLS */
 .stat-row{display:flex;gap:10px;flex-wrap:wrap;margin:.75rem 0}
 .stat-pill{background:var(--dark3);border-radius:8px;padding:.6rem 1rem;text-align:center;min-width:80px}
 .stat-pill .n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);line-height:1}
 .stat-pill .l{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-top:3px}
-/* TABS */
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
 .tab{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 18px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-/* TABLES */
 .table-wrap{background:var(--dark2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
 .table-toolbar{display:flex;align-items:center;gap:10px;padding:.75rem 1rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .table-toolbar h3{font-size:14px;font-weight:500;margin-right:auto}
-.filter-select{background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;outline:none;cursor:pointer}
 table{width:100%;border-collapse:collapse}
 th{font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 td{font-size:13px;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text)}
@@ -72,21 +65,18 @@ tr.clickable{cursor:pointer}
 .td-num{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold)}
 .td-pos{font-size:11px;background:var(--dark3);border-radius:4px;padding:2px 7px;color:var(--muted);white-space:nowrap}
 .player-cell{display:flex;align-items:center;gap:8px}
-.player-cell img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--dark4);flex-shrink:0}
+.player-cell img{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--dark4);flex-shrink:0}
 .player-cell .pname{font-weight:500}
 .player-cell .psub{font-size:11px;color:var(--muted)}
-/* TRANSFERS */
 .transfer-item{display:flex;align-items:center;gap:10px;padding:10px 1rem;border-bottom:1px solid var(--border)}
 .transfer-item:last-child{border-bottom:none}
 .transfer-type{font-size:10px;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
 .type-loan{background:rgba(74,158,255,.15);color:#8bb8ff}
 .type-free{background:rgba(76,175,80,.15);color:#81c784}
 .type-paid{background:rgba(232,197,71,.15);color:var(--gold)}
-/* FORM */
 .form-dots{display:flex;gap:3px}
 .fd{width:9px;height:9px;border-radius:50%}
 .fw{background:var(--green)}.fd-d{background:#555}.fl{background:var(--red)}
-/* LOADING/ERROR */
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:4rem;color:var(--muted);font-size:14px}
 .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -94,11 +84,13 @@ tr.clickable{cursor:pointer}
 .err{background:rgba(226,75,74,.1);border:1px solid rgba(226,75,74,.3);border-radius:8px;padding:1rem;color:#f08080;font-size:13px;margin:1rem 0;line-height:1.7}
 .ai-btn{background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:7px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 14px;cursor:pointer;transition:background .15s;margin-top:.5rem;display:inline-block}
 .ai-btn:hover{background:rgba(232,197,71,.2)}
-/* AI CHAT */
+.share-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 10px;cursor:pointer;margin-left:auto}
+.share-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.live-badge{background:rgba(226,75,74,.15);color:#f08080;border:1px solid rgba(226,75,74,.3);border-radius:4px;font-size:10px;padding:2px 7px;font-weight:500;letter-spacing:.5px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .chat-wrap{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .chat-head{background:var(--dark3);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .chat-msgs{padding:1.25rem;min-height:240px;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:1rem}
 .msg-user,.msg-ai{display:flex;flex-direction:column;gap:4px}
 .msg-role{font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -119,359 +111,309 @@ tr.clickable{cursor:pointer}
 .chip-row{display:flex;gap:6px;flex-wrap:wrap;padding:.75rem 1.25rem;border-top:1px solid var(--border)}
 .chip{background:var(--dark3);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:11px;padding:4px 11px;cursor:pointer;transition:border-color .15s,color .15s}
 .chip:hover{border-color:var(--border-hi);color:var(--text)}
-/* SHARE BTN */
-.share-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 10px;cursor:pointer;transition:border-color .15s,color .15s;margin-left:auto}
-.share-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.pos-header td{background:var(--dark3);color:var(--gold);font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:6px 12px}
 @media(max-width:768px){nav{display:none}main{padding:1rem}}
 </style>
 </head>
 <body>
 <header>
-  <a class="logo" href="/" onclick="navigate(event,'/')">Allsvenskan <em>/</em> AI</a>
-  <div class="season-badge">2026</div>
+  <a class="logo" href="/" onclick="nav(event,'/')">Allsvenskan <em>/</em> AI</a>
+  <div class="season-badge">2025</div>
   <input id="globalSearch" type="text" placeholder="Sök spelare eller lag…" onkeydown="if(event.key==='Enter')doSearch(this.value)">
 </header>
 <div class="layout">
-  <nav id="sidebar">
+  <nav>
     <div class="nav-section">Liga</div>
-    <a class="nav-btn" href="/" onclick="navigate(event,'/')"><span>🛡</span> Lag & Spelare</a>
-    <a class="nav-btn" href="/tabell" onclick="navigate(event,'/tabell')"><span>🏆</span> Tabell</a>
-    <a class="nav-btn" href="/resultat" onclick="navigate(event,'/resultat')"><span>📅</span> Resultat</a>
-    <a class="nav-btn" href="/overgangar" onclick="navigate(event,'/overgangar')"><span>🔄</span> Övergångar</a>
-    <a class="nav-btn" href="/skytteliga" onclick="navigate(event,'/skytteliga')"><span>⚽</span> Skytteliga</a>
+    <a class="nav-btn" href="/" onclick="nav(event,'/')"><span>🛡</span> Lag</a>
+    <a class="nav-btn" href="/tabell" onclick="nav(event,'/tabell')"><span>🏆</span> Tabell</a>
+    <a class="nav-btn" href="/resultat" onclick="nav(event,'/resultat')"><span>📅</span> Resultat & Live</a>
+    <a class="nav-btn" href="/overgangar" onclick="nav(event,'/overgangar')"><span>🔄</span> Övergångar</a>
+    <a class="nav-btn" href="/skytteliga" onclick="nav(event,'/skytteliga')"><span>⚽</span> Skytteliga</a>
     <div class="nav-section">Verktyg</div>
-    <a class="nav-btn" href="/sok" onclick="navigate(event,'/sok')"><span>🔍</span> AI-sökning</a>
+    <a class="nav-btn" href="/sok" onclick="nav(event,'/sok')"><span>🔍</span> AI-sökning</a>
   </nav>
-  <main id="mc"><div class="loading"><div class="spinner"></div>Laddar…</div></main>
+  <main id="mc"><div class="loading"><div class="spinner"></div>Laddar Allsvenskan…</div></main>
 </div>
 <script>
-const LEAGUE=113, SEASON=2025;
-const S={teams:[],chatHistory:[],chatLoading:false};
+// ── CONFIG ───────────────────────────────────────────
+const LEAGUE_ID = 271;   // Allsvenskan i Sportmonks
+const SEASON_ID = 23584; // Säsong 2025 i Sportmonks
+const S = {teams:[], chatHistory:[], chatLoading:false, page:'/'};
 
 // ── ROUTING ──────────────────────────────────────────
-function navigate(e, path) {
-  if (e) e.preventDefault();
+function nav(e, path) {
+  if(e) e.preventDefault();
   history.pushState({}, '', path);
   route(path);
 }
-
 function route(path) {
   updateNav(path);
-  const mc = document.getElementById('mc');
-  if (path === '/' || path === '') { loadTeams(mc); return; }
-  if (path === '/tabell')          { loadStandings(mc); return; }
-  if (path === '/resultat')        { loadResults(mc); return; }
-  if (path === '/overgangar')      { loadTransfers(mc); return; }
-  if (path === '/skytteliga')      { loadTopScorers(mc); return; }
-  if (path === '/sok')             { loadSearch(mc); return; }
-  const lagMatch = path.match(/^\/lag\/(\d+)/);
-  if (lagMatch)                    { loadTeam(mc, parseInt(lagMatch[1])); return; }
-  const playerMatch = path.match(/^\/spelare\/(\d+)/);
-  if (playerMatch)                 { loadPlayer(mc, parseInt(playerMatch[1])); return; }
-  mc.innerHTML = `<div class="err">Sidan hittades inte: ${esc(path)}</div>`;
+  const el = document.getElementById('mc');
+  if(path==='/'||path==='')           { loadTeams(el); return; }
+  if(path==='/tabell')                { loadStandings(el); return; }
+  if(path==='/resultat')              { loadResults(el); return; }
+  if(path==='/overgangar')            { loadTransfers(el); return; }
+  if(path==='/skytteliga')            { loadTopScorers(el); return; }
+  if(path==='/sok')                   { loadSearch(el); return; }
+  const tm = path.match(/^\/lag\/(\d+)/);
+  if(tm)                              { loadTeam(el, +tm[1]); return; }
+  const pm = path.match(/^\/spelare\/(\d+)/);
+  if(pm)                              { loadPlayer(el, +pm[1]); return; }
+  el.innerHTML = `<div class="err">Sidan hittades inte.</div>`;
 }
-
 function updateNav(path) {
   document.querySelectorAll('.nav-btn').forEach(b => {
-    const href = b.getAttribute('href');
-    b.classList.toggle('active', href === path || (path === '/' && href === '/'));
+    b.classList.toggle('active', b.getAttribute('href')===path||(path==='/'&&b.getAttribute('href')==='/'));
   });
 }
+window.addEventListener('popstate', ()=>route(location.pathname));
 
-window.addEventListener('popstate', () => route(location.pathname));
-
-// ── API ──────────────────────────────────────────────
-async function af(ep, params={}) {
-  const q = new URLSearchParams({_endpoint: ep, ...params});
+// ── API ───────────────────────────────────────────────
+async function sm(endpoint, params={}) {
+  const q = new URLSearchParams({_endpoint: endpoint, ...params});
   const r = await fetch(`/api/football?${q}`);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
-  if (d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
-  return d.response || [];
-}
-
-async function fetchAllPlayers(teamId) {
-  // API-Football paginates 20 players per page — fetch all pages
-  const first = await fetch(`/api/football?${new URLSearchParams({_endpoint:'players', league:LEAGUE, season:SEASON, team:teamId, page:1})}`);
-  const d1 = await first.json();
-  const total = d1.paging?.total || 1;
-  let players = d1.response || [];
-  if (total > 1) {
-    const rest = await Promise.all(
-      Array.from({length: total-1}, (_,i) =>
-        fetch(`/api/football?${new URLSearchParams({_endpoint:'players', league:LEAGUE, season:SEASON, team:teamId, page:i+2})}`)
-        .then(r=>r.json()).then(d=>d.response||[])
-      )
-    );
-    players = players.concat(rest.flat());
-  }
-  return players;
+  if(d.message && !d.data) throw new Error(d.message);
+  return d;
 }
 
 // ── BOOT ─────────────────────────────────────────────
 async function boot() {
   try {
-    const data = await af('teams', {league: LEAGUE, season: SEASON});
-    S.teams = data.map(d => d.team).sort((a,b) => a.name.localeCompare(b.name,'sv'));
+    // Get teams for season
+    const d = await sm('teams', {season_id: SEASON_ID, include: 'venue'});
+    S.teams = (d.data||[]).sort((a,b)=>a.name.localeCompare(b.name,'sv'));
   } catch(e) {
-    console.warn('Could not preload teams:', e.message);
+    console.warn('Boot error:', e.message);
   }
   route(location.pathname);
 }
 
-// ── TEAMS LIST ───────────────────────────────────────
+// ── TEAMS ─────────────────────────────────────────────
 async function loadTeams(el) {
-  if (!S.teams.length) {
+  if(!S.teams.length) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
     try {
-      const data = await af('teams', {league: LEAGUE, season: SEASON});
-      S.teams = data.map(d => d.team).sort((a,b) => a.name.localeCompare(b.name,'sv'));
+      const d = await sm('teams', {season_id: SEASON_ID});
+      S.teams = (d.data||[]).sort((a,b)=>a.name.localeCompare(b.name,'sv'));
     } catch(e) {
-      el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}<br>Kontrollera att <strong>APIFOOTBALL_KEY</strong> är inlagd i Vercel.</div>`;
+      el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}<br>Kontrollera att <strong>SPORTMONKS_KEY</strong> är inlagd i Vercel → Settings → Environment Variables.</div>`;
       return;
     }
   }
-  const cards = S.teams.map(t => `
-    <a class="team-card" href="/lag/${t.id}" onclick="navigate(event,'/lag/${t.id}')">
-      <img src="${t.logo}" onerror="this.style.opacity='.15'" loading="lazy">
+  document.title = 'AllsvenskanAI';
+  const cards = S.teams.map(t=>`
+    <a class="team-card" href="/lag/${t.id}" onclick="nav(event,'/lag/${t.id}')">
+      <img src="${t.image_path||''}" onerror="this.style.opacity='.15'" loading="lazy">
       <div class="tname">${esc(t.name)}</div>
     </a>`).join('');
   el.innerHTML = `
-    <div class="page-title"><h1>Allsvenskan</h1><span>${SEASON} — ${S.teams.length} lag</span></div>
+    <div class="page-title"><h1>Allsvenskan 2025</h1><span>${S.teams.length} lag</span></div>
     <div class="team-grid">${cards}</div>`;
 }
 
-// ── TEAM PAGE ────────────────────────────────────────
+// ── TEAM PAGE ─────────────────────────────────────────
 async function loadTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagdata…</div>`;
   try {
-    const team = S.teams.find(t => t.id === teamId) || {id: teamId, name: '', logo: ''};
+    const team = S.teams.find(t=>t.id===teamId)||{id:teamId,name:'',image_path:''};
+    document.title = `${team.name} — AllsvenskanAI`;
 
-    const [statsArr, playersArr, transfersArr] = await Promise.all([
-      af('teams/statistics', {league: LEAGUE, season: SEASON, team: teamId}),
-      fetchAllPlayers(teamId),
-      af('transfers', {team: teamId}),
+    // Fetch squad, stats, transfers in parallel
+    const [squadD, statsD, transfersD] = await Promise.all([
+      sm(`squads/teams/${teamId}`, {include:'player'}),
+      sm('statistics/seasons/teams', {season_id: SEASON_ID, team_id: teamId}),
+      sm(`transfers/teams/${teamId}`),
     ]);
 
-    const stats = Array.isArray(statsArr) ? statsArr[0] : statsArr;
-    const players = playersArr;
-    const transfers = (transfersArr || [])
-      .flatMap(t => (t.transfers||[]).map(tr => ({...tr, player: t.player})))
-      .filter(tr => parseInt((tr.date||'').slice(0,4)) >= 2023)
-      .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    const squad = squadD.data || [];
+    const stats = (statsD.data||[])[0]?.details || [];
+    const transfers = (transfersD.data||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
-    const teamName = stats?.team?.name || team.name;
-    const teamLogo = stats?.team?.logo || team.logo;
-    document.title = `${teamName} — AllsvenskanAI`;
+    // Parse stats
+    const getStat = (name) => stats.find(s=>s.type?.name===name)?.value?.total || stats.find(s=>s.type?.name===name)?.value || 0;
+    const wins = getStat('Wins');
+    const draws = getStat('Draws');
+    const losses = getStat('Lost');
+    const goalsFor = getStat('Goals For');
+    const goalsAgainst = getStat('Goals Against');
+    const cleanSheets = getStat('Clean Sheets');
 
-    const form = stats?.fixtures?.form || '';
-    const formDots = form.slice(-10).split('').map(c =>
-      `<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
-
-    const w  = stats?.fixtures?.wins?.total  || 0;
-    const d  = stats?.fixtures?.draws?.total || 0;
-    const l  = stats?.fixtures?.loses?.total || 0;
-    const gf = stats?.goals?.for?.total?.total     || 0;
-    const ga = stats?.goals?.against?.total?.total || 0;
-    const cleanSheets = stats?.clean_sheet?.total  || 0;
-    const avgGoals = stats?.goals?.for?.average?.total || '—';
-
+    // Group squad by position
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
-    const sorted = [...players].sort((a,b) =>
-      (posOrder[a.statistics?.[0]?.games?.position]||5) -
-      (posOrder[b.statistics?.[0]?.games?.position]||5));
+    const posLabel = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const sorted = [...squad].sort((a,b)=>(posOrder[a.player?.position?.name]||5)-(posOrder[b.player?.position?.name]||5));
 
-    const playerRows = sorted.map(p => {
-      const s = p.statistics?.[0] || {};
-      const rating = s.games?.rating ? parseFloat(s.games.rating).toFixed(1) : '—';
-      const goals = s.goals?.total || 0;
-      const assists = s.goals?.assists || 0;
-      const apps = s.games?.appearences || 0;
-      return `
-        <tr class="clickable" onclick="navigate(event,'/spelare/${p.player.id}')" data-href="/spelare/${p.player.id}">
-          <td><div class="player-cell">
-            <img src="${p.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-            <div><div class="pname">${esc(p.player.name)}</div>
-            <div class="psub">${flag(p.player.nationality)} ${esc(p.player.nationality||'')}</div></div>
-          </div></td>
-          <td><span class="td-pos">${esc(s.games?.position||'—')}</span></td>
-          <td>${p.player.age||'—'}</td>
-          <td class="td-num">${apps}</td>
-          <td class="td-num">${goals}</td>
-          <td class="td-num">${assists}</td>
-          <td style="color:${rc(rating)};font-weight:500">${rating}</td>
-        </tr>`;}).join('');
+    let lastPos = '';
+    const playerRows = sorted.map(s => {
+      const p = s.player || {};
+      const pos = p.position?.name || s.position?.name || '—';
+      let header = '';
+      if(pos !== lastPos && posLabel[pos]) {
+        lastPos = pos;
+        header = `<tr class="pos-header"><td colspan="5">${posLabel[pos]||pos}</td></tr>`;
+      }
+      return header + `<tr class="clickable" onclick="nav(event,'/spelare/${p.id}')">
+        <td><div class="player-cell">
+          <img src="${p.image_path||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div><div class="pname">${esc(p.display_name||p.name||'—')}</div>
+          <div class="psub">${flag(p.nationality?.name)} ${esc(p.nationality?.name||'')}</div></div>
+        </div></td>
+        <td><span class="td-pos">${esc(pos)}</span></td>
+        <td>${p.date_of_birth ? calcAge(p.date_of_birth)+' år' : '—'}</td>
+        <td>${p.height ? p.height+'cm' : '—'}</td>
+        <td style="color:var(--gold);font-family:'Bebas Neue',sans-serif">${p.market_value_currency||''} ${p.market_value ? formatVal(p.market_value) : '—'}</td>
+      </tr>`;}).join('');
 
-    const transferRows = transfers.slice(0, 25).map(tr => {
-      const isIn = tr.teams?.in?.id === teamId;
+    const transferRows = transfers.slice(0,20).map(tr=>{
+      const isIn = tr.to_team_id === teamId;
       const fc = feeClass(tr.type);
-      return `
-        <div class="transfer-item">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(tr.player?.name||'—')}</div>
-            <div style="font-size:11px;color:var(--muted)">${tr.date||''}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:${isIn?'var(--green)':'var(--red)'}">
-            <img src="${isIn?(tr.teams?.out?.logo||''):(tr.teams?.in?.logo||'')}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
-            ${isIn ? '↙ IN från <strong>'+esc(tr.teams?.out?.name||'?')+'</strong>' : '↗ UT till <strong>'+esc(tr.teams?.in?.name||'?')+'</strong>'}
-          </div>
-          <span class="transfer-type ${fc}">${esc(tr.type||'?')}</span>
-        </div>`;}).join('') || '<div class="empty">Inga övergångar hittades</div>';
+      return `<div class="transfer-item">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;font-size:13px">${esc(tr.player?.display_name||tr.player?.name||'—')}</div>
+          <div style="font-size:11px;color:var(--muted)">${tr.date||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:${isIn?'var(--green)':'var(--red)'}">
+          <img src="${isIn?(tr.fromTeam?.image_path||''):(tr.toTeam?.image_path||'')}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          ${isIn?'↙ IN från <strong>'+esc(tr.fromTeam?.name||'?')+'</strong>':'↗ UT till <strong>'+esc(tr.toTeam?.name||'?')+'</strong>'}
+        </div>
+        <span class="transfer-type ${fc}">${esc(tr.type||'?')}</span>
+      </div>`;}).join('')||'<div class="empty">Inga övergångar hittades</div>';
 
     el.innerHTML = `
-      <button class="back-btn" onclick="navigate(event,'/')">← Alla lag</button>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
-        <div class="page-title" style="margin-bottom:0"><h1>${esc(teamName)}</h1></div>
+        <button class="back-btn" style="margin-bottom:0" onclick="nav(event,'/')">← Alla lag</button>
         <button class="share-btn" onclick="copyLink()">🔗 Kopiera länk</button>
       </div>
+      <div class="page-title"><h1>${esc(team.name)}</h1></div>
 
       <div class="hero">
-        <img class="hero-logo" src="${teamLogo}" onerror="this.style.opacity='.15'">
+        <img class="hero-logo" src="${team.image_path||''}" onerror="this.style.opacity='.15'">
         <div class="hero-info">
           <div class="hero-meta">
-            ${stats?.venue?.name ? `<span>🏟 ${esc(stats.venue.name)}</span>` : ''}
-            ${stats?.venue?.city ? `<span>📍 ${esc(stats.venue.city)}</span>` : ''}
-            ${stats?.venue?.capacity ? `<span>👥 ${stats.venue.capacity.toLocaleString('sv-SE')} platser</span>` : ''}
+            ${team.venue?.name?`<span>🏟 ${esc(team.venue.name)}</span>`:''}
+            ${team.venue?.city?`<span>📍 ${esc(team.venue.city)}</span>`:''}
+            ${team.venue?.capacity?`<span>👥 ${team.venue.capacity.toLocaleString('sv-SE')} platser</span>`:''}
           </div>
           <div class="stat-row">
-            <div class="stat-pill"><div class="n">${w}</div><div class="l">Vinster</div></div>
-            <div class="stat-pill"><div class="n">${d}</div><div class="l">Oavgjorda</div></div>
-            <div class="stat-pill"><div class="n">${l}</div><div class="l">Förluster</div></div>
-            <div class="stat-pill"><div class="n">${gf}</div><div class="l">Gjorda mål</div></div>
-            <div class="stat-pill"><div class="n">${ga}</div><div class="l">Insläppta</div></div>
+            <div class="stat-pill"><div class="n">${wins}</div><div class="l">Vinster</div></div>
+            <div class="stat-pill"><div class="n">${draws}</div><div class="l">Oavgjorda</div></div>
+            <div class="stat-pill"><div class="n">${losses}</div><div class="l">Förluster</div></div>
+            <div class="stat-pill"><div class="n">${goalsFor}</div><div class="l">Gjorda mål</div></div>
+            <div class="stat-pill"><div class="n">${goalsAgainst}</div><div class="l">Insläppta</div></div>
             <div class="stat-pill"><div class="n">${cleanSheets}</div><div class="l">Nollor</div></div>
-            <div class="stat-pill"><div class="n">${avgGoals}</div><div class="l">Mål/match</div></div>
           </div>
-          ${form ? `<div style="margin-top:.5rem">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">Form (senaste 10)</div>
-            <div class="form-dots">${formDots}</div>
-          </div>` : ''}
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'ts')">Spelartrupp</button>
+        <button class="tab active" onclick="switchTab(this,'ts')">Spelartrupp (${squad.length})</button>
         <button class="tab" onclick="switchTab(this,'tt')">Övergångar (${transfers.length})</button>
       </div>
 
       <div id="ts">
-        <div class="table-wrap" style="padding:0">
-          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-            <div class="dot-live"></div>
-            <span style="font-size:13px;font-weight:500">Aktuell spelartrupp — hämtas live via AI</span>
-            <button class="ai-btn" style="margin:0;margin-left:auto;font-size:11px;padding:4px 10px" onclick="loadSquadAI('${esc(teamName)}', ${teamId})">🔄 Ladda trupp</button>
-          </div>
-          <div id="squad-ai-${teamId}" style="padding:1rem">
-            <div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">
-              Klicka på <strong>Ladda trupp</strong> för att hämta aktuell spelartrupp från AI
-            </div>
-          </div>
-        </div>
+        <div class="table-wrap"><div style="overflow-x:auto"><table>
+          <thead><tr><th>Spelare</th><th>Position</th><th>Ålder</th><th>Längd</th><th>Marknadsvärde</th></tr></thead>
+          <tbody>${playerRows||'<tr><td colspan="5" class="empty">Inga spelare</td></tr>'}</tbody>
+        </table></div></div>
       </div>
-
-      <div id="tt" style="display:none">
-        <div class="table-wrap">${transferRows}</div>
-      </div>`;
-
+      <div id="tt" style="display:none"><div class="table-wrap">${transferRows}</div></div>
+      <button class="ai-btn" onclick="aiAbout('${esc(team.name)}','lag')">🔍 Fråga AI om ${esc(team.name)}</button>`;
   } catch(e) {
-    el.innerHTML = `<button class="back-btn" onclick="navigate(event,'/')">← Alla lag</button>
+    el.innerHTML = `<button class="back-btn" onclick="nav(event,'/')">← Alla lag</button>
       <div class="err">Fel: ${esc(e.message)}</div>`;
   }
 }
 
-// ── PLAYER PAGE ──────────────────────────────────────
+// ── PLAYER PAGE ───────────────────────────────────────
 async function loadPlayer(el, playerId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelardata…</div>`;
   try {
-    const [playerArr, transfersArr] = await Promise.all([
-      af('players', {id: playerId, season: SEASON}),
-      af('transfers', {player: playerId}),
-    ]);
+    const d = await sm(`players/${playerId}`, {
+      include: 'position;nationality;statistics.season;transfers;teams'
+    });
+    const p = d.data;
+    if(!p) throw new Error('Spelare hittades inte');
+    document.title = `${p.display_name||p.name} — AllsvenskanAI`;
 
-    const p = playerArr[0];
-    if (!p) throw new Error('Spelare hittades inte');
-    const pl = p.player;
-    const s  = p.statistics?.[0] || {};
-    const teamId   = s.team?.id;
-    const teamName = s.team?.name || '—';
-    const teamLogo = s.team?.logo || '';
+    const teamId = p.teams?.[0]?.id;
+    const teamName = p.teams?.[0]?.name || '—';
+    const teamLogo = p.teams?.[0]?.image_path || '';
 
-    document.title = `${pl.name} — AllsvenskanAI`;
+    // Current season stats
+    const seasonStats = (p.statistics||[]).find(s=>s.season_id===SEASON_ID) || {};
+    const details = seasonStats.details || [];
 
-    const transfers = (transfersArr?.[0]?.transfers || [])
-      .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    const getStat = (name) => details.find(s=>s.type?.name===name)?.value?.total ?? details.find(s=>s.type?.name===name)?.value ?? '—';
 
-    const games   = s.games?.appearences || 0;
-    const starts  = s.games?.lineups     || 0;
-    const mins    = s.games?.minutes     || 0;
-    const goals   = s.goals?.total       || 0;
-    const assists = s.goals?.assists     || 0;
-    const shots   = s.shots?.total       || 0;
-    const shotsOT = s.shots?.on          || 0;
-    const passes  = s.passes?.total      || 0;
-    const passAcc = s.passes?.accuracy   || 0;
-    const tackles = s.tackles?.total     || 0;
-    const interc  = s.tackles?.interceptions || 0;
-    const yellow  = s.cards?.yellow      || 0;
-    const red     = s.cards?.red         || 0;
-    const drib    = s.dribbles?.success  || 0;
-    const duels   = s.duels?.won         || 0;
-    const rating  = s.games?.rating ? parseFloat(s.games.rating).toFixed(2) : '—';
-    const position = s.games?.position || pl.position || '—';
+    const goals   = getStat('Goals');
+    const assists = getStat('Assists');
+    const apps    = getStat('Appearances');
+    const mins    = getStat('Minutes Played');
+    const rating  = getStat('Rating');
+    const shots   = getStat('Shots Total');
+    const shotsOT = getStat('Shots On Target');
+    const passes  = getStat('Passes');
+    const tackles = getStat('Tackles');
+    const yellow  = getStat('Yellowcards');
+    const red     = getStat('Redcards');
+    const drib    = getStat('Dribbles');
 
-    const transferRows = transfers.slice(0, 15).map(tr => {
+    const transfers = (p.transfers||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const transferRows = transfers.slice(0,10).map(tr=>{
       const fc = feeClass(tr.type);
-      return `
-        <div class="transfer-item">
-          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-            <img src="${tr.teams?.out?.logo||''}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0" onerror="this.style.opacity='.15'">
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap">${esc(tr.teams?.out?.name||'?')}</span>
-            <span style="color:var(--muted)">→</span>
-            <img src="${tr.teams?.in?.logo||''}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0" onerror="this.style.opacity='.15'">
-            <span style="font-size:12px;white-space:nowrap">${esc(tr.teams?.in?.name||'?')}</span>
-          </div>
-          <span style="font-size:11px;color:var(--muted);flex-shrink:0">${tr.date||'—'}</span>
-          <span class="transfer-type ${fc}">${esc(tr.type||'?')}</span>
-        </div>`;}).join('') || '<div class="empty">Inga övergångar hittade</div>';
+      return `<div class="transfer-item">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+          <img src="${tr.fromTeam?.image_path||''}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px;color:var(--muted)">${esc(tr.fromTeam?.name||'?')}</span>
+          <span style="color:var(--muted)">→</span>
+          <img src="${tr.toTeam?.image_path||''}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.toTeam?.name||'?')}</span>
+        </div>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">${tr.date||'—'}</span>
+        <span class="transfer-type ${fc}">${esc(tr.type||'?')}</span>
+      </div>`;}).join('')||'<div class="empty">Inga övergångar</div>';
 
-    const sr = (label, val, col) =>
-      `<tr><td style="color:var(--muted);padding:8px 12px;width:55%">${label}</td>
-       <td style="padding:8px 12px;font-weight:500${col?';color:'+col:''}">${val}</td></tr>`;
+    const sr = (label,val,col)=>`<tr><td style="color:var(--muted);padding:8px 12px;width:55%">${label}</td>
+      <td style="padding:8px 12px;font-weight:500${col?';color:'+col:''}">${val}</td></tr>`;
+
+    const ratingNum = parseFloat(rating);
+    const ratingCol = isNaN(ratingNum)?'var(--text)':ratingNum>=7.5?'var(--green)':ratingNum>=6.5?'var(--gold)':'var(--red)';
 
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
-        ${teamId ? `<button class="back-btn" style="margin-bottom:0" onclick="navigate(event,'/lag/${teamId}')">← ${esc(teamName)}</button>` : `<button class="back-btn" style="margin-bottom:0" onclick="navigate(event,'/')">← Hem</button>`}
+        ${teamId?`<button class="back-btn" style="margin-bottom:0" onclick="nav(event,'/lag/${teamId}')">← ${esc(teamName)}</button>`:`<button class="back-btn" style="margin-bottom:0" onclick="nav(event,'/')">← Hem</button>`}
         <button class="share-btn" onclick="copyLink()">🔗 Kopiera länk</button>
       </div>
 
       <div class="hero">
-        <img class="hero-photo" src="${pl.photo||''}" onerror="this.src='';this.style.background='var(--dark4)'">
+        <img class="hero-photo" src="${p.image_path||''}" onerror="this.src='';this.style.background='var(--dark4)'">
         <div class="hero-info">
-          <h2>${esc(pl.name)}</h2>
+          <h2>${esc(p.display_name||p.name)}</h2>
           <div class="hero-meta">
-            <span>${flag(pl.nationality)} ${esc(pl.nationality||'—')}</span>
-            <span>⚽ ${esc(position)}</span>
-            <span>📅 ${pl.birth?.date||'—'} (${pl.age||'?'} år)</span>
-            ${pl.birth?.place ? `<span>📍 ${esc(pl.birth.place)}${pl.birth?.country?', '+esc(pl.birth.country):''}</span>` : ''}
-            ${pl.height ? `<span>📐 ${pl.height} / ${pl.weight||'—'}</span>` : ''}
+            <span>${flag(p.nationality?.name)} ${esc(p.nationality?.name||'—')}</span>
+            <span>⚽ ${esc(p.position?.name||'—')}</span>
+            ${p.date_of_birth?`<span>📅 ${p.date_of_birth} (${calcAge(p.date_of_birth)} år)</span>`:''}
+            ${p.height?`<span>📐 ${p.height}cm / ${p.weight||'—'}kg</span>`:''}
           </div>
-          ${teamId ? `<div style="display:flex;align-items:center;gap:7px;margin-bottom:.5rem">
+          ${teamId?`<div style="display:flex;align-items:center;gap:7px;margin-bottom:.5rem">
             <img src="${teamLogo}" style="width:22px;height:22px;object-fit:contain" onerror="this.style.opacity='.15'">
-            <a href="/lag/${teamId}" onclick="navigate(event,'/lag/${teamId}')" style="color:var(--blue);font-size:13px;text-decoration:none">${esc(teamName)}</a>
-          </div>` : ''}
+            <a href="/lag/${teamId}" onclick="nav(event,'/lag/${teamId}')" style="color:var(--blue);font-size:13px;text-decoration:none">${esc(teamName)}</a>
+          </div>`:''}
+          ${p.market_value?`<div style="font-size:13px;margin-top:.25rem">💰 Marknadsvärde: <strong style="color:var(--gold)">${p.market_value_currency||'€'} ${formatVal(p.market_value)}</strong></div>`:''}
           <div class="stat-row">
-            <div class="stat-pill"><div class="n">${games}</div><div class="l">Matcher</div></div>
-            <div class="stat-pill"><div class="n">${starts}</div><div class="l">Starter</div></div>
+            <div class="stat-pill"><div class="n">${apps}</div><div class="l">Matcher</div></div>
             <div class="stat-pill"><div class="n">${mins}</div><div class="l">Minuter</div></div>
             <div class="stat-pill"><div class="n">${goals}</div><div class="l">Mål</div></div>
             <div class="stat-pill"><div class="n">${assists}</div><div class="l">Assist</div></div>
-            <div class="stat-pill"><div class="n" style="color:${rc(rating)}">${rating}</div><div class="l">Rating</div></div>
+            <div class="stat-pill"><div class="n" style="color:${ratingCol}">${typeof rating==='number'?rating.toFixed(2):rating}</div><div class="l">Rating</div></div>
           </div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'ps')">Säsongsstatistik ${SEASON}</button>
+        <button class="tab active" onclick="switchTab(this,'ps')">Säsongsstatistik 2025</button>
         <button class="tab" onclick="switchTab(this,'pt')">Karriär & övergångar (${transfers.length})</button>
       </div>
 
@@ -480,305 +422,224 @@ async function loadPlayer(el, playerId) {
           ${sr('Skott totalt', shots)}
           ${sr('Skott på mål', shotsOT)}
           ${sr('Passningar', passes)}
-          ${sr('Passningsprecision', passAcc + '%')}
           ${sr('Tacklingar', tackles)}
-          ${sr('Interceptions', interc)}
           ${sr('Lyckade dribblingar', drib)}
-          ${sr('Dueller vunna', duels)}
-          ${sr('Gula kort', yellow, yellow > 5 ? 'var(--gold)' : '')}
-          ${sr('Röda kort', red, red > 0 ? 'var(--red)' : '')}
+          ${sr('Gula kort', yellow, yellow>5?'var(--gold)':'')}
+          ${sr('Röda kort', red, red>0?'var(--red)':'')}
         </tbody></table></div>
       </div>
-
-      <div id="pt" style="display:none">
-        <div class="table-wrap">${transferRows}</div>
-      </div>
-
-      <button class="ai-btn" onclick="aiAbout('${esc(pl.name)}','spelare')">
-        🔍 Mer om ${esc(pl.name)} med AI
-      </button>`;
-
+      <div id="pt" style="display:none"><div class="table-wrap">${transferRows}</div></div>
+      <button class="ai-btn" onclick="aiAbout('${esc(p.display_name||p.name)}','spelare')">🔍 Mer om ${esc(p.display_name||p.name)} med AI</button>`;
   } catch(e) {
-    el.innerHTML = `<button class="back-btn" onclick="navigate(event,'/')">← Hem</button>
+    el.innerHTML = `<button class="back-btn" onclick="nav(event,'/')">← Hem</button>
       <div class="err">Fel: ${esc(e.message)}</div>`;
   }
 }
 
-// ── AI SQUAD ─────────────────────────────────────────
-async function loadSquadAI(teamName, teamId) {
-  const el = document.getElementById('squad-ai-' + teamId);
-  if (!el) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar aktuell spelartrupp…</div>`;
-
-  const prompt = `Sök på transfermarkt.com/malmo-ff/kader eller transfermarkt.se efter ${teamName}s AKTUELLA spelartrupp säsongen 2025/2026.
-VIKTIGT: Ta BARA med spelare som faktiskt spelar i klubben JUST NU. Kontrollera mot transfermarkt att de inte är transfererade eller avslutade kontrakt.
-Returnera ENBART ett JSON-objekt i detta exakta format, inget annat:
-{
-  "players": [
-    {"name": "Förnamn Efternamn", "position": "Goalkeeper|Defender|Midfielder|Forward", "nationality": "Land", "age": 25, "value": "€1.5M"},
-    ...
-  ]
-}
-Sortera: Goalkeeper → Defender → Midfielder → Forward. Inkludera alla spelare i truppen.`;
-
-  try {
-    const resp = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        system: 'Du är expert på Allsvenskan. Sök ALLTID på webben för aktuell data. Returnera ENBART JSON, inga förklaringar, ingen markdown, inga backticks.',
-        messages: [{role: 'user', content: prompt}]
-      })
-    });
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
-    const raw = data.content || [];
-    const text = raw.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-    
-    // Parse JSON response
-    let squad;
-    try {
-      const clean = text.replace(/```json|```/g, '').trim();
-      squad = JSON.parse(clean);
-    } catch {
-      // Fallback: show raw text if JSON parsing fails
-      el.innerHTML = \`<div style="padding:1rem">\${mdToHtml(text)}</div>\`;
-      return;
-    }
-
-    const posOrder = {Goalkeeper:1, Defender:2, Midfielder:3, Forward:4};
-    const posLabel = {Goalkeeper:'Målvakt', Defender:'Försvarare', Midfielder:'Mittfältare', Forward:'Anfallare'};
-    
-    const players = (squad.players || []).sort((a,b) => 
-      (posOrder[a.position]||5) - (posOrder[b.position]||5));
-
-    let currentPos = '';
-    const rows = players.map(p => {
-      let header = '';
-      if (p.position !== currentPos) {
-        currentPos = p.position;
-        header = \`<tr style="background:var(--dark3)"><td colspan="5" style="padding:6px 12px;font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold)">\${posLabel[p.position]||p.position}</td></tr>\`;
-      }
-      return header + \`<tr class="clickable" onclick="searchPlayerByName('\${p.name.replace(/'/g,\"\\\\'\")}')">
-        <td style="font-weight:500">\${esc(p.name)}</td>
-        <td><span class="td-pos">\${posLabel[p.position]||p.position}</span></td>
-        <td style="font-size:12px">\${flag(p.nationality)} \${esc(p.nationality||'—')}</td>
-        <td>\${p.age||'—'}</td>
-        <td style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:15px">\${esc(p.value||'—')}</td>
-      </tr>\`;
-    }).join('');
-
-    el.innerHTML = \`
-      <div style="overflow-x:auto">
-        <table>
-          <thead><tr>
-            <th>Spelare</th><th>Position</th><th>Nationalitet</th><th>Ålder</th><th>Marknadsvärde</th>
-          </tr></thead>
-          <tbody>\${rows || '<tr><td colspan="5" class="empty">Inga spelare hittades</td></tr>'}</tbody>
-        </table>
-      </div>
-      <div style="padding:.75rem 1rem;font-size:11px;color:var(--muted);border-top:1px solid var(--border)">
-        Källa: Transfermarkt — klicka på en spelare för att söka mer info
-      </div>\`;
-  } catch(e) {
-    el.innerHTML = `<div class="err" style="margin:1rem">Fel: ${esc(e.message)}</div>`;
-  }
-}
-
-function searchPlayerByName(name) {
-  navigate(null, '/sok');
-  history.pushState({}, '', '/sok');
-  updateNav('/sok');
-  loadSearch(document.getElementById('mc'));
-  setTimeout(() => askAI(`Visa statistik och information om ${name} i Allsvenskan 2025/2026 – mål, assist, spelade matcher, marknadsvärde`), 100);
-}
-
-// ── STANDINGS ────────────────────────────────────────
+// ── STANDINGS ─────────────────────────────────────────
 async function loadStandings(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
+  document.title = 'Tabell — AllsvenskanAI';
   try {
-    const data = await af('standings', {league: LEAGUE, season: SEASON});
-    const st = data[0]?.league?.standings?.[0] || [];
-    document.title = 'Tabell — AllsvenskanAI';
-    const rows = st.map(t => {
-      const gd = t.goalsDiff;
-      const form = (t.form||'').slice(-5).split('').map(c =>
-        `<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
-      return `<tr class="clickable" onclick="navigate(event,'/lag/${t.team.id}')">
-        <td style="font-weight:500;color:var(--muted)">${t.rank}</td>
+    const d = await sm('standings/seasons', {season_id: SEASON_ID, include: 'participant'});
+    const rows = (d.data||[]).map(t=>{
+      const w = t.details?.find(x=>x.type?.name==='Won')?.value || 0;
+      const dr = t.details?.find(x=>x.type?.name==='Draw')?.value || 0;
+      const l = t.details?.find(x=>x.type?.name==='Lost')?.value || 0;
+      const gf = t.details?.find(x=>x.type?.name==='Goals For')?.value || 0;
+      const ga = t.details?.find(x=>x.type?.name==='Goals Against')?.value || 0;
+      const gd = gf-ga;
+      const pts = t.points || 0;
+      const mp = t.details?.find(x=>x.type?.name==='Matches Played')?.value || 0;
+      const form = (t.form||'').slice(-5).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
+      return `<tr class="clickable" onclick="nav(event,'/lag/${t.participant_id}')">
+        <td style="font-weight:500;color:var(--muted)">${t.position}</td>
         <td><div style="display:flex;align-items:center;gap:8px">
-          <img src="${t.team.logo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'" loading="lazy">
-          <span style="font-weight:500">${esc(t.team.name)}</span>
+          <img src="${t.participant?.image_path||''}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'" loading="lazy">
+          <span style="font-weight:500">${esc(t.participant?.name||'—')}</span>
         </div></td>
-        <td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td>
-        <td>${t.all.goals.for}</td><td>${t.all.goals.against}</td>
+        <td>${mp}</td><td>${w}</td><td>${dr}</td><td>${l}</td>
+        <td>${gf}</td><td>${ga}</td>
         <td style="color:${gd>=0?'var(--green)':'var(--red)'}">${gd>0?'+'+gd:gd}</td>
-        <td class="td-num">${t.points}</td>
+        <td class="td-num">${pts}</td>
         <td><div class="form-dots">${form}</div></td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Tabell</h1><span>Allsvenskan ${SEASON}</span></div>
+      <div class="page-title"><h1>Tabell</h1><span>Allsvenskan 2025</span></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
         <thead><tr><th>#</th><th>Lag</th><th>MP</th><th>V</th><th>O</th><th>F</th><th>GM</th><th>GI</th><th>GS</th><th>P</th><th>Form</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows||'<tr><td colspan="11" class="empty">Ingen tabelldata</td></tr>'}</tbody>
       </table></div></div>`;
   } catch(e) { el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ── RESULTS ──────────────────────────────────────────
+// ── RESULTS & LIVE ────────────────────────────────────
 async function loadResults(el) {
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar resultat…</div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
+  document.title = 'Resultat — AllsvenskanAI';
   try {
-    const data = await af('fixtures', {league: LEAGUE, season: SEASON, last: 50});
-    document.title = 'Resultat — AllsvenskanAI';
-    const rows = [...data].reverse().map(f => {
-      const hs = f.goals?.home, as_ = f.goals?.away;
-      const score = (hs !== null && hs !== undefined) ? `${hs} – ${as_}` : 'vs';
-      const col = hs > as_ ? 'var(--green)' : hs < as_ ? 'var(--red)' : 'var(--muted)';
+    const [liveD, recentD] = await Promise.all([
+      sm('livescores/inplay', {filters:`fixtureLeagues:${LEAGUE_ID}`, include:'participants;scores'}),
+      sm('fixtures', {season_id: SEASON_ID, include:'participants;scores', per_page:50, sort:'-starting_at'}),
+    ]);
+
+    const live = liveD.data || [];
+    const recent = recentD.data || [];
+
+    const renderMatch = (f, isLive=false) => {
+      const home = f.participants?.find(p=>p.meta?.location==='home');
+      const away = f.participants?.find(p=>p.meta?.location==='away');
+      const homeScore = f.scores?.find(s=>s.participant_id===home?.id&&s.type?.name==='current')?.score?.goals ?? '—';
+      const awayScore = f.scores?.find(s=>s.participant_id===away?.id&&s.type?.name==='current')?.score?.goals ?? '—';
+      const score = homeScore!=='—'?`${homeScore} – ${awayScore}`:'vs';
+      const col = homeScore>awayScore?'var(--green)':homeScore<awayScore?'var(--red)':'var(--muted)';
       return `<tr>
-        <td style="font-size:11px;color:var(--muted)">${(f.fixture?.date||'').slice(0,10)}</td>
+        <td style="font-size:11px;color:var(--muted)">${isLive?'<span class="live-badge">LIVE</span>':(f.starting_at||'').slice(0,10)}</td>
         <td style="text-align:right"><div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
-          <span style="font-weight:500">${esc(f.teams?.home?.name)}</span>
-          <img src="${f.teams?.home?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-weight:500">${esc(home?.name||'?')}</span>
+          <img src="${home?.image_path||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
         </div></td>
         <td class="td-num" style="text-align:center;color:${col}">${score}</td>
         <td><div style="display:flex;align-items:center;gap:6px">
-          <img src="${f.teams?.away?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-weight:500">${esc(f.teams?.away?.name)}</span>
+          <img src="${away?.image_path||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-weight:500">${esc(away?.name||'?')}</span>
         </div></td>
-        <td style="font-size:11px;color:var(--muted)">${esc(f.fixture?.venue?.name||'')}</td>
-      </tr>`;}).join('');
+        <td style="font-size:11px;color:var(--muted)">${esc(f.venue?.name||'')}</td>
+      </tr>`;};
+
+    const liveSection = live.length ? `
+      <div class="page-title" style="margin-top:1rem"><h1>Live</h1><span>${live.length} matcher pågår</span></div>
+      <div class="table-wrap"><div style="overflow-x:auto"><table>
+        <thead><tr><th>Status</th><th style="text-align:right">Hemma</th><th style="text-align:center">Mål</th><th>Borta</th><th>Arena</th></tr></thead>
+        <tbody>${live.map(f=>renderMatch(f,true)).join('')}</tbody>
+      </table></div></div>` : '';
+
+    const rows = recent.map(f=>renderMatch(f)).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Resultat</h1><span>Senaste 50 matcher</span></div>
+      <div class="page-title"><h1>Resultat & Live</h1></div>
+      ${liveSection}
+      <div class="page-title" style="margin-top:${live.length?'1.5rem':'0'}"><h1>Senaste matcher</h1></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
         <thead><tr><th>Datum</th><th style="text-align:right">Hemma</th><th style="text-align:center">Resultat</th><th>Borta</th><th>Arena</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows||'<tr><td colspan="5" class="empty">Inga matcher</td></tr>'}</tbody>
       </table></div></div>`;
   } catch(e) { el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ── TRANSFERS ────────────────────────────────────────
+// ── TRANSFERS ─────────────────────────────────────────
 async function loadTransfers(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar…</div>`;
   document.title = 'Övergångar — AllsvenskanAI';
   try {
-    const teams = S.teams.length ? S.teams : (await af('teams',{league:LEAGUE,season:SEASON})).map(d=>d.team);
-    const all = [];
-    await Promise.all(teams.map(async t => {
-      try {
-        const data = await af('transfers', {team: t.id});
-        data.forEach(tr => (tr.transfers||[]).forEach(x => {
-          if (parseInt((x.date||'').slice(0,4)) >= 2025)
-            all.push({...x, playerName: tr.player?.name, playerPhoto: tr.player?.photo});
-        }));
-      } catch {}
-    }));
-    all.sort((a,b) => (b.date||'').localeCompare(a.date||''));
-    const rows = all.slice(0,100).map(tr => {
+    const d = await sm('transfers', {
+      filters: `transferLeagues:${LEAGUE_ID}`,
+      include: 'player;fromTeam;toTeam',
+      per_page: 100,
+      sort: '-date'
+    });
+    const transfers = d.data || [];
+    const rows = transfers.map(tr=>{
       const fc = feeClass(tr.type);
       return `<tr>
         <td style="font-size:11px;color:var(--muted)">${tr.date||'—'}</td>
-        <td style="font-weight:500">${esc(tr.playerName||'—')}</td>
+        <td style="font-weight:500">${esc(tr.player?.display_name||tr.player?.name||'—')}</td>
         <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teams?.out?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teams?.out?.name||'?')}</span>
+          <img src="${tr.fromTeam?.image_path||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.fromTeam?.name||'?')}</span>
         </div></td>
         <td style="color:var(--muted)">→</td>
         <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teams?.in?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teams?.in?.name||'?')}</span>
+          <img src="${tr.toTeam?.image_path||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.toTeam?.name||'?')}</span>
         </div></td>
         <td><span class="transfer-type ${fc}">${esc(tr.type||'?')}</span></td>
+        <td style="color:var(--gold);font-family:'Bebas Neue',sans-serif">${tr.amount?'€'+formatVal(tr.amount):'—'}</td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Övergångar</h1><span>${all.length} övergångar sedan 2025</span></div>
+      <div class="page-title"><h1>Övergångar</h1><span>${transfers.length} övergångar</span></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
-        <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
+        <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th><th>Belopp</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="7" class="empty">Inga övergångar</td></tr>'}</tbody>
       </table></div></div>`;
   } catch(e) { el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ── TOP SCORERS ──────────────────────────────────────
+// ── TOP SCORERS ───────────────────────────────────────
 async function loadTopScorers(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar skytteliga…</div>`;
   document.title = 'Skytteliga — AllsvenskanAI';
   try {
-    const data = await af('players/topscorers', {league: LEAGUE, season: SEASON});
-    const rows = data.map((p,i) => {
-      const s = p.statistics?.[0] || {};
-      const rating = s.games?.rating ? parseFloat(s.games.rating).toFixed(1) : '—';
-      return `<tr class="clickable" onclick="navigate(event,'/spelare/${p.player.id}')">
+    const d = await sm('topscorers/seasons', {
+      season_id: SEASON_ID,
+      include: 'player.nationality;player.position;participant',
+      per_page: 30
+    });
+    const rows = (d.data||[]).map((t,i)=>{
+      const p = t.player || {};
+      const goals = t.total || 0;
+      return `<tr class="clickable" onclick="nav(event,'/spelare/${p.id}')">
         <td style="color:var(--muted);font-weight:500">${i+1}</td>
         <td><div class="player-cell">
-          <img src="${p.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div><div class="pname">${esc(p.player.name)}</div>
-          <div class="psub">${flag(p.player.nationality)} ${esc(p.player.nationality||'')}</div></div>
+          <img src="${p.image_path||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div><div class="pname">${esc(p.display_name||p.name||'—')}</div>
+          <div class="psub">${flag(p.nationality?.name)} ${esc(p.nationality?.name||'')}</div></div>
         </div></td>
         <td><div style="display:flex;align-items:center;gap:6px">
-          <img src="${s.team?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <a href="/lag/${s.team?.id}" onclick="navigate(event,'/lag/${s.team?.id}')" style="color:var(--text);text-decoration:none">${esc(s.team?.name||'—')}</a>
+          <img src="${t.participant?.image_path||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <a href="/lag/${t.participant_id}" onclick="nav(event,'/lag/${t.participant_id}')" style="color:var(--text);text-decoration:none">${esc(t.participant?.name||'—')}</a>
         </div></td>
-        <td><span class="td-pos">${esc(s.games?.position||'—')}</span></td>
-        <td class="td-num">${s.games?.appearences||0}</td>
-        <td class="td-num" style="font-size:20px">${s.goals?.total||0}</td>
-        <td class="td-num">${s.goals?.assists||0}</td>
-        <td style="color:${rc(rating)};font-weight:500">${rating}</td>
+        <td><span class="td-pos">${esc(p.position?.name||'—')}</span></td>
+        <td class="td-num" style="font-size:22px">${goals}</td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Skytteliga</h1><span>Allsvenskan ${SEASON}</span></div>
+      <div class="page-title"><h1>Skytteliga</h1><span>Allsvenskan 2025</span></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
-        <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Pos</th><th>M</th><th>⚽ Mål</th><th>🎯 Assist</th><th>★ Rating</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>⚽ Mål</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="5" class="empty">Ingen data</td></tr>'}</tbody>
       </table></div></div>`;
   } catch(e) { el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ── AI SEARCH ────────────────────────────────────────
-const SYS = `Du är expert på Allsvenskan – Sveriges högsta fotbollsserie. Hjälp journalister och fans med korrekt, aktuell statistik och nyheter. Sök alltid på webben. Bästa källor: fotmob.com, fbref.com, bolldata.se, transfermarkt.com, svenskfotboll.se. Svara på svenska. Använd tabeller när det passar. Säsong: Allsvenskan ${SEASON}.`;
+// ── AI SEARCH ─────────────────────────────────────────
+const SYS = `Du är expert på Allsvenskan – Sveriges högsta fotbollsserie. Hjälp journalister och fans med korrekt, aktuell statistik. Sök alltid på webben. Bästa källor: fotmob.com, fbref.com, bolldata.se, transfermarkt.com, svenskfotboll.se. Svara på svenska. Använd tabeller när det passar.`;
 
 function loadSearch(el) {
   document.title = 'AI-sökning — AllsvenskanAI';
   el.innerHTML = `
     <div class="page-title"><h1>AI-sökning</h1><span>Realtidsdata via webbsökning</span></div>
     <div class="chat-wrap">
-      <div class="chat-head"><div class="dot-live"></div>Claude AI med webbsökning — Allsvenskan ${SEASON}</div>
+      <div class="chat-head"><div class="dot-live"></div>Claude AI med webbsökning</div>
       <div class="chat-msgs" id="chatMsgs">
         ${S.chatHistory.length?'':'<div style="text-align:center;padding:3rem;color:var(--muted);font-size:13px"><div style="font-size:36px;margin-bottom:.75rem">⚽</div>Ställ valfri fråga om statistik, övergångar eller matcher</div>'}
         ${S.chatHistory.map(m=>`<div class="msg-${m.role==='user'?'user':'ai'}"><div class="msg-role">${m.role==='user'?'Du':'Allsvenskan AI'}</div><div class="msg-bubble">${m.role==='assistant'?mdToHtml(m.text):esc(m.text)}</div></div>`).join('')}
       </div>
       <div class="chip-row">
-        <span class="chip" onclick="askAI('Vem leder skytteligan i Allsvenskan ${SEASON}?')">Skytteliga</span>
-        <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2026')">Övergångar</span>
-        <span class="chip" onclick="askAI('Marknadsvärden för spelare i Allsvenskan 2026 enligt Transfermarkt')">Marknadsvärden</span>
-        <span class="chip" onclick="askAI('Bästa unga talangerna under 21 i Allsvenskan 2026')">U21-talanger</span>
+        <span class="chip" onclick="askAI('Vem leder skytteligan i Allsvenskan 2025?')">Skytteliga</span>
+        <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2025')">Övergångar</span>
+        <span class="chip" onclick="askAI('Marknadsvärden för spelare i Allsvenskan 2025 enligt Transfermarkt')">Marknadsvärden</span>
+        <span class="chip" onclick="askAI('Bästa unga talangerna under 21 i Allsvenskan 2025')">U21-talanger</span>
         <span class="chip" onclick="askAI('Malmö FF nyheter och form just nu')">Malmö FF</span>
       </div>
       <div class="chat-input-row">
-        <textarea id="aiInput" rows="1" placeholder="Fråga om statistik, övergångar, marknadsvärden…"
+        <textarea id="aiInput" rows="1" placeholder="Fråga om statistik, övergångar, spelare…"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
         <button class="send-btn" id="aiSend" onclick="sendAI()">SKICKA</button>
       </div>
     </div>`;
-  setTimeout(()=>{const e=document.getElementById('chatMsgs');if(e)e.scrollTop=e.scrollHeight;},50);
+  setTimeout(()=>{const e=document.getElementById('chatMsgs');if(e)e.scrollTop=e.scrollHeight},50);
 }
 
-function aiAbout(name, type) {
-  navigate(null, '/sok');
-  history.pushState({}, '', '/sok');
-  updateNav('/sok');
+function aiAbout(name,type) {
+  nav(null,'/sok'); history.pushState({},'','/sok'); updateNav('/sok');
   loadSearch(document.getElementById('mc'));
-  const q = type === 'lag'
-    ? `Ge mig en fullständig analys av ${name} i Allsvenskan ${SEASON} – form, toppspelare, övergångar och marknadsvärden`
-    : `Berätta allt om ${name} – statistik, marknadsvärde på Transfermarkt, senaste nyheter och transferrykten`;
-  setTimeout(() => askAI(q), 100);
+  const q = type==='lag'
+    ? `Ge mig en fullständig analys av ${name} i Allsvenskan 2025 – form, toppspelare, övergångar och marknadsvärden`
+    : `Berätta allt om ${name} – statistik Allsvenskan 2025, marknadsvärde på Transfermarkt, senaste nyheter och transferrykten`;
+  setTimeout(()=>askAI(q),100);
 }
 
-function askAI(q) {
-  const i = document.getElementById('aiInput');
-  if (i) { i.value = q; sendAI(); }
-}
+function askAI(q){const i=document.getElementById('aiInput');if(i){i.value=q;sendAI();}}
 
 async function sendAI() {
   const inp=document.getElementById('aiInput'),msgs=document.getElementById('chatMsgs'),btn=document.getElementById('aiSend');
@@ -811,26 +672,21 @@ async function sendAI() {
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function doSearch(v){if(!v.trim())return;document.getElementById('globalSearch').value='';navigate(null,'/sok');history.pushState({},'','/sok');updateNav('/sok');loadSearch(document.getElementById('mc'));setTimeout(()=>askAI(v.trim()),100);}
+function doSearch(v){if(!v.trim())return;document.getElementById('globalSearch').value='';nav(null,'/sok');history.pushState({},'','/sok');updateNav('/sok');loadSearch(document.getElementById('mc'));setTimeout(()=>askAI(v.trim()),100);}
 
-// ── HELPERS ──────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────
 function switchTab(btn,id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   ['ts','tt','ps','pt'].forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
-
-function copyLink(){
-  navigator.clipboard.writeText(location.href).then(()=>{
-    const b=event.target;const orig=b.textContent;b.textContent='✅ Kopierat!';setTimeout(()=>b.textContent=orig,2000);
-  });
-}
-
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=event.target;const o=b.textContent;b.textContent='✅ Kopierat!';setTimeout(()=>b.textContent=o,2000);});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-const FLAGS={Sweden:'🇸🇪',Nigeria:'🇳🇬',Ghana:'🇬🇭',Finland:'🇫🇮',Norway:'🇳🇴',Denmark:'🇩🇰',Brazil:'🇧🇷',Argentina:'🇦🇷',England:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',Scotland:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',France:'🇫🇷',Spain:'🇪🇸',Portugal:'🇵🇹',Germany:'🇩🇪',Italy:'🇮🇹',Netherlands:'🇳🇱',Poland:'🇵🇱',Serbia:'🇷🇸',Croatia:'🇭🇷',Kosovo:'🇽🇰',Albania:'🇦🇱',Iceland:'🇮🇸',Ireland:'🇮🇪',USA:'🇺🇸',Senegal:'🇸🇳',Morocco:'🇲🇦',Cameroon:'🇨🇲',Tunisia:'🇹🇳',Mali:'🇲🇱','Ivory Coast':'🇨🇮','Guinea':'🇬🇳','DR Congo':'🇨🇩'};
-function flag(n){return FLAGS[n]||'🌍';}
-function rc(r){const v=parseFloat(r);if(isNaN(v))return'var(--text)';if(v>=7.5)return'var(--green)';if(v>=6.5)return'var(--gold)';return'var(--red)';}
+function calcAge(dob){if(!dob)return'?';const b=new Date(dob),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
+function formatVal(v){if(!v)return'—';if(v>=1000000)return(v/1000000).toFixed(1)+'M';if(v>=1000)return(v/1000).toFixed(0)+'K';return v;}
 function feeClass(t){return(t||'').toLowerCase().includes('loan')?'type-loan':t==='Free'?'type-free':'type-paid';}
+const FLAGS={Sweden:'🇸🇪',Nigeria:'🇳🇬',Ghana:'🇬🇭',Finland:'🇫🇮',Norway:'🇳🇴',Denmark:'🇩🇰',Brazil:'🇧🇷',Argentina:'🇦🇷',England:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',Scotland:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',France:'🇫🇷',Spain:'🇪🇸',Portugal:'🇵🇹',Germany:'🇩🇪',Italy:'🇮🇹',Netherlands:'🇳🇱',Poland:'🇵🇱',Serbia:'🇷🇸',Croatia:'🇭🇷',Kosovo:'🇽🇰',Albania:'🇦🇱',Iceland:'🇮🇸',Ireland:'🇮🇪',USA:'🇺🇸',Senegal:'🇸🇳',Morocco:'🇲🇦',Cameroon:'🇨🇲',Tunisia:'🇹🇳',Mali:'🇲🇱','Ivory Coast':'🇨🇮','Guinea':'🇬🇳','DR Congo':'🇨🇩',Peru:'🇵🇪',Kosovo:'🇽🇰'};
+function flag(n){return FLAGS[n]||'🌍';}
 function mdToHtml(txt){
   const lines=txt.split('\n');let out='',inT=false;
   for(const line of lines){
