@@ -527,39 +527,45 @@ async function pagePlayer(el, playerId) {
           </div>
         </div>
         <div>
-          <button class="ai-btn" onclick="loadPlayerMV('${esc(p.display_name||p.name)}')">💰 Marknadsvärde & info</button>
+          <button class="ai-btn" onclick="loadPlayerMV('${esc(playerName)}')">💰 Marknadsvärde & info</button>
           <div id="mv-result" style="margin-top:.5rem"></div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'p-seasons')">Karriärstatistik (${allStats.length} säsonger)</button>
-        <button class="tab" onclick="switchTab(this,'p-transfers')">Övergångar (${transfers.length})</button>
+        <button class="tab active" onclick="switchTab(this,'p-ai')">Karriärstatistik & övergångar</button>
       </div>
 
-      <div id="p-seasons">
-        <div class="tbl-wrap"><div style="overflow-x:auto"><table>
-          <thead><tr><th>Säsong</th><th>M</th><th>Min</th><th>⚽ Mål</th><th>🎯 Assist</th><th>★ Rating</th><th>🟨</th><th>🟥</th></tr></thead>
-          <tbody>
-            ${sRows||'<tr><td colspan="8" class="empty">Ingen statistik</td></tr>'}
-            <tr style="background:var(--dark3);border-top:1px solid var(--border-hi)">
-              <td style="font-weight:500;color:var(--gold)">Totalt</td>
-              <td style="font-weight:500">${cApps}</td><td style="font-weight:500">${cMins}</td>
-              <td class="num">${cGoals}</td><td class="num">${cAssists}</td>
-              <td>—</td><td>${cYellow}</td><td style="color:${cRed>0?'var(--red)':'var(--text)'}">${cRed}</td>
-            </tr>
-          </tbody>
-        </table></div></div>
-      </div>
-
-      <div id="p-transfers" style="display:none">
-        <div class="tbl-wrap"><div style="overflow-x:auto"><table>
-          <thead><tr><th>Datum</th><th>Övergång</th><th>Typ</th><th>Belopp</th></tr></thead>
-          <tbody>${tRows||'<tr><td colspan="4" class="empty">Inga övergångar</td></tr>'}</tbody>
-        </table></div></div>
+      <div id="p-ai">
+        <div class="ai-panel">
+          <div class="ai-head"><div class="live-dot"></div>Hämtar karriärdata från transfermarkt.com & fbref.com…</div>
+          <div class="ai-body" id="player-ai-${playerId}">
+            <div class="ai-loading"><div class="dots"><span></span><span></span><span></span></div> Söker data…</div>
+          </div>
+        </div>
       </div>`;
   } catch(e) {
     el.innerHTML = `<button class="back" onclick="go('/')">← Hem</button><div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadPlayerCareer(name, playerId) {
+  const el = document.getElementById('player-ai-' + playerId);
+  if(!el) return;
+  try {
+    const prompt = `Sök på transfermarkt.com och fbref.com efter ${name} och hämta:
+1. Karriärstatistik säsong för säsong: säsong, lag, matcher, mål, assist, gula kort, röda kort
+2. Alla övergångar med datum, från-lag, till-lag, typ och belopp
+3. Aktuellt marknadsvärde
+Presentera i tydliga markdown-tabeller. Svara på svenska. Var noggrann och exakt.`;
+    const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({system: AISYS, messages:[{role:'user',content:prompt}]})});
+    const d = await resp.json();
+    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('
+');
+    el.innerHTML = `<div class="ai-content">${mdHtml(text)}</div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
   }
 }
 
