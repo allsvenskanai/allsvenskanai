@@ -118,7 +118,7 @@ tr.clickable{cursor:pointer}
 <body>
 <header>
   <a class="logo" href="/" onclick="nav(event,'/')">Allsvenskan <em>/</em> AI</a>
-  <div class="season-badge">2025</div>
+  <div class="season-badge" id="seasonBadge">—</div>
   <input id="globalSearch" type="text" placeholder="Sök spelare eller lag…" onkeydown="if(event.key==='Enter')doSearch(this.value)">
 </header>
 <div class="layout">
@@ -136,7 +136,7 @@ tr.clickable{cursor:pointer}
 </div>
 <script>
 // ── CONFIG ───────────────────────────────────────────
-const S = {teams:[], chatHistory:[], chatLoading:false, page:'/', LEAGUE_ID:0, SEASON_ID:0};
+const S = {teams:[], chatHistory:[], chatLoading:false, page:'/', LEAGUE_ID:0, SEASON_ID:0, SEASON_NAME:'2025'};
 
 // ── ROUTING ──────────────────────────────────────────
 function nav(e, path) {
@@ -188,10 +188,15 @@ async function boot() {
     if (!allsvenskan) throw new Error('Allsvenskan hittades inte i din Sportmonks-prenumeration. Kontrollera att du lagt till Allsvenskan under My Leagues på sportmonks.com.');
     S.LEAGUE_ID = allsvenskan.id;
 
-    // Step 2: Get current season ID directly from the league response
-    const current = allsvenskan.current_season;
-    if (!current) throw new Error('Ingen aktiv säsong hittades för Allsvenskan. Säsongen kanske inte har startat än.');
+    // Step 2: Fetch all seasons for this league, pick latest (works between seasons too)
+    const leagueDetail = await sm('leagues/' + S.LEAGUE_ID, {include: 'seasons'});
+    const allSeasons = (leagueDetail.data?.seasons || [])
+      .filter(s => s.league_id === S.LEAGUE_ID)
+      .sort((a,b) => b.id - a.id);
+    const current = allSeasons[0];
+    if (!current) throw new Error('Ingen säsong hittades för Allsvenskan.');
     S.SEASON_ID = current.id;
+    S.SEASON_NAME = current.name || '2025';
     console.log('Allsvenskan league:', S.LEAGUE_ID, 'season:', S.SEASON_ID, current.name);
     
     // Step 3: Load teams
@@ -218,13 +223,15 @@ async function loadTeams(el) {
     }
   }
   document.title = 'AllsvenskanAI';
+  const badge = document.getElementById('seasonBadge');
+  if(badge) badge.textContent = S.SEASON_NAME;
   const cards = S.teams.map(t=>`
     <a class="team-card" href="/lag/${t.id}" onclick="nav(event,'/lag/${t.id}')">
       <img src="${t.image_path||''}" onerror="this.style.opacity='.15'" loading="lazy">
       <div class="tname">${esc(t.name)}</div>
     </a>`).join('');
   el.innerHTML = `
-    <div class="page-title"><h1>Allsvenskan 2025</h1><span>${S.teams.length} lag</span></div>
+    <div class="page-title"><h1>Allsvenskan ${S.SEASON_NAME}</h1><span>${S.teams.length} lag</span></div>
     <div class="team-grid">${cards}</div>`;
 }
 
@@ -356,26 +363,68 @@ async function loadPlayer(el, playerId) {
     const teamName = p.teams?.[0]?.name || '—';
     const teamLogo = p.teams?.[0]?.image_path || '';
 
-    // Current season stats
-    const seasonStats = (p.statistics||[]).find(s=>s.season_id===S.SEASON_ID) || {};
-    const details = seasonStats.details || [];
-
-    const getStat = (name) => details.find(s=>s.type?.name===name)?.value?.total ?? details.find(s=>s.type?.name===name)?.value ?? '—';
-
-    const goals   = getStat('Goals');
-    const assists = getStat('Assists');
-    const apps    = getStat('Appearances');
-    const mins    = getStat('Minutes Played');
-    const rating  = getStat('Rating');
-    const shots   = getStat('Shots Total');
-    const shotsOT = getStat('Shots On Target');
-    const passes  = getStat('Passes');
-    const tackles = getStat('Tackles');
-    const yellow  = getStat('Yellowcards');
-    const red     = getStat('Redcards');
-    const drib    = getStat('Dribbles');
-
     const transfers = (p.transfers||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+    // Helper to extract stat value
+    const getStatFromDetails = (details, name) =>
+      details?.find(s=>s.type?.name===name)?.value?.total ??
+      details?.find(s=>s.type?.name===name)?.value ?? 0;
+
+    // Current/latest season stats
+    const allStats = p.statistics || [];
+    const currentStats = allStats.find(s=>s.season_id===S.SEASON_ID) || allStats[0] || {};
+    const curDetails = currentStats.details || [];
+
+    // Career totals across all seasons
+    const careerGoals   = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Goals')||0),0);
+    const careerAssists = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Assists')||0),0);
+    const careerApps    = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Appearances')||0),0);
+    const careerMins    = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Minutes Played')||0),0);
+    const careerYellow  = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Yellowcards')||0),0);
+    const careerRed     = allStats.reduce((s,x)=>s+(getStatFromDetails(x.details,'Redcards')||0),0);
+
+    // Current season
+    const goals   = getStatFromDetails(curDetails,'Goals');
+    const assists = getStatFromDetails(curDetails,'Assists');
+    const apps    = getStatFromDetails(curDetails,'Appearances');
+    const mins    = getStatFromDetails(curDetails,'Minutes Played');
+    const rating  = curDetails.find(s=>s.type?.name==='Rating')?.value || '—';
+    const shots   = getStatFromDetails(curDetails,'Shots Total');
+    const shotsOT = getStatFromDetails(curDetails,'Shots On Target');
+    const passes  = getStatFromDetails(curDetails,'Passes');
+    const tackles = getStatFromDetails(curDetails,'Tackles');
+    const yellow  = getStatFromDetails(curDetails,'Yellowcards');
+    const red     = getStatFromDetails(curDetails,'Redcards');
+    const drib    = getStatFromDetails(curDetails,'Dribbles');
+
+    const ratingNum = parseFloat(rating);
+    const ratingCol = isNaN(ratingNum)?'var(--text)':ratingNum>=7.5?'var(--green)':ratingNum>=6.5?'var(--gold)':'var(--red)';
+
+    // Season-by-season table rows
+    const seasonRows = allStats
+      .sort((a,b)=>b.season_id-a.season_id)
+      .map(s=>{
+        const d = s.details||[];
+        const g = getStatFromDetails(d,'Goals');
+        const a = getStatFromDetails(d,'Assists');
+        const m = getStatFromDetails(d,'Appearances');
+        const mn = getStatFromDetails(d,'Minutes Played');
+        const r = d.find(x=>x.type?.name==='Rating')?.value;
+        const y = getStatFromDetails(d,'Yellowcards');
+        const rd = getStatFromDetails(d,'Redcards');
+        const rCol = parseFloat(r)>=7.5?'var(--green)':parseFloat(r)>=6.5?'var(--gold)':'var(--red)';
+        const isCur = s.season_id===S.SEASON_ID;
+        return `<tr style="${isCur?'background:rgba(232,197,71,.05)':''}">
+          <td style="font-weight:500">${esc(s.season?.name||s.season_id||'—')}${isCur?'  <span style="font-size:10px;color:var(--gold);letter-spacing:.5px">SENASTE</span>':''}</td>
+          <td>${m||'—'}</td>
+          <td>${mn||'—'}</td>
+          <td class="td-num">${g||'—'}</td>
+          <td class="td-num">${a||'—'}</td>
+          <td style="color:${rCol};font-weight:500">${r?parseFloat(r).toFixed(2):'—'}</td>
+          <td style="color:${y>5?'var(--gold)':'var(--text)'}">${y||'—'}</td>
+          <td style="color:${rd>0?'var(--red)':'var(--text)'}">${rd||'—'}</td>
+        </tr>`;}).join('');
+
     const transferRows = transfers.slice(0,10).map(tr=>{
       const fc = feeClass(tr.type);
       return `<div class="transfer-item">
@@ -392,9 +441,6 @@ async function loadPlayer(el, playerId) {
 
     const sr = (label,val,col)=>`<tr><td style="color:var(--muted);padding:8px 12px;width:55%">${label}</td>
       <td style="padding:8px 12px;font-weight:500${col?';color:'+col:''}">${val}</td></tr>`;
-
-    const ratingNum = parseFloat(rating);
-    const ratingCol = isNaN(ratingNum)?'var(--text)':ratingNum>=7.5?'var(--green)':ratingNum>=6.5?'var(--gold)':'var(--red)';
 
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
@@ -418,22 +464,49 @@ async function loadPlayer(el, playerId) {
           </div>`:''}
           ${p.market_value?`<div style="font-size:13px;margin-top:.25rem">💰 Marknadsvärde: <strong style="color:var(--gold)">${p.market_value_currency||'€'} ${formatVal(p.market_value)}</strong></div>`:''}
           <div class="stat-row">
-            <div class="stat-pill"><div class="n">${apps}</div><div class="l">Matcher</div></div>
-            <div class="stat-pill"><div class="n">${mins}</div><div class="l">Minuter</div></div>
-            <div class="stat-pill"><div class="n">${goals}</div><div class="l">Mål</div></div>
-            <div class="stat-pill"><div class="n">${assists}</div><div class="l">Assist</div></div>
-            <div class="stat-pill"><div class="n" style="color:${ratingCol}">${typeof rating==='number'?rating.toFixed(2):rating}</div><div class="l">Rating</div></div>
+            <div class="stat-pill"><div class="n">${careerApps}</div><div class="l">Karriärmatcher</div></div>
+            <div class="stat-pill"><div class="n">${careerGoals}</div><div class="l">Karriärmål</div></div>
+            <div class="stat-pill"><div class="n">${careerAssists}</div><div class="l">Karriärassist</div></div>
+            <div class="stat-pill"><div class="n" style="color:${ratingCol}">${typeof rating==='number'?rating.toFixed(1):rating}</div><div class="l">Rating (senaste)</div></div>
           </div>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'ps')">Säsongsstatistik 2025</button>
-        <button class="tab" onclick="switchTab(this,'pt')">Karriär & övergångar (${transfers.length})</button>
+        <button class="tab active" onclick="switchTab(this,'ps')">Säsong för säsong (${allStats.length})</button>
+        <button class="tab" onclick="switchTab(this,'pd')">Detaljerad statistik</button>
+        <button class="tab" onclick="switchTab(this,'pt')">Övergångar (${transfers.length})</button>
       </div>
 
       <div id="ps">
+        <div class="table-wrap"><div style="overflow-x:auto"><table>
+          <thead><tr>
+            <th>Säsong</th><th>M</th><th>Min</th>
+            <th>⚽ Mål</th><th>🎯 Assist</th><th>★ Rating</th><th>🟨</th><th>🟥</th>
+          </tr></thead>
+          <tbody>
+            ${seasonRows||'<tr><td colspan="8" class="empty">Ingen statistik</td></tr>'}
+            <tr style="background:var(--dark3);border-top:2px solid var(--border-hi)">
+              <td style="font-weight:500;color:var(--gold)">Karriärtotalt</td>
+              <td style="font-weight:500">${careerApps}</td>
+              <td style="font-weight:500">${careerMins}</td>
+              <td class="td-num">${careerGoals}</td>
+              <td class="td-num">${careerAssists}</td>
+              <td>—</td>
+              <td>${careerYellow}</td>
+              <td style="color:${careerRed>0?'var(--red)':'var(--text)'}">${careerRed}</td>
+            </tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <div id="pd" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:.75rem">Detaljerad statistik — senaste säsong (${S.SEASON_NAME})</div>
         <div class="table-wrap"><table><tbody>
+          ${sr('Matcher', apps)}
+          ${sr('Minuter spelade', mins)}
+          ${sr('Mål', goals)}
+          ${sr('Assist', assists)}
           ${sr('Skott totalt', shots)}
           ${sr('Skott på mål', shotsOT)}
           ${sr('Passningar', passes)}
@@ -443,6 +516,7 @@ async function loadPlayer(el, playerId) {
           ${sr('Röda kort', red, red>0?'var(--red)':'')}
         </tbody></table></div>
       </div>
+
       <div id="pt" style="display:none"><div class="table-wrap">${transferRows}</div></div>
       <button class="ai-btn" onclick="aiAbout('${esc(p.display_name||p.name)}','spelare')">🔍 Mer om ${esc(p.display_name||p.name)} med AI</button>`;
   } catch(e) {
@@ -480,7 +554,7 @@ async function loadStandings(el) {
         <td><div class="form-dots">${form}</div></td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Tabell</h1><span>Allsvenskan 2025</span></div>
+      <div class="page-title"><h1>Tabell</h1><span>Allsvenskan ${S.SEASON_NAME}</span></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
         <thead><tr><th>#</th><th>Lag</th><th>MP</th><th>V</th><th>O</th><th>F</th><th>GM</th><th>GI</th><th>GS</th><th>P</th><th>Form</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="11" class="empty">Ingen tabelldata</td></tr>'}</tbody>
@@ -607,7 +681,7 @@ async function loadTopScorers(el) {
         <td class="td-num" style="font-size:22px">${goals}</td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="page-title"><h1>Skytteliga</h1><span>Allsvenskan 2025</span></div>
+      <div class="page-title"><h1>Skytteliga</h1><span>Allsvenskan ${S.SEASON_NAME}</span></div>
       <div class="table-wrap"><div style="overflow-x:auto"><table>
         <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>⚽ Mål</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="5" class="empty">Ingen data</td></tr>'}</tbody>
@@ -629,10 +703,10 @@ function loadSearch(el) {
         ${S.chatHistory.map(m=>`<div class="msg-${m.role==='user'?'user':'ai'}"><div class="msg-role">${m.role==='user'?'Du':'Allsvenskan AI'}</div><div class="msg-bubble">${m.role==='assistant'?mdToHtml(m.text):esc(m.text)}</div></div>`).join('')}
       </div>
       <div class="chip-row">
-        <span class="chip" onclick="askAI('Vem leder skytteligan i Allsvenskan 2025?')">Skytteliga</span>
-        <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2025')">Övergångar</span>
-        <span class="chip" onclick="askAI('Marknadsvärden för spelare i Allsvenskan 2025 enligt Transfermarkt')">Marknadsvärden</span>
-        <span class="chip" onclick="askAI('Bästa unga talangerna under 21 i Allsvenskan 2025')">U21-talanger</span>
+        <span class="chip" onclick="askAI('Vem leder skytteligan i Allsvenskan ${S.SEASON_NAME}?')">Skytteliga</span>
+        <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan ${S.SEASON_NAME}')">Övergångar</span>
+        <span class="chip" onclick="askAI('Marknadsvärden för spelare i Allsvenskan ${S.SEASON_NAME} enligt Transfermarkt')">Marknadsvärden</span>
+        <span class="chip" onclick="askAI('Bästa unga talangerna under 21 i Allsvenskan ${S.SEASON_NAME}')">U21-talanger</span>
         <span class="chip" onclick="askAI('Malmö FF nyheter och form just nu')">Malmö FF</span>
       </div>
       <div class="chat-input-row">
@@ -649,8 +723,8 @@ function aiAbout(name,type) {
   nav(null,'/sok'); history.pushState({},'','/sok'); updateNav('/sok');
   loadSearch(document.getElementById('mc'));
   const q = type==='lag'
-    ? `Ge mig en fullständig analys av ${name} i Allsvenskan 2025 – form, toppspelare, övergångar och marknadsvärden`
-    : `Berätta allt om ${name} – statistik Allsvenskan 2025, marknadsvärde på Transfermarkt, senaste nyheter och transferrykten`;
+    ? `Ge mig en fullständig analys av ${name} i Allsvenskan ${S.SEASON_NAME} – form, toppspelare, övergångar och marknadsvärden`
+    : `Berätta allt om ${name} – statistik Allsvenskan ${S.SEASON_NAME}, marknadsvärde på Transfermarkt, senaste nyheter och transferrykten`;
   setTimeout(()=>askAI(q),100);
 }
 
