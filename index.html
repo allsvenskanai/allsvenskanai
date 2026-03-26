@@ -350,27 +350,28 @@ async function loadTeam(el, teamId) {
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'ts')">Spelartrupp (${players.length})</button>
+        <button class="tab active" onclick="switchTab(this,'ts')">Spelartrupp</button>
         <button class="tab" onclick="switchTab(this,'tt')">Övergångar (${transfers.length})</button>
       </div>
 
       <div id="ts">
-        <div class="table-wrap"><div style="overflow-x:auto"><table>
-          <thead><tr>
-            <th>Spelare</th><th>Position</th><th>Ålder</th>
-            <th title="Matcher">M</th><th title="Mål">⚽</th><th title="Assist">🎯</th><th title="Rating">★</th>
-          </tr></thead>
-          <tbody>${playerRows || '<tr><td colspan="7" class="empty">Inga spelare hittade</td></tr>'}</tbody>
-        </table></div></div>
+        <div class="table-wrap" style="padding:0">
+          <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+            <div class="dot-live"></div>
+            <span style="font-size:13px;font-weight:500">Aktuell spelartrupp — hämtas live via AI</span>
+            <button class="ai-btn" style="margin:0;margin-left:auto;font-size:11px;padding:4px 10px" onclick="loadSquadAI('${esc(teamName)}', ${teamId})">🔄 Ladda trupp</button>
+          </div>
+          <div id="squad-ai-${teamId}" style="padding:1rem">
+            <div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">
+              Klicka på <strong>Ladda trupp</strong> för att hämta aktuell spelartrupp från AI
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="tt" style="display:none">
         <div class="table-wrap">${transferRows}</div>
-      </div>
-
-      <button class="ai-btn" onclick="aiAbout('${esc(teamName)}','lag')">
-        🔍 Fråga AI om ${esc(teamName)}
-      </button>`;
+      </div>`;
 
   } catch(e) {
     el.innerHTML = `<button class="back-btn" onclick="navigate(event,'/')">← Alla lag</button>
@@ -500,6 +501,37 @@ async function loadPlayer(el, playerId) {
   } catch(e) {
     el.innerHTML = `<button class="back-btn" onclick="navigate(event,'/')">← Hem</button>
       <div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── AI SQUAD ─────────────────────────────────────────
+async function loadSquadAI(teamName, teamId) {
+  const el = document.getElementById('squad-ai-' + teamId);
+  if (!el) return;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar aktuell spelartrupp…</div>`;
+
+  const prompt = `Visa hela den aktuella spelartruppen för ${teamName} i Allsvenskan 2025/2026.
+Hämta data från transfermarkt.com eller svenskfotboll.se — dessa har alltid uppdaterade trupper.
+Presentera spelarna i en tabell med kolumnerna: Namn | Position | Nationalitet | Ålder | Marknadsvärde.
+Sortera efter position: Målvakter → Försvarare → Mittfältare → Anfallare.
+Inkludera BARA spelare som är registrerade i truppen just nu. Inga gamla spelare.`;
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        system: 'Du är expert på Allsvenskan. Sök alltid på webben för aktuell data. Svara på svenska. Använd markdown-tabeller.',
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw = data.content || [];
+    const text = raw.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    el.innerHTML = `<div style="padding:1rem">${mdToHtml(text)}</div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err" style="margin:1rem">Fel: ${esc(e.message)}</div>`;
   }
 }
 
