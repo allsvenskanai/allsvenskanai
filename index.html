@@ -279,7 +279,7 @@ async function pageTeams(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
     // Use standings to get exactly the 16 Allsvenskan teams
-    const standData = await smCached('standings/seasons', {season_id: SM_SEASON, include:'participant'});
+    const standData = await smCached('standings/seasons/' + SM_SEASON, {include:'participant'});
     const standings = Array.isArray(standData) ? standData : (standData.data||[]);
     
     // Map standings to team cards, sorted by position
@@ -564,7 +564,7 @@ async function pageStandings(el) {
   document.title = 'Tabell — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
   try {
-    const d = await sm('standings/seasons', {season_id: SM_SEASON, include:'participant'});
+    const d = await sm('standings/seasons/' + SM_SEASON, {include:'participant'});
     const rows = (Array.isArray(d)?d:(d.data||[])).map(t=>{
       const gd=t.goalsDiff||(t.details?.find(x=>x.type?.name==='Goal Difference')?.value)||0;
       const form=(t.form||'').slice(-5).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
