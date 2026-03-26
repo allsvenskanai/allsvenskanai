@@ -188,8 +188,10 @@ async function boot() {
     const allSeasons = (seasonD.data || [])
       .filter(s => s.league_id === 573)
       .sort((a,b) => b.id - a.id);
-    const current = allSeasons.find(s => s.is_current) || allSeasons[0];
-    if (!current) throw new Error('Ingen säsong hittades. Säsonger tillgängliga: ' + (seasonD.data||[]).map(s=>s.name+'('+s.league_id+')').join(', '));
+    // Pick 2025 season (last completed), fall back to latest if not found
+    const season2025 = allSeasons.find(s => s.name === '2025');
+    const current = season2025 || allSeasons.find(s => s.is_current) || allSeasons[0];
+    if (!current) throw new Error('Ingen säsong hittades. Säsonger: ' + (seasonD.data||[]).map(s=>s.name+'('+s.league_id+')').join(', '));
     S.SEASON_ID = current.id;
     S.SEASON_NAME = current.name || '2025';
     console.log('Allsvenskan season:', S.SEASON_ID, S.SEASON_NAME);
