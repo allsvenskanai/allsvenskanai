@@ -189,8 +189,8 @@ async function boot() {
     S.LEAGUE_ID = allsvenskan.id;
     
     // Step 2: Find current season for Allsvenskan
-    const seasonD = await sm('seasons', {filters: 'leagueId:' + S.LEAGUE_ID});
-    const seasons = (seasonD.data || []).filter(s => s.league_id === S.LEAGUE_ID);
+    const seasonD = await sm('seasons/leagues/' + S.LEAGUE_ID, {});
+    const seasons = (seasonD.data || []);
     const current = seasons.find(s => s.is_current) || seasons.sort((a,b) => b.id-a.id)[0];
     if (!current) throw new Error('Ingen aktiv säsong hittades för Allsvenskan.');
     S.SEASON_ID = current.id;
