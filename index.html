@@ -510,18 +510,23 @@ async function loadSquadAI(teamName, teamId) {
   if (!el) return;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar aktuell spelartrupp…</div>`;
 
-  const prompt = `Visa hela den aktuella spelartruppen för ${teamName} i Allsvenskan 2025/2026.
-Hämta data från transfermarkt.com eller svenskfotboll.se — dessa har alltid uppdaterade trupper.
-Presentera spelarna i en tabell med kolumnerna: Namn | Position | Nationalitet | Ålder | Marknadsvärde.
-Sortera efter position: Målvakter → Försvarare → Mittfältare → Anfallare.
-Inkludera BARA spelare som är registrerade i truppen just nu. Inga gamla spelare.`;
+  const prompt = `Sök på transfermarkt.com/malmo-ff/kader eller transfermarkt.se efter ${teamName}s AKTUELLA spelartrupp säsongen 2025/2026.
+VIKTIGT: Ta BARA med spelare som faktiskt spelar i klubben JUST NU. Kontrollera mot transfermarkt att de inte är transfererade eller avslutade kontrakt.
+Returnera ENBART ett JSON-objekt i detta exakta format, inget annat:
+{
+  "players": [
+    {"name": "Förnamn Efternamn", "position": "Goalkeeper|Defender|Midfielder|Forward", "nationality": "Land", "age": 25, "value": "€1.5M"},
+    ...
+  ]
+}
+Sortera: Goalkeeper → Defender → Midfielder → Forward. Inkludera alla spelare i truppen.`;
 
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        system: 'Du är expert på Allsvenskan. Sök alltid på webben för aktuell data. Svara på svenska. Använd markdown-tabeller.',
+        system: 'Du är expert på Allsvenskan. Sök ALLTID på webben för aktuell data. Returnera ENBART JSON, inga förklaringar, ingen markdown, inga backticks.',
         messages: [{role: 'user', content: prompt}]
       })
     });
@@ -529,10 +534,63 @@ Inkludera BARA spelare som är registrerade i truppen just nu. Inga gamla spelar
     if (data.error) throw new Error(data.error.message);
     const raw = data.content || [];
     const text = raw.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-    el.innerHTML = `<div style="padding:1rem">${mdToHtml(text)}</div>`;
+    
+    // Parse JSON response
+    let squad;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      squad = JSON.parse(clean);
+    } catch {
+      // Fallback: show raw text if JSON parsing fails
+      el.innerHTML = \`<div style="padding:1rem">\${mdToHtml(text)}</div>\`;
+      return;
+    }
+
+    const posOrder = {Goalkeeper:1, Defender:2, Midfielder:3, Forward:4};
+    const posLabel = {Goalkeeper:'Målvakt', Defender:'Försvarare', Midfielder:'Mittfältare', Forward:'Anfallare'};
+    
+    const players = (squad.players || []).sort((a,b) => 
+      (posOrder[a.position]||5) - (posOrder[b.position]||5));
+
+    let currentPos = '';
+    const rows = players.map(p => {
+      let header = '';
+      if (p.position !== currentPos) {
+        currentPos = p.position;
+        header = \`<tr style="background:var(--dark3)"><td colspan="5" style="padding:6px 12px;font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold)">\${posLabel[p.position]||p.position}</td></tr>\`;
+      }
+      return header + \`<tr class="clickable" onclick="searchPlayerByName('\${p.name.replace(/'/g,\"\\\\'\")}')">
+        <td style="font-weight:500">\${esc(p.name)}</td>
+        <td><span class="td-pos">\${posLabel[p.position]||p.position}</span></td>
+        <td style="font-size:12px">\${flag(p.nationality)} \${esc(p.nationality||'—')}</td>
+        <td>\${p.age||'—'}</td>
+        <td style="color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:15px">\${esc(p.value||'—')}</td>
+      </tr>\`;
+    }).join('');
+
+    el.innerHTML = \`
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Spelare</th><th>Position</th><th>Nationalitet</th><th>Ålder</th><th>Marknadsvärde</th>
+          </tr></thead>
+          <tbody>\${rows || '<tr><td colspan="5" class="empty">Inga spelare hittades</td></tr>'}</tbody>
+        </table>
+      </div>
+      <div style="padding:.75rem 1rem;font-size:11px;color:var(--muted);border-top:1px solid var(--border)">
+        Källa: Transfermarkt — klicka på en spelare för att söka mer info
+      </div>\`;
   } catch(e) {
     el.innerHTML = `<div class="err" style="margin:1rem">Fel: ${esc(e.message)}</div>`;
   }
+}
+
+function searchPlayerByName(name) {
+  navigate(null, '/sok');
+  history.pushState({}, '', '/sok');
+  updateNav('/sok');
+  loadSearch(document.getElementById('mc'));
+  setTimeout(() => askAI(`Visa statistik och information om ${name} i Allsvenskan 2025/2026 – mål, assist, spelade matcher, marknadsvärde`), 100);
 }
 
 // ── STANDINGS ────────────────────────────────────────
