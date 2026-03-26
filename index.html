@@ -136,9 +136,7 @@ tr.clickable{cursor:pointer}
 </div>
 <script>
 // ── CONFIG ───────────────────────────────────────────
-const LEAGUE_ID = 271;   // Allsvenskan i Sportmonks
-const SEASON_ID = 23584; // Säsong 2025 i Sportmonks
-const S = {teams:[], chatHistory:[], chatLoading:false, page:'/'};
+const S = {teams:[], chatHistory:[], chatLoading:false, page:'/', LEAGUE_ID:0, SEASON_ID:0};
 
 // ── ROUTING ──────────────────────────────────────────
 function nav(e, path) {
@@ -180,12 +178,31 @@ async function sm(endpoint, params={}) {
 
 // ── BOOT ─────────────────────────────────────────────
 async function boot() {
+  const el = document.getElementById('mc');
   try {
-    // Get teams for season
-    const d = await sm('teams', {season_id: SEASON_ID, include: 'venue'});
+    // Step 1: Find Allsvenskan league from subscription
+    el.innerHTML = '<div class="loading"><div class="spinner"></div>Hämtar Allsvenskan…</div>';
+    const leagueD = await sm('leagues', {});
+    const leagues = leagueD.data || [];
+    const allsvenskan = leagues.find(l => l.name && l.name.toLowerCase().includes('allsvenskan'));
+    if (!allsvenskan) throw new Error('Allsvenskan hittades inte i din Sportmonks-prenumeration. Kontrollera att du lagt till Allsvenskan under My Leagues.');
+    S.LEAGUE_ID = allsvenskan.id;
+    
+    // Step 2: Find current season for Allsvenskan
+    const seasonD = await sm('seasons', {filters: 'leagueId:' + S.LEAGUE_ID});
+    const seasons = (seasonD.data || []).filter(s => s.league_id === S.LEAGUE_ID);
+    const current = seasons.find(s => s.is_current) || seasons.sort((a,b) => b.id-a.id)[0];
+    if (!current) throw new Error('Ingen aktiv säsong hittades för Allsvenskan.');
+    S.SEASON_ID = current.id;
+    console.log('Allsvenskan league:', S.LEAGUE_ID, 'season:', S.SEASON_ID, current.name);
+    
+    // Step 3: Load teams
+    const d = await sm('teams', {season_id: S.SEASON_ID, include: 'venue'});
     S.teams = (d.data||[]).sort((a,b)=>a.name.localeCompare(b.name,'sv'));
   } catch(e) {
-    console.warn('Boot error:', e.message);
+    el.innerHTML = '<div class="err">⚠️ ' + esc(e.message) + '<br><br>Kontrollera att <strong>SPORTMONKS_KEY</strong> är inlagd i Vercel och att Allsvenskan är vald under My Leagues på sportmonks.com.</div>';
+    console.error('Boot error:', e);
+    return;
   }
   route(location.pathname);
 }
@@ -195,7 +212,7 @@ async function loadTeams(el) {
   if(!S.teams.length) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
     try {
-      const d = await sm('teams', {season_id: SEASON_ID});
+      const d = await sm('teams', {season_id: S.SEASON_ID});
       S.teams = (d.data||[]).sort((a,b)=>a.name.localeCompare(b.name,'sv'));
     } catch(e) {
       el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}<br>Kontrollera att <strong>SPORTMONKS_KEY</strong> är inlagd i Vercel → Settings → Environment Variables.</div>`;
@@ -223,7 +240,7 @@ async function loadTeam(el, teamId) {
     // Fetch squad, stats, transfers in parallel
     const [squadD, statsD, transfersD] = await Promise.all([
       sm(`squads/teams/${teamId}`, {include:'player'}),
-      sm('statistics/seasons/teams', {season_id: SEASON_ID, team_id: teamId}),
+      sm('statistics/seasons/teams', {season_id: S.SEASON_ID, team_id: teamId}),
       sm(`transfers/teams/${teamId}`),
     ]);
 
@@ -342,7 +359,7 @@ async function loadPlayer(el, playerId) {
     const teamLogo = p.teams?.[0]?.image_path || '';
 
     // Current season stats
-    const seasonStats = (p.statistics||[]).find(s=>s.season_id===SEASON_ID) || {};
+    const seasonStats = (p.statistics||[]).find(s=>s.season_id===S.SEASON_ID) || {};
     const details = seasonStats.details || [];
 
     const getStat = (name) => details.find(s=>s.type?.name===name)?.value?.total ?? details.find(s=>s.type?.name===name)?.value ?? '—';
@@ -441,7 +458,7 @@ async function loadStandings(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
   document.title = 'Tabell — AllsvenskanAI';
   try {
-    const d = await sm('standings/seasons', {season_id: SEASON_ID, include: 'participant'});
+    const d = await sm('standings/seasons', {season_id: S.SEASON_ID, include: 'participant'});
     const rows = (d.data||[]).map(t=>{
       const w = t.details?.find(x=>x.type?.name==='Won')?.value || 0;
       const dr = t.details?.find(x=>x.type?.name==='Draw')?.value || 0;
@@ -479,8 +496,8 @@ async function loadResults(el) {
   document.title = 'Resultat — AllsvenskanAI';
   try {
     const [liveD, recentD] = await Promise.all([
-      sm('livescores/inplay', {filters:`fixtureLeagues:${LEAGUE_ID}`, include:'participants;scores'}),
-      sm('fixtures', {season_id: SEASON_ID, include:'participants;scores', per_page:50, sort:'-starting_at'}),
+      sm('livescores/inplay', {filters:`fixtureLeagues:${S.LEAGUE_ID}`, include:'participants;scores'}),
+      sm('fixtures', {season_id: S.SEASON_ID, include:'participants;scores', per_page:50, sort:'-starting_at'}),
     ]);
 
     const live = liveD.data || [];
@@ -532,7 +549,7 @@ async function loadTransfers(el) {
   document.title = 'Övergångar — AllsvenskanAI';
   try {
     const d = await sm('transfers', {
-      filters: `transferLeagues:${LEAGUE_ID}`,
+      filters: `transferLeagues:${S.LEAGUE_ID}`,
       include: 'player;fromTeam;toTeam',
       per_page: 100,
       sort: '-date'
@@ -570,7 +587,7 @@ async function loadTopScorers(el) {
   document.title = 'Skytteliga — AllsvenskanAI';
   try {
     const d = await sm('topscorers/seasons', {
-      season_id: SEASON_ID,
+      season_id: S.SEASON_ID,
       include: 'player.nationality;player.position;participant',
       per_page: 30
     });
