@@ -326,16 +326,15 @@ async function pageTeams(el) {
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const [teamD, squadD, statsD] = await Promise.all([
-      sm(`teams/${teamId}`, {include:'venue'}),
-      sm(`squads/teams/${teamId}`, {include:'player.position;player.nationality'}),
-      sm('statistics/seasons/teams', {season_id: SM_SEASON, team_id: teamId}),
+    const [teamD, squadD] = await Promise.all([
+      sm(`teams/${teamId}`, {include:'venue;statistics.details', filters:`teamStatisticSeasons:${SM_SEASON}`}),
+      sm(`squads/teams/${teamId}`, {include:'player;player.position;player.nationality'}),
     ]);
 
     const team = Array.isArray(teamD) ? teamD[0] : teamD;
     const squad = Array.isArray(squadD) ? squadD : (squadD.data||[]);
-    const statsArr = Array.isArray(statsD) ? statsD : (statsD.data||[]);
-    const details = statsArr[0]?.details || [];
+    // Stats are now included in the team object
+    const details = (team.statistics||[])[0]?.details || [];
 
     document.title = `${team.name} — AllsvenskanAI`;
 
