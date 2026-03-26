@@ -278,15 +278,35 @@ async function pageTeams(el) {
   document.title = 'Allsvenskan AI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    // Use standings to get exactly the 16 Allsvenskan teams
-    const standData = await smCached('standings/seasons/' + SM_SEASON, {include:'participant'});
-    const standings = Array.isArray(standData) ? standData : (standData.data||[]);
+    // Get teams via fixtures - participants in fixtures = exact teams that played
+    const fixData = await smCached('fixtures', {
+      season_id: SM_SEASON, 
+      include: 'participants',
+      per_page: 10  // Just need a few fixtures to get all 16 teams
+    });
+    const fixtures = Array.isArray(fixData) ? fixData : (fixData.data||[]);
     
-    // Map standings to team cards, sorted by position
-    const teams = standings
-      .sort((a,b) => a.position - b.position)
-      .map(s => s.participant)
-      .filter(Boolean);
+    // Collect unique teams from fixture participants
+    const teamMap = new Map();
+    fixtures.forEach(f => {
+      (f.participants||[]).forEach(p => {
+        if(!teamMap.has(p.id)) teamMap.set(p.id, p);
+      });
+    });
+    
+    // If we didn't get all 16, fetch more fixtures
+    if(teamMap.size < 16) {
+      const fix2 = await smCached('fixtures', {
+        season_id: SM_SEASON,
+        include: 'participants',
+        per_page: 50,
+        page: 2
+      });
+      const f2 = Array.isArray(fix2) ? fix2 : (fix2.data||[]);
+      f2.forEach(f => (f.participants||[]).forEach(p => {if(!teamMap.has(p.id)) teamMap.set(p.id, p);}));
+    }
+
+    const teams = [...teamMap.values()].sort((a,b)=>a.name.localeCompare(b.name,'sv'));
 
     const cards = teams.map(t=>`
       <div class="team-card" onclick="go('/lag/${t.id}')">
