@@ -180,26 +180,18 @@ async function sm(endpoint, params={}) {
 async function boot() {
   const el = document.getElementById('mc');
   try {
-    // Step 1: Find Allsvenskan from subscription leagues, with currentSeason included
+    // Allsvenskan: league 573, fetch latest season
     el.innerHTML = '<div class="loading"><div class="spinner"></div>Hämtar Allsvenskan…</div>';
-    const leagueD = await sm('leagues', {include: 'currentSeason'});
-    const leagues = leagueD.data || [];
-    // Match exact name to avoid picking Superettan or other Swedish leagues
-    const allsvenskan = leagues.find(l => l.name && l.name.toLowerCase() === 'allsvenskan')
-      || leagues.find(l => l.name && l.name.toLowerCase().includes('allsvenskan') && !l.name.toLowerCase().includes('super'));
-    if (!allsvenskan) throw new Error('Allsvenskan hittades inte. Tillgängliga ligor: ' + leagues.map(l=>l.name).join(', '));
-    S.LEAGUE_ID = allsvenskan.id;
-
-    // Step 2: Fetch all seasons for this league, pick latest (works between seasons too)
-    const leagueDetail = await sm('leagues/' + S.LEAGUE_ID, {include: 'seasons'});
+    S.LEAGUE_ID = 573;
+    const leagueDetail = await sm('leagues/573', {include: 'seasons'});
     const allSeasons = (leagueDetail.data?.seasons || [])
-      .filter(s => s.league_id === S.LEAGUE_ID)
+      .filter(s => s.league_id === 573)
       .sort((a,b) => b.id - a.id);
-    const current = allSeasons[0];
-    if (!current) throw new Error('Ingen säsong hittades för Allsvenskan.');
+    const current = allSeasons.find(s => s.is_current) || allSeasons[0];
+    if (!current) throw new Error('Ingen säsong hittades för Allsvenskan (league 573).');
     S.SEASON_ID = current.id;
     S.SEASON_NAME = current.name || '2025';
-    console.log('Allsvenskan league:', S.LEAGUE_ID, 'season:', S.SEASON_ID, current.name);
+    console.log('Allsvenskan season:', S.SEASON_ID, S.SEASON_NAME);
     
     // Step 3: Load teams
     const d = await sm('teams', {season_id: S.SEASON_ID, include: 'venue'});
