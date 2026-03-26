@@ -184,8 +184,10 @@ async function boot() {
     el.innerHTML = '<div class="loading"><div class="spinner"></div>Hämtar Allsvenskan…</div>';
     const leagueD = await sm('leagues', {include: 'currentSeason'});
     const leagues = leagueD.data || [];
-    const allsvenskan = leagues.find(l => l.name && l.name.toLowerCase().includes('allsvenskan'));
-    if (!allsvenskan) throw new Error('Allsvenskan hittades inte i din Sportmonks-prenumeration. Kontrollera att du lagt till Allsvenskan under My Leagues på sportmonks.com.');
+    // Match exact name to avoid picking Superettan or other Swedish leagues
+    const allsvenskan = leagues.find(l => l.name && l.name.toLowerCase() === 'allsvenskan')
+      || leagues.find(l => l.name && l.name.toLowerCase().includes('allsvenskan') && !l.name.toLowerCase().includes('super'));
+    if (!allsvenskan) throw new Error('Allsvenskan hittades inte. Tillgängliga ligor: ' + leagues.map(l=>l.name).join(', '));
     S.LEAGUE_ID = allsvenskan.id;
 
     // Step 2: Fetch all seasons for this league, pick latest (works between seasons too)
