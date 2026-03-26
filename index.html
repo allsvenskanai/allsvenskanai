@@ -278,21 +278,24 @@ async function pageTeams(el) {
   document.title = 'Allsvenskan AI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const teams = await smCached('teams', {season_id: SM_SEASON});
-    const arr = Array.isArray(teams) ? teams : (teams.data||[]);
-    const allsvenskan = arr.filter(t => {
-      // Only include teams that played in Allsvenskan 2025 (16 teams)
-      return t.name;
-    }).sort((a,b)=>a.name.localeCompare(b.name,'sv'));
+    // Use standings to get exactly the 16 Allsvenskan teams
+    const standData = await smCached('standings/seasons', {season_id: SM_SEASON, include:'participant'});
+    const standings = Array.isArray(standData) ? standData : (standData.data||[]);
+    
+    // Map standings to team cards, sorted by position
+    const teams = standings
+      .sort((a,b) => a.position - b.position)
+      .map(s => s.participant)
+      .filter(Boolean);
 
-    const cards = allsvenskan.map(t=>`
+    const cards = teams.map(t=>`
       <div class="team-card" onclick="go('/lag/${t.id}')">
         <img src="${t.image_path||''}" onerror="this.style.opacity='.15'" loading="lazy">
         <div class="tc-name">${esc(t.name)}</div>
       </div>`).join('');
 
     el.innerHTML = `
-      <div class="pg-title">Lag <small>Allsvenskan ${SEASON_NAME} — ${allsvenskan.length} lag</small></div>
+      <div class="pg-title">Lag <small>Allsvenskan ${SEASON_NAME} — ${teams.length} lag</small></div>
       <div class="team-grid">${cards}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
