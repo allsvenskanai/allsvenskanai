@@ -180,19 +180,17 @@ async function sm(endpoint, params={}) {
 async function boot() {
   const el = document.getElementById('mc');
   try {
-    // Step 1: Find Allsvenskan league from subscription
+    // Step 1: Find Allsvenskan from subscription leagues, with currentSeason included
     el.innerHTML = '<div class="loading"><div class="spinner"></div>Hämtar Allsvenskan…</div>';
-    const leagueD = await sm('leagues', {});
+    const leagueD = await sm('leagues', {include: 'currentSeason'});
     const leagues = leagueD.data || [];
     const allsvenskan = leagues.find(l => l.name && l.name.toLowerCase().includes('allsvenskan'));
-    if (!allsvenskan) throw new Error('Allsvenskan hittades inte i din Sportmonks-prenumeration. Kontrollera att du lagt till Allsvenskan under My Leagues.');
+    if (!allsvenskan) throw new Error('Allsvenskan hittades inte i din Sportmonks-prenumeration. Kontrollera att du lagt till Allsvenskan under My Leagues på sportmonks.com.');
     S.LEAGUE_ID = allsvenskan.id;
-    
-    // Step 2: Find current season for Allsvenskan
-    const seasonD = await sm('seasons/leagues/' + S.LEAGUE_ID, {});
-    const seasons = (seasonD.data || []);
-    const current = seasons.find(s => s.is_current) || seasons.sort((a,b) => b.id-a.id)[0];
-    if (!current) throw new Error('Ingen aktiv säsong hittades för Allsvenskan.');
+
+    // Step 2: Get current season ID directly from the league response
+    const current = allsvenskan.current_season;
+    if (!current) throw new Error('Ingen aktiv säsong hittades för Allsvenskan. Säsongen kanske inte har startat än.');
     S.SEASON_ID = current.id;
     console.log('Allsvenskan league:', S.LEAGUE_ID, 'season:', S.SEASON_ID, current.name);
     
