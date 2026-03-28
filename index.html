@@ -376,7 +376,11 @@ async function pageTeams(el) {
   document.title = 'AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const data = await af('standings', {league:LEAGUE, season:SEASON});
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    // Fall back to 2025 if 2026 has no standings yet
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
     const teams = (data[0]?.league?.standings?.[0]||[]).map(t=>t.team);
     const cards = teams.map(t=>`
       <div class="tcard" onclick="go('/lag/${t.id}')">
@@ -1025,10 +1029,17 @@ function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const
 function fixEnc(s) {
   if(!s) return '';
   try {
-    // Fix mojibake: latin1-interpreted UTF-8 bytes
-    return decodeURIComponent(escape(s));
+    // Fix mojibake: UTF-8 bytes mis-interpreted as Latin-1
+    // e.g. Ã¶ -> ö, Ã¥ -> å, Ã¤ -> ä, Ä… -> ą, Ä‡ -> ć
+    const fixed = decodeURIComponent(escape(s));
+    return fixed;
   } catch(e) {
-    return s;
+    // If decoding fails, try manual common replacements
+    return s
+      .replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä').replace(/Ã¥/g,'å')
+      .replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä').replace(/Ã…/g,'Å')
+      .replace(/Ä/g,'č').replace(/Ä/g,'ć').replace(/Å¡/g,'š')
+      .replace(/Å¾/g,'ž').replace(/Ä/g,'đ');
   }
 }
 function esc(s){
