@@ -533,8 +533,19 @@ async function pagePlayer(el, playerId) {
     document.title = `${p.name} — AllsvenskanAI`;
 
     // Find best available current stats (most recent season with data)
-    const recentWithData = seasonResults.find(d => d.length && d[0]?.statistics?.[0]?.games?.appearences);
-    const curStats = recentWithData?.[0]?.statistics?.[0] || {};
+    // Find most recent season with actual match data
+    // seasonResults = [2026data, 2025data, 2024data]
+    const recentSeasonYears = [2026, 2025, 2024];
+    let curSeasonYear = SEASON;
+    let curStats = {};
+    for(let i=0; i<seasonResults.length; i++) {
+      const d = seasonResults[i];
+      if(d.length && d[0]?.statistics?.[0]?.games?.appearences) {
+        curStats = d[0].statistics[0];
+        curSeasonYear = recentSeasonYears[i];
+        break;
+      }
+    }
 
     // Prefer team from URL (where user came from) over API data
     let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
@@ -641,7 +652,7 @@ async function pagePlayer(el, playerId) {
             <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
             <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
           </div>`:''}
-          <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.8px">Säsong ${SEASON}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.8px">Säsong ${curSeasonYear}</div>
           <div class="pills">
             <div class="pill"><div class="pn">${curApps}</div><div class="pl">Matcher</div></div>
             <div class="pill"><div class="pn">${curMins}</div><div class="pl">Minuter</div></div>
