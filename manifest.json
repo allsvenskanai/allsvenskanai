@@ -1,8 +1,9 @@
 {
   "name": "AllsvenskanAI",
-  "short_name": "AllsvenskanAI",
+  "short_name": "AAI",
   "description": "Statistik, spelare, övergångar och marknadsvärden för Allsvenskan",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#080A0E",
   "theme_color": "#080A0E",
@@ -18,9 +19,16 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["sports"],
-  "lang": "sv"
+  "lang": "sv",
+  "prefer_related_applications": false
 }
