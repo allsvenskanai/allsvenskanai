@@ -334,8 +334,8 @@ async function runSearch(q) {
   box.classList.add('open');
   try {
     const [players, teams] = await Promise.all([
-      af('players', {league:LEAGUE, season:SEASON, search:q}),
-      af('teams', {league:LEAGUE, season:SEASON, search:q})
+      af('players', {search:q, season:2025}),
+      af('teams', {search:q})
     ]);
     let html = '';
     if(teams.length) {
