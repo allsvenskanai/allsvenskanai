@@ -13,14 +13,13 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(url, {
-      headers: {
-        'x-apisports-key': apiKey,
-        'Accept': 'application/json; charset=utf-8'
-      }
+      headers: { 'x-apisports-key': apiKey }
     });
-    const text = await response.text();
+    // Read as buffer and decode as UTF-8 explicitly
+    const buffer = await response.arrayBuffer();
+    const text = new TextDecoder('utf-8').decode(buffer);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(text);
   } catch (err) {
     return res.status(500).json({ error: err.message });
