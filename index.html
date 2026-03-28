@@ -408,18 +408,24 @@ async function loadTeamAI(name, tabId) {
 async function pagePlayer(el, playerId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelardata…</div>`;
   try {
-    // Fetch current season stats first
-    const currentD = await af('players', {id:playerId, season:SEASON});
-    const current = currentD[0];
-    if(!current) throw new Error('Spelare hittades inte');
+    // Fetch player profile (no season needed) + recent seasons in parallel
+    const [profileD, ...seasonResults] = await Promise.all([
+      af('players/profiles', {player: playerId}),
+      af('players', {id:playerId, season:2025}),
+      af('players', {id:playerId, season:2024}),
+    ]);
 
-    const p = current.player;
-    const curStats = current.statistics?.[0]||{};
+    const p = profileD[0]?.player;
+    if(!p) throw new Error('Spelare hittades inte');
     document.title = `${p.name} — AllsvenskanAI`;
 
-    const teamId = curStats.team?.id;
-    const teamName = curStats.team?.name||'—';
-    const teamLogo = curStats.team?.logo||'';
+    // Find best available current stats (most recent season with data)
+    const recentWithData = seasonResults.find(d => d.length && d[0]?.statistics?.[0]?.games?.appearences);
+    const curStats = recentWithData?.[0]?.statistics?.[0] || {};
+
+    const teamId = curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    const teamName = curStats.team?.name || '—';
+    const teamLogo = curStats.team?.logo || '';
 
     // Current season numbers
     const curApps    = curStats.games?.appearences||0;
