@@ -506,6 +506,27 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-tcard:hover .start-tn{color:var(--text)}
 
+/* INSTALL BANNER */
+.install-banner{
+  background:var(--dark2);border-bottom:1px solid var(--border-hi);
+  padding:10px 1.5rem;display:flex;align-items:center;gap:10px;
+  font-size:13px;
+}
+.install-banner img{width:32px;height:32px;border-radius:8px;flex-shrink:0}
+.install-banner .ib-text{flex:1}
+.install-banner .ib-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px}
+.install-banner .ib-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.install-banner .ib-btn{
+  background:var(--gold);color:var(--dark);border:none;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:7px 14px;border-radius:2px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.install-banner .ib-close{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:18px;padding:0 4px;flex-shrink:0;line-height:1;
+}
+
 /* PAGINATION */
 .pagination{display:flex;gap:4px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
 .page-btn{
@@ -588,6 +609,15 @@ main > *{animation:fadeUp .3s ease both}
   </nav>
 </header>
 
+<div id="installBanner" class="install-banner" style="display:none">
+  <img src="/icon-180.png" alt="AAI">
+  <div class="ib-text">
+    <div class="ib-title">AllsvenskanAI</div>
+    <div class="ib-sub">Installera som app på din telefon</div>
+  </div>
+  <button class="ib-btn" id="installBtn">Installera</button>
+  <button class="ib-close" onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('installDismissed','1')">×</button>
+</div>
 <main id="mc"><div class="loading"><div class="spinner"></div>Laddar Allsvenskan…</div></main>
 
 <nav class="mobile-nav" id="mobileNav">
@@ -1833,6 +1863,38 @@ boot();
 
 </script>
 <script>
+// PWA Install Banner
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if(!localStorage.getItem('installDismissed')) {
+    document.getElementById('installBanner').style.display = 'flex';
+  }
+});
+
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if(deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('installBanner').style.display = 'none';
+    if(result.outcome === 'accepted') localStorage.setItem('installDismissed','1');
+  } else {
+    // iOS fallback — show instructions
+    alert('På iPhone: tryck på dela-knappen (□↑) i Safari och välj "Lägg till på hemskärmen"');
+  }
+});
+
+// Show banner on iOS too (no beforeinstallprompt on Safari)
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone;
+if(isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+  setTimeout(() => {
+    document.getElementById('installBanner').style.display = 'flex';
+  }, 2000);
+}
+
 if('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(reg => {
