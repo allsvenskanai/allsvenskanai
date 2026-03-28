@@ -533,19 +533,40 @@ async function pagePlayer(el, playerId) {
     document.title = `${p.name} — AllsvenskanAI`;
 
     // Find best available current stats (most recent season with data)
-    // Find most recent season with actual match data
-    // seasonResults = [2026data, 2025data, 2024data]
-    const recentSeasonYears = [2026, 2025, 2024];
-    let curSeasonYear = SEASON;
+    // Always show SEASON (2026) stats — use whatever data exists, default to zeros
+    // This ensures we show current season even if player hasn't played Allsvenskan yet
+    const curSeasonYear = SEASON;
+    // Aggregate all stats from current season (may include cup, league etc)
+    const cur2026Data = seasonResults[0]; // first result = 2026
     let curStats = {};
-    for(let i=0; i<seasonResults.length; i++) {
-      const d = seasonResults[i];
-      if(d.length && d[0]?.statistics?.[0]?.games?.appearences) {
-        curStats = d[0].statistics[0];
-        curSeasonYear = recentSeasonYears[i];
-        break;
-      }
+    if(cur2026Data.length && cur2026Data[0]?.statistics?.length) {
+      // Sum up all competitions in 2026
+      const allComps = cur2026Data[0].statistics;
+      curStats = {
+        games: {
+          appearences: allComps.reduce((s,x)=>s+(x.games?.appearences||0),0),
+          minutes: allComps.reduce((s,x)=>s+(x.games?.minutes||0),0),
+          rating: allComps.find(x=>x.games?.rating)?.games?.rating || null,
+          position: allComps[0]?.games?.position || '',
+          lineups: allComps.reduce((s,x)=>s+(x.games?.lineups||0),0),
+        },
+        goals: {
+          total: allComps.reduce((s,x)=>s+(x.goals?.total||0),0),
+          assists: allComps.reduce((s,x)=>s+(x.goals?.assists||0),0),
+        },
+        cards: {
+          yellow: allComps.reduce((s,x)=>s+(x.cards?.yellow||0),0),
+          red: allComps.reduce((s,x)=>s+(x.cards?.red||0),0),
+        },
+        shots: { total: allComps.reduce((s,x)=>s+(x.shots?.total||0),0), on: allComps.reduce((s,x)=>s+(x.shots?.on||0),0) },
+        passes: { total: allComps.reduce((s,x)=>s+(x.passes?.total||0),0), accuracy: allComps[0]?.passes?.accuracy||0 },
+        tackles: { total: allComps.reduce((s,x)=>s+(x.tackles?.total||0),0), interceptions: allComps.reduce((s,x)=>s+(x.tackles?.interceptions||0),0) },
+        dribbles: { success: allComps.reduce((s,x)=>s+(x.dribbles?.success||0),0) },
+        duels: { won: allComps.reduce((s,x)=>s+(x.duels?.won||0),0) },
+        team: allComps[0]?.team,
+      };
     }
+    // If truly no 2026 data at all, curStats stays {} and everything shows 0
 
     // Prefer team from URL (where user came from) over API data
     let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
