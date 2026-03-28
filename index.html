@@ -467,9 +467,10 @@ async function pagePlayer(el, playerId) {
     let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
     const seasonRows = [];
 
-    const allSeasons = [2026,2025,2024,...remainingSeasons];
+    // allSeasonData order: [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016]
+    const allSeasonsList = [2026, 2025, 2024, ...remainingSeasons];
     allSeasonData.forEach((data, idx) => {
-      const season = allSeasons[idx];
+      const season = allSeasonsList[idx];
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
         if(!s || !s.league) return; // skip empty stats objects
