@@ -454,28 +454,32 @@ async function pagePlayer(el, playerId) {
     // Fetch ALL historical seasons in parallel for career stats
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar karriärstatistik…</div>`;
 
-    // API-Football supports fetching player stats across multiple seasons
     const seasons = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016];
-    const allSeasonData = await Promise.all(
-      seasons.map(s => af('players', {id:playerId, season:s}).catch(()=>[]))
+    // Reuse already-fetched 2026/2025/2024, fetch rest in parallel
+    const remainingSeasons = [2023,2022,2021,2020,2019,2018,2017,2016];
+    const remainingData = await Promise.all(
+      remainingSeasons.map(s => af('players', {id:playerId, season:s}).catch(()=>[]))
     );
+    // Combine: seasonResults = [2026, 2025, 2024], remainingData = [2023..2016]
+    const allSeasonData = [...seasonResults, ...remainingData];
 
     // Build career table
     let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
     const seasonRows = [];
 
+    const allSeasons = [2026,2025,2024,...remainingSeasons];
     allSeasonData.forEach((data, idx) => {
-      const season = seasons[idx];
+      const season = allSeasons[idx];
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
         if(!s || !s.league) return; // skip empty stats objects
         const g  = s.goals?.total||0;
         const a  = s.goals?.assists||0;
         const m  = s.games?.appearences||0;
-        const mn = s.games.minutes||0;
+        const mn = s.games?.minutes||0;
         const y  = s.cards?.yellow||0;
         const r  = s.cards?.red||0;
-        const rt = s.games.rating ? parseFloat(s.games.rating) : null;
+        const rt = s.games?.rating ? parseFloat(s.games.rating) : null;
         const rtClass = rt ? (rt>=7.5?'rg':rt>=6.5?'ry':'rr') : '';
         careerGoals   += g;
         careerAssists += a;
