@@ -154,7 +154,8 @@ tr.season-row td{border-left:3px solid var(--gold)}
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────
-const LEAGUE = 113, SEASON = 2025;
+const LEAGUE = 113;
+let SEASON = 2026; // auto-detects current season
 const AF = '/api/football';
 const C = {chatHistory:[], chatLoading:false};
 
@@ -538,7 +539,7 @@ async function pagePlayer(el, playerId) {
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'p-career')">Karriärstatistik (${seasonRows.length} säsonger)</button>
         <button class="tab" onclick="switchTab(this,'p-detail')">Detaljerad ${SEASON}</button>
-        <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,'${esc(p.name)}','p-tr')">Övergångar</button>
+        <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,${p.player?.id||playerId},'p-tr')">Övergångar</button>
       </div>
 
       <div id="p-career">
@@ -619,18 +620,39 @@ async function loadMV(btn, name) {
   }
 }
 
-async function loadPlayerTransfers(tab, name, tabId) {
+async function loadPlayerTransfers(tab, playerId, tabId) {
   const el = document.getElementById(tabId);
   if(!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
-  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="dots"><span></span><span></span><span></span></div> Hämtar övergångar från transfermarkt.com…</div></div>`;
+  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="spinner" style="width:14px;height:14px"></div> Hämtar övergångar…</div></div>`;
   try {
-    const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
-        `Sök på transfermarkt.com efter fotbollsspelaren ${name} och hämta hela hans/hennes övergångshistorik. Presentera som tabell med kolumner: Datum | Från | Till | Typ | Belopp. Svara på svenska.`}]})});
-    const d = await resp.json();
-    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    el.innerHTML = `<div class="tw"><div style="padding:1rem" class="ai-content">${mdHtml(text)}</div></div>`;
+    const data = await af('transfers', {player: playerId});
+    if(!data.length) {
+      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+      return;
+    }
+    const transfers = [];
+    data.forEach(tr => (tr.transfers||[]).forEach(x => transfers.push({
+      date: x.date, type: x.type, teamIn: x.teams?.in, teamOut: x.teams?.out,
+    })));
+    transfers.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const rows = transfers.map(tr => {
+      const fc = feeStyle(tr.type);
+      return `<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <img src="${tr.teamOut?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px;color:var(--muted)">${esc(tr.teamOut?.name||'?')}</span>
+          <span style="color:var(--muted)">→</span>
+          <img src="${tr.teamIn?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
+        </div></td>
+        <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;${fc}">${esc(tr.type||'?')}</span></td>
+      </tr>`;}).join('');
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Datum</th><th>Övergång</th><th>Typ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
   }
@@ -702,40 +724,65 @@ async function pageResults(el) {
 // ─── TRANSFERS ───────────────────────────────────────
 async function pageTransfers(el) {
   document.title = 'Övergångar — AllsvenskanAI';
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar…</div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    // Get teams first, then fetch transfers
+    // Get all 16 teams from standings
     const standData = await af('standings', {league:LEAGUE, season:SEASON});
     const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag…</div>`;
+
+    // Fetch transfers for all teams in parallel
     const all = [];
     await Promise.all(teams.map(async t => {
       try {
         const d = await af('transfers', {team:t.id});
-        d.forEach(tr => (tr.transfers||[]).forEach(x => {
-          if(parseInt((x.date||'').slice(0,4))>=2025)
-            all.push({...x, playerName:tr.player?.name, playerId:tr.player?.id});
-        }));
-      } catch{}
+        d.forEach(tr => {
+          (tr.transfers||[]).forEach(x => {
+            const year = parseInt((x.date||'').slice(0,4));
+            if(year >= SEASON - 1) { // current and previous season transfers
+              all.push({
+                date: x.date,
+                type: x.type,
+                playerName: tr.player?.name,
+                playerId: tr.player?.id,
+                teamIn: x.teams?.in,
+                teamOut: x.teams?.out,
+              });
+            }
+          });
+        });
+      } catch(e) {}
     }));
-    all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    const rows = all.slice(0,100).map(tr => {
+
+    // Deduplicate and sort by date
+    const seen = new Set();
+    const unique = all.filter(t => {
+      const key = `${t.playerId}-${t.date}-${t.teamIn?.id}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+    const rows = unique.slice(0,150).map(tr => {
       const fc = feeStyle(tr.type);
       return `<tr>
-        <td style="font-size:11px;color:var(--muted)">${tr.date||'—'}</td>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
         <td style="font-weight:500;color:var(--blue);cursor:pointer" onclick="go('/spelare/${tr.playerId}')">${esc(tr.playerName||'—')}</td>
         <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teams?.out?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teams?.out?.name||'?')}</span>
+          <img src="${tr.teamOut?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
         </div></td>
         <td style="color:var(--muted)">→</td>
         <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teams?.in?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teams?.in?.name||'?')}</span>
+          <img src="${tr.teamIn?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
         </div></td>
         <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;${fc}">${esc(tr.type||'?')}</span></td>
       </tr>`;}).join('');
+
     el.innerHTML = `
-      <div class="ptitle">Övergångar <small>${all.length} övergångar 2025</small></div>
+      <div class="ptitle">Övergångar <small>${unique.length} övergångar</small></div>
       <div class="tw"><div style="overflow-x:auto"><table>
         <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
@@ -879,7 +926,19 @@ function mdHtml(txt){
 }
 function inl(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
 
-route(location.pathname);
+async function boot() {
+  // Try current year first, fall back to previous if no team data
+  try {
+    const test = await af('teams', {league:LEAGUE, season:SEASON});
+    if(!test || test.length === 0) {
+      SEASON = 2025;
+    }
+  } catch(e) {
+    SEASON = 2025;
+  }
+  route(location.pathname);
+}
+boot();
 </script>
 </body>
 </html>
