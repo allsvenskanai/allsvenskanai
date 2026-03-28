@@ -616,7 +616,7 @@ main > *{animation:fadeUp .3s ease both}
     <div class="ib-sub">Installera som app på din telefon</div>
   </div>
   <button class="ib-btn" id="installBtn">Installera</button>
-  <button class="ib-close" onclick="document.getElementById('installBanner').style.display='none';localStorage.setItem('installDismissed','1')">×</button>
+  <button class="ib-close" onclick="document.getElementById('installBanner').style.display='none'">×</button>
 </div>
 <main id="mc"><div class="loading"><div class="spinner"></div>Laddar Allsvenskan…</div></main>
 
@@ -1864,7 +1864,7 @@ boot();
 </script>
 <script>
 // Show banner unless already dismissed
-if(!localStorage.getItem('installDismissed') && !window.navigator.standalone) {
+if(!window.navigator.standalone) {
   document.getElementById('installBanner').style.display = 'flex';
 }
 
@@ -1873,7 +1873,7 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  if(!localStorage.getItem('installDismissed')) {
+  if(true) {
     document.getElementById('installBanner').style.display = 'flex';
   }
 });
@@ -1884,7 +1884,7 @@ document.getElementById('installBtn')?.addEventListener('click', async () => {
     const result = await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById('installBanner').style.display = 'none';
-    if(result.outcome === 'accepted') localStorage.setItem('installDismissed','1');
+    
   } else {
     // iOS fallback — show instructions
     alert('På iPhone: tryck på dela-knappen (□↑) i Safari och välj "Lägg till på hemskärmen"');
@@ -1894,7 +1894,7 @@ document.getElementById('installBtn')?.addEventListener('click', async () => {
 // Show banner on iOS too (no beforeinstallprompt on Safari)
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.navigator.standalone;
-if(isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+if(isIOS && !isStandalone) {
   setTimeout(() => {
     document.getElementById('installBanner').style.display = 'flex';
   }, 2000);
