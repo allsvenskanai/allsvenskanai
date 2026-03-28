@@ -15,13 +15,14 @@ export default async function handler(req, res) {
     const response = await fetch(url, {
       headers: { 'x-apisports-key': apiKey }
     });
-    // Parse JSON — Node fetch handles UTF-8 correctly via .json()
-    const data = await response.json();
-    // Re-stringify to ensure proper UTF-8 output
-    const json = JSON.stringify(data);
+
+    // Force read as UTF-8 bytes then decode correctly
+    const bytes = await response.arrayBuffer();
+    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).send(json);
+    return res.status(200).send(decoded);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
