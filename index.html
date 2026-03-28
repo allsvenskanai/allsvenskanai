@@ -509,6 +509,55 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-tcard:hover .start-tn{color:var(--text)}
 
+/* MINA LAG */
+.fav-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:20px;padding:4px;line-height:1;
+  transition:transform .2s;flex-shrink:0;
+}
+.fav-btn:hover{transform:scale(1.2)}
+.notif-panel{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem 1.5rem;
+  margin-bottom:1.5rem;
+}
+.notif-panel h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;
+  font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text);margin-bottom:.5rem;
+}
+.notif-toggle{
+  display:flex;align-items:center;gap:10px;
+  background:var(--dark3);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.75rem 1rem;cursor:pointer;
+  transition:border-color .2s;
+}
+.notif-toggle:hover{border-color:var(--border-hi)}
+.toggle-switch{
+  width:40px;height:22px;background:var(--dark5);
+  border-radius:11px;position:relative;transition:background .2s;flex-shrink:0;
+}
+.toggle-switch.on{background:var(--gold)}
+.toggle-switch::after{
+  content:'';position:absolute;width:16px;height:16px;
+  background:white;border-radius:50%;top:3px;left:3px;
+  transition:transform .2s;
+}
+.toggle-switch.on::after{transform:translateX(18px)}
+.my-teams-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:8px;margin-top:1rem;
+}
+.my-team-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.75rem;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  transition:border-color .2s;
+}
+.my-team-card:hover{border-color:var(--border-hi)}
+.my-team-card img{width:24px;height:24px;object-fit:contain}
+.my-team-card .mtn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex:1}
+
 /* INSTALL BANNER */
 .install-banner{
   background:var(--dark2);border-bottom:1px solid var(--border-hi);
@@ -594,6 +643,29 @@ main > *{animation:fadeUp .3s ease both}
   .profile > div:last-child .pills{justify-content:flex-start!important}
 }
 </style>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQBtrYhiWbtOTvNHjeJS3WetXx9kYRbAc",
+  authDomain: "allsvenskanai.firebaseapp.com",
+  projectId: "allsvenskanai",
+  storageBucket: "allsvenskanai.firebasestorage.app",
+  messagingSenderId: "165931219052",
+  appId: "1:165931219052:web:6b80cf43571c7567558049"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+const VAPID = 'BEDTCiipjeScSyiyOJmpS8AVVe1_axOzPapYP04DiPyyDs2V0E_TNvcIjGapoaRA3IrbPyx9Hdyrgdp1x-86ETM';
+
+window.firebaseMessaging = messaging;
+window.firebaseGetToken = () => getToken(messaging, { vapidKey: VAPID });
+window.firebaseOnMessage = (cb) => onMessage(messaging, cb);
+</script>
 </head>
 <body>
 <header>
@@ -608,6 +680,7 @@ main > *{animation:fadeUp .3s ease both}
     <button class="np" onclick="go('/resultat')">Resultat</button>
     <button class="np" onclick="go('/overgangar')">Övergångar</button>
     <button class="np" onclick="go('/statistik')">Statistik</button>
+    <button class="np" onclick="go('/mina-lag')">Mina lag ♥</button>
     <button class="np" onclick="go('/sok')">AI-sökning</button>
   </nav>
 </header>
@@ -645,6 +718,7 @@ main > *{animation:fadeUp .3s ease both}
   <button class="mnav-btn" onclick="go('/resultat')"><span class="icon">📅</span>Resultat</button>
   <button class="mnav-btn" onclick="go('/overgangar')"><span class="icon">🔄</span>Överg.</button>
   <button class="mnav-btn" onclick="go('/statistik')"><span class="icon">⚽</span>Stats</button>
+  <button class="mnav-btn" onclick="go('/mina-lag')"><span class="icon">♥</span>Mina lag</button>
   <button class="mnav-btn" onclick="go('/sok')"><span class="icon">🤖</span>AI</button>
 </nav>
 
@@ -734,6 +808,7 @@ function route(path) {
   const trm = path.match(/^\/overgangar\/(\d+)/);
   if(trm)                              { pageTransfers(el, +trm[1]); return; }
   if(path==='/statistik')              { pageStats(el); return; }
+  if(path==='/mina-lag')               { pageMyTeams(el); return; }
   if(path==='/sok')                    { pageSearch(el); return; }
   const tm = path.match(/^\/lag\/(\d+)/);
   if(tm)                               { pageTeam(el, +tm[1]); return; }
@@ -1808,6 +1883,153 @@ async function sendChat() {
   }
   C.chatLoading=false;if(btn)btn.disabled=false;
   msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ─── FAVORITES & NOTIFICATIONS ───────────────────────
+const FAV_KEY = 'aai_favorites';
+function getFavs() { try { return JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); } catch{ return []; } }
+function saveFavs(arr) { localStorage.setItem(FAV_KEY, JSON.stringify(arr)); }
+function isFav(id) { return getFavs().includes(+id); }
+function toggleFav(id, name) {
+  const favs = getFavs();
+  const idx = favs.indexOf(+id);
+  if(idx >= 0) { favs.splice(idx,1); } else { favs.push(+id); }
+  saveFavs(favs);
+  // Update all fav buttons for this team
+  document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(b => {
+    b.textContent = isFav(id) ? '❤️' : '🤍';
+  });
+  updateFavCount();
+}
+function updateFavCount() {
+  const count = getFavs().length;
+  document.querySelectorAll('.np').forEach(b => {
+    if(b.textContent.includes('Mina lag')) b.textContent = count ? `Mina lag (${count})` : 'Mina lag ♥';
+  });
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────
+const NOTIF_KEY = 'aai_notif_token';
+
+async function enableNotifications() {
+  try {
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') {
+      alert('Du behöver tillåta notiser i din webbläsare.');
+      return false;
+    }
+    if(!window.firebaseGetToken) {
+      alert('Notiser är inte tillgängliga just nu.');
+      return false;
+    }
+    const token = await window.firebaseGetToken();
+    if(!token) return false;
+    localStorage.setItem(NOTIF_KEY, token);
+    // Save to server with selected teams
+    await syncSubscription(token);
+    return true;
+  } catch(e) {
+    console.error('Notification error:', e);
+    return false;
+  }
+}
+
+async function disableNotifications() {
+  const token = localStorage.getItem(NOTIF_KEY);
+  if(token) {
+    await fetch('/api/subscribe', {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token})}).catch(()=>{});
+    localStorage.removeItem(NOTIF_KEY);
+  }
+}
+
+async function syncSubscription(token) {
+  const t = token || localStorage.getItem(NOTIF_KEY);
+  if(!t) return;
+  const teams = getFavs();
+  await fetch('/api/subscribe', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:t, teams})}).catch(()=>{});
+}
+
+function isNotifEnabled() { return !!localStorage.getItem(NOTIF_KEY); }
+
+// ─── MINA LAG PAGE ────────────────────────────────────
+async function pageMyTeams(el) {
+  document.title = 'Mina lag — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar...</div>`;
+
+  try {
+    let standData = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!standData.length || !standData[0]?.league?.standings?.[0]?.length) {
+      standData = await af('standings', {league:LEAGUE, season:2025});
+    }
+    const allTeams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+    const favIds = getFavs();
+    const favTeams = allTeams.filter(t => favIds.includes(t.id));
+    const notifOn = isNotifEnabled();
+
+    const favCards = favTeams.length ? favTeams.map(t => `
+      <div class="my-team-card" onclick="go('/lag/${t.id}')">
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'">
+        <div class="mtn">${esc(fixName(t.name))}</div>
+        <button class="fav-btn" data-id="${t.id}" onclick="event.stopPropagation();toggleFav(${t.id},'${esc(fixName(t.name))}');pageMyTeams(document.getElementById('mc'))" title="Ta bort">${isFav(t.id)?'❤️':'🤍'}</button>
+      </div>`).join('') : `<div class="empty">Du har inga favoritlag ännu.<br>Klicka 🤍 på ett lag för att lägga till det.</div>`;
+
+    const allCards = allTeams.map(t => `
+      <div class="start-tcard" style="position:relative" onclick="go('/lag/${t.id}')">
+        <button class="fav-btn" data-id="${t.id}" 
+          style="position:absolute;top:6px;right:6px;font-size:16px;z-index:1"
+          onclick="event.stopPropagation();toggleFav(${t.id},'${esc(fixName(t.name))}');document.querySelectorAll('.fav-btn[data-id=${t.id}]').forEach(b=>b.textContent=isFav(${t.id})?'❤️':'🤍')"
+        >${isFav(t.id)?'❤️':'🤍'}</button>
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div class="start-tn">${esc(fixName(t.name))}</div>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div class="pg-header"><div class="pg-title">Mina <em>lag</em></div></div>
+
+      <!-- Notification panel -->
+      <div class="notif-panel" style="margin-bottom:1.5rem">
+        <h3>🔔 Push-notiser</h3>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:.75rem">
+          Få notiser direkt på telefonen när dina lag gör mål, skriver klart en övergång eller spelar match.
+        </div>
+        <div class="notif-toggle" id="notifToggle" onclick="toggleNotif()">
+          <div class="toggle-switch ${notifOn?'on':''}" id="toggleSwitch"></div>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px">${notifOn?'Notiser aktiverade':'Aktivera notiser'}</div>
+            <div style="font-size:11px;color:var(--muted)">${notifOn?'Du får notiser för dina favoritlag':'Välj dina favoritlag nedan och aktivera'}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favoritlag -->
+      <div class="section-label">Dina favoritlag (${favTeams.length})</div>
+      <div class="my-teams-grid" style="margin-bottom:2rem">${favCards}</div>
+
+      <!-- Alla lag -->
+      <div class="section-label">Alla lag — klicka ♥ för att följa</div>
+      <div class="start-tgrid">${allCards}</div>`;
+
+    updateFavCount();
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+async function toggleNotif() {
+  const sw = document.getElementById('toggleSwitch');
+  if(isNotifEnabled()) {
+    await disableNotifications();
+    sw?.classList.remove('on');
+    document.querySelector('#notifToggle div:last-child div:first-child').textContent = 'Aktivera notiser';
+    document.querySelector('#notifToggle div:last-child div:last-child').textContent = 'Välj dina favoritlag nedan och aktivera';
+  } else {
+    const ok = await enableNotifications();
+    if(ok) {
+      sw?.classList.add('on');
+      document.querySelector('#notifToggle div:last-child div:first-child').textContent = 'Notiser aktiverade';
+      document.querySelector('#notifToggle div:last-child div:last-child').textContent = 'Du får notiser för dina favoritlag';
+    }
+  }
 }
 
 // ─── HELPERS ─────────────────────────────────────────
