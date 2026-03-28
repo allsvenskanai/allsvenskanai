@@ -1369,10 +1369,17 @@ async function pageTransfers(el, page=1) {
               const year = parseInt((x.date||'').slice(0,4));
               const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
               if(year >= 2024 && validDate) {
+                const type = x.type || '';
+                // For internal moves (Raise/Loan Return), both teams are same club
+                const teamIn = x.teams?.in;
+                const teamOut = x.teams?.out;
+                const isInternal = type === 'Raise' || type === 'Loan Return' || 
+                  (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
                 all.push({
-                  date: x.date, type: x.type,
+                  date: x.date, type: isInternal ? 'Uppflyttad' : type,
                   playerName: tr.player?.name, playerId: tr.player?.id,
-                  teamIn: x.teams?.in, teamOut: x.teams?.out,
+                  teamIn: teamIn, teamOut: isInternal ? teamIn : teamOut,
+                  isInternal,
                 });
               }
             });
