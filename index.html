@@ -1414,21 +1414,24 @@ const STAT_CATEGORIES = [
 
 let statsCache = null;
 
-async function pageStats(el) {
-  document.title = 'Topplistor — AllsvenskanAI';
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelarstatistik…</div>`;
+let statsYear = 2025; // default to last completed season
+
+async function pageStats(el, year=null) {
+  if(year) statsYear = year;
+  document.title = `Statistik ${statsYear} — AllsvenskanAI`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
-    // Fetch all players for season — used for all categories
-    if(!statsCache) {
-      const standData = await af('standings', {league:LEAGUE, season:2025});
-      const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
-      const allPlayers = [];
-      await Promise.all(teams.map(async t => {
-        const players = await afAll('players', {league:LEAGUE, season:2025, team:t.id}).catch(()=>[]);
-        allPlayers.push(...players);
-      }));
-      statsCache = allPlayers;
-    }
+    // Fetch all players for selected season
+    statsCache = null; // reset cache when year changes
+    const standData = await af('standings', {league:LEAGUE, season:statsYear});
+    const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+    if(!teams.length) throw new Error(`Ingen data för säsong ${statsYear}`);
+    const allPlayers = [];
+    await Promise.all(teams.map(async t => {
+      const players = await afAll('players', {league:LEAGUE, season:statsYear, team:t.id}).catch(()=>[]);
+      allPlayers.push(...players);
+    }));
+    statsCache = allPlayers;
     renderStats(el, 'goals');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
@@ -1439,7 +1442,8 @@ function renderStats(el, catId) {
 
   const sorted = all
     .map(p => {
-      const s = p.statistics?.[0]||{};
+      // Find stats for selected year
+      const s = (p.statistics||[]).find(x=>x.league?.season===statsYear) || p.statistics?.[0] || {};
       const val = getNestedVal(s, cat.key);
       return {p: p.player, s, val: cat.id==='rating' ? (val?parseFloat(val):0) : (+val||0)};
     })
@@ -1476,8 +1480,19 @@ function renderStats(el, catId) {
 
   const extraCol = cat.id!=='goals' ? `<th>Mål</th>` : '';
 
+  // Year selector — show last 8 seasons
+  const years = [2025,2024,2023,2022,2021,2020,2019,2018];
+  const yearBtns = years.map(y =>
+    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${y}</button>`
+  ).join('');
+
   el.innerHTML = `
-    <div class="pg-header"><div class="pg-title">Topplistor <em>${SEASON}</em></div></div>
+    <div class="pg-header"><div class="pg-title">Statistik <em>${statsYear}</em></div></div>
+    <div style="margin-bottom:.75rem">
+      <div class="section-label">Säsong</div>
+      <div class="stat-tabs">${yearBtns}</div>
+    </div>
+    <div class="section-label" style="margin-top:1rem">Kategori</div>
     <div class="stat-tabs">${tabs}</div>
     <div class="tw" style="margin-top:1rem"><div style="overflow-x:auto"><table>
       <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>${cat.col}</th>${extraCol}<th>Matcher</th></tr></thead>
