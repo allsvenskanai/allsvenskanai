@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AllsvenskanAI</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AllsvenskanAI">
+<meta name="theme-color" content="#080A0E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="https://cdn.sportmonks.com/images/soccer/leagues/29/573.png">
 <meta name="description" content="AllsvenskanAI — Statistik, spelardata, övergångar och marknadsvärden för Allsvenskan. Karriärstatistik för alla spelare. Live-resultat och tabell.">
 <meta name="keywords" content="Allsvenskan, svensk fotboll, statistik, spelare, övergångar, marknadsvärden, live, tabell">
 <meta property="og:title" content="AllsvenskanAI — Allsvenskan statistik">
@@ -1824,6 +1831,15 @@ async function boot() {
 }
 boot();
 
+</script>
+<script>
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registered');
+    }).catch(err => console.log('SW error:', err));
+  });
+}
 </script>
 </body>
 </html>
