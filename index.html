@@ -415,6 +415,7 @@ async function pagePlayer(el, playerId) {
     // Fetch player profile (no season needed) + recent seasons in parallel
     const [profileD, ...seasonResults] = await Promise.all([
       af('players/profiles', {player: playerId}),
+      af('players', {id:playerId, season:2026}),
       af('players', {id:playerId, season:2025}),
       af('players', {id:playerId, season:2024}),
     ]);
@@ -454,7 +455,7 @@ async function pagePlayer(el, playerId) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar karriärstatistik…</div>`;
 
     // API-Football supports fetching player stats across multiple seasons
-    const seasons = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016];
+    const seasons = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016];
     const allSeasonData = await Promise.all(
       seasons.map(s => af('players', {id:playerId, season:s}).catch(()=>[]))
     );
@@ -913,7 +914,11 @@ function switchTab(btn,id){
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
 function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=event.target;const o=b.textContent;b.textContent='✅';setTimeout(()=>b.textContent=o,2000);});}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){
+  const t = document.createElement('div');
+  t.textContent = String(s||'');
+  return t.innerHTML;
+}
 function calcAge(d){const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
 function formatVal(v){if(!v)return'—';const n=+v;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n;}
 function feeStyle(t){const s=(t||'').toLowerCase();if(s.includes('loan'))return'background:rgba(74,158,255,.15);color:#8bb8ff';if(s==='free')return'background:rgba(76,175,80,.15);color:#81c784';return'background:rgba(232,197,71,.15);color:var(--gold)';}
