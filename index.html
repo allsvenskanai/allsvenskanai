@@ -248,7 +248,7 @@ async function runSearch(q) {
       html += `<div class="sr-label">Spelare</div>`;
       players.slice(0,6).forEach(p => {
         const s = p.statistics?.[0];
-        html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}')">
+        html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
           <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
           <div><div class="sr-name">${esc(p.player.name)}</div>
           <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
@@ -326,7 +326,7 @@ async function pageTeam(el, teamId) {
       const pos = p.position||'—';
       let sep = '';
       if(pos!==lastPos && posLabel[pos]) { lastPos=pos; sep=`<tr class="pos-sep"><td colspan="5">${posLabel[pos]}</td></tr>`; }
-      return sep + `<tr class="link" onclick="go('/spelare/${p.id}')">
+      return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
         <td><div class="pcell">
           <img src="${p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
           <div><div class="pn">${esc(p.name)}</div>
@@ -408,6 +408,10 @@ async function loadTeamAI(name, tabId) {
 async function pagePlayer(el, playerId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelardata…</div>`;
   try {
+    // Read team context from URL if available (set when clicking from a team page)
+    const urlParams = new URLSearchParams(location.search);
+    const urlTeamId = urlParams.get('team') ? +urlParams.get('team') : null;
+
     // Fetch player profile (no season needed) + recent seasons in parallel
     const [profileD, ...seasonResults] = await Promise.all([
       af('players/profiles', {player: playerId}),
@@ -423,9 +427,18 @@ async function pagePlayer(el, playerId) {
     const recentWithData = seasonResults.find(d => d.length && d[0]?.statistics?.[0]?.games?.appearences);
     const curStats = recentWithData?.[0]?.statistics?.[0] || {};
 
-    const teamId = curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
-    const teamName = curStats.team?.name || '—';
-    const teamLogo = curStats.team?.logo || '';
+    // Prefer team from URL (where user came from) over API data
+    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    let teamName = curStats.team?.name || '—';
+    let teamLogo = curStats.team?.logo || '';
+
+    // If URL teamId differs from stats teamId, fetch correct team info
+    if(urlTeamId && urlTeamId !== curStats.team?.id) {
+      try {
+        const teamD = await af('teams', {id: urlTeamId});
+        if(teamD[0]) { teamName = teamD[0].team.name; teamLogo = teamD[0].team.logo; }
+      } catch(e) {}
+    }
 
     // Current season numbers
     const curApps    = curStats.games?.appearences||0;
