@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AllsvenskanAI</title>
+<meta name="description" content="AllsvenskanAI — Statistik, spelardata, övergångar och marknadsvärden för Allsvenskan. Karriärstatistik för alla spelare. Live-resultat och tabell.">
+<meta name="keywords" content="Allsvenskan, svensk fotboll, statistik, spelare, övergångar, marknadsvärden, live, tabell">
+<meta property="og:title" content="AllsvenskanAI — Allsvenskan statistik">
+<meta property="og:description" content="Statistik, spelardata, övergångar och marknadsvärden för Allsvenskan.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://allsvenskanai.se">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AllsvenskanAI">
+<meta name="twitter:description" content="Allsvenskan statistik, spelardata och övergångar.">
+<link rel="canonical" href="https://allsvenskanai.se">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
 <style>
@@ -384,6 +394,42 @@ tr.season-row td{border-left:2px solid var(--gold)}
 .mnav-btn .icon{font-size:18px;line-height:1}
 .mnav-btn.active{color:var(--gold)}
 
+/* LIVE */
+.live-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(200,75,75,.12);color:#E07070;
+  border:1px solid rgba(200,75,75,.25);
+  border-radius:2px;font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;animation:livepulse 2s infinite;
+}
+.live-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#E07070;display:inline-block;animation:livepulse 1s infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.5}}
+.match-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.25rem;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;
+  transition:border-color .2s;cursor:default;
+}
+.match-card.live{border-color:rgba(200,75,75,.3);background:rgba(200,75,75,.04)}
+.match-card.upcoming{opacity:.7}
+.match-team{display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.5px}
+.match-team.away{flex-direction:row-reverse;text-align:right}
+.match-team img{width:28px;height:28px;object-fit:contain;flex-shrink:0}
+.match-score{text-align:center}
+.match-score .score{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;color:var(--text);line-height:1}
+.match-score .score.win-home{color:var(--green)}
+.match-score .time{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px;font-family:'Barlow Condensed',sans-serif;font-weight:600}
+.matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:8px;margin-bottom:1.5rem}
+.section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+/* NYHETER */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:1.5rem}
+.news-card{background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;transition:border-color .2s}
+.news-card:hover{border-color:var(--border-hi)}
+.news-source{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem}
+.news-title{font-size:14px;font-weight:500;line-height:1.4;color:var(--text);margin-bottom:.4rem}
+.news-date{font-size:11px;color:var(--muted)}
 /* PAGE ENTER ANIMATION */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 main > *{animation:fadeUp .3s ease both}
@@ -624,7 +670,7 @@ async function pageTeam(el, teamId) {
     
     // squads endpoint returns [{team, players:[]}]
     const squadPlayers = (squadD[0]?.players || []);
-    document.title = `${team.name} — AllsvenskanAI`;
+    document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
     const d = stats?.fixtures?.draws?.total||0;
@@ -742,7 +788,7 @@ async function pagePlayer(el, playerId) {
 
     const p = profileD[0]?.player;
     if(!p) throw new Error('Spelare hittades inte');
-    document.title = `${p.name} — AllsvenskanAI`;
+    document.title = `${p.name} — statistik, karriär & övergångar | AllsvenskanAI`;
 
     // Find best available current stats (most recent season with data)
     // Always show SEASON (2026) stats — use whatever data exists, default to zeros
