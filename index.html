@@ -1405,10 +1405,10 @@ async function pageTransfers(el, page=1) {
         <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
       </div></td>
       <td style="color:var(--muted)">→</td>
-      <td><div style="display:flex;align-items:center;gap:5px">
-        <img src="${tr.teamIn?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-        <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
-      </div></td>
+      <td>${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div style="display:flex;align-items:center;gap:5px">
+        <img src="${tr.teamIn.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+        <span style="font-size:12px">${esc(tr.teamIn.name||'?')}</span>
+      </div>` : '<span style="color:var(--muted)">—</span>'}</td>
       <td><span style="font-size:10px;padding:2px 8px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;${fc}">${esc(tr.type||'?')}</span></td>
     </tr>`;
   }).join('');
