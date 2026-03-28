@@ -260,6 +260,27 @@ const C = {chatHistory:[], chatLoading:false};
 
 // Cache
 const CACHE = {};
+
+// Name corrections — API-Football 2026 strips Swedish/special chars
+const NAME_FIX = {
+  'IFK Goteborg': 'IFK Göteborg',
+  'Djurgardens IF': 'Djurgårdens IF',
+  'Hammarby FF': 'Hammarby IF',
+  'Malmo FF': 'Malmö FF',
+  'Vasteras SK FK': 'Västerås SK FK',
+  'Orgryte IS': 'Örgryte IS',
+  'Mjallby AIF': 'Mjällby AIF',
+  'IF Elfsborg': 'IF Elfsborg',
+  'IF Brommapojkarna': 'IF Brommapojkarna',
+  'BK Hacken': 'BK Häcken',
+  'Kalmar FF': 'Kalmar FF',
+  'Halmstad': 'Halmstads BK',
+  'Sirius': 'IK Sirius FK',
+  'Degerfors IF': 'Degerfors IF',
+  'AIK Stockholm': 'AIK',
+  'Gais': 'GAIS',
+};
+function fixName(s) { return NAME_FIX[s] || s; }
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
@@ -1029,12 +1050,8 @@ function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const
 function fixEnc(s) {
   if(!s) return '';
   try {
-    // Fix mojibake: UTF-8 bytes mis-interpreted as Latin-1
-    // e.g. Ã¶ -> ö, Ã¥ -> å, Ã¤ -> ä, Ä… -> ą, Ä‡ -> ć
-    const fixed = decodeURIComponent(escape(s));
-    return fixed;
+    return decodeURIComponent(escape(s));
   } catch(e) {
-    // If decoding fails, try manual common replacements
     return s
       .replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä').replace(/Ã¥/g,'å')
       .replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä').replace(/Ã…/g,'Å')
@@ -1043,7 +1060,7 @@ function fixEnc(s) {
   }
 }
 function esc(s){
-  return fixEnc(String(s||''))
+  return fixEnc(fixName(String(s||'')))
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
