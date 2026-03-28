@@ -292,8 +292,6 @@ async function afAll(ep, p={}) {
 function go(path, push=true) {
   if(push) history.pushState({}, '', path);
   updateNav(path);
-  document.getElementById('sr').classList.remove('open');
-  document.getElementById('si').value = '';
   route(path);
 }
 function updateNav(path) {
