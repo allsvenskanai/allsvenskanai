@@ -1421,16 +1421,10 @@ async function pageStats(el, year=null) {
   document.title = `Statistik ${statsYear} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
-    // Fetch all players for selected season
-    statsCache = null; // reset cache when year changes
-    const standData = await af('standings', {league:LEAGUE, season:statsYear});
-    const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
-    if(!teams.length) throw new Error(`Ingen data för säsong ${statsYear}`);
-    const allPlayers = [];
-    await Promise.all(teams.map(async t => {
-      const players = await afAll('players', {league:LEAGUE, season:statsYear, team:t.id}).catch(()=>[]);
-      allPlayers.push(...players);
-    }));
+    statsCache = null;
+    // Fetch all players directly by league+season — no need to iterate teams
+    const allPlayers = await afAll('players', {league:LEAGUE, season:statsYear});
+    if(!allPlayers.length) throw new Error(`Ingen spelardata för säsong ${statsYear}`);
     statsCache = allPlayers;
     renderStats(el, 'goals');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
