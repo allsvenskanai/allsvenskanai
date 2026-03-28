@@ -930,13 +930,21 @@ async function loadTeamAI(name, tabId, teamId) {
       (tr.transfers||[]).forEach(x => {
         const year = parseInt((x.date||'').slice(0,4));
         if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) {
+          const type = x.type || '';
+          const teamIn = x.teams?.in;
+          const teamOut = x.teams?.out;
+          const isInternal = type === 'Raise' || type === 'Loan Return' ||
+            (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
+          if(type === '-' && !teamIn && !teamOut) return;
+          const resolvedTeam = teamIn || teamOut || null;
           all.push({
             date: x.date,
-            type: x.type,
+            type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
             playerName: tr.player?.name,
             playerId: tr.player?.id,
-            teamIn: x.teams?.in,
-            teamOut: x.teams?.out,
+            teamIn: isInternal ? resolvedTeam : teamIn,
+            teamOut: isInternal ? resolvedTeam : teamOut,
+            isInternal,
           });
         }
       });
@@ -949,20 +957,21 @@ async function loadTeamAI(name, tabId, teamId) {
     }
 
     const rows = all.map(tr => {
-      const isIn = tr.teamIn?.id == teamId;
+      const isIn = !tr.isInternal && tr.teamIn?.id == teamId;
       const fc = feeStyle(tr.type);
+      const motpart = tr.isInternal
+        ? `<span style="font-size:12px;color:var(--muted)">Intern flytt</span>`
+        : `<div style="display:flex;align-items:center;gap:5px">
+            <img src="${isIn?(tr.teamOut?.logo||''):(tr.teamIn?.logo||'')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <span style="font-size:12px">${esc(isIn?(tr.teamOut?.name||'—'):(tr.teamIn?.name||'—'))}</span>
+          </div>`;
       return `<tr>
         <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
         <td style="cursor:pointer;color:var(--blue);font-weight:500" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</td>
-        <td>
-          <span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:${isIn?'var(--green)':'var(--red)'}">
-            ${isIn ? '↙ IN' : '↗ UT'}
-          </span>
-        </td>
-        <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${isIn?(tr.teamOut?.logo||''):(tr.teamIn?.logo||'')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(isIn?(tr.teamOut?.name||'?'):(tr.teamIn?.name||'?'))}</span>
-        </div></td>
+        <td><span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:${tr.isInternal?'var(--gold)':isIn?'var(--green)':'var(--red)'}">
+          ${tr.isInternal?'↑ UPP':isIn?'↙ IN':'↗ UT'}
+        </span></td>
+        <td>${motpart}</td>
         <td><span style="font-size:10px;padding:3px 9px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;${fc}">${esc(tr.type||'?')}</span></td>
       </tr>`;
     }).join('');
