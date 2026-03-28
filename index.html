@@ -226,7 +226,7 @@ tr.season-row td{border-left:3px solid var(--gold)}
   <span class="logo" onclick="go('/')">Allsvenskan <em>/</em> AI</span>
   <div class="search-wrap">
     <span class="si">🔍</span>
-    <input id="si" type="text" placeholder="Sök spelare eller lag…" autocomplete="off"
+    <input id="si" type="text" placeholder="Sök spelare eller lag (3+ tecken)…" autocomplete="off"
       oninput="onSearch(this.value)" onkeydown="handleSearchKey(event)">
     <div class="sr" id="sr"></div>
   </div>
@@ -325,8 +325,8 @@ let searchTimer;
 function onSearch(v) {
   clearTimeout(searchTimer);
   const box = document.getElementById('sr');
-  if(!v.trim()){box.classList.remove('open');return;}
-  searchTimer = setTimeout(()=>runSearch(v.trim()), 300);
+  if(v.trim().length < 3){box.classList.remove('open');return;}
+  searchTimer = setTimeout(()=>runSearch(v.trim()), 350);
 }
 async function runSearch(q) {
   const box = document.getElementById('sr');
