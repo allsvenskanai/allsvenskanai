@@ -499,6 +499,18 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-tcard:hover .start-tn{color:var(--text)}
 
+/* PAGINATION */
+.pagination{display:flex;gap:4px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.page-btn{
+  background:var(--dark2);border:1px solid var(--border);
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;padding:7px 14px;border-radius:var(--radius);
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+}
+.page-btn:hover{background:var(--dark3);color:var(--text);border-color:var(--border-hi)}
+.page-btn.active{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+
 /* STAT TABS */
 .stat-tabs{
   display:flex;gap:4px;flex-wrap:wrap;
@@ -641,6 +653,8 @@ async function afAll(ep, p={}) {
 function go(path, push=true) {
   if(push) history.pushState({}, '', path);
   updateNav(path);
+  // Reset transfers cache when leaving the page
+  if(!path.startsWith('/overgangar')) transfersCache = null;
   route(path);
 }
 function updateNav(path) {
