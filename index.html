@@ -870,7 +870,7 @@ async function pageTransfers(el) {
         d.forEach(tr => {
           (tr.transfers||[]).forEach(x => {
             const year = parseInt((x.date||'').slice(0,4));
-            if(year >= SEASON - 1) { // current and previous season transfers
+            if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) { // only valid dated transfers from 2024+
               all.push({
                 date: x.date,
                 type: x.type,
