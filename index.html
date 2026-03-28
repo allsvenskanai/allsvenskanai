@@ -468,10 +468,10 @@ async function pagePlayer(el, playerId) {
       const season = seasons[idx];
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
-        if(!s.games?.appearences) return;
+        if(!s || !s.league) return; // skip empty stats objects
         const g  = s.goals?.total||0;
         const a  = s.goals?.assists||0;
-        const m  = s.games.appearences;
+        const m  = s.games?.appearences||0;
         const mn = s.games.minutes||0;
         const y  = s.cards?.yellow||0;
         const r  = s.cards?.red||0;
@@ -915,9 +915,11 @@ function switchTab(btn,id){
 }
 function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=event.target;const o=b.textContent;b.textContent='✅';setTimeout(()=>b.textContent=o,2000);});}
 function esc(s){
-  const t = document.createElement('div');
-  t.textContent = String(s||'');
-  return t.innerHTML;
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 function calcAge(d){const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
 function formatVal(v){if(!v)return'—';const n=+v;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n;}
