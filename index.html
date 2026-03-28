@@ -1885,20 +1885,55 @@ window.addEventListener('beforeinstallprompt', e => {
 
 document.getElementById('installBtn')?.addEventListener('click', async () => {
   if(deferredPrompt) {
-    // Android/Chrome — native install prompt
+    // Native install prompt available (Chrome Android)
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById('installBanner').style.display = 'none';
   } else {
+    // Show modal with instructions
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
-    if(isIOS) {
-      alert('På iPhone: tryck på dela-knappen (□↑) längst ner i Safari och välj "Lägg till på hemskärmen"');
-    } else {
-      alert('Tryck på menyn (⋮) uppe till höger i Chrome och välj "Lägg till på startskärmen" eller "Installera app"');
-    }
+    showInstallModal(isIOS);
   }
 });
+
+function showInstallModal(isIOS) {
+  const existing = document.getElementById('installModal');
+  if(existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'installModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:1rem';
+  
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const steps = isIOS
+    ? ['Öppna i <strong>Safari</strong> (inte Chrome)', 'Tryck på dela-knappen <strong>□↑</strong> längst ner', 'Välj <strong>"Lägg till på hemskärmen"</strong>', 'Tryck <strong>Lägg till</strong>']
+    : ['Öppna i <strong>Chrome</strong>', 'Tryck på menyn <strong>⋮</strong> uppe till höger', 'Välj <strong>"Lägg till på startskärmen"</strong> eller <strong>"Installera app"</strong>', 'Tryck <strong>Installera</strong>'];
+  
+  modal.innerHTML = `<div style="background:#161921;border:1px solid rgba(212,175,55,.3);border-radius:12px;padding:1.5rem;max-width:380px;width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem">
+      <svg width="40" height="40" viewBox="0 0 512 512"><rect width="512" height="512" fill="#080A0E" rx="60"/>
+        <text x="105" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#EEF0F4">A</text>
+        <text x="218" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#D4AF37">A</text>
+        <text x="338" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#D4AF37">I</text>
+      </svg>
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;color:#EEF0F4">Installera AllsvenskanAI</div>
+        <div style="font-size:12px;color:#5A6480">Som en riktig app på din telefon</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">
+      ${steps.map((s,i)=>`<div style="display:flex;align-items:center;gap:10px">
+        <div style="width:24px;height:24px;border-radius:50%;background:#D4AF37;color:#080A0E;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+        <div style="font-size:13px;color:#B0B8C8">${s}</div>
+      </div>`).join('')}
+    </div>
+    <button onclick="document.getElementById('installModal').remove()" style="width:100%;background:#D4AF37;color:#080A0E;border:none;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;padding:12px;cursor:pointer">FÖRSTÅTT</button>
+  </div>`;
+  
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 
 // Show banner on iOS too (no beforeinstallprompt on Safari)
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
