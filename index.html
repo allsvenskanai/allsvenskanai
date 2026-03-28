@@ -653,8 +653,8 @@ async function afAll(ep, p={}) {
 function go(path, push=true) {
   if(push) history.pushState({}, '', path);
   updateNav(path);
-  // Reset transfers cache when leaving the page
-  if(!path.startsWith('/overgangar')) transfersCache = null;
+  // Reset transfers cache only when navigating to a completely different section
+  if(transfersCache && !path.startsWith('/overgangar') && !path.startsWith('/spelare')) transfersCache = null;
   route(path);
 }
 function updateNav(path) {
@@ -675,7 +675,9 @@ function route(path) {
   if(path==='/lag-lista')              { pageTeams(el); return; }
   if(path==='/tabell')                 { pageStandings(el); return; }
   if(path==='/resultat')               { pageResults(el); return; }
-  if(path==='/overgangar')             { pageTransfers(el); return; }
+  if(path==='/overgangar')             { pageTransfers(el, 1); return; }
+  const trm = path.match(/^\/overgangar\/(\d+)/);
+  if(trm)                              { pageTransfers(el, +trm[1]); return; }
   if(path==='/statistik')              { pageStats(el); return; }
   if(path==='/sok')                    { pageSearch(el); return; }
   const tm = path.match(/^\/lag\/(\d+)/);
@@ -1346,72 +1348,85 @@ async function pageResults(el) {
 }
 
 // ─── TRANSFERS ───────────────────────────────────────
-async function pageTransfers(el) {
+let transfersCache = null;
+
+async function pageTransfers(el, page=1) {
   document.title = 'Övergångar — AllsvenskanAI';
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
-  try {
-    // Get all 16 teams from standings
-    const standData = await af('standings', {league:LEAGUE, season:SEASON});
-    const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+  const PER_PAGE = 50;
 
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag…</div>`;
-
-    // Fetch transfers for all teams in parallel
-    const all = [];
-    await Promise.all(teams.map(async t => {
-      try {
-        const d = await af('transfers', {team:t.id});
-        d.forEach(tr => {
-          (tr.transfers||[]).forEach(x => {
-            const year = parseInt((x.date||'').slice(0,4));
-            if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) { // only valid dated transfers from 2024+
-              all.push({
-                date: x.date,
-                type: x.type,
-                playerName: tr.player?.name,
-                playerId: tr.player?.id,
-                teamIn: x.teams?.in,
-                teamOut: x.teams?.out,
-              });
-            }
+  if(!transfersCache) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag...</div>`;
+    try {
+      const standData = await af('standings', {league:LEAGUE, season:SEASON});
+      const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+      el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag...</div>`;
+      const all = [];
+      await Promise.all(teams.map(async t => {
+        try {
+          const d = await af('transfers', {team:t.id});
+          d.forEach(tr => {
+            (tr.transfers||[]).forEach(x => {
+              const year = parseInt((x.date||'').slice(0,4));
+              const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
+              if(year >= 2024 && validDate) {
+                all.push({
+                  date: x.date, type: x.type,
+                  playerName: tr.player?.name, playerId: tr.player?.id,
+                  teamIn: x.teams?.in, teamOut: x.teams?.out,
+                });
+              }
+            });
           });
-        });
-      } catch(e) {}
-    }));
+        } catch(e) {}
+      }));
+      const seen = new Set();
+      transfersCache = all.filter(t => {
+        const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
+      }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    } catch(e) {
+      el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+      return;
+    }
+  }
 
-    // Deduplicate and sort by date
-    const seen = new Set();
-    const unique = all.filter(t => {
-      const key = `${t.playerId}-${t.date}-${t.teamIn?.id}`;
-      if(seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const unique = transfersCache;
+  const totalPages = Math.ceil(unique.length / PER_PAGE);
+  const slice = unique.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
-    const rows = unique.slice(0,150).map(tr => {
-      const fc = feeStyle(tr.type);
-      return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
-        <td style="font-weight:500;color:var(--blue);cursor:pointer" onclick="go('/spelare/${tr.playerId}?team=${tr.teamIn?.id||''}')">${esc(tr.playerName||'—')}</td>
-        <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teamOut?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
-        </div></td>
-        <td style="color:var(--muted)">→</td>
-        <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${tr.teamIn?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
-        </div></td>
-        <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;${fc}">${esc(tr.type||'?')}</span></td>
-      </tr>`;}).join('');
+  const rows = slice.map(tr => {
+    const fc = feeStyle(tr.type);
+    return `<tr>
+      <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
+      <td style="font-weight:500;color:var(--blue);cursor:pointer" onclick="go('/spelare/${tr.playerId}?team=${tr.teamIn?.id||''}')">${esc(tr.playerName||'—')}</td>
+      <td><div style="display:flex;align-items:center;gap:5px">
+        <img src="${tr.teamOut?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+        <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
+      </div></td>
+      <td style="color:var(--muted)">→</td>
+      <td><div style="display:flex;align-items:center;gap:5px">
+        <img src="${tr.teamIn?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+        <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
+      </div></td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;${fc}">${esc(tr.type||'?')}</span></td>
+    </tr>`;
+  }).join('');
 
-    el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${unique.length} övergångar</span></div>
-      <div class="tw"><div style="overflow-x:auto"><table>
-        <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
-      </table></div></div>`;
-  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+  const pageBtns = [];
+  if(page > 1) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page-1}')">← Föregående</button>`);
+  const s = Math.max(1,page-2), e2 = Math.min(totalPages,page+2);
+  for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===page?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
+  if(page < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page+1}')">Nästa →</button>`);
+
+  el.innerHTML = `
+    <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${unique.length} övergångar · sida ${page} av ${totalPages}</span></div>
+    <div class="tw"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
+    </table></div></div>
+    <div class="pagination">${pageBtns.join('')}</div>`;
+  window.scrollTo(0,0);
 }
 
 // ─── STATS / TOPPLISTOR ──────────────────────────────
