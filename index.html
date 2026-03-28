@@ -609,7 +609,7 @@ main > *{animation:fadeUp .3s ease both}
   </nav>
 </header>
 
-<div id="installBanner" class="install-banner" style="display:none">
+<div id="installBanner" class="install-banner">
   <img src="/icon-180.png" alt="AAI">
   <div class="ib-text">
     <div class="ib-title">AllsvenskanAI</div>
@@ -1863,6 +1863,11 @@ boot();
 
 </script>
 <script>
+// Show banner unless already dismissed
+if(!localStorage.getItem('installDismissed') && !window.navigator.standalone) {
+  document.getElementById('installBanner').style.display = 'flex';
+}
+
 // PWA Install Banner
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
