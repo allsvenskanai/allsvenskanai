@@ -292,15 +292,18 @@ async function pageTeams(el) {
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    // Fetch team info, squad (all pages), and season stats in parallel
-    const [statsD, playersD] = await Promise.all([
+    // Fetch team stats, current squad, and season stats in parallel
+    const [statsD, squadD] = await Promise.all([
       af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
-      afAll('players', {league:LEAGUE, season:SEASON, team:teamId})
+      af('players/squads', {team:teamId})   // current squad, no season needed
     ]);
 
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
+    
+    // squads endpoint returns [{team, players:[]}]
+    const squadPlayers = (squadD[0]?.players || []);
     document.title = `${team.name} — AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
@@ -312,32 +315,27 @@ async function pageTeam(el, teamId) {
     const form = stats?.fixtures?.form||'';
     const formDots = form.slice(-10).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
 
-    // Sort players by position
+    // Sort squad players by position
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
     const posLabel = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
-    const sorted = [...playersD].sort((a,b)=>
-      (posOrder[a.statistics?.[0]?.games?.position]||5)-(posOrder[b.statistics?.[0]?.games?.position]||5));
+    const sorted = [...squadPlayers].sort((a,b)=>
+      (posOrder[a.position]||5)-(posOrder[b.position]||5));
 
     let lastPos = '';
     const playerRows = sorted.map(p => {
-      const s = p.statistics?.[0]||{};
-      const pos = s.games?.position||'—';
-      const rating = s.games?.rating ? parseFloat(s.games.rating) : null;
-      const ratingClass = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
+      const pos = p.position||'—';
       let sep = '';
-      if(pos!==lastPos && posLabel[pos]) { lastPos=pos; sep=`<tr class="pos-sep"><td colspan="7">${posLabel[pos]}</td></tr>`; }
-      return sep + `<tr class="link" onclick="go('/spelare/${p.player.id}')">
+      if(pos!==lastPos && posLabel[pos]) { lastPos=pos; sep=`<tr class="pos-sep"><td colspan="5">${posLabel[pos]}</td></tr>`; }
+      return sep + `<tr class="link" onclick="go('/spelare/${p.id}')">
         <td><div class="pcell">
-          <img src="${p.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div><div class="pn">${esc(p.player.name)}</div>
-          <div class="ps">${flag(p.player.nationality)} ${esc(p.player.nationality||'')}</div></div>
+          <img src="${p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div><div class="pn">${esc(p.name)}</div>
+          <div class="ps">${p.number?'#'+p.number:''}</div></div>
         </div></td>
         <td><span class="pos-tag">${esc(pos)}</span></td>
-        <td>${p.player.age||'—'}</td>
-        <td class="num">${s.games?.appearences||0}</td>
-        <td class="num">${s.goals?.total||0}</td>
-        <td class="num">${s.goals?.assists||0}</td>
-        <td class="${ratingClass}" style="font-weight:500">${rating?rating.toFixed(1):'—'}</td>
+        <td>${p.age||'—'} år</td>
+        <td>${p.nationality ? flag(p.nationality)+' '+esc(p.nationality) : '—'}</td>
+        <td style="color:var(--muted);font-size:12px">${p.injured?'🚑 Skadad':''}</td>
       </tr>`;}).join('');
 
     el.innerHTML = `
@@ -368,17 +366,16 @@ async function pageTeam(el, teamId) {
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp ${SEASON} (${playersD.length})</button>
+        <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
         <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('${esc(team.name)}','tai')">Övergångar & analys</button>
       </div>
 
       <div id="sq">
         <div class="tw"><div style="overflow-x:auto"><table>
           <thead><tr>
-            <th>Spelare</th><th>Position</th><th>Ålder</th>
-            <th title="Matcher">M</th><th title="Mål">⚽</th><th title="Assist">🎯</th><th title="Rating">★</th>
+            <th>Spelare</th><th>Position</th><th>Ålder</th><th>Nationalitet</th><th></th>
           </tr></thead>
-          <tbody>${playerRows||'<tr><td colspan="7" class="empty">Inga spelare</td></tr>'}</tbody>
+          <tbody>${playerRows||'<tr><td colspan="5" class="empty">Inga spelare</td></tr>'}</tbody>
         </table></div></div>
       </div>
 
