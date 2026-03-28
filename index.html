@@ -499,6 +499,23 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-tcard:hover .start-tn{color:var(--text)}
 
+/* STAT TABS */
+.stat-tabs{
+  display:flex;gap:4px;flex-wrap:wrap;
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:6px;
+}
+.stat-tab{
+  background:none;border:none;
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:6px 12px;border-radius:2px;cursor:pointer;
+  transition:background .15s,color .15s;white-space:nowrap;
+}
+.stat-tab:hover{background:var(--dark3);color:var(--text)}
+.stat-tab.active{background:var(--gold);color:var(--dark)}
+
 /* MOBILE */
 @media(max-width:768px){
   header{padding:0 1rem;height:52px}
@@ -1383,40 +1400,89 @@ async function pageTransfers(el) {
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ─── TOP SCORERS / STATS ─────────────────────────────
+// ─── STATS / TOPPLISTOR ──────────────────────────────
+const STAT_CATEGORIES = [
+  {id:'goals',    label:'⚽ Skytteliga',   key:'goals.total',        col:'Mål',        api:'players/topscorers'},
+  {id:'assists',  label:'🎯 Assistligan',  key:'goals.assists',      col:'Assist',     api:'players/topassists'},
+  {id:'rating',   label:'★ Bäst rating',  key:'games.rating',       col:'Rating',     api:null},
+  {id:'minutes',  label:'⏱ Mest minuter', key:'games.minutes',      col:'Minuter',    api:null},
+  {id:'passes',   label:'🔄 Passningar',   key:'passes.total',       col:'Passningar', api:null},
+  {id:'shots',    label:'🎯 Skott',        key:'shots.total',        col:'Skott',      api:null},
+  {id:'yellow',   label:'🟨 Gula kort',    key:'cards.yellow',       col:'Gula kort',  api:null},
+  {id:'saves',    label:'🧤 Räddningar',   key:'goals.saves',        col:'Räddningar', api:null},
+];
+
+let statsCache = null;
+
 async function pageStats(el) {
-  document.title = 'Statistik — AllsvenskanAI';
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik…</div>`;
+  document.title = 'Topplistor — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelarstatistik…</div>`;
   try {
-    const data = await af('players/topscorers', {league:LEAGUE, season:SEASON});
-    const rows = data.map((p,i) => {
-      const s = p.statistics?.[0]||{};
-      const rating = s.games?.rating ? parseFloat(s.games.rating) : null;
-      const rc = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
-      return `<tr class="link" onclick="go('/spelare/${p.player.id}')">
-        <td style="color:var(--muted);font-weight:500">${i+1}</td>
-        <td><div class="pcell">
-          <img src="${p.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div><div class="pn">${esc(p.player.name)}</div>
-          <div class="ps">${flag(p.player.nationality)} ${esc(p.player.nationality||'')}</div></div>
-        </div></td>
-        <td><div style="display:flex;align-items:center;gap:5px">
-          <img src="${s.team?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px;cursor:pointer;color:var(--blue)" onclick="event.stopPropagation();go('/lag/${s.team?.id}')">${esc(s.team?.name||'—')}</span>
-        </div></td>
-        <td><span class="pos-tag">${esc(s.games?.position||'—')}</span></td>
-        <td class="num" style="font-size:22px">${s.goals?.total||0}</td>
-        <td class="num">${s.goals?.assists||0}</td>
-        <td class="num">${s.games?.appearences||0}</td>
-        <td class="${rc}" style="font-weight:500">${rating?rating.toFixed(1):'—'}</td>
-      </tr>`;}).join('');
-    el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Skytteliga <em>${SEASON}</em></div></div>
-      <div class="tw"><div style="overflow-x:auto"><table>
-        <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>⚽ Mål</th><th>🎯 Assist</th><th>Matcher</th><th>★ Rating</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="8" class="empty">Ingen data</td></tr>'}</tbody>
-      </table></div></div>`;
+    // Fetch all players for season — used for all categories
+    if(!statsCache) {
+      const standData = await af('standings', {league:LEAGUE, season:2025});
+      const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+      const allPlayers = [];
+      await Promise.all(teams.map(async t => {
+        const players = await afAll('players', {league:LEAGUE, season:2025, team:t.id}).catch(()=>[]);
+        allPlayers.push(...players);
+      }));
+      statsCache = allPlayers;
+    }
+    renderStats(el, 'goals');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+
+function renderStats(el, catId) {
+  const cat = STAT_CATEGORIES.find(c=>c.id===catId);
+  const all = statsCache || [];
+
+  const sorted = all
+    .map(p => {
+      const s = p.statistics?.[0]||{};
+      const val = getNestedVal(s, cat.key);
+      return {p: p.player, s, val: cat.id==='rating' ? (val?parseFloat(val):0) : (+val||0)};
+    })
+    .filter(x => x.val > 0)
+    .sort((a,b) => b.val - a.val)
+    .slice(0, 20);
+
+  const tabs = STAT_CATEGORIES.map(c =>
+    `<button class="stat-tab ${c.id===catId?'active':''}" onclick="renderStats(document.getElementById('mc'),'${c.id}')">${c.label}</button>`
+  ).join('');
+
+  const rows = sorted.map((x,i) => {
+    const rating = x.s.games?.rating ? parseFloat(x.s.games.rating) : null;
+    const rc = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
+    const displayVal = cat.id==='rating' ? x.val.toFixed(2) : x.val;
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    return `<tr class="link" onclick="go('/spelare/${x.p.id}')">
+      <td style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px">${medal||i+1}</td>
+      <td><div class="pcell">
+        <img src="${x.p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div><div class="pn">${esc(x.p.name)}</div>
+        <div class="ps">${flag(x.p.nationality)} ${esc(x.p.nationality||'')}</div></div>
+      </div></td>
+      <td><div style="display:flex;align-items:center;gap:5px">
+        <img src="${x.s.team?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+        <span style="font-size:12px;cursor:pointer;color:var(--blue)" onclick="event.stopPropagation();go('/lag/${x.s.team?.id}')">${esc(fixName(x.s.team?.name||'—'))}</span>
+      </div></td>
+      <td><span class="pos-tag">${esc(x.s.games?.position||'—')}</span></td>
+      <td class="num ${cat.id==='rating'?rc:''}" style="font-size:22px">${displayVal}</td>
+      ${cat.id!=='goals'?`<td class="num" style="font-size:15px;color:var(--muted)">${x.s.goals?.total||0} mål</td>`:''}
+      <td style="font-size:12px;color:var(--muted)">${x.s.games?.appearences||0} M</td>
+    </tr>`;
+  }).join('');
+
+  const extraCol = cat.id!=='goals' ? `<th>Mål</th>` : '';
+
+  el.innerHTML = `
+    <div class="pg-header"><div class="pg-title">Topplistor <em>${SEASON}</em></div></div>
+    <div class="stat-tabs">${tabs}</div>
+    <div class="tw" style="margin-top:1rem"><div style="overflow-x:auto"><table>
+      <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>${cat.col}</th>${extraCol}<th>Matcher</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7" class="empty">Ingen data</td></tr>'}</tbody>
+    </table></div></div>`;
 }
 
 // ─── AI SEARCH ───────────────────────────────────────
