@@ -1375,10 +1375,13 @@ async function pageTransfers(el, page=1) {
                 const teamOut = x.teams?.out;
                 const isInternal = type === 'Raise' || type === 'Loan Return' || 
                   (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
+                // For internal moves, use whichever team is available
+                const resolvedTeam = teamIn || teamOut;
                 all.push({
                   date: x.date, type: isInternal ? 'Uppflyttad' : type,
                   playerName: tr.player?.name, playerId: tr.player?.id,
-                  teamIn: teamIn, teamOut: isInternal ? teamIn : teamOut,
+                  teamIn: isInternal ? resolvedTeam : teamIn,
+                  teamOut: isInternal ? resolvedTeam : teamOut,
                   isInternal,
                 });
               }
