@@ -434,6 +434,71 @@ tr.season-row td{border-left:2px solid var(--gold)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 main > *{animation:fadeUp .3s ease both}
 
+/* START PAGE */
+.start-hero{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:3rem 2rem;text-align:center;margin-bottom:2rem;
+  position:relative;overflow:hidden;
+}
+.start-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.start-wordmark{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(42px,8vw,80px);font-weight:900;
+  letter-spacing:4px;text-transform:uppercase;
+  color:var(--text);line-height:1;margin-bottom:.5rem;
+  position:relative;
+}
+.start-wordmark span{color:var(--gold)}
+.start-sub{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);
+}
+.start-teams-section{margin-bottom:2rem}
+.start-ai-section{margin-bottom:2rem}
+.start-section-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.75rem;
+  display:flex;align-items:center;gap:8px;
+}
+.start-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.start-tgrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:2px;
+}
+.start-tcard{
+  background:var(--dark2);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  gap:10px;padding:1.5rem 1rem;text-align:center;
+  transition:background .2s;position:relative;overflow:hidden;
+}
+.start-tcard::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(212,175,55,.06) 0%,transparent 60%);
+  opacity:0;transition:opacity .3s;
+}
+.start-tcard:hover{background:var(--dark3)}
+.start-tcard:hover::before{opacity:1}
+.start-tcard img{
+  width:64px;height:64px;object-fit:contain;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  transition:transform .3s;
+}
+.start-tcard:hover img{transform:scale(1.08) translateY(-2px)}
+.start-tn{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text2);transition:color .2s;line-height:1.2;
+}
+.start-tcard:hover .start-tn{color:var(--text)}
+
 /* MOBILE */
 @media(max-width:768px){
   header{padding:0 1rem;height:52px}
@@ -442,6 +507,13 @@ main > *{animation:fadeUp .3s ease both}
   main{padding:1rem 1rem 72px}
   .pg-title{font-size:28px}
   .tgrid{grid-template-columns:repeat(3,1fr);gap:2px}
+  .start-tgrid{grid-template-columns:repeat(4,1fr);gap:2px}
+  .start-tcard{padding:.85rem .4rem;gap:7px}
+  .start-tcard img{width:36px;height:36px}
+  .start-tn{font-size:10px;letter-spacing:0}
+  .start-hero{padding:1.75rem 1rem;margin-bottom:1.25rem}
+  .start-wordmark{font-size:36px}
+  .start-sub{font-size:11px}
   .tcard{padding:1rem .6rem;gap:8px}
   .tcard img{width:44px;height:44px}
   .tcard .tn{font-size:11px}
@@ -470,7 +542,8 @@ main > *{animation:fadeUp .3s ease both}
     <span class="logo-badge">2026</span>
   </span>
   <nav class="nav-pills">
-    <button class="np" onclick="go('/')">Lag</button>
+    <button class="np" onclick="go('/')">Start</button>
+    <button class="np" onclick="go('/lag-lista')">Lag</button>
     <button class="np" onclick="go('/tabell')">Tabell</button>
     <button class="np" onclick="go('/resultat')">Resultat</button>
     <button class="np" onclick="go('/overgangar')">Övergångar</button>
@@ -482,7 +555,8 @@ main > *{animation:fadeUp .3s ease both}
 <main id="mc"><div class="loading"><div class="spinner"></div>Laddar Allsvenskan…</div></main>
 
 <nav class="mobile-nav" id="mobileNav">
-  <button class="mnav-btn" onclick="go('/')"><span class="icon">🛡</span>Lag</button>
+  <button class="mnav-btn" onclick="go('/')"><span class="icon">🏠</span>Start</button>
+  <button class="mnav-btn" onclick="go('/lag-lista')"><span class="icon">🛡</span>Lag</button>
   <button class="mnav-btn" onclick="go('/tabell')"><span class="icon">🏆</span>Tabell</button>
   <button class="mnav-btn" onclick="go('/resultat')"><span class="icon">📅</span>Resultat</button>
   <button class="mnav-btn" onclick="go('/overgangar')"><span class="icon">🔄</span>Överg.</button>
@@ -566,7 +640,8 @@ window.addEventListener('popstate', () => route(location.pathname));
 
 function route(path) {
   const el = document.getElementById('mc');
-  if(path==='/'||path==='')            { pageTeams(el); return; }
+  if(path==='/'||path==='')            { pageStart(el); return; }
+  if(path==='/lag-lista')              { pageTeams(el); return; }
   if(path==='/tabell')                 { pageStandings(el); return; }
   if(path==='/resultat')               { pageResults(el); return; }
   if(path==='/overgangar')             { pageTransfers(el); return; }
@@ -629,6 +704,64 @@ function handleSearchKey(e) {
 document.addEventListener('click', e => {
   if(!e.target.closest('.search-wrap')) document.getElementById('sr').classList.remove('open');
 });
+
+// ─── START PAGE ──────────────────────────────────────
+async function pageStart(el) {
+  document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
+  try {
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
+    const teams = (data[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+
+    const cards = teams.map(t=>`
+      <div class="start-tcard" onclick="go('/lag/${t.id}')">
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div class="start-tn">${esc(t.name)}</div>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div class="start-hero">
+        <div class="start-hero-inner">
+          <div class="start-wordmark">Allsvenskan<span>AI</span></div>
+          <div class="start-sub">Statistik · Spelare · Övergångar · Marknadsvärden</div>
+        </div>
+      </div>
+
+      <div class="start-teams-section">
+        <div class="start-section-label">Allsvenskan ${SEASON}</div>
+        <div class="start-tgrid">${cards}</div>
+      </div>
+
+      <div class="start-ai-section">
+        <div class="start-section-label">Fråga Allsvenskan AI</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="cm" style="min-height:80px">
+            <div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:13px">
+              Ställ valfri fråga om Allsvenskan…
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip" onclick="askAI('Vem är värd mest i Allsvenskan 2026?')">Marknadsvärden</span>
+            <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2026')">Övergångar</span>
+            <span class="chip" onclick="askAI('Skytteligan Allsvenskan 2025')">Skytteliga</span>
+            <span class="chip" onclick="askAI('Bästa unga talanger under 21 i Allsvenskan')">U21-talanger</span>
+            <span class="chip" onclick="askAI('Senaste nyheterna om Allsvenskan')">Nyheter</span>
+          </div>
+          <div class="chat-in">
+            <textarea id="ci" rows="1" placeholder="Fråga om spelare, lag, statistik…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+            <button class="send" id="sb" onclick="sendChat()">SKICKA</button>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
+  }
+}
 
 // ─── TEAMS ───────────────────────────────────────────
 async function pageTeams(el) {
