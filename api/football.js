@@ -12,10 +12,16 @@ export default async function handler(req, res) {
   const url = `https://v3.football.api-sports.io/${endpoint}?${params.toString()}`;
 
   try {
-    const response = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
-    const data = await response.json();
+    const response = await fetch(url, {
+      headers: {
+        'x-apisports-key': apiKey,
+        'Accept': 'application/json; charset=utf-8'
+      }
+    });
+    const text = await response.text();
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    return res.status(200).json(data);
+    return res.status(200).send(text);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
