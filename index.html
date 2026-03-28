@@ -1422,12 +1422,31 @@ async function pageStats(el, year=null) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
     statsCache = null;
-    // Fetch all players directly by league+season — no need to iterate teams
-    const allPlayers = await afAll('players', {league:LEAGUE, season:statsYear});
-    if(!allPlayers.length) throw new Error(`Ingen spelardata för säsong ${statsYear}`);
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
+
+    // Get teams from standings for that year
+    const standData = await af('standings', {league:LEAGUE, season:statsYear});
+    const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+
+    if(!teams.length) throw new Error(`Inga lag hittades för säsong ${statsYear}. API-Football kanske saknar denna säsong.`);
+
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik för ${teams.length} lag…</div>`;
+
+    // Fetch players per team with concurrency limit
+    const allPlayers = [];
+    const chunks = [];
+    for(let i=0; i<teams.length; i+=4) chunks.push(teams.slice(i,i+4));
+    for(const chunk of chunks) {
+      const results = await Promise.all(chunk.map(t =>
+        af('players', {league:LEAGUE, season:statsYear, team:t.id, page:1}).catch(()=>[])
+      ));
+      results.forEach(r => allPlayers.push(...(Array.isArray(r)?r:[])));
+    }
+
+    if(!allPlayers.length) throw new Error(`Ingen spelardata för ${statsYear}`);
     statsCache = allPlayers;
     renderStats(el, 'goals');
-  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+  } catch(e) { el.innerHTML=`<div class="err">⚠️ ${esc(e.message)}</div>`; }
 }
 
 function renderStats(el, catId) {
