@@ -1885,14 +1885,18 @@ window.addEventListener('beforeinstallprompt', e => {
 
 document.getElementById('installBtn')?.addEventListener('click', async () => {
   if(deferredPrompt) {
+    // Android/Chrome — native install prompt
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById('installBanner').style.display = 'none';
-    
   } else {
-    // iOS fallback — show instructions
-    alert('På iPhone: tryck på dela-knappen (□↑) i Safari och välj "Lägg till på hemskärmen"');
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+    if(isIOS) {
+      alert('På iPhone: tryck på dela-knappen (□↑) längst ner i Safari och välj "Lägg till på hemskärmen"');
+    } else {
+      alert('Tryck på menyn (⋮) uppe till höger i Chrome och välj "Lägg till på startskärmen" eller "Installera app"');
+    }
   }
 });
 
