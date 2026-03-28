@@ -129,7 +129,96 @@ tr.season-row td{border-left:3px solid var(--gold)}
 .dots span{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.7;animation:bns 1.1s infinite;display:inline-block;margin-right:3px}
 .dots span:nth-child(2){animation-delay:.18s}.dots span:nth-child(3){animation-delay:.36s}
 @keyframes bns{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-@media(max-width:600px){.nav-pills{display:none}main{padding:1rem}}
+/* ── MOBILE ─────────────────────────────────────── */
+@media(max-width:768px){
+  /* Header */
+  header{padding:0 1rem;gap:.6rem;height:52px}
+  .logo{font-size:18px}
+  .search-wrap{flex:1;max-width:none}
+  .nav-pills{display:none}
+
+  /* Main */
+  main{padding:1rem}
+  .ptitle{font-size:20px;margin-bottom:1rem}
+
+  /* Team grid - 3 columns on mobile */
+  .tgrid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .tcard{padding:.7rem .5rem;gap:5px}
+  .tcard img{width:40px;height:40px}
+  .tcard .tn{font-size:11px}
+
+  /* Profile card - stack vertically */
+  .profile{flex-direction:column;gap:.85rem;padding:1rem}
+  .p-img{width:60px;height:60px;align-self:flex-start}
+  .p-photo{width:56px;height:56px}
+  .p-body h1{font-size:18px}
+  .p-meta{font-size:11px;gap:0 10px}
+  .pills{gap:5px}
+  .pill{min-width:56px;padding:.4rem .6rem}
+  .pill .pn{font-size:16px}
+  .pill .pl{font-size:8px}
+
+  /* Move career totals below profile on mobile */
+  .profile > div:last-child{width:100%;text-align:left!important}
+  .profile > div:last-child .pills{justify-content:flex-start!important}
+
+  /* Tabs - scrollable */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tab{font-size:12px;padding:7px 12px;white-space:nowrap;flex-shrink:0}
+
+  /* Tables - horizontal scroll */
+  .tw .overflow-x-auto,
+  .tw > div{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:500px}
+  th,td{padding:6px 9px;font-size:12px}
+  .pcell img{width:22px;height:22px}
+  .pcell .pn{font-size:12px}
+  .pcell .ps{font-size:10px}
+  .num{font-size:13px}
+
+  /* Back button + share */
+  .back{font-size:12px}
+  .share{font-size:10px;padding:3px 7px}
+
+  /* Search results */
+  .sr{left:-50px;right:-10px}
+  .sr-item{padding:8px 12px}
+
+  /* Chat */
+  .chat-msgs{max-height:300px}
+  .chips{gap:4px}
+  .chip{font-size:10px;padding:3px 8px}
+  .chat-in{padding:.65rem .85rem;gap:6px}
+  .send{font-size:12px;padding:7px 12px}
+
+  /* Bottom nav for mobile */
+  .mobile-nav{display:flex}
+}
+
+/* Bottom nav bar - hidden on desktop */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--dark2);border-top:1px solid var(--border);
+  height:56px;z-index:200;
+  justify-content:space-around;align-items:center;
+  padding:0 .5rem;
+  safe-area-inset-bottom: env(safe-area-inset-bottom);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.mnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;color:var(--muted);
+  font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;
+  padding:.4rem .6rem;border-radius:6px;cursor:pointer;
+  letter-spacing:.5px;text-transform:uppercase;
+  transition:color .15s;min-width:48px;
+}
+.mnav-btn .icon{font-size:18px;line-height:1}
+.mnav-btn:hover,.mnav-btn.active{color:var(--gold)}
+@media(max-width:768px){
+  main{padding-bottom:70px} /* space for bottom nav */
+}
 </style>
 </head>
 <body>
@@ -151,6 +240,16 @@ tr.season-row td{border-left:3px solid var(--gold)}
   </nav>
 </header>
 <main id="mc"><div class="loading"><div class="spinner"></div>Laddar…</div></main>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mnav-btn" onclick="go('/')"><span class="icon">🛡</span>Lag</button>
+  <button class="mnav-btn" onclick="go('/tabell')"><span class="icon">🏆</span>Tabell</button>
+  <button class="mnav-btn" onclick="go('/resultat')"><span class="icon">📅</span>Resultat</button>
+  <button class="mnav-btn" onclick="go('/overgangar')"><span class="icon">🔄</span>Överg.</button>
+  <button class="mnav-btn" onclick="go('/statistik')"><span class="icon">⚽</span>Statistik</button>
+  <button class="mnav-btn" onclick="go('/sok')"><span class="icon">🔍</span>AI</button>
+</nav>
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────
@@ -196,6 +295,10 @@ function go(path, push=true) {
 }
 function updateNav(path) {
   document.querySelectorAll('.np').forEach(b => {
+    const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
+  });
+  document.querySelectorAll('.mnav-btn').forEach(b => {
     const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
     b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
   });
@@ -919,8 +1022,17 @@ function switchTab(btn,id){
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
 function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=event.target;const o=b.textContent;b.textContent='✅';setTimeout(()=>b.textContent=o,2000);});}
+function fixEnc(s) {
+  if(!s) return '';
+  try {
+    // Fix mojibake: latin1-interpreted UTF-8 bytes
+    return decodeURIComponent(escape(s));
+  } catch(e) {
+    return s;
+  }
+}
 function esc(s){
-  return String(s||'')
+  return fixEnc(String(s||''))
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
