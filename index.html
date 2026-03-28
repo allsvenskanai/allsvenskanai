@@ -1432,15 +1432,22 @@ async function pageStats(el, year=null) {
 
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik för ${teams.length} lag…</div>`;
 
-    // Fetch players per team with concurrency limit
+    // Fetch ALL players per team (all pages)
     const allPlayers = [];
     const chunks = [];
-    for(let i=0; i<teams.length; i+=4) chunks.push(teams.slice(i,i+4));
+    for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
     for(const chunk of chunks) {
-      const results = await Promise.all(chunk.map(t =>
-        af('players', {league:LEAGUE, season:statsYear, team:t.id, page:1}).catch(()=>[])
-      ));
-      results.forEach(r => allPlayers.push(...(Array.isArray(r)?r:[])));
+      await Promise.all(chunk.map(async t => {
+        let page = 1;
+        while(true) {
+          const r = await af('players', {league:LEAGUE, season:statsYear, team:t.id, page}).catch(()=>[]);
+          const arr = Array.isArray(r) ? r : [];
+          allPlayers.push(...arr);
+          if(arr.length < 20) break; // no more pages
+          page++;
+          if(page > 5) break; // safety
+        }
+      }));
     }
 
     if(!allPlayers.length) throw new Error(`Ingen spelardata för ${statsYear}`);
