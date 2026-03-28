@@ -765,56 +765,24 @@ async function pageStart(el) {
 
 // ─── TEAMS ───────────────────────────────────────────
 async function pageTeams(el) {
-  document.title = 'AllsvenskanAI';
+  document.title = 'Alla lag — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
     let data = await af('standings', {league:LEAGUE, season:SEASON});
-    // Fall back to 2025 if 2026 has no standings yet
     if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
       data = await af('standings', {league:LEAGUE, season:2025});
     }
     const teams = (data[0]?.league?.standings?.[0]||[]).map(t=>t.team);
     const cards = teams.map(t=>`
-      <div class="tcard" onclick="go('/lag/${t.id}')">
+      <div class="start-tcard" onclick="go('/lag/${t.id}')">
         <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-        <div class="tn">${esc(t.name)}</div>
+        <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
       <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
-      <div class="tgrid">${cards}</div>
-      <div style="margin-top:2rem">
-        <div class="chat-wrap">
-          <div class="chat-head" style="background:none;border-bottom:1px solid var(--border)">
-            <div style="flex:1">
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text)">Fråga Allsvenskan AI</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px">Statistik, marknadsvärden, övergångar och nyheter</div>
-            </div>
-            <div class="ldot"></div>
-          </div>
-          <div class="chat-msgs" id="cm" style="min-height:120px">
-            <div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;color:var(--dark5);margin-bottom:.5rem">⚽</div>
-              Ställ valfri fråga om Allsvenskan…
-            </div>
-          </div>
-          <div class="chips">
-            <span class="chip" onclick="askAI('Vem är värd mest i Allsvenskan 2026?')">Marknadsvärden</span>
-            <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2026')">Övergångar</span>
-            <span class="chip" onclick="askAI('Skytteligan Allsvenskan 2025 — topplistan')">Skytteliga</span>
-            <span class="chip" onclick="askAI('Bästa unga talanger under 21 i Allsvenskan')">U21-talanger</span>
-            <span class="chip" onclick="askAI('Malmö FF trupp och marknadsvärde 2026')">Malmö FF</span>
-            <span class="chip" onclick="askAI('Senaste nyheterna om Allsvenskan')">Nyheter</span>
-          </div>
-          <div class="chat-in">
-            <textarea id="ci" rows="1" placeholder="Fråga om spelare, lag, statistik, marknadsvärden…"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
-            <button class="send" id="sb" onclick="sendChat()">SKICKA</button>
-          </div>
-        </div>
-      </div>`;
+      <div class="start-tgrid">${cards}</div>`;
   } catch(e) {
-    el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}<br>Kontrollera att <strong>APIFOOTBALL_KEY</strong> är inlagd i Vercel.</div>`;
+    el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
   }
 }
 
