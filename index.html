@@ -733,7 +733,7 @@ async function pageTeam(el, teamId) {
 
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
-        <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('${esc(team.name)}','tai')">Övergångar & analys</button>
+        <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('${esc(team.name)}','tai',${teamId})">Övergångar</button>
       </div>
 
       <div id="sq">
@@ -753,18 +753,59 @@ async function pageTeam(el, teamId) {
   }
 }
 
-async function loadTeamAI(name, tabId) {
+async function loadTeamAI(name, tabId, teamId) {
   const el = document.getElementById(tabId);
   if(!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
-  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="dots"><span></span><span></span><span></span></div> Hämtar övergångar & analys från transfermarkt.com…</div></div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar…</div>`;
   try {
-    const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
-        `Sök på transfermarkt.com/se efter ${name} och ge mig:\n1. Senaste övergångarna (in och ut) med datum, spelare, typ och belopp\n2. Trupp-marknadsvärde totalt\n3. Top 5 mest värdefulla spelare med marknadsvärde\n4. Kort analys av säsongen\nSvara på svenska med markdown-tabeller.`}]})});
-    const d = await resp.json();
-    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    el.innerHTML = `<div class="tw"><div style="padding:1rem" class="ai-content">${mdHtml(text)}</div></div>`;
+    const data = await af('transfers', {team: teamId});
+    const all = [];
+    data.forEach(tr => {
+      (tr.transfers||[]).forEach(x => {
+        const year = parseInt((x.date||'').slice(0,4));
+        if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) {
+          all.push({
+            date: x.date,
+            type: x.type,
+            playerName: tr.player?.name,
+            playerId: tr.player?.id,
+            teamIn: x.teams?.in,
+            teamOut: x.teams?.out,
+          });
+        }
+      });
+    });
+    all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+    if(!all.length) {
+      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+      return;
+    }
+
+    const rows = all.map(tr => {
+      const isIn = tr.teamIn?.id == teamId;
+      const fc = feeStyle(tr.type);
+      return `<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
+        <td style="cursor:pointer;color:var(--blue);font-weight:500" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</td>
+        <td>
+          <span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:${isIn?'var(--green)':'var(--red)'}">
+            ${isIn ? '↙ IN' : '↗ UT'}
+          </span>
+        </td>
+        <td><div style="display:flex;align-items:center;gap:5px">
+          <img src="${isIn?(tr.teamOut?.logo||''):(tr.teamIn?.logo||'')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+          <span style="font-size:12px">${esc(isIn?(tr.teamOut?.name||'?'):(tr.teamIn?.name||'?'))}</span>
+        </div></td>
+        <td><span style="font-size:10px;padding:3px 9px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;${fc}">${esc(tr.type||'?')}</span></td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Datum</th><th>Spelare</th><th>Riktning</th><th>Motpart</th><th>Typ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
   }
