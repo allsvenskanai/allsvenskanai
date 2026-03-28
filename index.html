@@ -648,7 +648,38 @@ async function pageTeams(el) {
       </div>`).join('');
     el.innerHTML = `
       <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
-      <div class="tgrid">${cards}</div>`;
+      <div class="tgrid">${cards}</div>
+      <div style="margin-top:2rem">
+        <div class="chat-wrap">
+          <div class="chat-head" style="background:none;border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text)">Fråga Allsvenskan AI</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Statistik, marknadsvärden, övergångar och nyheter</div>
+            </div>
+            <div class="ldot"></div>
+          </div>
+          <div class="chat-msgs" id="cm" style="min-height:120px">
+            <div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;color:var(--dark5);margin-bottom:.5rem">⚽</div>
+              Ställ valfri fråga om Allsvenskan…
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip" onclick="askAI('Vem är värd mest i Allsvenskan 2026?')">Marknadsvärden</span>
+            <span class="chip" onclick="askAI('Senaste övergångarna i Allsvenskan 2026')">Övergångar</span>
+            <span class="chip" onclick="askAI('Skytteligan Allsvenskan 2025 — topplistan')">Skytteliga</span>
+            <span class="chip" onclick="askAI('Bästa unga talanger under 21 i Allsvenskan')">U21-talanger</span>
+            <span class="chip" onclick="askAI('Malmö FF trupp och marknadsvärde 2026')">Malmö FF</span>
+            <span class="chip" onclick="askAI('Senaste nyheterna om Allsvenskan')">Nyheter</span>
+          </div>
+          <div class="chat-in">
+            <textarea id="ci" rows="1" placeholder="Fråga om spelare, lag, statistik, marknadsvärden…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+              oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+            <button class="send" id="sb" onclick="sendChat()">SKICKA</button>
+          </div>
+        </div>
+      </div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}<br>Kontrollera att <strong>APIFOOTBALL_KEY</strong> är inlagd i Vercel.</div>`;
   }
@@ -1293,9 +1324,9 @@ const AISYS = `Du är expert på Allsvenskan och svensk fotboll. Hjälp med stat
 function pageSearch(el) {
   document.title = 'AI-sökning — AllsvenskanAI';
   el.innerHTML = `
-    <div class="pg-header"><div class="pg-title">AI<em>-sökning</em></div></div>
+    <div class="pg-header"><div class="pg-title">Fråga <em>Allsvenskan AI</em></div></div>
     <div class="chat-wrap">
-      <div class="chat-head"><div class="ldot"></div>Claude AI — söker live på transfermarkt, fbref, fotmob</div>
+      <div class="chat-head"><div class="ldot"></div>Ställ en fråga om spelare, lag, statistik eller övergångar</div>
       <div class="chat-msgs" id="cm">
         ${C.chatHistory.length?'':'<div style="text-align:center;padding:2.5rem;color:var(--muted);font-size:13px"><div style="font-size:32px;margin-bottom:.5rem">⚽</div>Fråga om spelare, marknadsvärden, övergångar, statistik…</div>'}
         ${C.chatHistory.map(m=>`<div class="m${m.role==='user'?'u':'a'}"><div class="mrole">${m.role==='user'?'Du':'AI'}</div><div class="mb">${m.role==='assistant'?mdHtml(m.text):esc(m.text)}</div></div>`).join('')}
