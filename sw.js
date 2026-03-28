@@ -1,20 +1,16 @@
-const CACHE = 'allsvenskanai-v1';
-const STATIC = ['/'];
+const VERSION = 'allsvenskanai-v2';
+const API_CACHE = 'api-cache-v2';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(STATIC))
-  );
-  self.skipWaiting();
+  self.skipWaiting(); // Activate immediately
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+      Promise.all(keys.filter(k => k !== API_CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim()) // Take control immediately
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
@@ -23,7 +19,7 @@ self.addEventListener('fetch', e => {
   // Cache API responses for 5 minutes
   if(url.pathname.startsWith('/api/')) {
     e.respondWith(
-      caches.open(CACHE).then(async cache => {
+      caches.open(API_CACHE).then(async cache => {
         const cached = await cache.match(e.request);
         if(cached) {
           const cachedTime = cached.headers.get('sw-cached-at');
@@ -35,26 +31,26 @@ self.addEventListener('fetch', e => {
         const clone = response.clone();
         const headers = new Headers(clone.headers);
         headers.set('sw-cached-at', Date.now().toString());
-        const cachedResponse = new Response(await clone.arrayBuffer(), {
+        const cached2 = new Response(await clone.arrayBuffer(), {
           status: clone.status, statusText: clone.statusText, headers
         });
-        cache.put(e.request, cachedResponse);
+        cache.put(e.request, cached2);
         return response;
       }).catch(() => caches.match(e.request))
     );
     return;
   }
 
-  // For navigation requests — serve from cache, fall back to network
-  if(e.request.mode === 'navigate') {
+  // For HTML — always fetch fresh from network (never cache)
+  if(e.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match('/'))
+      fetch(e.request).catch(() => new Response('Offline — starta om appen när du har internet', {
+        headers: {'Content-Type': 'text/plain'}
+      }))
     );
     return;
   }
 
-  // Default: network first
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
+  // Everything else — network first
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
