@@ -1370,18 +1370,20 @@ async function pageTransfers(el, page=1) {
               const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
               if(year >= 2024 && validDate) {
                 const type = x.type || '';
-                // For internal moves (Raise/Loan Return), both teams are same club
                 const teamIn = x.teams?.in;
                 const teamOut = x.teams?.out;
-                const isInternal = type === 'Raise' || type === 'Loan Return' || 
+                const isInternal = type === 'Raise' || type === 'Loan Return' ||
                   (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
-                // For internal moves, use whichever team is available
-                const resolvedTeam = teamIn || teamOut;
+                // For Raise: use the current team (t) since API doesn't provide team info
+                const resolvedTeam = teamIn || teamOut || t;
+                // Skip unknown type "-" entries with no team info
+                if(type === '-' && !teamIn && !teamOut) return;
                 all.push({
-                  date: x.date, type: isInternal ? 'Uppflyttad' : type,
+                  date: x.date,
+                  type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
                   playerName: tr.player?.name, playerId: tr.player?.id,
-                  teamIn: isInternal ? resolvedTeam : teamIn,
-                  teamOut: isInternal ? resolvedTeam : teamOut,
+                  teamIn: isInternal ? resolvedTeam : (teamIn || null),
+                  teamOut: isInternal ? resolvedTeam : (teamOut || null),
                   isInternal,
                 });
               }
