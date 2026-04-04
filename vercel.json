@@ -1,15 +1,7 @@
 {
   "rewrites": [
-    {"source": "/api/chat", "destination": "/api/chat.js"},
-    {"source": "/api/football", "destination": "/api/football.js"},
-    {"source": "/api/subscribe", "destination": "/api/subscribe.js"},
-    {"source": "/api/cron", "destination": "/api/cron.js"},
-    {"source": "/(.*)", "destination": "/index.html"}
-  ],
-  "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "*/5 * * * *"
-    }
+    { "source": "/api/chat", "destination": "/api/chat.js" },
+    { "source": "/api/football", "destination": "/api/football.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
