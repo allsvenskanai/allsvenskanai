@@ -1135,30 +1135,77 @@ async function pageTeams(el) {
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    // Fetch team stats, current squad, and season stats in parallel
     const [statsD, squadD] = await Promise.all([
       af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
-      af('players/squads', {team:teamId})   // current squad, no season needed
+      af('players/squads', {team:teamId})
     ]);
 
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
-    
-    // squads endpoint returns [{team, players:[]}]
     const squadPlayers = (squadD[0]?.players || []);
     document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
     const d = stats?.fixtures?.draws?.total||0;
     const l = stats?.fixtures?.loses?.total||0;
+    const played = stats?.fixtures?.played?.total || (w+d+l);
     const gf = stats?.goals?.for?.total?.total||0;
     const ga = stats?.goals?.against?.total?.total||0;
     const cs = stats?.clean_sheet?.total||0;
+    const failedToScore = stats?.failed_to_score?.total || 0;
     const form = stats?.fixtures?.form||'';
     const formDots = form.slice(-10).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
 
-    // Sort squad players by position
+    const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || 0;
+    const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || 0;
+    const homeW = stats?.fixtures?.wins?.home || 0;
+    const awayW = stats?.fixtures?.wins?.away || 0;
+    const homeD = stats?.fixtures?.draws?.home || 0;
+    const awayD = stats?.fixtures?.draws?.away || 0;
+    const homeL = stats?.fixtures?.loses?.home || 0;
+    const awayL = stats?.fixtures?.loses?.away || 0;
+    const formPct = played ? Math.round(((w*3 + d) / (played*3))*100) : 0;
+
+    const scoredMin = Object.entries(stats?.goals?.for?.minute || {})
+      .map(([range, val]) => ({range, total: val?.total || 0}))
+      .filter(x => x.total > 0)
+      .sort((a,b) => b.total-a.total)
+      .slice(0,3);
+    const concededMin = Object.entries(stats?.goals?.against?.minute || {})
+      .map(([range, val]) => ({range, total: val?.total || 0}))
+      .filter(x => x.total > 0)
+      .sort((a,b) => b.total-a.total)
+      .slice(0,3);
+
+    const statCards = [
+      ['Matcher', played],
+      ['Poäng', w*3 + d],
+      ['Målskillnad', (gf-ga>0?'+':'') + (gf-ga)],
+      ['Mål / match', avgFor.toFixed(2)],
+      ['Insläppta / match', avgAgainst.toFixed(2)],
+      ['Hållna nollor', cs],
+      ['Mållösa matcher', failedToScore],
+      ['Poängprocent', formPct + '%']
+    ].map(([label,val]) => `<div class="pill"><div class="pn">${val}</div><div class="pl">${label}</div></div>`).join('');
+
+    const splitRows = `
+      <tr><td>Vinster</td><td class="num">${homeW}</td><td class="num">${awayW}</td><td class="num">${w}</td></tr>
+      <tr><td>Oavgjorda</td><td class="num">${homeD}</td><td class="num">${awayD}</td><td class="num">${d}</td></tr>
+      <tr><td>Förluster</td><td class="num">${homeL}</td><td class="num">${awayL}</td><td class="num">${l}</td></tr>
+      <tr><td>Gjorda mål</td><td class="num">${stats?.goals?.for?.total?.home||0}</td><td class="num">${stats?.goals?.for?.total?.away||0}</td><td class="num">${gf}</td></tr>
+      <tr><td>Insläppta mål</td><td class="num">${stats?.goals?.against?.total?.home||0}</td><td class="num">${stats?.goals?.against?.total?.away||0}</td><td class="num">${ga}</td></tr>
+    `;
+
+    const minuteCard = (title, arr) => `
+      <div class="tw" style="flex:1;min-width:260px">
+        <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div>
+        <div style="padding:1rem 1.1rem">
+          ${arr.length ? arr.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)"><span>${esc(x.range)}</span><strong style="color:var(--gold)">${x.total}</strong></div>`).join('') : `<div class="empty" style="padding:1rem 0">Ingen data</div>`}
+        </div>
+      </div>
+    `;
+
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
     const posLabel = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sorted = [...squadPlayers].sort((a,b)=>
@@ -1207,6 +1254,35 @@ async function pageTeam(el, teamId) {
           ${form?`<div style="margin-top:.6rem"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Form</div><div class="form-row">${formDots}</div></div>`:''}
         </div>
       </div></div>
+
+      <div class="section-label">Säsongsstatistik ${SEASON}</div>
+      <div class="pills" style="margin-bottom:1rem">${statCards}</div>
+
+      <div style="display:grid;grid-template-columns:1.25fr .9fr;gap:12px;margin-bottom:1rem">
+        <div class="tw">
+          <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Hemma / borta</div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Statistik</th><th>Hemma</th><th>Borta</th><th>Totalt</th></tr></thead>
+            <tbody>${splitRows}</tbody>
+          </table></div>
+        </div>
+        <div class="tw">
+          <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Säsongsöversikt</div>
+          <div style="padding:1rem 1.1rem;display:grid;gap:.65rem">
+            <div style="display:flex;justify-content:space-between"><span>Poäng</span><strong style="color:var(--gold)">${w*3 + d}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Matcher</span><strong style="color:var(--gold)">${played}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Målskillnad</span><strong style="color:var(--gold)">${(gf-ga>0?'+':'') + (gf-ga)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Poängprocent</span><strong style="color:var(--gold)">${formPct}%</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Mål per match</span><strong style="color:var(--gold)">${avgFor.toFixed(2)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Insläppta per match</span><strong style="color:var(--gold)">${avgAgainst.toFixed(2)}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem">
+        ${minuteCard('Farligaste målperioder', scoredMin)}
+        ${minuteCard('Mest insläppta målperioder', concededMin)}
+      </div>
 
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
@@ -1986,15 +2062,16 @@ const STAT_CATEGORIES = [
 ];
 
 let statsCache = null;
+let currentStatCategory = 'goals';
 
 let statsYear = 2026; // default to current season
 
-async function pageStats(el, year=null) {
+async function pageStats(el, year=null, force=false) {
   if(year) statsYear = year;
   document.title = `Statistik ${statsYear} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
-    statsCache = null;
+    if(force) statsCache = null;
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
 
     // Get teams from standings for that year
@@ -2024,11 +2101,11 @@ async function pageStats(el, year=null) {
     }
 
     statsCache = allPlayers;
-    renderStats(el, 'goals');
+    renderStats(el, currentStatCategory || 'goals');
   } catch(e) { el.innerHTML=`<div class="err">⚠️ ${esc(e.message)}</div>`; }
 }
-
 function renderStats(el, catId) {
+  currentStatCategory = catId;
   const cat = STAT_CATEGORIES.find(c=>c.id===catId);
   const all = statsCache || [];
 
@@ -2072,14 +2149,16 @@ function renderStats(el, catId) {
 
   const extraCol = cat.id!=='goals' ? `<th>Mål</th>` : '';
 
-  // Year selector — show last 8 seasons
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
-    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${y}</button>`
+    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y},true)">${y}</button>`
   ).join('');
 
   el.innerHTML = `
-    <div class="pg-header"><div class="pg-title">Statistik <em>${statsYear}</em></div></div>
+    <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div class="pg-title">Statistik <em>${statsYear}</em></div>
+      <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">🔄 Uppdatera statistik</button>
+    </div>
     <div style="margin-bottom:.75rem">
       <div class="section-label">Säsong</div>
       <div class="stat-tabs">${yearBtns}</div>
