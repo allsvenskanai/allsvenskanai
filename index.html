@@ -29,12 +29,12 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --gold:#D4AF37;--gold-light:#F0D060;--gold-dim:rgba(212,175,55,.15);
-  --dark:#080A0E;--dark2:#0F1218;--dark3:#161C26;--dark4:#1E2535;--dark5:#252E40;
-  --border:rgba(212,175,55,0.08);--border-hi:rgba(212,175,55,0.3);
-  --text:#EEF0F4;--text2:#B0B8C8;--muted:#5A6480;
-  --red:#C84B4B;--green:#3A9E6A;--blue:#3D7EBF;
-  --radius:3px;
+  --gold:#C9A54B;--gold-light:#E6C977;--gold-dim:rgba(201,165,75,.14);
+  --dark:#F7F3EB;--dark2:#FFFDF8;--dark3:#F3EBDD;--dark4:#E9DFC9;--dark5:#DED0B3;
+  --border:rgba(108,86,44,0.14);--border-hi:rgba(108,86,44,0.28);
+  --text:#241C12;--text2:#5D503D;--muted:#8A7A63;
+  --red:#B65151;--green:#2F8F67;--blue:#7AA8D8;
+  --radius:12px;
 }
 
 /* BASE */
@@ -49,8 +49,8 @@ body{
 
 /* HEADER */
 header{
-  background:rgba(8,10,14,.95);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:rgba(255,251,244,.88);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   border-bottom:1px solid var(--border);
   height:58px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;
   position:sticky;top:0;z-index:100;flex-shrink:0;
@@ -87,7 +87,7 @@ header{
 .np.active::after{left:14px;right:14px}
 
 /* MAIN */
-main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2rem 2rem 4rem}
+main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
 
 /* PAGE HEADER */
 .pg-header{
@@ -483,7 +483,7 @@ tr.season-row td{border-left:2px solid var(--gold)}
 .duel-stat:last-child{border-bottom:none}
 .duel-stat .val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--text)}
 .duel-stat .lab{font-size:12px;color:var(--muted);text-align:center;font-weight:600}
-.duel-track{height:10px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;position:relative}
+.duel-track{height:10px;border-radius:999px;background:rgba(108,86,44,.08);overflow:hidden;position:relative}
 .duel-home,.duel-away{position:absolute;top:0;bottom:0}
 .duel-home{left:0;background:linear-gradient(90deg,var(--gold),var(--gold-light))}
 .duel-away{right:0;background:linear-gradient(90deg,var(--blue),#7cb1e8)}
@@ -834,7 +834,45 @@ const NAME_FIX = {
   'AIK Stockholm': 'AIK',
   'Gais': 'GAIS',
 };
+
 function fixName(s) { return NAME_FIX[s] || s; }
+function svLand(s){
+  const map = {
+    'Sweden':'Sverige','Norway':'Norge','Denmark':'Danmark','Finland':'Finland',
+    'Iceland':'Island','England':'England','Scotland':'Skottland','Wales':'Wales',
+    'Germany':'Tyskland','France':'Frankrike','Spain':'Spanien','Italy':'Italien',
+    'Brazil':'Brasilien','Argentina':'Argentina','USA':'USA'
+  };
+  return map[s] || s;
+}
+function svStatus(longStatus=''){
+  const map = {
+    'Match Finished':'Slut',
+    'First Half':'Första halvlek',
+    'Second Half':'Andra halvlek',
+    'Halftime':'Halvtid',
+    'Not Started':'Kommande',
+    'Time to be defined':'Tid ej fastställd',
+    'Postponed':'Uppskjuten',
+    'Cancelled':'Inställd',
+    'Abandoned':'Avbruten',
+    'Interrupted':'Avbruten',
+    'Awarded':'Tilldömd',
+    'WalkOver':'Walkover'
+  };
+  return map[longStatus] || longStatus;
+}
+function svOmgang(s=''){
+  return String(s || '')
+    .replace(/Regular Season/gi,'Grundserie')
+    .replace(/Championship Round/gi,'Mästerskapsrunda')
+    .replace(/Relegation Round/gi,'Nedflyttningsrunda')
+    .replace(/Play-offs?/gi,'Slutspel');
+}
+function svDomare(s=''){
+  return String(s || '').replace(/,\s*Sweden$/i, ', Sverige');
+}
+
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
@@ -1611,11 +1649,11 @@ function matchStatusLabel(f){
   const short = f?.fixture?.status?.short || '';
   const elapsed = f?.fixture?.status?.elapsed;
   if(short === 'NS') return 'Kommande';
-  if(['1H','2H','ET','BT','LIVE'].includes(short)) return elapsed ? `${elapsed}' LIVE` : 'LIVE';
+  if(['1H','2H','ET','BT','LIVE'].includes(short)) return elapsed ? `${elapsed}' spelas` : 'Spelas';
   if(short === 'HT') return 'Halvtid';
   if(['FT','AET','PEN'].includes(short)) return 'Slut';
-  if(['PST','CANC','ABD','INT','AWD','WO'].includes(short)) return f?.fixture?.status?.long || 'Avbruten';
-  return f?.fixture?.status?.long || short || 'Match';
+  if(['PST','CANC','ABD','INT','AWD','WO'].includes(short)) return svStatus(f?.fixture?.status?.long || 'Avbruten');
+  return svStatus(f?.fixture?.status?.long || short || 'Match');
 }
 function matchStatusClass(f){
   const short = f?.fixture?.status?.short || '';
@@ -1741,7 +1779,7 @@ async function pageResults(el) {
       const hs = f.goals?.home, as_ = f.goals?.away;
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
       const venue = f.fixture?.venue?.name || 'Arena saknas';
-      const comp = f.league?.round || f.league?.name || 'Allsvenskan';
+      const comp = svOmgang(f.league?.round || f.league?.name || 'Allsvenskan');
       return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')">
         <div class="match-team">
           <img src="${f.teams?.home?.logo||''}" onerror="this.style.opacity='.15'">
@@ -1784,9 +1822,9 @@ async function pageMatch(el, fixtureId) {
     const hs = f.goals?.home, as_ = f.goals?.away;
     const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
     const venue = f.fixture?.venue?.name || 'Arena saknas';
-    const city = f.fixture?.venue?.city || '';
-    const round = f.league?.round || 'Allsvenskan';
-    const ref = f.fixture?.referee || 'Domare saknas';
+    const city = svLand(f.fixture?.venue?.city || '');
+    const round = svOmgang(f.league?.round || 'Allsvenskan');
+    const ref = svDomare(f.fixture?.referee || 'Domare saknas');
     const status = matchStatusLabel(f);
     const home = f.teams?.home || {};
     const away = f.teams?.away || {};
@@ -2215,7 +2253,7 @@ async function sendChat() {
     if(dataAnswer) {
       C.chatHistory.push({role:'assistant', text:'[data]', html:dataAnswer});
       const ae=document.getElementById(aid);
-      if(ae)ae.outerHTML=`<div class="ma"><div class="mrole">AI <span style="font-size:9px;color:var(--green);letter-spacing:1px">● LIVE DATA</span></div><div class="mb">${dataAnswer}</div></div>`;
+      if(ae)ae.outerHTML=`<div class="ma"><div class="mrole">AI <span style="font-size:9px;color:var(--green);letter-spacing:1px">● LIVE-DATA</span></div><div class="mb">${dataAnswer}</div></div>`;
     } else {
       // Fall back to web search for complex questions
       const ae2=document.getElementById(aid);
