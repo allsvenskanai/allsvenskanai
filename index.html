@@ -1064,39 +1064,49 @@ async function loadStartNews() {
   const el = document.getElementById('news-container');
   if(!el) return;
 
-  // Cache news for 30 minutes
   if(newsCache && Date.now() - newsCacheTime < 30 * 60 * 1000) {
     renderNews(el, newsCache);
     return;
   }
 
   try {
-    const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
-        `Sök efter de 6 senaste nyheterna om Allsvenskan och svenska fotbollsklubbar från de senaste 3 dagarna. Källor: allsvenskan.se, fotbollskanalen.se, aftonbladet.se/sport, expressen.se/sport, svt.se/sport.
-        
+    const resp = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system: AISYS,
+        messages:[{
+          role:'user',
+          content:`Sök efter de 6 senaste nyheterna om Allsvenskan och svenska fotbollsklubbar från de senaste 3 dagarna. Källor: allsvenskan.se, fotbollskanalen.se, aftonbladet.se/sport, expressen.se/sport, svt.se/sport.
+
 Returnera BARA ett JSON-objekt i detta format utan markdown eller förklaringar:
-{"news":[{"title":"Rubrik","summary":"En mening sammanfattning","source":"Källnamn","date":"YYYY-MM-DD","url":""}]}`}]})});
-    
+{"news":[{"title":"Rubrik","summary":"En mening sammanfattning","source":"Källnamn","date":"YYYY-MM-DD","url":""}]}`
+        }]
+      })
+    });
+
     const d = await resp.json();
     const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-    
-    // Parse JSON safely
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if(!jsonMatch) throw new Error('Ingen JSON');
     const parsed = JSON.parse(jsonMatch[0]);
-    const news = parsed.news || [];
-    
+    const news = Array.isArray(parsed.news) ? parsed.news.filter(n => n && n.title) : [];
+
+    if(!news.length) throw new Error('Inga nyheter');
     newsCache = news;
     newsCacheTime = Date.now();
     renderNews(el, news);
   } catch(e) {
-    if(el) el.innerHTML = `<div style="font-size:12px;color:var(--muted)">Kunde inte ladda nyheter just nu.</div>`;
+    renderNewsFallback(el);
   }
 }
 
 function renderNews(el, news) {
-  if(!el || !news.length) return;
+  if(!el) return;
+  if(!news.length) {
+    renderNewsFallback(el);
+    return;
+  }
   const cards = news.map(n => `
     <div class="news-card" ${n.url?`onclick="window.open('${n.url}','_blank')"`:''}>
       <div class="news-source">${esc(n.source||'')}</div>
@@ -1108,6 +1118,45 @@ function renderNews(el, news) {
     <button class="ai-btn" onclick="newsCache=null;loadStartNews()" style="font-size:11px">🔄 Uppdatera nyheter</button>`;
 }
 
+function renderNewsFallback(el) {
+  if(!el) return;
+  const fallback = [
+    {
+      source:'Allsvenskan.se',
+      title:'Gå till senaste nytt hos Allsvenskan',
+      summary:'Officiella nyheter, matchrapporter och uppdateringar från ligan.',
+      date:'Direktlänk',
+      url:'https://www.allsvenskan.se/nyheter'
+    },
+    {
+      source:'Fotbollskanalen',
+      title:'Läs senaste nytt på Fotbollskanalen',
+      summary:'Snabba uppdateringar om Allsvenskan, klubbar, spelare och övergångar.',
+      date:'Direktlänk',
+      url:'https://www.fotbollskanalen.se/allsvenskan/'
+    },
+    {
+      source:'SVT Sport',
+      title:'Se senaste nytt hos SVT Sport',
+      summary:'Sportnyheter och större händelser kopplade till svensk fotboll.',
+      date:'Direktlänk',
+      url:'https://www.svt.se/sport/fotboll'
+    }
+  ];
+  const cards = fallback.map(n => `
+    <div class="news-card" onclick="window.open('${n.url}','_blank')">
+      <div class="news-source">${esc(n.source)}</div>
+      <div class="news-title">${esc(n.title)}</div>
+      <div class="news-summary">${esc(n.summary)}</div>
+      <div class="news-date">${esc(n.date)}</div>
+    </div>`).join('');
+  el.innerHTML = `
+    <div class="news-grid">${cards}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:.6rem">
+      Kunde inte ladda automatiska nyheter just nu. Här är snabblänkar till pålitliga källor.
+    </div>
+    <button class="ai-btn" onclick="newsCache=null;loadStartNews()" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
+}
 // ─── TEAMS ───────────────────────────────────────────
 async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
