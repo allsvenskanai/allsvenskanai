@@ -1122,6 +1122,8 @@ function route(path) {
   if(path==='/lag-lista')              { pageTeams(el); return; }
   if(path==='/tabell')                 { pageStandings(el); return; }
   if(path==='/resultat')               { pageResults(el); return; }
+  const mm = path.match(/^\/match\/(\d+)/);
+  if(mm)                               { pageMatch(el, +mm[1]); return; }
   if(path==='/overgangar')             { pageTransfers(el, 1); return; }
   const trm = path.match(/^\/overgangar\/(\d+)/);
   if(trm)                              { pageTransfers(el, +trm[1]); return; }
@@ -1842,16 +1844,16 @@ async function pageResults(el) {
       const hs=f.goals?.home, as_=f.goals?.away;
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : 'vs';
       const col = hs>as_?'var(--green)':hs<as_?'var(--red)':'var(--muted)';
-      return `<tr>
+      return `<tr class="link" onclick="go('/match/${f.fixture?.id}')">
         <td style="font-size:11px;color:var(--muted)">${(f.fixture?.date||'').slice(0,10)}</td>
         <td style="text-align:right"><div style="display:flex;align-items:center;justify-content:flex-end;gap:5px">
-          <span style="font-weight:500">${esc(f.teams?.home?.name)}</span>
+          <span style="font-weight:500">${esc(fixName(f.teams?.home?.name||''))}</span>
           <img src="${f.teams?.home?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
         </div></td>
         <td class="num" style="text-align:center;color:${col}">${score}</td>
         <td><div style="display:flex;align-items:center;gap:5px">
           <img src="${f.teams?.away?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-weight:500">${esc(f.teams?.away?.name)}</span>
+          <span style="font-weight:500">${esc(fixName(f.teams?.away?.name||''))}</span>
         </div></td>
         <td style="font-size:11px;color:var(--muted)">${esc(f.fixture?.venue?.name||'')}</td>
       </tr>`;}).join('');
@@ -1861,7 +1863,130 @@ async function pageResults(el) {
         <thead><tr><th>Datum</th><th style="text-align:right">Hemma</th><th style="text-align:center">Resultat</th><th>Borta</th><th>Arena</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="5" class="empty">Inga matcher</td></tr>'}</tbody>
       </table></div></div>`;
+
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+
+async function pageMatch(el, fixtureId) {
+  document.title = 'Matchstatistik — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matchstatistik…</div>`;
+  try {
+    const [fixD, statsD, eventsD, lineupsD] = await Promise.all([
+      af('fixtures', {id: fixtureId}),
+      af('fixtures/statistics', {fixture: fixtureId}).catch(()=>[]),
+      af('fixtures/events', {fixture: fixtureId}).catch(()=>[]),
+      af('fixtures/lineups', {fixture: fixtureId}).catch(()=>[])
+    ]);
+
+    const f = fixD[0];
+    if(!f) throw new Error('Matchen hittades inte');
+
+    const home = f.teams?.home || {};
+    const away = f.teams?.away || {};
+    const homeStats = statsD.find(x => x.team?.id === home.id)?.statistics || [];
+    const awayStats = statsD.find(x => x.team?.id === away.id)?.statistics || [];
+
+    const statMap = {};
+    [...homeStats, ...awayStats].forEach(s => {
+      const key = s.type || '';
+      statMap[key] = statMap[key] || {home: '—', away: '—'};
+      if(homeStats.includes(s)) statMap[key].home = s.value ?? '—';
+      if(awayStats.includes(s)) statMap[key].away = s.value ?? '—';
+    });
+
+    const orderedStats = [
+      'Ball Possession','Total Shots','Shots on Goal','Shots off Goal',
+      'Blocked Shots','Corner Kicks','Offsides','Fouls','Yellow Cards',
+      'Red Cards','Goalkeeper Saves','Total passes','Passes accurate','Passes %'
+    ].filter(k => statMap[k]);
+
+    const statRows = orderedStats.map(k => `
+      <tr>
+        <td class="num" style="font-size:16px;text-align:center">${esc(String(statMap[k].home))}</td>
+        <td style="color:var(--muted);font-weight:600">${esc(k)}</td>
+        <td class="num" style="font-size:16px;text-align:center">${esc(String(statMap[k].away))}</td>
+      </tr>
+    `).join('');
+
+    const events = eventsD.map(ev => {
+      const isHome = ev.team?.id === home.id;
+      const icon = ev.type === 'Goal' ? '⚽' : ev.type === 'Card' ? '🟨' : ev.type === 'subst' ? '🔁' : '•';
+      const detail = [ev.player?.name, ev.detail].filter(Boolean).join(' — ');
+      return `
+        <div style="display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:start;padding:.85rem 1rem;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--gold)">${esc((ev.time?.elapsed||0)+'′')}</div>
+          <div style="display:flex;align-items:flex-start;justify-content:${isHome?'flex-start':'flex-end'}">
+            <div style="max-width:100%;text-align:${isHome?'left':'right'};background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:.7rem .9rem">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:2px">${isHome?esc(fixName(home.name||'')):esc(fixName(away.name||''))}</div>
+              <div style="font-size:13px;font-weight:600">${icon} ${esc(detail || ev.type || '')}</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const lineupCard = team => {
+      const startXI = (team.startXI || []).map(p => `<div style="padding:.45rem .65rem;border-bottom:1px solid var(--border);font-size:13px">${esc(p.player?.number ? p.player.number + '. ' : '')}${esc(p.player?.name||'')}</div>`).join('');
+      return `
+        <div class="tw" style="flex:1;min-width:280px">
+          <div style="padding:1rem 1rem .6rem;display:flex;align-items:center;gap:10px">
+            <img src="${team.team?.logo||''}" style="width:24px;height:24px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800">${esc(fixName(team.team?.name||''))}</div>
+          </div>
+          <div style="padding:0 1rem .75rem;font-size:12px;color:var(--muted)">Formation: ${esc(team.formation||'—')}</div>
+          <div>${startXI || '<div class="empty">Ingen laguppställning</div>'}</div>
+        </div>`;
+    };
+
+    const matchStatus = f.fixture?.status?.long || f.fixture?.status?.short || '';
+    const hs = f.goals?.home, as_ = f.goals?.away;
+    const score = hs!==null && hs!==undefined ? `${hs} – ${as_}` : '–';
+    const dateStr = f.fixture?.date ? new Date(f.fixture.date).toLocaleString('sv-SE', {
+      year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'
+    }) : '';
+
+    el.innerHTML = `
+      <button class="back" onclick="go('/resultat')">Tillbaka till resultat</button>
+      <div class="profile" style="margin-bottom:1.25rem">
+        <div class="profile-bg"></div>
+        <div class="profile-inner" style="align-items:center;justify-content:space-between;gap:1.25rem">
+          <div style="display:flex;align-items:center;gap:1rem;flex:1;min-width:220px">
+            <img src="${home.logo||''}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:1px">${esc(fixName(home.name||''))}</div>
+          </div>
+          <div style="text-align:center;min-width:180px">
+            <div class="num" style="font-size:38px;line-height:1">${score}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:6px">${esc(dateStr)}</div>
+            <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:4px">${esc(matchStatus)}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">${esc(f.fixture?.venue?.name||'')}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem;justify-content:flex-end;flex:1;min-width:220px">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:1px;text-align:right">${esc(fixName(away.name||''))}</div>
+            <img src="${away.logo||''}" style="width:52px;height:52px;object-fit:contain" onerror="this.style.opacity='.15'">
+          </div>
+        </div>
+      </div>
+
+      <div class="pg-header"><div class="pg-title">Match<em>statistik</em></div><span class="pg-sub">${esc(f.fixture?.referee||'Ingen domare angiven')}</span></div>
+
+      <div class="tw">
+        <div style="padding:1rem 1rem .4rem" class="section-label">Statistik</div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th style="text-align:center">${esc(fixName(home.name||''))}</th><th>Nyckeltal</th><th style="text-align:center">${esc(fixName(away.name||''))}</th></tr></thead>
+          <tbody>${statRows || '<tr><td colspan="3" class="empty">Ingen matchstatistik tillgänglig ännu</td></tr>'}</tbody>
+        </table></div>
+      </div>
+
+      <div class="section-label">Händelser</div>
+      <div class="tw">${events || '<div class="empty">Inga matchhändelser tillgängliga</div>'}</div>
+
+      <div class="section-label">Laguppställningar</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        ${lineupsD.length ? lineupsD.map(lineupCard).join('') : '<div class="tw" style="width:100%"><div class="empty">Inga laguppställningar tillgängliga</div></div>'}
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
 }
 
 // ─── TRANSFERS ───────────────────────────────────────
