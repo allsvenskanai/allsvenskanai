@@ -1649,7 +1649,7 @@ const STAT_CATEGORIES = [
 
 let statsCache = null;
 
-let statsYear = 2025; // default to last completed season
+let statsYear = 2026; // default to current season
 
 async function pageStats(el, year=null) {
   if(year) statsYear = year;
@@ -1736,7 +1736,7 @@ function renderStats(el, catId) {
   const extraCol = cat.id!=='goals' ? `<th>Mål</th>` : '';
 
   // Year selector — show last 8 seasons
-  const years = [2025,2024,2023,2022,2021,2020,2019,2018];
+  const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
     `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${y}</button>`
   ).join('');
