@@ -1057,54 +1057,72 @@ async function pageStart(el) {
   }
 }
 
-let newsCache = null;
-let newsCacheTime = 0;
 
-async function loadStartNews() {
+let newsCache = {};
+let newsCacheTime = {};
+
+function newsKey(query) {
+  return (query || 'allsvenskan').toLowerCase().trim();
+}
+
+async function fetchRSSNews(query='Allsvenskan') {
+  const key = newsKey(query);
+  const cached = newsCache[key];
+  const cachedAt = newsCacheTime[key] || 0;
+  if(cached && Date.now() - cachedAt < 30 * 60 * 1000) return cached;
+
+  const resp = await fetch(`/api/news?q=${encodeURIComponent(query)}`);
+  if(!resp.ok) throw new Error('Kunde inte hämta nyheter');
+  const data = await resp.json();
+  const news = Array.isArray(data.news) ? data.news.filter(n => n && n.title) : [];
+  if(!news.length) throw new Error('Inga nyheter');
+  newsCache[key] = news;
+  newsCacheTime[key] = Date.now();
+  return news;
+}
+
+async function loadStartNews(force=false) {
   const el = document.getElementById('news-container');
   if(!el) return;
 
-  if(newsCache && Date.now() - newsCacheTime < 30 * 60 * 1000) {
-    renderNews(el, newsCache);
-    return;
+  const key = newsKey('Allsvenskan');
+  if(force) {
+    delete newsCache[key];
+    delete newsCacheTime[key];
   }
 
   try {
-    const resp = await fetch('/api/chat', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        system: AISYS,
-        messages:[{
-          role:'user',
-          content:`Sök efter de 6 senaste nyheterna om Allsvenskan och svenska fotbollsklubbar från de senaste 3 dagarna. Källor: allsvenskan.se, fotbollskanalen.se, aftonbladet.se/sport, expressen.se/sport, svt.se/sport.
-
-Returnera BARA ett JSON-objekt i detta format utan markdown eller förklaringar:
-{"news":[{"title":"Rubrik","summary":"En mening sammanfattning","source":"Källnamn","date":"YYYY-MM-DD","url":""}]}`
-        }]
-      })
-    });
-
-    const d = await resp.json();
-    const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('Ingen JSON');
-    const parsed = JSON.parse(jsonMatch[0]);
-    const news = Array.isArray(parsed.news) ? parsed.news.filter(n => n && n.title) : [];
-
-    if(!news.length) throw new Error('Inga nyheter');
-    newsCache = news;
-    newsCacheTime = Date.now();
-    renderNews(el, news);
+    const news = await fetchRSSNews('Allsvenskan');
+    renderNews(el, news, {query:'Allsvenskan', title:'Senaste nyheter'});
   } catch(e) {
-    renderNewsFallback(el);
+    renderNewsFallback(el, 'Allsvenskan');
   }
 }
 
-function renderNews(el, news) {
+async function loadTeamNews(teamName, containerId='team-news-container', force=false) {
+  const el = document.getElementById(containerId);
+  if(!el || !teamName) return;
+
+  const q = `${teamName} Allsvenskan`;
+  const key = newsKey(q);
+  if(force) {
+    delete newsCache[key];
+    delete newsCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamName)}…</div>`;
+  try {
+    const news = await fetchRSSNews(q);
+    renderNews(el, news, {query:q, teamName, title:`Senaste nyheter om ${teamName}`});
+  } catch(e) {
+    renderNewsFallback(el, q, teamName);
+  }
+}
+
+function renderNews(el, news, opts={}) {
   if(!el) return;
   if(!news.length) {
-    renderNewsFallback(el);
+    renderNewsFallback(el, opts.query || 'Allsvenskan', opts.teamName || '');
     return;
   }
   const cards = news.map(n => `
@@ -1114,49 +1132,48 @@ function renderNews(el, news) {
       <div class="news-summary">${esc(n.summary||'')}</div>
       <div class="news-date">${esc(n.date||'')}</div>
     </div>`).join('');
+
+  const refreshFn = opts.teamName
+    ? `loadTeamNews(${JSON.stringify(opts.teamName)},'team-news-container',true)`
+    : `loadStartNews(true)`;
+
   el.innerHTML = `<div class="news-grid">${cards}</div>
-    <button class="ai-btn" onclick="newsCache=null;loadStartNews()" style="font-size:11px">🔄 Uppdatera nyheter</button>`;
+    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.8rem">🔄 Uppdatera nyheter</button>`;
 }
 
-function renderNewsFallback(el) {
+function renderNewsFallback(el, query='Allsvenskan', teamName='') {
   if(!el) return;
-  const fallback = [
-    {
-      source:'Allsvenskan.se',
-      title:'Gå till senaste nytt hos Allsvenskan',
-      summary:'Officiella nyheter, matchrapporter och uppdateringar från ligan.',
-      date:'Direktlänk',
-      url:'https://www.allsvenskan.se/nyheter'
-    },
-    {
-      source:'Fotbollskanalen',
-      title:'Läs senaste nytt på Fotbollskanalen',
-      summary:'Snabba uppdateringar om Allsvenskan, klubbar, spelare och övergångar.',
-      date:'Direktlänk',
-      url:'https://www.fotbollskanalen.se/allsvenskan/'
-    },
-    {
-      source:'SVT Sport',
-      title:'Se senaste nytt hos SVT Sport',
-      summary:'Sportnyheter och större händelser kopplade till svensk fotboll.',
-      date:'Direktlänk',
-      url:'https://www.svt.se/sport/fotboll'
-    }
-  ];
-  const cards = fallback.map(n => `
-    <div class="news-card" onclick="window.open('${n.url}','_blank')">
-      <div class="news-source">${esc(n.source)}</div>
-      <div class="news-title">${esc(n.title)}</div>
-      <div class="news-summary">${esc(n.summary)}</div>
-      <div class="news-date">${esc(n.date)}</div>
-    </div>`).join('');
+  const title = teamName ? `Senaste nyheter om ${teamName}` : 'Senaste nyheter';
+  const q = encodeURIComponent(query || 'Allsvenskan');
+  const refreshFn = teamName
+    ? `loadTeamNews(${JSON.stringify(teamName)},'team-news-container',true)`
+    : `loadStartNews(true)`;
+
   el.innerHTML = `
-    <div class="news-grid">${cards}</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:.6rem">
-      Kunde inte ladda automatiska nyheter just nu. Här är snabblänkar till pålitliga källor.
+    <div class="news-grid">
+      <div class="news-card" onclick="window.open('https://news.google.com/rss/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
+        <div class="news-source">Google Nyheter</div>
+        <div class="news-title">Öppna RSS-flödet för ${esc(teamName || 'Allsvenskan')}</div>
+        <div class="news-summary">Senaste rubriker från flera svenska sportkällor samlade i ett flöde.</div>
+        <div class="news-date">Direktlänk</div>
+      </div>
+      <div class="news-card" onclick="window.open('https://www.allsvenskan.se','_blank')">
+        <div class="news-source">Allsvenskan.se</div>
+        <div class="news-title">Officiella nyheter från ligan</div>
+        <div class="news-summary">Matchrapporter, truppnyheter och officiella uppdateringar.</div>
+        <div class="news-date">Direktlänk</div>
+      </div>
+      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se','_blank')">
+        <div class="news-source">Fotbollskanalen</div>
+        <div class="news-title">Senaste nytt från klubbarna</div>
+        <div class="news-summary">Nyheter, övergångar och analyser om svensk fotboll.</div>
+        <div class="news-date">Direktlänk</div>
+      </div>
     </div>
-    <button class="ai-btn" onclick="newsCache=null;loadStartNews()" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
+    <div style="font-size:12px;color:var(--muted);margin-top:.7rem">Kunde inte ladda automatiska RSS-nyheter just nu.</div>
+    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
 }
+
 // ─── TEAMS ───────────────────────────────────────────
 async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
@@ -1184,15 +1201,17 @@ async function pageTeams(el) {
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const [statsD, squadD] = await Promise.all([
+    const [statsD, squadD, seasonPlayers] = await Promise.all([
       af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
-      af('players/squads', {team:teamId})
+      af('players/squads', {team:teamId}),
+      afAll('players', {team:teamId, season:SEASON}).catch(()=>[])
     ]);
 
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
     const squadPlayers = (squadD[0]?.players || []);
+    const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(x => [x.player?.id, x.player || {}]));
     document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
@@ -1256,24 +1275,28 @@ async function pageTeam(el, teamId) {
     `;
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
-    const posLabel = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sorted = [...squadPlayers].sort((a,b)=>
       (posOrder[a.position]||5)-(posOrder[b.position]||5));
 
     let lastPos = '';
     const playerRows = sorted.map(p => {
-      const pos = p.position||'—';
+      const info = playerInfoById[p.id] || {};
+      const rawPos = p.position || info.position || '—';
+      const pos = posLabel[rawPos] || rawPos;
+      const nationality = info.nationality || p.nationality || info.birth?.country || p.birth?.country || '—';
       let sep = '';
-      if(pos!==lastPos && posLabel[pos]) { lastPos=pos; sep=`<tr class="pos-sep"><td colspan="5">${posLabel[pos]}</td></tr>`; }
+      if(rawPos!==lastPos && posSection[rawPos]) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
         <td><div class="pcell">
-          <img src="${p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div><div class="pn">${esc(p.name)}</div>
+          <img src="${p.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div><div class="pn">${esc(p.name||info.name||'')}</div>
           <div class="ps">${p.number?'#'+p.number:''}</div></div>
         </div></td>
         <td><span class="pos-tag">${esc(pos)}</span></td>
-        <td>${p.age||'—'} år</td>
-        <td>${p.nationality ? flag(p.nationality)+' '+esc(p.nationality) : '—'}</td>
+        <td>${p.age||info.age||'—'} år</td>
+        <td>${nationality !== '—' ? flag(nationality)+' '+esc(nationality) : '—'}</td>
         <td style="color:var(--muted);font-size:12px">${p.injured?'🚑 Skadad':''}</td>
       </tr>`;}).join('');
 
@@ -1333,6 +1356,13 @@ async function pageTeam(el, teamId) {
         ${minuteCard('Mest insläppta målperioder', concededMin)}
       </div>
 
+      <div style="margin-bottom:1.2rem">
+        <div class="section-label">Senaste nyheter om ${esc(team.name)}</div>
+        <div id="team-news-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(team.name)}…</div>
+        </div>
+      </div>
+
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
         <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('${esc(team.name)}','tai',${teamId})">Övergångar</button>
@@ -1350,6 +1380,8 @@ async function pageTeam(el, teamId) {
       <div id="tai" style="display:none">
         <div class="tw"><div style="padding:1.25rem;color:var(--muted);font-size:13px">Klicka på fliken för att hämta data…</div></div>
       </div>`;
+
+    loadTeamNews(team.name, 'team-news-container');
   } catch(e) {
     el.innerHTML = `<button class="back" onclick="go('/')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
   }
