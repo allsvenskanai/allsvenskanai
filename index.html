@@ -1685,7 +1685,7 @@ async function pageStats(el, year=null) {
       }));
     }
 
-    if(!allPlayers.length) throw new Error(`Ingen spelardata för ${statsYear}`);
+    if(!allPlayers.length) throw new Error(statsYear===2026 ? 'Matcher har spelats för 2026 men spelarstatistiken är inte uppdaterad i API:t ännu.' : `Ingen spelardata för ${statsYear}`);
     statsCache = allPlayers;
     renderStats(el, 'goals');
   } catch(e) { el.innerHTML=`<div class="err">⚠️ ${esc(e.message)}</div>`; }
