@@ -7,8 +7,8 @@ export default async function handler(req, res) {
   const FEEDS_BY_TEAM = {
   start: [
     {
-      name: 'Fotbollskanalen',
-      url: 'https://www.fotbollskanalen.se/rss/allsvenskan/'
+      name: 'Google',
+      url: 'https://news.google.com/rss/search?q=allsvenskan&hl=sv&gl=SE&ceid=SE%3Asv'
     }
   ],
 
