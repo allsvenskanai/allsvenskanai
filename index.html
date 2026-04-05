@@ -978,50 +978,60 @@ async function pageStart(el) {
 }
 
 const TEAM_NEWS_KEYS = {
-  'malmo ff': 'malmo',
-  'malmö ff': 'malmo',
-  'aik': 'aik',
-  'aik solna': 'aik',
-  'hammarby': 'hammarby',
-  'hammarby if': 'hammarby',
-  'ik sirius fk': 'sirius',
-  'sirius': 'sirius',
-  'ik sirius': 'sirius',
-  'djurgardens if': 'djurgarden',
-  'djurgårdens if': 'djurgarden',
-  'djurgarden': 'djurgarden',
-  'if elfsborg': 'elfsborg',
-  'elfsborg': 'elfsborg',
-  'bk hacken': 'hacken',
-  'bk häcken': 'hacken',
-  'hacken': 'hacken',
-  'häcken': 'hacken',
-  'ifk goteborg': 'goteborg',
-  'ifk göteborg': 'goteborg',
-  'goteborg': 'goteborg',
-  'göteborg': 'goteborg',
-  'mjallby aif': 'mjallby',
-  'mjällby aif': 'mjallby',
-  'mjallby': 'mjallby',
-  'mjällby': 'mjallby',
-  'ifk norrkoping': 'norrkoping',
-  'ifk norrköping': 'norrkoping',
-  'norrkoping': 'norrkoping',
-  'norrköping': 'norrkoping',
-  'degerfors if': 'degerfors',
-  'degerfors': 'degerfors',
-  'gais': 'gais',
-  'brommapojkarna': 'brommapojkarna',
-  'osters if': 'osters',
-  'östers if': 'osters',
-  'osters': 'osters',
-  'östers': 'osters',
-  'halmstads bk': 'halmstad',
-  'halmstad': 'halmstad',
-  'varnamo': 'varnamo',
-  'värnamo': 'varnamo',
-  'ostersunds fk': 'ostersund',
-  'östersunds fk': 'ostersund'
+  'Malmö FF': 'malmo',
+  'Malmo FF': 'malmo',
+
+  'AIK': 'aik',
+  'AIK Stockholm': 'aik',
+
+  'Hammarby': 'hammarby',
+  'Hammarby IF': 'hammarby',
+  'Hammarby FF': 'hammarby',
+
+  'IK Sirius FK': 'sirius',
+  'Sirius': 'sirius',
+
+  'Djurgårdens IF': 'djurgarden',
+  'Djurgardens IF': 'djurgarden',
+
+  'IF Elfsborg': 'elfsborg',
+
+  'BK Häcken': 'hacken',
+  'BK Hacken': 'hacken',
+
+  'IFK Göteborg': 'goteborg',
+  'IFK Goteborg': 'goteborg',
+
+  'Mjällby AIF': 'mjallby',
+  'Mjallby AIF': 'mjallby',
+
+  'IFK Norrköping': 'norrkoping',
+  'IFK Norrkoping': 'norrkoping',
+
+  'Degerfors IF': 'degerfors',
+
+  'GAIS': 'gais',
+  'Gais': 'gais',
+
+  'Brommapojkarna': 'brommapojkarna',
+  'IF Brommapojkarna': 'brommapojkarna',
+
+  'Östers IF': 'osters',
+  'Osters IF': 'osters',
+
+  'Halmstads BK': 'halmstad',
+  'Halmstad': 'halmstad',
+
+  'Värnamo': 'varnamo',
+  'Varnamo': 'varnamo',
+
+  'Västerås SK FK': 'vasteras',
+  'Vasteras SK FK': 'vasteras',
+
+  'Örgryte IS': 'orgryte',
+  'Orgryte IS': 'orgryte',
+
+  'Kalmar FF': 'kalmar'
 };
 
 function normalizeTeamName(name=''){
