@@ -560,6 +560,14 @@ main > *{animation:fadeUp .3s ease both}
 .news-summary{font-size:12px;color:var(--muted);line-height:1.5}
 .news-date{font-size:11px;color:var(--muted);margin-top:2px}
 .news-loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:.5rem 0}
+.feed-note{font-size:12px;line-height:1.6;color:var(--muted);margin:.35rem 0 .9rem}
+.podcast-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1.5rem}
+.podcast-card{background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;transition:border-color .2s;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.podcast-card:hover{border-color:var(--border-hi)}
+.podcast-source{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
+.podcast-title{font-size:14px;font-weight:600;line-height:1.45;color:var(--text)}
+.podcast-summary{font-size:12px;color:var(--muted);line-height:1.5}
+.podcast-date{font-size:11px;color:var(--muted);margin-top:2px}
 
 /* MINA LAG */
 .fav-btn{
@@ -965,12 +973,22 @@ async function pageStart(el) {
       </div>
 
       <div style="margin-bottom:2rem">
+        <div class="start-section-label">Senaste poddar</div>
+        <div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ditt lag.</div>
+        <div id="podcasts-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar…</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:2rem">
         <div class="start-section-label">Senaste nyheter</div>
+        <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning som borde synas här? Kontakta info@allsvenskanai.se.</div>
         <div id="news-container">
           <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter…</div>
         </div>
       </div>`;
-    // Load news async after page renders
+    // Load feeds async after page renders
+    loadStartPodcasts();
     loadStartNews();
   } catch(e) {
     el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
@@ -978,66 +996,44 @@ async function pageStart(el) {
 }
 
 const TEAM_NEWS_KEYS = {
-  'ik sirius fk': 'sirius',
-  'sirius': 'sirius',
+  'IK Sirius FK': 'sirius',
+  'Hammarby IF': 'hammarby',
+  'AIK': 'aik',
+  'Västerås SK FK': 'vasteras',
 
-  'hammarby if': 'hammarby',
-  'hammarby': 'hammarby',
-  'hammarby ff': 'hammarby',
+  'Örgryte IS': 'orgryte',
+  'Malmö FF': 'malmo',
+  'BK Häcken': 'hacken',
+  'IF Brommapojkarna': 'brommapojkarna',
 
-  'aik': 'aik',
-  'aik stockholm': 'aik',
+  'IFK Göteborg': 'goteborg',
+  'Djurgårdens IF': 'djurgarden',
+  'IF Elfsborg': 'elfsborg',
+  'GAIS': 'gais',
 
-  'vasteras sk fk': 'vasteras',
-  'vasteras sk': 'vasteras',
-
-  'orgryte is': 'orgryte',
-  'orgryte': 'orgryte',
-
-  'malmo ff': 'malmo',
-  'malmo': 'malmo',
-
-  'bk hacken': 'hacken',
-  'hacken': 'hacken',
-
-  'if brommapojkarna': 'brommapojkarna',
-  'brommapojkarna': 'brommapojkarna',
-
-  'ifk goteborg': 'goteborg',
-  'goteborg': 'goteborg',
-
-  'djurgardens if': 'djurgarden',
-  'djurgarden': 'djurgarden',
-
-  'if elfsborg': 'elfsborg',
-  'elfsborg': 'elfsborg',
-
-  'gais': 'gais',
-
-  'halmstads bk': 'halmstad',
-  'halmstad': 'halmstad',
-
-  'kalmar ff': 'kalmar',
-  'kalmar': 'kalmar',
-
-  'degerfors if': 'degerfors',
-  'degerfors': 'degerfors',
-
-  'mjallby aif': 'mjallby',
-  'mjallby': 'mjallby'
+  'Halmstads BK': 'halmstad',
+  'Kalmar FF': 'kalmar',
+  'Degerfors IF': 'degerfors',
+  'Mjällby AIF': 'mjallby'
 };
 
 function normalizeTeamName(name=''){
   return String(name || '')
     .toLowerCase()
-    .replace(/[åä]/g, 'a')
+    .replace(/å/g, 'a')
+    .replace(/ä/g, 'a')
     .replace(/ö/g, 'o')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
+const TEAM_PODCAST_KEYS = { ...TEAM_NEWS_KEYS };
+const PODCAST_EMPTY_MESSAGE = 'Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ditt lag.';
+
 let newsCache = {};
 let newsCacheTime = {};
+let podcastCache = {};
+let podcastCacheTime = {};
 
 function newsKey(teamKey){
   return (teamKey || 'start').toLowerCase().trim();
@@ -1159,6 +1155,136 @@ function renderNews(el, news, opts = {}){
 }
 
 function renderNewsEmpty(el, message = 'Inga nyheter hittades.'){
+  if (!el) return;
+  el.innerHTML = `
+    <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
+      ${message}
+    </div>
+  `;
+}
+
+
+function podcastKey(teamKey){
+  return (teamKey || 'start').toLowerCase().trim();
+}
+
+async function fetchPodcastsByTeamKey(teamKey = 'start'){
+  const key = podcastKey(teamKey);
+  const cached = podcastCache[key];
+  const cachedAt = podcastCacheTime[key] || 0;
+
+  if (cached && Date.now() - cachedAt < 30 * 60 * 1000) {
+    return cached;
+  }
+
+  const resp = await fetchWithTimeout(`/api/podcasts?team=${encodeURIComponent(teamKey)}`, 5000);
+  if (!resp.ok) throw new Error('Kunde inte hämta poddar');
+
+  const data = await resp.json();
+  const podcasts = Array.isArray(data.podcasts)
+    ? data.podcasts.filter(p => p && (p.title || p.name))
+    : [];
+
+  podcastCache[key] = podcasts;
+  podcastCacheTime[key] = Date.now();
+
+  return podcasts;
+}
+
+async function loadStartPodcasts(force = false){
+  const el = document.getElementById('podcasts-container');
+  if (!el) return;
+
+  const key = podcastKey('start');
+  if (force) {
+    delete podcastCache[key];
+    delete podcastCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste poddar…</div>`;
+
+  try {
+    const podcasts = await fetchPodcastsByTeamKey('start');
+    renderPodcasts(el, podcasts, {
+      teamKey: 'start',
+      teamName: '',
+      title: 'Senaste poddar'
+    });
+  } catch {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+  }
+}
+
+async function loadTeamPodcasts(teamName, id = 'team-podcasts-container', force = false){
+  const el = document.getElementById(id);
+  if (!el || !teamName) return;
+
+  const normalizedTeamName = normalizeTeamName(teamName);
+  const teamKey = TEAM_PODCAST_KEYS[normalizedTeamName];
+
+  if (!teamKey) {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+    return;
+  }
+
+  const key = podcastKey(teamKey);
+  if (force) {
+    delete podcastCache[key];
+    delete podcastCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(teamName)}…</div>`;
+
+  try {
+    const podcasts = await fetchPodcastsByTeamKey(teamKey);
+    renderPodcasts(el, podcasts, {
+      teamKey,
+      teamName,
+      title: `Senaste poddar om ${teamName}`
+    });
+  } catch {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+  }
+}
+
+function renderPodcasts(el, podcasts, opts = {}){
+  if (!el) return;
+
+  if (!podcasts || !podcasts.length) {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+    return;
+  }
+
+  const cards = podcasts.slice(0, 8).map(p => {
+    const title = p.title || p.name || 'Utan titel';
+    const link = p.url || p.link || '';
+    const summary = p.summary || p.description || '';
+    const source = p.source || p.podcast || 'Podd';
+    const date = p.date || p.published || '';
+    const actionText = p.actionText || 'Lyssna →';
+
+    return `
+      <article class="podcast-card" ${link ? `onclick="window.open('${link}','_blank')"` : ''}>
+        <div class="podcast-source">${esc(source)}</div>
+        <div class="podcast-title">${esc(title)}</div>
+        <div class="podcast-summary">${esc(summary)}</div>
+        ${date ? `<div class="podcast-date">${esc(date)}</div>` : ''}
+        <div class="news-linkline">${esc(actionText)}</div>
+      </article>
+    `;
+  }).join('');
+
+  const refreshFn = opts.teamKey && opts.teamKey !== 'start'
+    ? `loadTeamPodcasts(${JSON.stringify(opts.teamName)},'team-podcasts-container',true)`
+    : `loadStartPodcasts(true)`;
+
+  el.innerHTML = `
+    <div class="podcast-grid">${cards}</div>
+    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.85rem">🔄 Uppdatera poddar</button>
+  `;
+}
+
+function renderPodcastsEmpty(el, message = PODCAST_EMPTY_MESSAGE){
   if (!el) return;
   el.innerHTML = `
     <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
@@ -1350,7 +1476,16 @@ async function pageTeam(el, teamId) {
       </div>
 
       <div style="margin-bottom:1.2rem">
+        <div class="section-label">Senaste poddar om ${esc(team.name)}</div>
+        <div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ${esc(team.name)}.</div>
+        <div id="team-podcasts-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(team.name)}…</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.2rem">
         <div class="section-label">Senaste nyheter om ${esc(team.name)}</div>
+        <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning av ${esc(team.name)}? Kontakta info@allsvenskanai.se.</div>
         <div id="team-news-container">
           <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(team.name)}…</div>
         </div>
@@ -1374,6 +1509,7 @@ async function pageTeam(el, teamId) {
         <div class="tw"><div style="padding:1.25rem;color:var(--muted);font-size:13px">Klicka på fliken för att hämta data…</div></div>
       </div>`;
 
+    loadTeamPodcasts(team.name, 'team-podcasts-container');
     loadTeamNews(team.name, 'team-news-container');
   } catch(e) {
     el.innerHTML = `<button class="back" onclick="go('/')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
