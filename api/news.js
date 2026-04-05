@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     ],
 
     aik: [
-      { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
+      { name: 'AIK', url: 'https://www.aikfotboll.se/artiklar-och-nyheter?newsSegment=mens&page=1' }
     ],
 
     // 🔥 lägg till fler lag här
