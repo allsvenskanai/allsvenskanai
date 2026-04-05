@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   // Startsidan
   const START_FEEDS = [
-    { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
+    { name: 'Allsvenskan', url: 'https://allsvenskan.se/nyheter' }
   ];
 
   // 🔥 LAG-SPECIFIKA RSS
