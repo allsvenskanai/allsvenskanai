@@ -1062,237 +1062,164 @@ async function pageStart(el) {
 }
 
 
-
 let newsCache = {};
 let newsCacheTime = {};
 
-function newsKey(query) {
+function newsKey(query){
   return (query || 'allsvenskan').toLowerCase().trim();
 }
 
-function teamNewsQuery(teamName) {
+// 🔥 Rensa lagnamn
+function teamNewsQuery(teamName){
   return String(teamName || '')
-    .replace(/\bIK\b/gi, '')
-    .replace(/\bIF\b/gi, '')
-    .replace(/\bFK\b/gi, '')
-    .replace(/\bFF\b/gi, '')
-    .replace(/\bAIF\b/gi, '')
-    .replace(/\s+/g, ' ')
+    .replace(/\bIK\b/gi,'')
+    .replace(/\bIF\b/gi,'')
+    .replace(/\bFK\b/gi,'')
+    .replace(/\bFF\b/gi,'')
+    .replace(/\bAIF\b/gi,'')
+    .replace(/\s+/g,' ')
     .trim() || 'allsvenskan';
 }
 
-function teamTerms(teamName) {
-  const raw = String(teamName || '').trim();
-  const cleaned = teamNewsQuery(raw);
+// 🔥 SMARTARE FILTER
+function filterTeamNews(news, teamName){
+  const clean = teamNewsQuery(teamName).toLowerCase();
 
-  return [...new Set(
-    [raw, cleaned, ...cleaned.split(' ')]
-      .map(x => String(x || '').trim())
-      .filter(x => x && x.length > 2)
-      .map(x => x.toLowerCase())
-  )];
-}
-
-function filterTeamNews(news, teamName) {
-  const terms = teamTerms(teamName);
-  if(!terms.length) return news || [];
-
-  return (news || []).filter(n => {
+  return (news || []).filter(n=>{
     const hay = `${n.title || ''} ${n.summary || ''}`.toLowerCase();
-    return terms.some(term => hay.includes(term));
+
+    // matchar både "Malmö" och "Malmö FF"
+    return hay.includes(clean) || hay.includes(clean.split(' ')[0]);
   });
 }
 
-async function fetchWithTimeout(url, ms = 4500) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { signal: controller.signal });
+// 🔥 timeout (fixar loading-problem)
+async function fetchWithTimeout(url, ms=4500){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), ms);
+  try{
+    return await fetch(url, {signal:ctrl.signal});
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(t);
   }
 }
 
-async function fetchRSSNews(query='Allsvenskan') {
+async function fetchRSSNews(query='Allsvenskan'){
   const key = newsKey(query);
   const cached = newsCache[key];
   const cachedAt = newsCacheTime[key] || 0;
-  if(cached && Date.now() - cachedAt < 30 * 60 * 1000) return cached;
 
-  const resp = await fetchWithTimeout(`/api/news?q=${encodeURIComponent(query)}`, 4500);
-  if(!resp.ok) throw new Error('Kunde inte hämta nyheter');
+  if(cached && Date.now() - cachedAt < 30*60*1000) return cached;
+
+  const resp = await fetchWithTimeout(`/api/news?q=${encodeURIComponent(query)}`);
+
+  if(!resp.ok) throw new Error('News fetch fail');
 
   const data = await resp.json();
-  const news = Array.isArray(data.news) ? data.news.filter(n => n && n.title) : [];
-  if(!news.length) throw new Error('Inga nyheter');
+  const news = Array.isArray(data.news) ? data.news : [];
+
+  if(!news.length) throw new Error('No news');
 
   newsCache[key] = news;
   newsCacheTime[key] = Date.now();
+
   return news;
 }
 
-async function loadStartNews(force=false) {
+// 🔥 STARTSIDA
+async function loadStartNews(force=false){
   const el = document.getElementById('news-container');
   if(!el) return;
 
-  const key = newsKey('Allsvenskan');
-  if(force) {
-    delete newsCache[key];
-    delete newsCacheTime[key];
+  if(force){
+    delete newsCache['allsvenskan'];
+    delete newsCacheTime['allsvenskan'];
   }
 
-  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste nyheter…</div>`;
+  el.innerHTML = `Hämtar nyheter…`;
 
-  try {
-    const news = await fetchRSSNews('Allsvenskan');
-    renderNews(el, news, {query:'Allsvenskan', title:'Senaste nyheter'});
-  } catch(e) {
-    renderNewsFallback(el, 'Allsvenskan');
-  }
-}
-
-async function loadTeamNews(teamName, containerId='team-news-container', force=false) {
-  const el = document.getElementById(containerId);
-  if(!el || !teamName) return;
-
-  const q = teamNewsQuery(teamName);
-  const key = newsKey(q);
-  if(force) {
-    delete newsCache[key];
-    delete newsCacheTime[key];
-  }
-
-  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamName)}…</div>`;
-
-  try {
-    const rawNews = await fetchRSSNews(q);
-    const teamNews = filterTeamNews(rawNews, teamName);
-
-    if(!teamNews.length) {
-      throw new Error('Inga lagträffar');
-    }
-
-    renderNews(el, teamNews.slice(0, 6), {
-      query:q,
-      teamName,
-      title:`Senaste nyheter om ${teamName}`
-    });
-  } catch(e) {
-    renderNewsFallback(el, q, teamName);
+  try{
+    const news = await fetchRSSNews('allsvenskan');
+    renderNews(el, news, {title:'Senaste nyheter'});
+  } catch {
+    renderNewsFallback(el);
   }
 }
 
-function renderNews(el, news, opts={}) {
+// 🔥 LAGSIDA (VIKTIG FIX)
+async function loadTeamNews(teamName, id='team-news-container', force=false){
+  const el = document.getElementById(id);
   if(!el) return;
 
-  if(!news.length) {
-    renderNewsFallback(el, opts.query || 'Allsvenskan', opts.teamName || '');
+  const q = teamNewsQuery(teamName);
+
+  el.innerHTML = `Hämtar nyheter om ${teamName}…`;
+
+  try{
+    const news = await fetchRSSNews(q);
+
+    const filtered = filterTeamNews(news, teamName);
+
+    // 🔥 CRITICAL FIX
+    const finalNews = filtered.length ? filtered : news;
+
+    renderNews(el, finalNews, {
+      title:`Senaste nyheter om ${teamName}`
+    });
+
+  } catch {
+    renderNewsFallback(el, teamName);
+  }
+}
+
+// 🔥 RENDER
+function renderNews(el, news, opts={}){
+  if(!news.length){
+    renderNewsFallback(el, opts.title);
     return;
   }
 
-  const cards = news.map(n => {
-    const src = esc(n.source || 'Nyheter');
-    const title = esc(n.title || 'Utan rubrik');
-    const summary = esc(n.summary || 'Öppna artikeln för att läsa mer.');
-    const date = esc(n.date || '');
-    const url = n.url || '';
-    const onclick = url ? `onclick="window.open('${url}','_blank')"` : '';
-
-    return `
-      <article class="news-card" ${onclick}>
-        <div class="news-topline">
-          <div class="news-source">${src}</div>
-          ${date ? `<div class="news-date-chip">${date}</div>` : ''}
-        </div>
-        <div class="news-title">${title}</div>
-        <div class="news-summary">${summary}</div>
-        <div class="news-linkline">Läs artikel →</div>
-      </article>`;
-  }).join('');
-
-  const refreshFn = opts.teamName
-    ? `loadTeamNews(${JSON.stringify(opts.teamName)},'team-news-container',true)`
-    : `loadStartNews(true)`;
-
-  el.innerHTML = `
-    <div class="news-grid">${cards}</div>
-    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.85rem">🔄 Uppdatera nyheter</button>`;
-}
-
-function renderNewsFallback(el, query='Allsvenskan', teamName='') {
-  if(!el) return;
-
-  const safeName = esc(teamName || 'Allsvenskan');
-  const q = encodeURIComponent(query || 'Allsvenskan');
-  const refreshFn = teamName
-    ? `loadTeamNews(${JSON.stringify(teamName)},'team-news-container',true)`
-    : `loadStartNews(true)`;
-
-  const cards = teamName ? `
-      <article class="news-card" onclick="window.open('https://news.google.com/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
-        <div class="news-topline">
-          <div class="news-source">Google Nyheter</div>
-          <div class="news-date-chip">Sökning</div>
-        </div>
-        <div class="news-title">Öppna nyheter för ${safeName}</div>
-        <div class="news-summary">Visa artiklar och rubriker som handlar om det valda laget.</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
-      <article class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${q}','_blank')">
-        <div class="news-topline">
-          <div class="news-source">Fotbollskanalen</div>
-          <div class="news-date-chip">Sökning</div>
-        </div>
-        <div class="news-title">Sök efter ${safeName} hos Fotbollskanalen</div>
-        <div class="news-summary">Visa bara träffar kopplade till det valda laget.</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
-      <article class="news-card" onclick="window.open('https://www.svt.se/sport?sok=${q}','_blank')">
-        <div class="news-topline">
-          <div class="news-source">SVT Sport</div>
-          <div class="news-date-chip">Sökning</div>
-        </div>
-        <div class="news-title">Sök efter ${safeName} hos SVT Sport</div>
-        <div class="news-summary">Öppna fler nyheter om det valda laget.</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
-    ` : `
-      <article class="news-card" onclick="window.open('https://www.allsvenskan.se','_blank')">
-        <div class="news-topline">
-          <div class="news-source">Allsvenskan.se</div>
-          <div class="news-date-chip">Ligan</div>
-        </div>
-        <div class="news-title">Officiella nyheter från ligan</div>
-        <div class="news-summary">Matchrapporter, truppnyheter och officiella uppdateringar.</div>
-        <div class="news-linkline">Öppna källa →</div>
-      </article>
-      <article class="news-card" onclick="window.open('https://www.fotbollskanalen.se/allsvenskan/','_blank')">
-        <div class="news-topline">
-          <div class="news-source">Fotbollskanalen</div>
-          <div class="news-date-chip">Allsvenskan</div>
-        </div>
-        <div class="news-title">Senaste nytt från klubbarna</div>
-        <div class="news-summary">Nyheter, övergångar och analyser om svensk fotboll.</div>
-        <div class="news-linkline">Öppna källa →</div>
-      </article>
-      <article class="news-card" onclick="window.open('https://www.svt.se/sport/fotboll','_blank')">
-        <div class="news-topline">
-          <div class="news-source">SVT Sport</div>
-          <div class="news-date-chip">Fotboll</div>
-        </div>
-        <div class="news-title">Fler rubriker om svensk fotboll</div>
-        <div class="news-summary">Senaste sportnyheterna med fokus på svensk fotboll och större matcher.</div>
-        <div class="news-linkline">Öppna källa →</div>
-      </article>
-    `;
-
-  el.innerHTML = `
-    <div class="news-grid">${cards}</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:.5rem">
-      Automatiska nyheter tog för lång tid eller gav inga träffar just nu.
+  const cards = news.map(n=>`
+    <div class="news-card" onclick="window.open('${n.url}','_blank')">
+      <div class="news-source">${n.source || ''}</div>
+      <div class="news-title">${n.title || ''}</div>
+      <div class="news-summary">${n.summary || ''}</div>
+      ${n.date ? `<div class="news-date">${n.date}</div>` : ''}
+      <div class="news-cta">Läs artikel →</div>
     </div>
-    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
+  `).join('');
+
+  el.innerHTML = `
+    <div class="section-label">${opts.title || 'Nyheter'}</div>
+    <div class="news-grid">${cards}</div>
+  `;
 }
+
+// 🔥 FALLBACK
+function renderNewsFallback(el, teamName=''){
+  el.innerHTML = `
+    <div class="section-label">Senaste nyheter</div>
+
+    <div class="news-grid">
+      <div class="news-card" onclick="window.open('https://news.google.com/search?q=${teamName}','_blank')">
+        <div class="news-title">Öppna nyheter</div>
+      </div>
+
+      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${teamName}','_blank')">
+        <div class="news-title">Fotbollskanalen</div>
+      </div>
+
+      <div class="news-card" onclick="window.open('https://www.svt.se/sport?sok=${teamName}','_blank')">
+        <div class="news-title">SVT Sport</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;margin-top:10px;">
+      Kunde inte hämta nyheter just nu
+    </div>
+  `;
+}
+
 
 
 // ─── TEAMS ───────────────────────────────────────────
