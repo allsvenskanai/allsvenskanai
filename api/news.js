@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   // Lagsidor
   const TEAM_FEEDS = {
     malmö: [
-      { name: 'Google News', url: 'https://news.google.com/search?q=Malm%C3%B6%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
+      { name: 'Google News', url: 'https://news.google.com/rss/search?q=Malm%C3%B6%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
     ],
 
     aik: [
