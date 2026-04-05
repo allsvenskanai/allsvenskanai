@@ -978,23 +978,56 @@ async function pageStart(el) {
 }
 
 const TEAM_NEWS_KEYS = {
-  'Malmö FF': 'malmo',
-  'AIK': 'aik',
-  'Hammarby': 'hammarby',
-  'IK Sirius FK': 'sirius',
-  'Djurgårdens IF': 'djurgarden',
-  'IF Elfsborg': 'elfsborg',
-  'BK Häcken': 'hacken',
-  'IFK Göteborg': 'goteborg',
-  'Mjällby AIF': 'mjallby',
-  'IFK Norrköping': 'norrkoping',
-  'Degerfors IF': 'degerfors',
-  'GAIS': 'gais',
-  'Brommapojkarna': 'brommapojkarna',
-  'Östers IF': 'osters',
-  'Halmstads BK': 'halmstad',
-  'Värnamo': 'varnamo'
+  'malmo ff': 'malmo',
+  'malmö ff': 'malmo',
+  'aik': 'aik',
+  'hammarby': 'hammarby',
+  'hammarby if': 'hammarby',
+  'ik sirius fk': 'sirius',
+  'sirius': 'sirius',
+  'djurgardens if': 'djurgarden',
+  'djurgårdens if': 'djurgarden',
+  'djurgarden': 'djurgarden',
+  'if elfsborg': 'elfsborg',
+  'elfsborg': 'elfsborg',
+  'bk hacken': 'hacken',
+  'bk häcken': 'hacken',
+  'hacken': 'hacken',
+  'häcken': 'hacken',
+  'ifk goteborg': 'goteborg',
+  'ifk göteborg': 'goteborg',
+  'goteborg': 'goteborg',
+  'göteborg': 'goteborg',
+  'mjallby aif': 'mjallby',
+  'mjällby aif': 'mjallby',
+  'mjallby': 'mjallby',
+  'mjällby': 'mjallby',
+  'ifk norrkoping': 'norrkoping',
+  'ifk norrköping': 'norrkoping',
+  'norrkoping': 'norrkoping',
+  'norrköping': 'norrkoping',
+  'degerfors if': 'degerfors',
+  'degerfors': 'degerfors',
+  'gais': 'gais',
+  'brommapojkarna': 'brommapojkarna',
+  'osters if': 'osters',
+  'östers if': 'osters',
+  'osters': 'osters',
+  'östers': 'osters',
+  'halmstads bk': 'halmstad',
+  'halmstad': 'halmstad',
+  'varnamo': 'varnamo',
+  'värnamo': 'varnamo',
+  'ostersunds fk': 'ostersund',
+  'östersunds fk': 'ostersund'
 };
+
+function normalizeTeamName(name=''){
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 let newsCache = {};
 let newsCacheTime = {};
@@ -1062,10 +1095,11 @@ async function loadTeamNews(teamName, id = 'team-news-container', force = false)
   const el = document.getElementById(id);
   if (!el || !teamName) return;
 
-  const teamKey = TEAM_NEWS_KEYS[teamName];
+  const normalizedTeamName = normalizeTeamName(teamName);
+  const teamKey = TEAM_NEWS_KEYS[normalizedTeamName];
 
   if (!teamKey) {
-    renderNewsEmpty(el, `Inga nyhetsflöden är kopplade till ${teamName}.`);
+    renderNewsEmpty(el, `Inga nyhetsflöden är kopplade till ${esc(teamName)}.`);
     return;
   }
 
@@ -1906,7 +1940,8 @@ async function pageResults(el) {
           <span class="match-meta-pill">${esc(formatMatchDateTime(f.fixture?.date || ''))}</span>
           <span class="match-meta-pill">${esc(comp)}</span>
           <span class="match-meta-pill">${esc(venue)}</span>
-        </div>`;
+        </div>
+      </div>`;
     }).join('');
     el.innerHTML = `
       <div class="pg-header"><div class="pg-title">Resultat</div><span class="pg-sub">Klicka på en match för statistik, händelser och laguppställningar</span></div>
