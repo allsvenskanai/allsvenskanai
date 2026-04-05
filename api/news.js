@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   // 🔥 LAG-SPECIFIKA RSS
   const TEAM_FEEDS = {
     malmö: [
-      { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
+      { name: 'Google', url: 'https://news.google.com/search?q=Malm%C3%B6%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
     ],
 
     aik: [
