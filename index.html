@@ -978,30 +978,60 @@ async function pageStart(el) {
 }
 
 const TEAM_NEWS_KEYS = {
-  'IK Sirius FK': 'sirius',
-  'Hammarby IF': 'hammarby',
-  'AIK': 'aik',
-  'Västerås SK FK': 'vasteras',
+  'ik sirius fk': 'sirius',
+  'sirius': 'sirius',
 
-  'Örgryte IS': 'orgryte',
-  'Malmö FF': 'malmo',
-  'BK Häcken': 'hacken',
-  'IF Brommapojkarna': 'brommapojkarna',
+  'hammarby if': 'hammarby',
+  'hammarby': 'hammarby',
+  'hammarby ff': 'hammarby',
 
-  'IFK Göteborg': 'goteborg',
-  'Djurgårdens IF': 'djurgarden',
-  'IF Elfsborg': 'elfsborg',
-  'GAIS': 'gais',
+  'aik': 'aik',
+  'aik stockholm': 'aik',
 
-  'Halmstads BK': 'halmstad',
-  'Kalmar FF': 'kalmar',
-  'Degerfors IF': 'degerfors',
-  'Mjällby AIF': 'mjallby'
+  'vasteras sk fk': 'vasteras',
+  'vasteras sk': 'vasteras',
+
+  'orgryte is': 'orgryte',
+  'orgryte': 'orgryte',
+
+  'malmo ff': 'malmo',
+  'malmo': 'malmo',
+
+  'bk hacken': 'hacken',
+  'hacken': 'hacken',
+
+  'if brommapojkarna': 'brommapojkarna',
+  'brommapojkarna': 'brommapojkarna',
+
+  'ifk goteborg': 'goteborg',
+  'goteborg': 'goteborg',
+
+  'djurgardens if': 'djurgarden',
+  'djurgarden': 'djurgarden',
+
+  'if elfsborg': 'elfsborg',
+  'elfsborg': 'elfsborg',
+
+  'gais': 'gais',
+
+  'halmstads bk': 'halmstad',
+  'halmstad': 'halmstad',
+
+  'kalmar ff': 'kalmar',
+  'kalmar': 'kalmar',
+
+  'degerfors if': 'degerfors',
+  'degerfors': 'degerfors',
+
+  'mjallby aif': 'mjallby',
+  'mjallby': 'mjallby'
 };
 
 function normalizeTeamName(name=''){
   return String(name || '')
     .toLowerCase()
+    .replace(/[åä]/g, 'a')
+    .replace(/ö/g, 'o')
     .replace(/\s+/g, ' ')
     .trim();
 }
