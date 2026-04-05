@@ -2671,3 +2671,130 @@ if(isIOS && !isStandalone) {
 </script>
 </body>
 </html>
+
+/* =========================
+   MOBILE FIX ALLSVENSKANAI
+   ========================= */
+
+@media (max-width: 900px){
+
+  main{
+    padding:1.5rem 1rem 5rem;
+  }
+
+  header{
+    padding:0 1rem;
+  }
+
+  .logo{
+    font-size:16px;
+    letter-spacing:2px;
+  }
+
+  .nav-pills{
+    display:none;
+  }
+
+  .mobile-nav{
+    display:flex;
+  }
+
+  .pg-title{
+    font-size:28px;
+  }
+
+  .pg-header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
+
+  /* TEAM GRID */
+  .tgrid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .start-tgrid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .tcard,
+  .start-tcard{
+    padding:1rem .5rem;
+  }
+
+  .tcard img,
+  .start-tcard img{
+    width:50px;
+    height:50px;
+  }
+
+  .tn,
+  .start-tn{
+    font-size:12px;
+  }
+
+  /* MATCHES */
+  .match-card{
+    grid-template-columns:1fr;
+    padding:1rem;
+  }
+
+  .match-score .score{
+    font-size:28px;
+  }
+
+  /* PROFILE */
+  .profile-inner{
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:1.5rem 1rem;
+  }
+
+  .p-body h1{
+    font-size:24px;
+  }
+
+  .p-meta{
+    justify-content:center;
+  }
+
+  .pills{
+    justify-content:center;
+  }
+
+  /* TABLE FIX */
+  .tw{
+    overflow-x:auto;
+  }
+
+  table{
+    min-width:600px;
+  }
+
+  /* NEWS */
+  .news-grid{
+    grid-template-columns:1fr;
+  }
+
+  .news-card{
+    padding:1rem;
+  }
+
+  .news-title{
+    font-size:16px;
+  }
+
+  /* PODCAST */
+  .podcast-grid{
+    grid-template-columns:1fr;
+  }
+
+  /* BUTTONS */
+  .ai-btn{
+    width:100%;
+    text-align:center;
+  }
+
+}
