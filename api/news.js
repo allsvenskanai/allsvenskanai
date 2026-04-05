@@ -101,18 +101,6 @@ export default async function handler(req, res) {
     });
   }
 
-  function filterArticlesForTeam(list, teamQuery) {
-    const clean = cleanTeam(teamQuery).toLowerCase();
-    const firstWord = clean.split(' ')[0];
-
-    if (!clean) return list;
-
-    return list.filter(article => {
-      const hay = `${article.title} ${article.summary}`.toLowerCase();
-      return hay.includes(clean) || (firstWord && hay.includes(firstWord));
-    });
-  }
-
   // =========================
   // VÄLJ FEEDS
   // =========================
@@ -154,11 +142,6 @@ export default async function handler(req, res) {
 
     let news = unique(fetched.flat());
 
-  // Visa exakt det som finns i feeden, utan extra filtrering
-// if (q !== 'allsvenskan') {
-//   news = filterArticlesForTeam(news, q);
-// }
-    
     news.sort((a,b) => {
       if (a.date && b.date) return b.date.localeCompare(a.date);
       if (a.date) return -1;
