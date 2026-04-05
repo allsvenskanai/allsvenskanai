@@ -977,25 +977,33 @@ async function pageStart(el) {
   }
 }
 
+const TEAM_NEWS_KEYS = {
+  'Malmö FF': 'malmo',
+  'AIK': 'aik',
+  'Hammarby': 'hammarby',
+  'IK Sirius FK': 'sirius',
+  'Djurgårdens IF': 'djurgarden',
+  'IF Elfsborg': 'elfsborg',
+  'BK Häcken': 'hacken',
+  'IFK Göteborg': 'goteborg',
+  'Mjällby AIF': 'mjallby',
+  'IFK Norrköping': 'norrkoping',
+  'Degerfors IF': 'degerfors',
+  'GAIS': 'gais',
+  'Brommapojkarna': 'brommapojkarna',
+  'Östers IF': 'osters',
+  'Halmstads BK': 'halmstad',
+  'Värnamo': 'varnamo'
+};
+
 let newsCache = {};
 let newsCacheTime = {};
 
-function newsKey(query){
-  return (query || 'allsvenskan').toLowerCase().trim();
+function newsKey(teamKey){
+  return (teamKey || 'start').toLowerCase().trim();
 }
 
-function teamNewsQuery(teamName){
-  return String(teamName || '')
-    .replace(/\bIK\b/gi,'')
-    .replace(/\bIF\b/gi,'')
-    .replace(/\bFK\b/gi,'')
-    .replace(/\bFF\b/gi,'')
-    .replace(/\bAIF\b/gi,'')
-    .replace(/\s+/g,' ')
-    .trim() || 'allsvenskan';
-}
-
-async function fetchWithTimeout(url, ms=5000){
+async function fetchWithTimeout(url, ms = 5000){
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ms);
   try{
@@ -1005,75 +1013,91 @@ async function fetchWithTimeout(url, ms=5000){
   }
 }
 
-async function fetchRSSNews(query='allsvenskan'){
-  const key = newsKey(query);
+async function fetchNewsByTeamKey(teamKey = 'start'){
+  const key = newsKey(teamKey);
   const cached = newsCache[key];
   const cachedAt = newsCacheTime[key] || 0;
 
-  if(cached && Date.now() - cachedAt < 30 * 60 * 1000) return cached;
+  if (cached && Date.now() - cachedAt < 30 * 60 * 1000) {
+    return cached;
+  }
 
-  const resp = await fetchWithTimeout(`/api/news?q=${encodeURIComponent(query)}`, 5000);
-  if(!resp.ok) throw new Error('Kunde inte hämta nyheter');
+  const resp = await fetchWithTimeout(`/api/news?team=${encodeURIComponent(teamKey)}`, 5000);
+  if (!resp.ok) throw new Error('Kunde inte hämta nyheter');
 
   const data = await resp.json();
   const news = Array.isArray(data.news) ? data.news.filter(n => n && n.title) : [];
 
   newsCache[key] = news;
   newsCacheTime[key] = Date.now();
+
   return news;
 }
 
-async function loadStartNews(force=false){
+async function loadStartNews(force = false){
   const el = document.getElementById('news-container');
-  if(!el) return;
+  if (!el) return;
 
-  const key = newsKey('allsvenskan');
-  if(force){
+  const key = newsKey('start');
+  if (force) {
     delete newsCache[key];
     delete newsCacheTime[key];
   }
 
   el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste nyheter…</div>`;
 
-  try{
-    const news = await fetchRSSNews('allsvenskan');
-    renderNews(el, news, { teamName:'' });
+  try {
+    const news = await fetchNewsByTeamKey('start');
+    renderNews(el, news, {
+      teamKey: 'start',
+      teamName: '',
+      title: 'Senaste nyheter'
+    });
   } catch {
     renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
   }
 }
 
-async function loadTeamNews(teamName, id='team-news-container', force=false){
+async function loadTeamNews(teamName, id = 'team-news-container', force = false){
   const el = document.getElementById(id);
-  if(!el || !teamName) return;
+  if (!el || !teamName) return;
 
-  const q = teamNewsQuery(teamName);
-  const key = newsKey(q);
+  const teamKey = TEAM_NEWS_KEYS[teamName];
 
-  if(force){
+  if (!teamKey) {
+    renderNewsEmpty(el, `Inga nyhetsflöden är kopplade till ${teamName}.`);
+    return;
+  }
+
+  const key = newsKey(teamKey);
+  if (force) {
     delete newsCache[key];
     delete newsCacheTime[key];
   }
 
   el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamName)}…</div>`;
 
-  try{
-    const rawNews = await fetchRSSNews(q);
-    renderNews(el, rawNews, { teamName });
+  try {
+    const news = await fetchNewsByTeamKey(teamKey);
+    renderNews(el, news, {
+      teamKey,
+      teamName,
+      title: `Senaste nyheter om ${teamName}`
+    });
   } catch {
     renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
   }
 }
 
-function renderNews(el, news, opts={}){
-  if(!el) return;
+function renderNews(el, news, opts = {}){
+  if (!el) return;
 
-  if(!news || !news.length){
+  if (!news || !news.length) {
     renderNewsEmpty(el, 'Inga nyheter hittades.');
     return;
   }
 
-  const cards = news.slice(0, 6).map(n => `
+  const cards = news.slice(0, 8).map(n => `
     <article class="news-card" ${n.url ? `onclick="window.open('${n.url}','_blank')"` : ''}>
       <div class="news-source">${esc(n.source || 'Nyheter')}</div>
       <div class="news-title">${esc(n.title || 'Utan rubrik')}</div>
@@ -1083,7 +1107,7 @@ function renderNews(el, news, opts={}){
     </article>
   `).join('');
 
-  const refreshFn = opts.teamName
+  const refreshFn = opts.teamKey && opts.teamKey !== 'start'
     ? `loadTeamNews(${JSON.stringify(opts.teamName)},'team-news-container',true)`
     : `loadStartNews(true)`;
 
@@ -1093,8 +1117,8 @@ function renderNews(el, news, opts={}){
   `;
 }
 
-function renderNewsEmpty(el, message='Inga nyheter hittades.'){
-  if(!el) return;
+function renderNewsEmpty(el, message = 'Inga nyheter hittades.'){
+  if (!el) return;
   el.innerHTML = `
     <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
       ${message}
