@@ -1065,6 +1065,17 @@ function newsKey(query) {
   return (query || 'allsvenskan').toLowerCase().trim();
 }
 
+function teamNewsQuery(teamName) {
+  return String(teamName || '')
+    .replace(/\bIK\b/gi, '')
+    .replace(/\bIF\b/gi, '')
+    .replace(/\bFK\b/gi, '')
+    .replace(/\bFF\b/gi, '')
+    .replace(/\bAIF\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim() || 'allsvenskan';
+}
+
 async function fetchRSSNews(query='Allsvenskan') {
   const key = newsKey(query);
   const cached = newsCache[key];
@@ -1091,6 +1102,7 @@ async function loadStartNews(force=false) {
     delete newsCacheTime[key];
   }
 
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter…</div>`;
   try {
     const news = await fetchRSSNews('Allsvenskan');
     renderNews(el, news, {query:'Allsvenskan', title:'Senaste nyheter'});
@@ -1103,7 +1115,7 @@ async function loadTeamNews(teamName, containerId='team-news-container', force=f
   const el = document.getElementById(containerId);
   if(!el || !teamName) return;
 
-  const q = `${teamName} Allsvenskan`;
+  const q = teamNewsQuery(teamName);
   const key = newsKey(q);
   if(force) {
     delete newsCache[key];
@@ -1125,12 +1137,13 @@ function renderNews(el, news, opts={}) {
     renderNewsFallback(el, opts.query || 'Allsvenskan', opts.teamName || '');
     return;
   }
+
   const cards = news.map(n => `
-    <div class="news-card" ${n.url?`onclick="window.open('${n.url}','_blank')"`:''}>
-      <div class="news-source">${esc(n.source||'')}</div>
-      <div class="news-title">${esc(n.title||'')}</div>
-      <div class="news-summary">${esc(n.summary||'')}</div>
-      <div class="news-date">${esc(n.date||'')}</div>
+    <div class="news-card" ${n.url ? `onclick="window.open('${n.url}','_blank')"` : ''}>
+      <div class="news-source">${esc(n.source || '')}</div>
+      <div class="news-title">${esc(n.title || '')}</div>
+      <div class="news-summary">${esc(n.summary || '')}</div>
+      <div class="news-date">${esc(n.date || '')}</div>
     </div>`).join('');
 
   const refreshFn = opts.teamName
@@ -1143,8 +1156,8 @@ function renderNews(el, news, opts={}) {
 
 function renderNewsFallback(el, query='Allsvenskan', teamName='') {
   if(!el) return;
-  const title = teamName ? `Senaste nyheter om ${teamName}` : 'Senaste nyheter';
   const q = encodeURIComponent(query || 'Allsvenskan');
+  const label = teamName || 'Allsvenskan';
   const refreshFn = teamName
     ? `loadTeamNews(${JSON.stringify(teamName)},'team-news-container',true)`
     : `loadStartNews(true)`;
@@ -1153,7 +1166,7 @@ function renderNewsFallback(el, query='Allsvenskan', teamName='') {
     <div class="news-grid">
       <div class="news-card" onclick="window.open('https://news.google.com/rss/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
         <div class="news-source">Google Nyheter</div>
-        <div class="news-title">Öppna RSS-flödet för ${esc(teamName || 'Allsvenskan')}</div>
+        <div class="news-title">Öppna RSS-flödet för ${esc(label)}</div>
         <div class="news-summary">Senaste rubriker från flera svenska sportkällor samlade i ett flöde.</div>
         <div class="news-date">Direktlänk</div>
       </div>
@@ -1163,14 +1176,14 @@ function renderNewsFallback(el, query='Allsvenskan', teamName='') {
         <div class="news-summary">Matchrapporter, truppnyheter och officiella uppdateringar.</div>
         <div class="news-date">Direktlänk</div>
       </div>
-      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se','_blank')">
+      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se/allsvenskan/','_blank')">
         <div class="news-source">Fotbollskanalen</div>
         <div class="news-title">Senaste nytt från klubbarna</div>
         <div class="news-summary">Nyheter, övergångar och analyser om svensk fotboll.</div>
         <div class="news-date">Direktlänk</div>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:.7rem">Kunde inte ladda automatiska RSS-nyheter just nu.</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:.5rem">Kunde inte ladda automatiska RSS-nyheter just nu.</div>
     <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
 }
 
