@@ -1065,6 +1065,57 @@ function newsKey(query) {
   return (query || 'allsvenskan').toLowerCase().trim();
 }
 
+function teamNewsQuery(teamName) {
+  return String(teamName || '')
+    .replace(/\bIK\b/gi, '')
+    .replace(/\bIF\b/gi, '')
+    .replace(/\bFK\b/gi, '')
+    .replace(/\bFF\b/gi, '')
+    .replace(/\bAIF\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim() || 'allsvenskan';
+}
+
+function teamNewsTerms(teamName) {
+  const raw = String(teamName || '').trim();
+  const clean = teamNewsQuery(raw);
+  const parts = clean.split(/\s+/).filter(Boolean);
+  const base = [raw, clean, ...parts]
+    .map(s => String(s || '').toLowerCase().trim())
+    .filter(Boolean);
+
+  const synonyms = [];
+  if (clean.toLowerCase() === 'malmö') synonyms.push('mff', 'malmö ff');
+  if (clean.toLowerCase() === 'hammarby') synonyms.push('hammarby', 'bajen');
+  if (clean.toLowerCase() === 'djurgården') synonyms.push('dif', 'djurgården');
+  if (clean.toLowerCase() === 'aik') synonyms.push('aik');
+  if (clean.toLowerCase() === 'sirius') synonyms.push('sirius', 'ik sirius');
+  if (clean.toLowerCase() === 'häcken') synonyms.push('häcken', 'bkhäcken', 'bk häcken');
+  if (clean.toLowerCase() === 'gais') synonyms.push('gais');
+  if (clean.toLowerCase() === 'mjällby') synonyms.push('mjällby', 'mjällby aif');
+  if (clean.toLowerCase() === 'elfsborg') synonyms.push('elfsborg', 'if elfsborg');
+  if (clean.toLowerCase() === 'ifk göteborg') synonyms.push('ifk göteborg', 'blåvitt', 'göteborg');
+  if (clean.toLowerCase() === 'norrköping') synonyms.push('norrköping', 'ifk norrköping');
+  if (clean.toLowerCase() === 'brommapojkarna') synonyms.push('brommapojkarna', 'bp');
+  if (clean.toLowerCase() === 'deg­erfors' or clean.lower() == 'degerfors') synonyms.push('degerfors', 'degerfors if');
+  if (clean.toLowerCase() === 'halmstad') synonyms.push('halmstad', 'halmstads bk');
+  if (clean.toLowerCase() === 'västerås') synonyms.push('västerås', 'vsk');
+  if (clean.toLowerCase() === 'kalmar') synonyms.push('kalmar', 'kalmar ff');
+  if (clean.toLowerCase() === 'värnamo') synonyms.push('värnamo', 'ifk värnamo');
+  if (clean.toLowerCase() === 'öster') synonyms.push('öster', 'östers if');
+
+  return [...new Set([...base, ...synonyms].filter(Boolean))];
+}
+
+function filterTeamNews(news, teamName) {
+  const terms = teamNewsTerms(teamName);
+  if (!terms.length) return news || [];
+  return (news || []).filter(n => {
+    const hay = `${n.title || ''} ${n.summary || ''}`.toLowerCase();
+    return terms.some(term => hay.includes(term));
+  });
+}
+
 async function fetchRSSNews(query='Allsvenskan') {
   const key = newsKey(query);
   const cached = newsCache[key];
@@ -1091,6 +1142,7 @@ async function loadStartNews(force=false) {
     delete newsCacheTime[key];
   }
 
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste nyheter…</div>`;
   try {
     const news = await fetchRSSNews('Allsvenskan');
     renderNews(el, news, {query:'Allsvenskan', title:'Senaste nyheter'});
@@ -1099,46 +1151,12 @@ async function loadStartNews(force=false) {
   }
 }
 
-function teamNewsQuery(teamName) {
-  return String(teamName || '')
-    .replace(/\bIK\b/gi, '')
-    .replace(/\bIF\b/gi, '')
-    .replace(/\bFK\b/gi, '')
-    .replace(/\bFF\b/gi, '')
-    .replace(/\bAIF\b/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim() || 'Allsvenskan';
-}
-
-function filterTeamNews(news, teamName) {
-  const rawName = String(teamName || '').trim();
-  if(!rawName) return Array.isArray(news) ? news : [];
-
-  const cleaned = teamNewsQuery(rawName);
-  const parts = [rawName, cleaned]
-    .flatMap(s => String(s).split(/\s+/))
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean)
-    .filter(s => !['ik','if','fk','ff','aif','allsvenskan'].includes(s))
-    .filter(s => s.length >= 3);
-
-  const uniqueParts = [...new Set(parts)];
-  if(!uniqueParts.length) return Array.isArray(news) ? news : [];
-
-  const filtered = (Array.isArray(news) ? news : []).filter(n => {
-    const hay = `${n.title || ''} ${n.summary || ''}`.toLowerCase();
-    return uniqueParts.some(term => hay.includes(term));
-  });
-
-  return filtered;
-}
-
 async function loadTeamNews(teamName, containerId='team-news-container', force=false) {
   const el = document.getElementById(containerId);
   if(!el || !teamName) return;
 
   const q = teamNewsQuery(teamName);
-  const key = newsKey(`team:${q}`);
+  const key = newsKey(q);
   if(force) {
     delete newsCache[key];
     delete newsCacheTime[key];
@@ -1146,14 +1164,13 @@ async function loadTeamNews(teamName, containerId='team-news-container', force=f
 
   el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamName)}…</div>`;
   try {
-    let news = await fetchRSSNews(q);
-    news = filterTeamNews(news, teamName);
-
-    if(!news.length) {
-      throw new Error('Inga lagspecifika nyheter');
+    const news = await fetchRSSNews(q);
+    const filtered = filterTeamNews(news, teamName);
+    if(!filtered.length) {
+      renderNewsFallback(el, q, teamName);
+      return;
     }
-
-    renderNews(el, news, {query:q, teamName, title:`Senaste nyheter om ${teamName}`});
+    renderNews(el, filtered, {query:q, teamName, title:`Senaste nyheter om ${teamName}`});
   } catch(e) {
     renderNewsFallback(el, q, teamName);
   }
@@ -1184,45 +1201,33 @@ function renderNews(el, news, opts={}) {
 function renderNewsFallback(el, query='Allsvenskan', teamName='') {
   if(!el) return;
   const q = encodeURIComponent(query || 'Allsvenskan');
+  const teamLabel = teamName || 'Allsvenskan';
   const refreshFn = teamName
     ? `loadTeamNews(${JSON.stringify(teamName)},'team-news-container',true)`
     : `loadStartNews(true)`;
 
   el.innerHTML = `
     <div class="news-grid">
-      <div class="news-card" onclick="window.open('https://news.google.com/rss/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
+      <div class="news-card" onclick="window.open('https://news.google.com/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
         <div class="news-source">Google Nyheter</div>
-        <div class="news-title">Öppna nyheter för ${esc(teamName || 'Allsvenskan')}</div>
-        <div class="news-summary">${teamName ? `Öppna ett filtrerat nyhetsflöde för ${esc(teamName)}.` : 'Senaste rubriker från flera svenska sportkällor samlade i ett flöde.'}</div>
+        <div class="news-title">Öppna nyheter för ${esc(teamLabel)}</div>
+        <div class="news-summary">Öppna ett filtrerat nyhetsflöde för ${esc(teamLabel)}.</div>
         <div class="news-date">Direktlänk</div>
       </div>
-      ${teamName ? `
       <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${q}','_blank')">
         <div class="news-source">Fotbollskanalen</div>
-        <div class="news-title">Sök efter ${esc(teamName)} hos Fotbollskanalen</div>
+        <div class="news-title">Sök efter ${esc(teamLabel)} hos Fotbollskanalen</div>
         <div class="news-summary">Visar bara träffar kopplade till det valda laget.</div>
         <div class="news-date">Direktlänk</div>
       </div>
-      <div class="news-card" onclick="window.open('https://www.svt.se/sport?query=${q}','_blank')">
+      <div class="news-card" onclick="window.open('https://www.svt.se/sok?q=${q}','_blank')">
         <div class="news-source">SVT Sport</div>
-        <div class="news-title">Sök efter ${esc(teamName)} hos SVT Sport</div>
+        <div class="news-title">Sök efter ${esc(teamLabel)} hos SVT Sport</div>
         <div class="news-summary">Öppna fler nyheter om det valda laget.</div>
         <div class="news-date">Direktlänk</div>
-      </div>` : `
-      <div class="news-card" onclick="window.open('https://www.allsvenskan.se','_blank')">
-        <div class="news-source">Allsvenskan.se</div>
-        <div class="news-title">Officiella nyheter från ligan</div>
-        <div class="news-summary">Matchrapporter, truppnyheter och officiella uppdateringar.</div>
-        <div class="news-date">Direktlänk</div>
       </div>
-      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se','_blank')">
-        <div class="news-source">Fotbollskanalen</div>
-        <div class="news-title">Senaste nytt från klubbarna</div>
-        <div class="news-summary">Nyheter, övergångar och analyser om svensk fotboll.</div>
-        <div class="news-date">Direktlänk</div>
-      </div>`}
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:.7rem">${teamName ? `Hittade inga tydliga RSS-nyheter bara om ${esc(teamName)} just nu.` : 'Kunde inte ladda automatiska RSS-nyheter just nu.'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:.7rem">${teamName ? `Hittade inga tydligt lagspecifika artiklar för ${esc(teamName)} just nu.` : 'Kunde inte ladda automatiska RSS-nyheter just nu.'}</div>
     <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.8rem">🔄 Försök igen</button>`;
 }
 
