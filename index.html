@@ -1069,7 +1069,7 @@ function newsKey(query){
   return (query || 'allsvenskan').toLowerCase().trim();
 }
 
-// 🔥 Rensa lagnamn
+// Rensa lagnamn
 function teamNewsQuery(teamName){
   return String(teamName || '')
     .replace(/\bIK\b/gi,'')
@@ -1081,19 +1081,17 @@ function teamNewsQuery(teamName){
     .trim() || 'allsvenskan';
 }
 
-// 🔥 SMARTARE FILTER
+// Smartare filter
 function filterTeamNews(news, teamName){
   const clean = teamNewsQuery(teamName).toLowerCase();
 
   return (news || []).filter(n=>{
     const hay = `${n.title || ''} ${n.summary || ''}`.toLowerCase();
-
-    // matchar både "Malmö" och "Malmö FF"
     return hay.includes(clean) || hay.includes(clean.split(' ')[0]);
   });
 }
 
-// 🔥 timeout (fixar loading-problem)
+// Timeout
 async function fetchWithTimeout(url, ms=4500){
   const ctrl = new AbortController();
   const t = setTimeout(()=>ctrl.abort(), ms);
@@ -1126,7 +1124,7 @@ async function fetchRSSNews(query='Allsvenskan'){
   return news;
 }
 
-// 🔥 STARTSIDA
+// Startsida
 async function loadStartNews(force=false){
   const el = document.getElementById('news-container');
   if(!el) return;
@@ -1140,31 +1138,34 @@ async function loadStartNews(force=false){
 
   try{
     const news = await fetchRSSNews('allsvenskan');
-    renderNews(el, news, {title:'Senaste nyheter'});
+    renderNews(el, news, { title:'Senaste nyheter', teamName:'' });
   } catch {
-    renderNewsFallback(el);
+    renderNewsFallback(el, '');
   }
 }
 
-// 🔥 LAGSIDA (VIKTIG FIX)
+// Lagsida
 async function loadTeamNews(teamName, id='team-news-container', force=false){
   const el = document.getElementById(id);
   if(!el) return;
 
   const q = teamNewsQuery(teamName);
 
+  if(force){
+    delete newsCache[newsKey(q)];
+    delete newsCacheTime[newsKey(q)];
+  }
+
   el.innerHTML = `Hämtar nyheter om ${teamName}…`;
 
   try{
     const news = await fetchRSSNews(q);
-
     const filtered = filterTeamNews(news, teamName);
-
-    // 🔥 CRITICAL FIX
     const finalNews = filtered.length ? filtered : news;
 
     renderNews(el, finalNews, {
-      title:`Senaste nyheter om ${teamName}`
+      title:`Senaste nyheter om ${teamName}`,
+      teamName
     });
 
   } catch {
@@ -1172,10 +1173,10 @@ async function loadTeamNews(teamName, id='team-news-container', force=false){
   }
 }
 
-// 🔥 RENDER
+// Render
 function renderNews(el, news, opts={}){
   if(!news.length){
-    renderNewsFallback(el, opts.title);
+    renderNewsFallback(el, opts.teamName || '');
     return;
   }
 
@@ -1190,26 +1191,25 @@ function renderNews(el, news, opts={}){
   `).join('');
 
   el.innerHTML = `
-    <div class="section-label">${opts.title || 'Nyheter'}</div>
     <div class="news-grid">${cards}</div>
   `;
 }
 
-// 🔥 FALLBACK
+// Fallback
 function renderNewsFallback(el, teamName=''){
-  el.innerHTML = `
-    <div class="section-label">Senaste nyheter</div>
+  const q = encodeURIComponent(teamName || 'allsvenskan');
 
+  el.innerHTML = `
     <div class="news-grid">
-      <div class="news-card" onclick="window.open('https://news.google.com/search?q=${teamName}','_blank')">
+      <div class="news-card" onclick="window.open('https://news.google.com/search?q=${q}','_blank')">
         <div class="news-title">Öppna nyheter</div>
       </div>
 
-      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${teamName}','_blank')">
+      <div class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${q}','_blank')">
         <div class="news-title">Fotbollskanalen</div>
       </div>
 
-      <div class="news-card" onclick="window.open('https://www.svt.se/sport?sok=${teamName}','_blank')">
+      <div class="news-card" onclick="window.open('https://www.svt.se/sport?sok=${q}','_blank')">
         <div class="news-title">SVT Sport</div>
       </div>
     </div>
