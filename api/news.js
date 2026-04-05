@@ -1,6 +1,7 @@
 export default async function handler(req, res) {
   const q = String(req.query.q || 'allsvenskan').trim();
 
+  // 🔥 Rensa lagnamn (IK, FF osv)
   const cleanQuery = q
     .replace(/\bIK\b/gi, '')
     .replace(/\bIF\b/gi, '')
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
     { name: 'Aftonbladet Sport', url: 'https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/' }
   ];
 
+  // 🔧 Helpers
   function decodeHtml(str = '') {
     return str
       .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1')
@@ -57,8 +59,8 @@ export default async function handler(req, res) {
 
       items.push({
         title,
-        url: link,
-        summary: description.slice(0, 180) || 'Läs mer hos källan.',
+        url: link, // 🔥 viktigt (inte "link")
+        summary: description.slice(0, 160) || 'Läs mer hos källan.',
         source: sourceName,
         date
       });
@@ -68,12 +70,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 🔥 Hämta alla feeds
     const fetched = await Promise.all(
       feeds.map(async feed => {
         try {
           const resp = await fetch(feed.url, {
             headers: {
-              'user-agent': 'Mozilla/5.0 AllsvenskanAI News Fetcher'
+              'user-agent': 'Mozilla/5.0 AllsvenskanAI News'
             }
           });
 
@@ -88,6 +91,7 @@ export default async function handler(req, res) {
 
     const allArticles = fetched.flat();
 
+    // 🔥 Ta bort dubletter
     const unique = [];
     const seen = new Set();
 
@@ -98,11 +102,13 @@ export default async function handler(req, res) {
       unique.push(article);
     }
 
+    // 🔥 Filtrera på lag / query
     let filtered = unique.filter(article => {
       const hay = `${article.title} ${article.summary}`.toLowerCase();
       return queryTerms.some(term => term && hay.includes(term));
     });
 
+    // 🔥 fallback: Allsvenskan
     if (!filtered.length) {
       filtered = unique.filter(article => {
         const hay = `${article.title} ${article.summary}`.toLowerCase();
@@ -110,10 +116,12 @@ export default async function handler(req, res) {
       });
     }
 
+    // 🔥 sista fallback: visa allt
     if (!filtered.length) {
       filtered = unique;
     }
 
+    // 🔥 sortera nyast först
     filtered.sort((a, b) => {
       if (a.date && b.date) return b.date.localeCompare(a.date);
       if (a.date) return -1;
@@ -121,10 +129,13 @@ export default async function handler(req, res) {
       return 0;
     });
 
+    // 🔥 cache (snabbare sida)
     res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=3600');
+
     return res.status(200).json({
-      news: filtered.slice(0, 6)
+      news: filtered.slice(0, 6) // 🔥 viktigt: "news"
     });
+
   } catch (err) {
     return res.status(500).json({
       error: 'Kunde inte hämta nyheter',
