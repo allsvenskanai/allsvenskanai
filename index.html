@@ -1101,7 +1101,7 @@ async function fetchWithTimeout(url, ms=5000){
   }
 }
 
-async function fetchRSSNews(query='Allsvenskan'){
+async function fetchRSSNews(query='allsvenskan'){
   const key = newsKey(query);
   const cached = newsCache[key];
   const cachedAt = newsCacheTime[key] || 0;
@@ -1113,7 +1113,6 @@ async function fetchRSSNews(query='Allsvenskan'){
 
   const data = await resp.json();
   const news = Array.isArray(data.news) ? data.news.filter(n => n && n.title) : [];
-  if(!news.length) throw new Error('Inga nyheter');
 
   newsCache[key] = news;
   newsCacheTime[key] = Date.now();
@@ -1136,7 +1135,7 @@ async function loadStartNews(force=false){
     const news = await fetchRSSNews('allsvenskan');
     renderNews(el, news, { teamName:'' });
   } catch {
-    renderNewsFallback(el, '');
+    renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
   }
 }
 
@@ -1157,20 +1156,17 @@ async function loadTeamNews(teamName, id='team-news-container', force=false){
   try{
     const rawNews = await fetchRSSNews(q);
     const filtered = filterTeamNews(rawNews, teamName);
-
-    // viktigaste fixen:
-    const finalNews = filtered.length ? filtered : rawNews;
-
-    renderNews(el, finalNews, { teamName });
+    renderNews(el, filtered, { teamName });
   } catch {
-    renderNewsFallback(el, teamName);
+    renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
   }
 }
 
 function renderNews(el, news, opts={}){
   if(!el) return;
-  if(!news.length){
-    renderNewsFallback(el, opts.teamName || '');
+
+  if(!news || !news.length){
+    renderNewsEmpty(el, 'Inga nyheter hittades.');
     return;
   }
 
@@ -1194,46 +1190,14 @@ function renderNews(el, news, opts={}){
   `;
 }
 
-function renderNewsFallback(el, teamName=''){
+function renderNewsEmpty(el, message='Inga nyheter hittades.'){
   if(!el) return;
-
-  const q = encodeURIComponent(teamName || 'allsvenskan');
-  const refreshFn = teamName
-    ? `loadTeamNews(${JSON.stringify(teamName)},'team-news-container',true)`
-    : `loadStartNews(true)`;
-
   el.innerHTML = `
-    <div class="news-grid">
-      <article class="news-card" onclick="window.open('https://news.google.com/search?q=${q}&hl=sv&gl=SE&ceid=SE:sv','_blank')">
-        <div class="news-source">Google Nyheter</div>
-        <div class="news-title">Öppna nyheter</div>
-        <div class="news-summary">Visa artiklar och rubriker som handlar om det valda laget.</div>
-        <div class="news-date">Direktlänk</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
-
-      <article class="news-card" onclick="window.open('https://www.fotbollskanalen.se/sok/?text=${q}','_blank')">
-        <div class="news-source">Fotbollskanalen</div>
-        <div class="news-title">Sök hos Fotbollskanalen</div>
-        <div class="news-summary">Visa bara träffar kopplade till det valda laget.</div>
-        <div class="news-date">Direktlänk</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
-
-      <article class="news-card" onclick="window.open('https://www.svt.se/sport/sok?q=${q}','_blank')">
-        <div class="news-source">SVT Sport</div>
-        <div class="news-title">Sök hos SVT Sport</div>
-        <div class="news-summary">Öppna fler nyheter om det valda laget.</div>
-        <div class="news-date">Direktlänk</div>
-        <div class="news-linkline">Öppna sökning →</div>
-      </article>
+    <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
+      ${message}
     </div>
-
-    <div style="font-size:12px;margin-top:10px;">Kunde inte hämta nyheter just nu</div>
-    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.85rem">🔄 Försök igen</button>
   `;
 }
-
 
 
 // ─── TEAMS ───────────────────────────────────────────
