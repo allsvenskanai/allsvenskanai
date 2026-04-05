@@ -995,17 +995,6 @@ function teamNewsQuery(teamName){
     .trim() || 'allsvenskan';
 }
 
-function filterTeamNews(news, teamName){
-  const full = String(teamName || '').trim().toLowerCase();
-  const clean = teamNewsQuery(teamName).toLowerCase();
-  const short = clean.split(' ')[0] || '';
-
-  return (news || []).filter(n => {
-    const hay = `${n.title || ''} ${n.summary || ''}`.toLowerCase();
-    return (full && hay.includes(full)) || (clean && hay.includes(clean)) || (short && hay.includes(short));
-  });
-}
-
 async function fetchWithTimeout(url, ms=5000){
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ms);
@@ -1070,8 +1059,6 @@ async function loadTeamNews(teamName, id='team-news-container', force=false){
 
   try{
     const rawNews = await fetchRSSNews(q);
-
-    // Visa exakt det som kommer från news.js
     renderNews(el, rawNews, { teamName });
   } catch {
     renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
