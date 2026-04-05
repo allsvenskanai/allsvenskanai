@@ -5,41 +5,77 @@ export default async function handler(req, res) {
   // ENDA STÄLLET DU BEHÖVER ÄNDRA
   // =========================
   const FEEDS_BY_TEAM = {
-    start: [
-      {
-        name: 'Fotbollskanalen',
-        url: 'https://www.fotbollskanalen.se/rss/allsvenskan/'
-      }
-    ],
+  start: [
+    {
+      name: 'Fotbollskanalen',
+      url: 'https://www.fotbollskanalen.se/rss/allsvenskan/'
+    }
+  ],
 
-    malmo: [
-      {
-        name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=Malm%C3%B6%20FF&hl=sv&gl=SE&ceid=SE:sv'
-      }
-    ],
+  malmo: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=malmö%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
 
-    aik: [
-      {
-        name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=aik&hl=sv&gl=SE&ceid=SE%3Asv'
-      }
-    ],
+  aik: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=aik&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
 
-    häcken: [
-      {
-        name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=häcken&hl=sv&gl=SE&ceid=SE%3Asv'
-      }
-    ],
+  hammarby: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=hammarby&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
 
-    hammarby: [
-      {
-        name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=hammarby&hl=sv&gl=SE&ceid=SE%3Asv'
-      }
-    ]
-  };
+  djurgarden: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=djurgården%20allsvenskan&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  goteborg: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=ifk%20göteborg&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  elfsborg: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=elfsborg&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  hacken: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=häcken&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  mjallby: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=mjällby&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  sirius: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=sirius&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  vasteras: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=Västerås%20sk&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  brommapojkarna: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=brommapojkarna&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  degerfors: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=degerfors&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  halmstad: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=halmstad%20bk&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  orgryte: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=Örgryte&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  gais: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=gais&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ],
+
+  kalmar: [
+    { name: 'Google News', url: 'https://news.google.com/rss/search?q=kalmar%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
+  ]
+};
 
   // Om team inte finns här blir det tom lista
   const feeds = FEEDS_BY_TEAM[team] || [];
