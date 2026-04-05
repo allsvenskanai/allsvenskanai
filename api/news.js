@@ -1,51 +1,41 @@
 export default async function handler(req, res) {
-  const q = String(req.query.q || 'allsvenskan').trim().toLowerCase();
+  const team = String(req.query.team || 'start').trim().toLowerCase();
 
   // =========================
-  // HÄR LÄGGER DU IN DINA KÄLLOR
+  // ENDA STÄLLET DU BEHÖVER ÄNDRA
   // =========================
+  const FEEDS_BY_TEAM = {
+    start: [
+      {
+        name: 'Fotbollskanalen',
+        url: 'https://www.fotbollskanalen.se/rss/allsvenskan/'
+      }
+    ],
 
-  // Startsidan
-  const START_FEEDS = [
-    { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
-  ];
-
-  // Lagsidor
-  const TEAM_FEEDS = {
-    malmö: [
-      { name: 'Google News', url: 'https://news.google.com/rss/search?q=Malm%C3%B6%20ff&hl=sv&gl=SE&ceid=SE%3Asv' }
+    malmo: [
+      {
+        name: 'Google News',
+        url: 'https://news.google.com/rss/search?q=Malm%C3%B6%20FF&hl=sv&gl=SE&ceid=SE:sv'
+      }
     ],
 
     aik: [
-      { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
+      {
+        name: 'Google News',
+        url: 'https://news.google.com/rss/search?q=AIK&hl=sv&gl=SE&ceid=SE:sv'
+      }
     ],
 
     hammarby: [
-      { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' }
+      {
+        name: 'Google News',
+        url: 'https://news.google.com/rss/search?q=Hammarby&hl=sv&gl=SE&ceid=SE:sv'
+      }
     ]
   };
 
-  // Om laget inte finns här -> tom lista
-  const DEFAULT_TEAM_FEEDS = [];
-
-  // =========================
-  // HJÄLPFUNKTIONER
-  // =========================
-
-  function cleanTeam(str = '') {
-    return str
-      .replace(/\bik\b/gi, '')
-      .replace(/\bif\b/gi, '')
-      .replace(/\bfk\b/gi, '')
-      .replace(/\bff\b/gi, '')
-      .replace(/\baif\b/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function getTeamKey(str) {
-    return cleanTeam(str).split(' ')[0].toLowerCase();
-  }
+  // Om team inte finns här blir det tom lista
+  const feeds = FEEDS_BY_TEAM[team] || [];
 
   function decodeHtml(str = '') {
     return str
@@ -57,21 +47,21 @@ export default async function handler(req, res) {
       .replace(/&gt;/g, '>');
   }
 
-  function strip(str=''){
+  function stripHtml(str = '') {
     return decodeHtml(str)
-      .replace(/<[^>]*>/g,' ')
-      .replace(/\s+/g,' ')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
   }
 
-  function parse(xml, source){
+  function parseRss(xml, sourceName) {
     const items = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
 
     return items.slice(0, 20).map(item => {
-      const title = strip(item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '');
-      const link = strip(item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '');
-      const desc = strip(item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || '');
-      const pubDateRaw = strip(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '');
+      const title = stripHtml(item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '');
+      const link = stripHtml(item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '');
+      const description = stripHtml(item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || '');
+      const pubDateRaw = stripHtml(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '');
 
       if (!title || !link) return null;
 
@@ -84,74 +74,55 @@ export default async function handler(req, res) {
       return {
         title,
         url: link,
-        summary: desc.slice(0, 180),
-        source,
+        summary: description.slice(0, 180),
+        source: sourceName,
         date
       };
     }).filter(Boolean);
   }
 
-  function unique(list){
+  function uniqueArticles(list = []) {
     const seen = new Set();
-    return list.filter(a => {
-      const key = `${a.title}|${a.url}`;
+    return list.filter(article => {
+      const key = `${article.title}|${article.url}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
   }
 
-  // =========================
-  // VÄLJ FEEDS
-  // =========================
-
-  let feeds = [];
-
-  if (q === 'allsvenskan') {
-    feeds = START_FEEDS;
-  } else {
-    const key = getTeamKey(q);
-    feeds = TEAM_FEEDS[key] || DEFAULT_TEAM_FEEDS;
-  }
-
-  // Om du inte lagt in några feeds -> tom lista
   if (!feeds.length) {
     return res.status(200).json({ news: [] });
   }
 
-  // =========================
-  // HÄMTA OCH RETURNERA
-  // =========================
-
   try {
     const fetched = await Promise.all(
-      feeds.map(async f => {
+      feeds.map(async feed => {
         try {
-          const r = await fetch(f.url, {
+          const resp = await fetch(feed.url, {
             headers: { 'user-agent': 'Mozilla/5.0 AllsvenskanAI' }
           });
 
-          if (!r.ok) return [];
-          const xml = await r.text();
-          return parse(xml, f.name);
+          if (!resp.ok) return [];
+          const xml = await resp.text();
+          return parseRss(xml, feed.name);
         } catch {
           return [];
         }
       })
     );
 
-    let news = unique(fetched.flat());
-
-    news.sort((a,b) => {
+    const news = uniqueArticles(fetched.flat()).sort((a, b) => {
       if (a.date && b.date) return b.date.localeCompare(a.date);
       if (a.date) return -1;
       if (b.date) return 1;
       return 0;
     });
 
-    res.setHeader('Cache-Control','s-maxage=600, stale-while-revalidate=1800');
+    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=1800');
+
     return res.status(200).json({
-      news: news.slice(0, 6)
+      news: news.slice(0, 8)
     });
   } catch (err) {
     return res.status(500).json({
