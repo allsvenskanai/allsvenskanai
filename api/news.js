@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   const q = String(req.query.q || 'allsvenskan').trim();
 
-  // 🔥 Rensa lagnamn (IK, FF osv)
+  // 🔥 Rensa lagnamn (IK, IF osv)
   const cleanQuery = q
     .replace(/\bIK\b/gi, '')
     .replace(/\bIF\b/gi, '')
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     const items = [];
     const matches = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
 
-    for (const item of matches.slice(0, 12)) {
+    for (const item of matches.slice(0, 15)) {
       const title = stripHtml(item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '');
       const link = stripHtml(item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '');
       const description = stripHtml(item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || '');
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
       items.push({
         title,
-        url: link, // 🔥 viktigt (inte "link")
+        url: link,
         summary: description.slice(0, 160) || 'Läs mer hos källan.',
         source: sourceName,
         date
@@ -70,13 +70,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🔥 Hämta alla feeds
+    // 🔥 Hämta RSS
     const fetched = await Promise.all(
       feeds.map(async feed => {
         try {
           const resp = await fetch(feed.url, {
             headers: {
-              'user-agent': 'Mozilla/5.0 AllsvenskanAI News'
+              'user-agent': 'Mozilla/5.0 AllsvenskanAI'
             }
           });
 
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       unique.push(article);
     }
 
-    // 🔥 Filtrera på lag / query
+    // 🔥 Filtrera
     let filtered = unique.filter(article => {
       const hay = `${article.title} ${article.summary}`.toLowerCase();
       return queryTerms.some(term => term && hay.includes(term));
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 🔥 sista fallback: visa allt
+    // 🔥 sista fallback
     if (!filtered.length) {
       filtered = unique;
     }
@@ -129,11 +129,11 @@ export default async function handler(req, res) {
       return 0;
     });
 
-    // 🔥 cache (snabbare sida)
-    res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=3600');
+    // 🔥 cache
+    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=1800');
 
     return res.status(200).json({
-      news: filtered.slice(0, 6) // 🔥 viktigt: "news"
+      news: filtered.slice(0, 6)
     });
 
   } catch (err) {
