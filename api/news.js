@@ -1,63 +1,134 @@
 export default async function handler(req, res) {
-  try {
-    const query = req.query.q || 'allsvenskan';
+  const q = String(req.query.q || 'allsvenskan').trim();
 
-    // RSS-källor (enkla och stabila)
-    const sources = [
-      `https://www.svt.se/sport/rss.xml`,
-      `https://www.fotbollskanalen.se/rss/allsvenskan/`,
-      `https://allsvenskan.se/rss`
-    ];
+  const cleanQuery = q
+    .replace(/\bIK\b/gi, '')
+    .replace(/\bIF\b/gi, '')
+    .replace(/\bFK\b/gi, '')
+    .replace(/\bFF\b/gi, '')
+    .replace(/\bAIF\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-    const articles = [];
+  const queryTerms = [cleanQuery, q, 'allsvenskan']
+    .filter(Boolean)
+    .map(s => s.toLowerCase());
 
-    for (const url of sources) {
-      try {
-        const r = await fetch(url);
-        const text = await r.text();
+  const feeds = [
+    { name: 'SVT Sport', url: 'https://www.svt.se/sport/rss.xml' },
+    { name: 'Fotbollskanalen', url: 'https://www.fotbollskanalen.se/rss/allsvenskan/' },
+    { name: 'Aftonbladet Sport', url: 'https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/' }
+  ];
 
-        const items = text.split('<item>').slice(1, 6);
+  function decodeHtml(str = '') {
+    return str
+      .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+  }
 
-        items.forEach(item => {
-          const title = item.match(/<title>(.*?)<\/title>/)?.[1] || '';
-          const link = item.match(/<link>(.*?)<\/link>/)?.[1] || '';
-          const desc = item.match(/<description>(.*?)<\/description>/)?.[1] || '';
+  function stripHtml(str = '') {
+    return decodeHtml(str)
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-          if (title.toLowerCase().includes(query.toLowerCase())) {
-            articles.push({
-              title,
-              link,
-              summary: desc.replace(/<[^>]+>/g, '').slice(0, 120)
-            });
-          }
-        });
+  function parseItems(xml, sourceName) {
+    const items = [];
+    const matches = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
 
-      } catch (e) {
-        console.log('RSS fel:', url);
+    for (const item of matches.slice(0, 12)) {
+      const title = stripHtml(item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '');
+      const link = stripHtml(item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || '');
+      const description = stripHtml(item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || '');
+      const pubDateRaw = stripHtml(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '');
+
+      if (!title || !link) continue;
+
+      let date = '';
+      const d = new Date(pubDateRaw);
+      if (!isNaN(d.getTime())) {
+        date = d.toISOString().slice(0, 10);
       }
-    }
 
-    // fallback om inget hittas
-    if (!articles.length) {
-      return res.status(200).json({
-        articles: [
-          {
-            title: 'Se senaste nytt på SVT Sport',
-            link: 'https://www.svt.se/sport',
-            summary: 'Sportnyheter och uppdateringar'
-          },
-          {
-            title: 'Fotbollskanalen - Allsvenskan',
-            link: 'https://www.fotbollskanalen.se/allsvenskan/',
-            summary: 'Nyheter om Allsvenskan'
-          }
-        ]
+      items.push({
+        title,
+        url: link,
+        summary: description.slice(0, 180) || 'Läs mer hos källan.',
+        source: sourceName,
+        date
       });
     }
 
-    res.status(200).json({ articles });
+    return items;
+  }
 
+  try {
+    const fetched = await Promise.all(
+      feeds.map(async feed => {
+        try {
+          const resp = await fetch(feed.url, {
+            headers: {
+              'user-agent': 'Mozilla/5.0 AllsvenskanAI News Fetcher'
+            }
+          });
+
+          if (!resp.ok) return [];
+          const xml = await resp.text();
+          return parseItems(xml, feed.name);
+        } catch {
+          return [];
+        }
+      })
+    );
+
+    const allArticles = fetched.flat();
+
+    const unique = [];
+    const seen = new Set();
+
+    for (const article of allArticles) {
+      const key = `${article.title}|${article.url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(article);
+    }
+
+    let filtered = unique.filter(article => {
+      const hay = `${article.title} ${article.summary}`.toLowerCase();
+      return queryTerms.some(term => term && hay.includes(term));
+    });
+
+    if (!filtered.length) {
+      filtered = unique.filter(article => {
+        const hay = `${article.title} ${article.summary}`.toLowerCase();
+        return hay.includes('allsvenskan') || hay.includes('svensk fotboll');
+      });
+    }
+
+    if (!filtered.length) {
+      filtered = unique;
+    }
+
+    filtered.sort((a, b) => {
+      if (a.date && b.date) return b.date.localeCompare(a.date);
+      if (a.date) return -1;
+      if (b.date) return 1;
+      return 0;
+    });
+
+    res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=3600');
+    return res.status(200).json({
+      news: filtered.slice(0, 6)
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({
+      error: 'Kunde inte hämta nyheter',
+      details: err.message
+    });
   }
 }
