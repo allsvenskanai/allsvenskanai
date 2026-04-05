@@ -1070,8 +1070,7 @@ async function loadTeamNews(teamName, id='team-news-container', force=false){
 
   try{
     const rawNews = await fetchRSSNews(q);
-    const filtered = filterTeamNews(rawNews, teamName);
-    renderNews(el, filtered, { teamName });
+    renderNews(el, rawNews, { teamName });
   } catch {
     renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
   }
