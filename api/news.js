@@ -22,14 +22,21 @@ export default async function handler(req, res) {
     aik: [
       {
         name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=AIK&hl=sv&gl=SE&ceid=SE:sv'
+        url: 'https://news.google.com/rss/search?q=aik&hl=sv&gl=SE&ceid=SE%3Asv'
+      }
+    ],
+
+    häcken: [
+      {
+        name: 'Google News',
+        url: 'https://news.google.com/rss/search?q=häcken&hl=sv&gl=SE&ceid=SE%3Asv'
       }
     ],
 
     hammarby: [
       {
         name: 'Google News',
-        url: 'https://news.google.com/rss/search?q=Hammarby&hl=sv&gl=SE&ceid=SE:sv'
+        url: 'https://news.google.com/rss/search?q=hammarby&hl=sv&gl=SE&ceid=SE%3Asv'
       }
     ]
   };
