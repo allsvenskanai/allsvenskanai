@@ -154,11 +154,11 @@ export default async function handler(req, res) {
 
     let news = unique(fetched.flat());
 
-    // På lagsidor filtrerar vi på laget
-    if (q !== 'allsvenskan') {
-      news = filterArticlesForTeam(news, q);
-    }
-
+  // Visa exakt det som finns i feeden, utan extra filtrering
+// if (q !== 'allsvenskan') {
+//   news = filterArticlesForTeam(news, q);
+// }
+    
     news.sort((a,b) => {
       if (a.date && b.date) return b.date.localeCompare(a.date);
       if (a.date) return -1;
