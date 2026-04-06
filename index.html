@@ -701,6 +701,110 @@ main > *{animation:fadeUp .3s ease both}
   .profile > div:last-child{width:100%;text-align:left!important}
   .profile > div:last-child .pills{justify-content:flex-start!important}
 }
+
+
+/* ROUTE/UI ENHANCEMENTS */
+.top-ad{
+  background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(247,243,235,.92));
+}
+.top-ad.route-hidden{display:none!important}
+header{box-shadow:0 10px 30px rgba(70,50,18,.05)}
+main{max-width:1360px}
+.pg-header{justify-content:space-between}
+.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel{
+  box-shadow:0 14px 34px rgba(76,56,24,.06);
+}
+.tw > div{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tw thead th{position:sticky;top:0;z-index:2}
+.entity-topbar{justify-content:space-between}
+.section-label{margin-bottom:.8rem}
+.section-label + .feed-note{margin-top:.15rem}
+.news-linkline{margin-top:auto}
+.share{min-height:38px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,253,248,.78)}
+.ai-btn{min-height:42px;border-radius:10px}
+.install-banner{display:none;position:sticky;top:58px;z-index:95;box-shadow:0 8px 18px rgba(76,56,24,.06)}
+.install-banner.route-hidden{display:none!important}
+.install-banner .ib-btn{min-height:38px;padding:0 18px;border-radius:10px}
+.install-banner .ib-close{width:34px;height:34px;border-radius:10px}
+.start-hero{box-shadow:0 18px 40px rgba(76,56,24,.06)}
+.start-tgrid,.tgrid{background:var(--border);padding:1px;border-radius:16px;overflow:hidden}
+.start-tcard,.tcard{border-radius:0}
+.team-overview-grid{align-items:start}
+.team-stat-pills,.player-current-pills,.player-career-pills{gap:10px}
+.team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:110px;min-height:84px;display:flex;flex-direction:column;justify-content:center}
+.news-title{word-break:break-word}
+.podcast-title{word-break:break-word}
+
+@media (min-width: 901px){
+  .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
+  .start-tgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:1px}
+  .news-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+}
+
+@media (max-width: 900px){
+  body{padding-bottom:88px}
+  header{height:56px}
+  .logo{font-size:16px;letter-spacing:2px;gap:6px}
+  .logo-badge{font-size:8px;padding:3px 6px}
+  main{padding:1rem 1rem 6.4rem}
+  .top-ad{display:none!important}
+  .install-banner{top:56px;padding:10px 12px;gap:10px}
+  .install-banner .ib-sub{font-size:12px}
+  .install-banner .ib-btn{font-size:11px;letter-spacing:.8px}
+  .entity-topbar{align-items:center}
+  .entity-topbar .share{margin-left:0;width:auto}
+  .pg-header{margin-bottom:1.15rem;padding-bottom:.9rem}
+  .pg-title{font-size:24px;letter-spacing:1px}
+  .pg-sub{font-size:12px;line-height:1.45}
+  .start-hero{padding:1.35rem .9rem;border-radius:18px}
+  .start-wordmark{font-size:clamp(28px,12vw,42px);letter-spacing:2px}
+  .start-sub{font-size:10px;letter-spacing:1.8px;line-height:1.5}
+  .tgrid,.start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:18px}
+  .tcard,.start-tcard{padding:1rem .55rem;min-height:124px;justify-content:center}
+  .tcard img,.start-tcard img{width:48px;height:48px}
+  .tcard .tn,.start-tn{font-size:12px;line-height:1.15}
+  .profile{border-radius:18px}
+  .profile-inner{padding:1.2rem;gap:1rem;align-items:flex-start;text-align:left}
+  .p-img{width:84px;height:84px;padding:10px}
+  .p-photo{width:96px;height:96px}
+  .p-body{width:100%}
+  .p-body h1{font-size:22px;letter-spacing:.8px;line-height:1.02}
+  .p-meta{gap:4px 12px;line-height:1.7;font-size:13px}
+  .pills{gap:8px}
+  .pill{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:.8rem .7rem}
+  .pill .pn{font-size:30px}
+  .pill .pl{font-size:10px;letter-spacing:1.1px}
+  .team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:calc(50% - 4px);min-height:92px}
+  .team-overview-grid{grid-template-columns:1fr!important}
+  .team-minute-grid{display:grid!important;grid-template-columns:1fr!important}
+  .team-minute-grid > .tw{min-width:0!important}
+  .tabs{gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar,.stat-tabs::-webkit-scrollbar{display:none}
+  .tab{padding:11px 14px;border-radius:999px;border:1px solid var(--border);margin-bottom:0;background:var(--dark2);font-size:12px}
+  .tab.active{background:rgba(201,165,75,.12)}
+  .stat-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}
+  .stat-tab{padding:10px 12px;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal}
+  .tw{border-radius:18px;overflow:hidden}
+  table{min-width:640px}
+  th,td{padding:10px 12px;font-size:12px}
+  .match-card{padding:1rem;border-radius:18px}
+  .match-score{min-width:0}
+  .match-score .score{font-size:32px}
+  .match-team{font-size:15px}
+  .matches-grid{gap:12px}
+  .match-meta-row{gap:8px;margin-top:.3rem}
+  .match-meta-pill{font-size:11px;padding:6px 10px}
+  .news-grid,.podcast-grid{grid-template-columns:1fr}
+  .news-card,.podcast-card{padding:1rem 1rem 1.05rem;border-radius:18px}
+  .news-title{font-size:16px;line-height:1.35}
+  .news-summary,.podcast-summary{font-size:13px;line-height:1.55}
+  .pagination{gap:8px;justify-content:flex-start;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap}
+  .page-btn{flex:0 0 auto;padding:10px 14px;font-size:14px;border-radius:12px}
+  .mobile-nav{height:68px;padding:0 .35rem calc(env(safe-area-inset-bottom) + 4px)}
+  .mnav-btn{min-width:50px;padding:.35rem .4rem;font-size:9px}
+  .mnav-btn .icon{font-size:18px}
+}
+
 </style>
 
 </head>
@@ -721,7 +825,7 @@ main > *{animation:fadeUp .3s ease both}
 </header>
 
 <!-- AdSense top banner -->
-<div style="text-align:center;background:var(--dark2);border-bottom:1px solid var(--border);padding:6px;min-height:60px;display:flex;align-items:center;justify-content:center">
+<div id="topAdWrap" class="top-ad" style="text-align:center;background:var(--dark2);border-bottom:1px solid var(--border);padding:6px;min-height:60px;display:flex;align-items:center;justify-content:center">
   <ins class="adsbygoogle"
     style="display:block;width:100%;max-width:728px"
     data-ad-client="ca-pub-4755802199865904"
@@ -869,7 +973,20 @@ function updateNav(path) {
 }
 window.addEventListener('popstate', () => route(location.pathname));
 
+
+function updateRouteChrome(path){
+  const installBanner = document.getElementById('installBanner');
+  const topAdWrap = document.getElementById('topAdWrap');
+  const isHome = path === '/' || path === '';
+  if(installBanner){
+    installBanner.classList.toggle('route-hidden', !isHome);
+    if(!isHome) installBanner.style.display = 'none';
+  }
+  if(topAdWrap) topAdWrap.classList.toggle('route-hidden', !isHome && window.innerWidth <= 900);
+}
+
 function route(path) {
+  updateRouteChrome(path);
   const el = document.getElementById('mc');
   if(path==='/'||path==='')            { pageStart(el); return; }
   if(path==='/lag-lista')              { pageTeams(el); return; }
@@ -1135,10 +1252,10 @@ function renderNews(el, news, opts = {}){
 
   const cards = news.slice(0, 8).map(n => `
     <article class="news-card" ${n.url ? `onclick="window.open('${n.url}','_blank')"` : ''}>
-      <div class="news-source">${esc(n.source || 'Nyheter')}</div>
-      <div class="news-title">${esc(n.title || 'Utan rubrik')}</div>
-      <div class="news-summary">${esc(n.summary || '')}</div>
-      ${n.date ? `<div class="news-date">${esc(n.date)}</div>` : ''}
+      <div class="news-source">${esc(cleanFeedText(n.source || 'Nyheter'))}</div>
+      <div class="news-title">${esc(cleanFeedText(n.title || 'Utan rubrik'))}</div>
+      <div class="news-summary">${esc(cleanFeedText(n.summary || ''))}</div>
+      ${n.date ? `<div class="news-date">${esc(cleanFeedText(n.date))}</div>` : ''}
       <div class="news-linkline">Läs artikel →</div>
     </article>
   `).join('');
@@ -1257,7 +1374,7 @@ function renderPodcasts(el, podcasts, opts = {}){
   const cards = podcasts.slice(0, 8).map(p => {
     const title = p.title || p.name || 'Utan titel';
     const link = p.url || p.link || '';
-    const summary = p.summary || p.description || '';
+    const summary = cleanFeedText(p.summary || p.description || '');
     const source = p.source || p.podcast || 'Podd';
     const date = p.date || p.published || '';
     const actionText = p.actionText || 'Lyssna →';
@@ -1419,7 +1536,7 @@ async function pageTeam(el, teamId) {
       </tr>`;}).join('');
 
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         <button class="back" onclick="go('/')">← Alla lag</button>
         <button class="share" onclick="copyLink()">🔗 Kopiera länk</button>
       </div>
@@ -1446,9 +1563,9 @@ async function pageTeam(el, teamId) {
       </div></div>
 
       <div class="section-label">Säsongsstatistik ${SEASON}</div>
-      <div class="pills" style="margin-bottom:1rem">${statCards}</div>
+      <div class="pills team-stat-pills" style="margin-bottom:1rem">${statCards}</div>
 
-      <div style="display:grid;grid-template-columns:1.25fr .9fr;gap:12px;margin-bottom:1rem">
+      <div class="team-overview-grid" style="display:grid;grid-template-columns:1.25fr .9fr;gap:12px;margin-bottom:1rem">
         <div class="tw">
           <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Hemma / borta</div>
           <div style="overflow-x:auto"><table>
@@ -1469,7 +1586,7 @@ async function pageTeam(el, teamId) {
         </div>
       </div>
 
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem">
+      <div class="team-minute-grid" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem">
         ${minuteCard('Farligaste målperioder', scoredMin)}
         ${minuteCard('Mest insläppta målperioder', concededMin)}
       </div>
@@ -1724,7 +1841,7 @@ async function pagePlayer(el, playerId) {
       </tr>`).join('');
 
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         ${teamId?`<button class="back" onclick="go('/lag/${teamId}')">← ${esc(teamName)}</button>`:`<button class="back" onclick="go('/')">← Hem</button>`}
         <button class="share" onclick="copyLink()">🔗 Kopiera länk</button>
       </div>
@@ -1744,7 +1861,7 @@ async function pagePlayer(el, playerId) {
             <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
           </div>`:''}
           <span class="season-label">Säsong ${curSeasonYear}</span>
-          <div class="pills">
+          <div class="pills player-current-pills">
             <div class="pill"><div class="pn">${curApps}</div><div class="pl">Matcher</div></div>
             <div class="pill"><div class="pn">${curMins}</div><div class="pl">Minuter</div></div>
             <div class="pill"><div class="pn">${curGoals}</div><div class="pl">Mål</div></div>
@@ -1754,7 +1871,7 @@ async function pagePlayer(el, playerId) {
         </div>
         <div style="text-align:right">
           <span class="season-label">Karriärtotalt</span>
-          <div class="pills" style="justify-content:flex-end">
+          <div class="pills player-career-pills" style="justify-content:flex-end">
             <div class="pill"><div class="pn">${careerApps}</div><div class="pl">Matcher</div></div>
             <div class="pill"><div class="pn">${careerGoals}</div><div class="pl">Mål</div></div>
             <div class="pill"><div class="pn">${careerAssists}</div><div class="pl">Assist</div></div>
@@ -2060,7 +2177,7 @@ async function pageResults(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
   try {
     const data = await af('fixtures', {league:LEAGUE, season:SEASON, last:50});
-    const cards = [...data].reverse().map(f => {
+    const cards = [...data].sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0)).map(f => {
       const hs = f.goals?.home, as_ = f.goals?.away;
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
       const venue = f.fixture?.venue?.name || 'Arena saknas';
@@ -2527,7 +2644,7 @@ function switchTab(btn,id){
   const all=['sq','tai','p-career','p-detail','p-tr'];
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
-function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=event.target;const o=b.textContent;b.textContent='✅';setTimeout(()=>b.textContent=o,2000);});}
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='✅ Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
 function fixEnc(s) {
   if(!s) return '';
   try {
@@ -2539,6 +2656,15 @@ function fixEnc(s) {
       .replace(/Ä/g,'č').replace(/Ä/g,'ć').replace(/Å¡/g,'š')
       .replace(/Å¾/g,'ž').replace(/Ä/g,'đ');
   }
+}
+function cleanFeedText(s){
+  return fixEnc(String(s||''))
+    .replace(/&nbsp;|&#160;/gi,' ')
+    .replace(/&amp;/gi,'&')
+    .replace(/&#39;|&apos;/gi,"'")
+    .replace(/&quot;/gi,'"')
+    .replace(/\s+/g,' ')
+    .trim();
 }
 function esc(s){
   return fixEnc(fixName(String(s||'')))
@@ -2591,8 +2717,8 @@ boot();
 
 </script>
 <script>
-// Show banner unless already dismissed
-if(!window.navigator.standalone) {
+// Show banner only on start page
+if((location.pathname==='/' || location.pathname==='') && !window.navigator.standalone) {
   document.getElementById('installBanner').style.display = 'flex';
 }
 
@@ -2601,7 +2727,7 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  if(true) {
+  if(location.pathname==='/' || location.pathname==='') {
     document.getElementById('installBanner').style.display = 'flex';
   }
 });
@@ -2661,140 +2787,13 @@ function showInstallModal(isIOS) {
 // Show banner on iOS too (no beforeinstallprompt on Safari)
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.navigator.standalone;
-if(isIOS && !isStandalone) {
+if(isIOS && !isStandalone && (location.pathname==='/' || location.pathname==='')) {
   setTimeout(() => {
     document.getElementById('installBanner').style.display = 'flex';
   }, 2000);
 }
 
-
-
-/* =========================
-   MOBILE FIX ALLSVENSKANAI
-   ========================= */
-
-@media (max-width: 900px){
-
-  main{
-    padding:1.5rem 1rem 5rem;
-  }
-
-  header{
-    padding:0 1rem;
-  }
-
-  .logo{
-    font-size:16px;
-    letter-spacing:2px;
-  }
-
-  .nav-pills{
-    display:none;
-  }
-
-  .mobile-nav{
-    display:flex;
-  }
-
-  .pg-title{
-    font-size:28px;
-  }
-
-  .pg-header{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:6px;
-  }
-
-  /* TEAM GRID */
-  .tgrid{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .start-tgrid{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .tcard,
-  .start-tcard{
-    padding:1rem .5rem;
-  }
-
-  .tcard img,
-  .start-tcard img{
-    width:50px;
-    height:50px;
-  }
-
-  .tn,
-  .start-tn{
-    font-size:12px;
-  }
-
-  /* MATCHES */
-  .match-card{
-    grid-template-columns:1fr;
-    padding:1rem;
-  }
-
-  .match-score .score{
-    font-size:28px;
-  }
-
-  /* PROFILE */
-  .profile-inner{
-    flex-direction:column;
-    align-items:center;
-    text-align:center;
-    padding:1.5rem 1rem;
-  }
-
-  .p-body h1{
-    font-size:24px;
-  }
-
-  .p-meta{
-    justify-content:center;
-  }
-
-  .pills{
-    justify-content:center;
-  }
-
-  /* TABLE FIX */
-  .tw{
-    overflow-x:auto;
-  }
-
-  table{
-    min-width:600px;
-  }
-
-  /* NEWS */
-  .news-grid{
-    grid-template-columns:1fr;
-  }
-
-  .news-card{
-    padding:1rem;
-  }
-
-  .news-title{
-    font-size:16px;
-  }
-
-  /* PODCAST */
-  .podcast-grid{
-    grid-template-columns:1fr;
-  }
-
-  /* BUTTONS */
-  .ai-btn{
-    width:100%;
-    text-align:center;
-  }
-
-}
+updateRouteChrome(location.pathname);
 
   </script>
 </body>
