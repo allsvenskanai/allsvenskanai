@@ -805,7 +805,7 @@ main{max-width:1360px}
   .stat-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}
   .stat-tab{padding:10px 12px;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal}
   .tw{border-radius:18px;overflow:hidden}
-  table{min-width:640px}
+  table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
   .match-card{padding:1rem;border-radius:18px}
   .match-score{min-width:0}
@@ -820,20 +820,23 @@ main{max-width:1360px}
   .news-summary,.podcast-summary{font-size:13px;line-height:1.55}
   .pagination{gap:8px;justify-content:flex-start;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap}
   .page-btn{flex:0 0 auto;padding:10px 14px;font-size:14px;border-radius:12px}
-  .stats-table{table-layout:auto}
-  .stats-table th:nth-child(1), .stats-table td:nth-child(1){width:52px}
-  .stats-table th:nth-child(3), .stats-table td:nth-child(3){width:84px}
+  .stats-table{width:100%;table-layout:fixed}
+  .stats-table th:nth-child(1), .stats-table td:nth-child(1){width:46px}
+  .stats-table th:nth-child(3), .stats-table td:nth-child(3){width:68px;text-align:right}
+  .stats-table th:nth-child(2), .stats-table td:nth-child(2){width:auto}
   .stats-table thead th:nth-child(2){text-align:left}
-  .stats-table tbody td{padding:10px 8px}
-  .stats-table thead th{padding:10px 8px}
-  .stats-player-cell{gap:8px}
-  .stats-player-photo{width:54px;height:54px}
-  .stats-player-name{font-size:13px;white-space:normal;line-height:1.12}
-  .stats-player-club{font-size:11px;gap:5px}
-  .stats-player-club img{width:14px;height:14px}
-  .stats-rank{font-size:18px}
-  .stats-rank.medal{font-size:18px}
-  .stats-value{font-size:28px}
+  .stats-table tbody td{padding:8px 6px}
+  .stats-table thead th{padding:10px 6px}
+  .stats-player-cell{gap:8px;min-width:0;max-width:100%}
+  .stats-player-photo{width:40px;height:40px}
+  .stats-player-meta{min-width:0;max-width:100%}
+  .stats-player-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+  .stats-player-club{font-size:10px;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stats-player-club span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .stats-player-club img{width:12px;height:12px}
+  .stats-rank{font-size:16px}
+  .stats-rank.medal{font-size:16px}
+  .stats-value{display:block;font-size:22px;line-height:1;text-align:right}
   .mobile-nav{height:68px;padding:0 .35rem calc(env(safe-area-inset-bottom) + 4px)}
   .mnav-btn{min-width:50px;padding:.35rem .4rem;font-size:9px}
   .mnav-btn .icon{font-size:18px}
