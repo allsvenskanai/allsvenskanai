@@ -667,6 +667,42 @@ main > *{animation:fadeUp .3s ease both}
 .stat-tab:hover{background:var(--dark3);color:var(--text)}
 .stat-tab.active{background:var(--gold);color:var(--dark)}
 
+/* STATS TABLE */
+.stats-table-wrap{overflow-x:visible!important}
+.stats-table{width:100%;min-width:0!important;table-layout:fixed}
+.stats-table th:nth-child(1), .stats-table td:nth-child(1){width:54px}
+.stats-table th:nth-child(2), .stats-table td:nth-child(2){width:auto}
+.stats-table th:nth-child(3), .stats-table td:nth-child(3){width:32%}
+.stats-table th:nth-child(4), .stats-table td:nth-child(4){width:110px;text-align:right}
+.stats-rank{
+  color:var(--muted);font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:16px;white-space:nowrap
+}
+.stats-player-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.stats-player-cell img{
+  width:38px;height:38px;border-radius:50%;object-fit:cover;
+  background:var(--dark4);flex-shrink:0
+}
+.stats-player-text,.stats-team-cell{min-width:0}
+.stats-player-name{
+  font-size:14px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.stats-team-link{
+  display:flex;align-items:center;gap:7px;min-width:0;
+  color:var(--blue);text-decoration:none;cursor:pointer
+}
+.stats-team-link img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.stats-team-name{
+  font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.stats-value{
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;
+  font-weight:800;white-space:nowrap
+}
+.stats-empty{text-align:center}
+
+
 /* MOBILE */
 @media(max-width:768px){
   header{padding:0 1rem;height:52px}
@@ -786,6 +822,16 @@ main{max-width:1360px}
   .stat-tab{padding:10px 12px;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:640px}
+  .stats-table{min-width:0!important;table-layout:auto}
+  .stats-table th,.stats-table td{padding:10px 10px;font-size:12px}
+  .stats-table th:nth-child(1), .stats-table td:nth-child(1){width:44px}
+  .stats-table th:nth-child(3), .stats-table td:nth-child(3){width:34%}
+  .stats-table th:nth-child(4), .stats-table td:nth-child(4){width:82px}
+  .stats-player-cell{gap:8px}
+  .stats-player-cell img{width:34px;height:34px}
+  .stats-player-name{font-size:13px}
+  .stats-team-name{font-size:12px}
+  .stats-value{font-size:21px}
   th,td{padding:10px 12px;font-size:12px}
   .match-card{padding:1rem;border-radius:18px}
   .match-score{min-width:0}
@@ -2456,24 +2502,24 @@ function renderStats(el, catId) {
     const displayVal = cat.id==='rating' ? x.val.toFixed(2) : x.val;
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
     return `<tr class="link" onclick="go('/spelare/${x.p.id}')">
-      <td style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px">${medal||i+1}</td>
-      <td><div class="pcell">
-        <img src="${x.p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-        <div><div class="pn">${esc(x.p.name)}</div>
-        <div class="ps">${flag(x.p.nationality)} ${esc(x.p.nationality||'')}</div></div>
-      </div></td>
-      <td><div style="display:flex;align-items:center;gap:5px">
-        <img src="${x.s.team?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-        <span style="font-size:12px;cursor:pointer;color:var(--blue)" onclick="event.stopPropagation();go('/lag/${x.s.team?.id}')">${esc(fixName(x.s.team?.name||'—'))}</span>
-      </div></td>
-      <td><span class="pos-tag">${esc(x.s.games?.position||'—')}</span></td>
-      <td class="num ${cat.id==='rating'?rc:''}" style="font-size:22px">${displayVal}</td>
-      ${cat.id!=='goals'?`<td class="num" style="font-size:15px;color:var(--muted)">${x.s.goals?.total||0} mål</td>`:''}
-      <td style="font-size:12px;color:var(--muted)">${x.s.games?.appearences||0} M</td>
+      <td class="stats-rank">${medal||i+1}</td>
+      <td>
+        <div class="stats-player-cell">
+          <img src="${x.p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div class="stats-player-text">
+            <div class="stats-player-name">${esc(x.p.name)}</div>
+          </div>
+        </div>
+      </td>
+      <td class="stats-team-cell">
+        <span class="stats-team-link" onclick="event.stopPropagation();go('/lag/${x.s.team?.id}')">
+          <img src="${x.s.team?.logo||''}" onerror="this.style.opacity='.15'">
+          <span class="stats-team-name">${esc(fixName(x.s.team?.name||'—'))}</span>
+        </span>
+      </td>
+      <td class="stats-value ${cat.id==='rating'?rc:''}">${displayVal}</td>
     </tr>`;
   }).join('');
-
-  const extraCol = cat.id!=='goals' ? `<th>Mål</th>` : '';
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
@@ -2491,10 +2537,14 @@ function renderStats(el, catId) {
     </div>
     <div class="section-label" style="margin-top:1rem">Kategori</div>
     <div class="stat-tabs">${tabs}</div>
-    <div class="tw" style="margin-top:1rem"><div style="overflow-x:auto"><table>
-      <thead><tr><th>#</th><th>Spelare</th><th>Lag</th><th>Position</th><th>${cat.col}</th>${extraCol}<th>Matcher</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="7" class="empty">Ingen data</td></tr>'}</tbody>
-    </table></div></div>`;
+    <div class="tw" style="margin-top:1rem">
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>#</th><th>Spelare</th><th>Klubb</th><th>${cat.col}</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="4" class="empty stats-empty">Ingen data</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 // ─── AI SEARCH ───────────────────────────────────────
