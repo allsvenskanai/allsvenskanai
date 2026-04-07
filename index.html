@@ -759,6 +759,9 @@ main > *{animation:fadeUp .3s ease both}
   border-radius:16px;padding:1.05rem 1.1rem;
   box-shadow:0 12px 26px rgba(66,48,18,.05);
 }
+.start-mini-card.placeholder{
+  display:flex;flex-direction:column;
+}
 .start-mini-head{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   margin-bottom:.8rem;
@@ -770,6 +773,18 @@ main > *{animation:fadeUp .3s ease both}
 .start-mini-sub{
   margin-top:.2rem;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
   font-family:'Barlow Condensed',sans-serif;font-weight:700;
+}
+.start-mini-empty{
+  flex:1;min-height:238px;display:flex;align-items:center;justify-content:center;
+  text-align:center;border-radius:14px;background:rgba(255,255,255,.5);border:1px dashed rgba(108,86,44,.14);
+  color:var(--muted);padding:1rem;
+}
+.start-mini-empty strong{
+  display:block;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text2);
+}
+.start-mini-empty span{
+  display:block;margin-top:.45rem;font-size:12px;line-height:1.5;
 }
 .start-mini-link{
   background:none;border:none;color:var(--gold);cursor:pointer;
@@ -1562,22 +1577,26 @@ async function pageStart(el) {
         <div class="start-mini-card">
           <div class="start-mini-head">
             <div>
-              <div class="start-mini-title">Toppen just nu</div>
+              <div class="start-mini-title">Toppen Herr</div>
               <div class="start-mini-sub">Poäng, målskillnad och form</div>
             </div>
             <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
           </div>
           <div class="start-table-list">${topRows}</div>
         </div>
-        <div class="start-mini-card">
+        <div class="start-mini-card placeholder">
           <div class="start-mini-head">
             <div>
-              <div class="start-mini-title">Senaste resultat</div>
-              <div class="start-mini-sub">Senast uppdaterad live-data</div>
+              <div class="start-mini-title">Toppen Dam</div>
+              <div class="start-mini-sub">Damallsvenskan</div>
             </div>
-            <button class="start-mini-link" onclick="go('/resultat')">Alla matcher</button>
           </div>
-          <div class="start-result-list">${resultRows}</div>
+          <div class="start-mini-empty">
+            <div>
+              <strong>Kommer snart</strong>
+              <span>Damallsvenskan är på väg</span>
+            </div>
+          </div>
         </div>
       </div>
 
