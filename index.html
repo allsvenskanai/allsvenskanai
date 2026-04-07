@@ -1473,7 +1473,14 @@ async function pageStart(el) {
       .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
       .slice(0,3);
 
-    const cards = teams.map(t=>`
+    const teamOrderIndex = new Map(TEAM_GRID_ORDER.map((name, index) => [name, index]));
+    const orderedTeams = [...teams].sort((a,b) => {
+      const ai = teamOrderIndex.get(fixName(a.name)) ?? Number.MAX_SAFE_INTEGER;
+      const bi = teamOrderIndex.get(fixName(b.name)) ?? Number.MAX_SAFE_INTEGER;
+      return ai - bi || fixName(a.name).localeCompare(fixName(b.name), 'sv');
+    });
+
+    const cards = orderedTeams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
         <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
         <div class="start-tn">${esc(t.name)}</div>
@@ -1788,6 +1795,25 @@ const TEAM_NEWS_KEYS = {
   'degerfors if': 'degerfors',
   'mjallby aif': 'mjallby'
 };
+
+const TEAM_GRID_ORDER = [
+  'AIK',
+  'BK Häcken',
+  'Degerfors IF',
+  'Djurgårdens IF',
+  'GAIS',
+  'Halmstads BK',
+  'Hammarby IF',
+  'IF Brommapojkarna',
+  'IF Elfsborg',
+  'IFK Göteborg',
+  'IK Sirius FK',
+  'Kalmar FF',
+  'Malmö FF',
+  'Mjällby AIF',
+  'Västerås SK FK',
+  'Örgryte IS'
+];
 
 function normalizeTeamName(name=''){
   return String(name || '')
