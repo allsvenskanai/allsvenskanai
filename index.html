@@ -1794,6 +1794,23 @@ const TEAM_NEWS_KEYS = {
   'mjallby aif': 'mjallby'
 };
 
+const AI_TEAM_ALIASES = {
+  'mff': 'Malmö FF',
+  'malmö': 'Malmö FF',
+  'malmo': 'Malmö FF',
+  'malmö ff': 'Malmö FF',
+  'aik': 'AIK',
+  'hammarby': 'Hammarby IF',
+  'hammarby if': 'Hammarby IF',
+  'djurgården': 'Djurgårdens IF',
+  'djurgarden': 'Djurgårdens IF',
+  'djurgårdens if': 'Djurgårdens IF',
+  'göteborg': 'IFK Göteborg',
+  'goteborg': 'IFK Göteborg',
+  'ifk göteborg': 'IFK Göteborg',
+  'ifk goteborg': 'IFK Göteborg'
+};
+
 const TEAM_GRID_ORDER = [
   'AIK',
   'BK Häcken',
@@ -3282,8 +3299,13 @@ async function tryDataAnswer(question) {
     }
   }
 
-  if(!matchedTeam && /\baik\b/.test(q)) {
-    matchedTeam = teams.find(t => fixName(t.name) === 'AIK') || null;
+  if(!matchedTeam) {
+    for(const [alias, canonical] of Object.entries(AI_TEAM_ALIASES)) {
+      if(q.includes(alias.toLowerCase())) {
+        matchedTeam = teams.find(t => fixName(t.name) === canonical) || null;
+        if(matchedTeam) break;
+      }
+    }
   }
 
   // Find which stat is asked about
@@ -3292,7 +3314,7 @@ async function tryDataAnswer(question) {
     if(q.includes(word)) { matchedStat = path; matchedStatLabel = word; break; }
   }
 
-  if(q.includes('flest mål') || q === 'mål?' || q === 'flest mål?' || q === 'skytteliga' || q === 'skytteligan') {
+  if((q.includes('flest mål') || q === 'mål?' || q === 'flest mål?' || q === 'skytteliga' || q === 'skytteligan') && !matchedTeam) {
     const scorers = await af('players/topscorers', {league:LEAGUE, season:SEASON}).catch(() => []);
     const top = scorers.slice(0,5);
     if(top.length) {
@@ -3381,6 +3403,22 @@ async function tryDataAnswer(question) {
         </div></td>
         <td class="num" style="font-size:20px">${p.val}</td>
       </tr>`).join('');
+
+    const isGoalsQuery = matchedStat === 'goals.total';
+    if(isGoalsQuery) {
+      return renderQuickListAnswer(
+        `Flest mål i ${esc(fixName(matchedTeam.name))}`,
+        'Spelare i laget sorterade efter mål',
+        top.map((p, i) => `
+          <div class="start-table-row" onclick="go('/spelare/${p.id}?team=${matchedTeam.id}')">
+            <div class="start-rank">${i+1}</div>
+            <img src="${p.photo||''}" style="width:24px;height:24px;object-fit:cover;border-radius:50%" onerror="this.style.opacity='.15'">
+            <div class="start-team-name">${esc(p.name)}</div>
+            <div class="start-team-gd">${esc(fixName(matchedTeam.name))}</div>
+            <div class="start-points">${p.val}</div>
+          </div>`).join('')
+      );
+    }
 
     const label = matchedStatLabel.charAt(0).toUpperCase() + matchedStatLabel.slice(1);
     return `
