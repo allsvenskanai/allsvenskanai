@@ -693,6 +693,10 @@ main > *{animation:fadeUp .3s ease both}
   letter-spacing:1.4px;text-transform:uppercase;color:var(--text);line-height:1;
 }
 .start-ai-copy{max-width:700px;margin-top:.5rem;font-size:14px;line-height:1.7;color:var(--text2)}
+.start-ai-live{
+  font-size:10px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+}
 .start-ai-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
 .start-ai-input{
   flex:1 1 420px;min-height:50px;padding:0 16px;border-radius:12px;
@@ -724,15 +728,20 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-mini-card{
   background:var(--dark2);border:1px solid var(--border);
-  border-radius:16px;padding:1.1rem 1.15rem;
+  border-radius:16px;padding:1.05rem 1.1rem;
+  box-shadow:0 12px 26px rgba(66,48,18,.05);
 }
 .start-mini-head{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  margin-bottom:.9rem;
+  margin-bottom:.8rem;
 }
 .start-mini-title{
   font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;
   letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.start-mini-sub{
+  margin-top:.2rem;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
 }
 .start-mini-link{
   background:none;border:none;color:var(--gold);cursor:pointer;
@@ -743,9 +752,9 @@ main > *{animation:fadeUp .3s ease both}
 .start-table-row{
   display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;
   padding:.7rem .8rem;border-radius:12px;background:rgba(255,255,255,.58);cursor:pointer;
-  transition:background .18s,transform .18s;
+  transition:background .18s,transform .18s,box-shadow .18s;
 }
-.start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px)}
+.start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px);box-shadow:0 10px 18px rgba(76,56,24,.08)}
 .start-rank{
   font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--gold);text-align:center;
 }
@@ -753,13 +762,15 @@ main > *{animation:fadeUp .3s ease both}
 .start-team-line img{width:22px;height:22px;object-fit:contain;flex-shrink:0}
 .start-team-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
 .start-team-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.start-team-form{display:flex;gap:4px;justify-content:flex-end;margin-top:4px}
+.start-team-form .fd{width:7px;height:7px}
 .start-points{
   font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--text);
 }
 .start-result-list{display:grid;gap:8px}
 .start-result-row{
   padding:.8rem .9rem;border-radius:12px;background:rgba(255,255,255,.58);
-  cursor:pointer;transition:background .18s,transform .18s;
+  cursor:pointer;transition:background .18s,transform .18s,box-shadow .18s;
 }
 .start-result-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .start-result-round{
@@ -767,7 +778,7 @@ main > *{animation:fadeUp .3s ease both}
   letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
 }
 .start-result-score{
-  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--text);line-height:1;
+  font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--text);line-height:1;
 }
 .start-result-teams{
   display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
@@ -1435,18 +1446,24 @@ async function pageStart(el) {
         <div class="start-highlight-copy">${item.copy}</div>
       </div>`).join('');
 
-    const topRows = topThree.map(row => `
+    const topRows = topThree.map(row => {
+      const gd = row.goalsDiff || 0;
+      const formDots = (row.form || '').slice(-5).split('').filter(Boolean)
+        .map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
+      return `
       <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
         <div class="start-rank">${row.rank}</div>
         <div class="start-team-line">
           <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
           <div style="min-width:0">
             <div class="start-team-name">${esc(fixName(row.team.name))}</div>
-            <div class="start-team-meta">${row.all.played} matcher · ${row.all.win} vinster</div>
+            <div class="start-team-meta">${row.points} poäng · ${gd >= 0 ? '+' : ''}${gd} i målskillnad</div>
+            ${formDots ? `<div class="start-team-form">${formDots}</div>` : ''}
           </div>
         </div>
         <div class="start-points">${row.points}p</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     const resultRows = recentFixtures.length
       ? recentFixtures.map(f => `
@@ -1489,15 +1506,16 @@ async function pageStart(el) {
             <div class="start-ai-title">Fr&aring;ga AllsvenskanAI</div>
             <div class="start-ai-copy">Skriv en fr&aring;ga om tabellen eller spelardata. Prova g&auml;rna en av fr&aring;gorna nedan f&ouml;r att komma ig&aring;ng.</div>
           </div>
+          <div class="start-ai-live">Live-data</div>
         </div>
         <form class="start-ai-form" onsubmit="startAskAI(event)">
           <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off">
           <button class="start-ai-submit" type="submit">Fr&aring;ga AI</button>
         </form>
         <div class="start-chip-row">
-          <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?')" type="button">Vem leder tabellen just nu?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest m&aring;l?')" type="button">Vilka spelare i AIK har flest m&aring;l?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest po&auml;ng?')" type="button">Vilket lag har flest po&auml;ng?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?', true)" type="button">Vem leder tabellen just nu?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest m&aring;l?', true)" type="button">Vilka spelare i AIK har flest m&aring;l?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest po&auml;ng?', true)" type="button">Vilket lag har flest po&auml;ng?</button>
         </div>
         <div class="start-ai-note">Snabbsvaren nedan bygger p&aring; den live-data som redan finns i sajten.</div>
         <div id="startAiResult" class="start-ai-result">
@@ -1508,14 +1526,20 @@ async function pageStart(el) {
       <div class="start-snapshot">
         <div class="start-mini-card">
           <div class="start-mini-head">
-            <div class="start-mini-title">Toppen just nu</div>
+            <div>
+              <div class="start-mini-title">Toppen just nu</div>
+              <div class="start-mini-sub">Poäng, målskillnad och form</div>
+            </div>
             <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
           </div>
           <div class="start-table-list">${topRows}</div>
         </div>
         <div class="start-mini-card">
           <div class="start-mini-head">
-            <div class="start-mini-title">Senaste resultat</div>
+            <div>
+              <div class="start-mini-title">Senaste resultat</div>
+              <div class="start-mini-sub">Senast uppdaterad live-data</div>
+            </div>
             <button class="start-mini-link" onclick="go('/resultat')">Alla matcher</button>
           </div>
           <div class="start-result-list">${resultRows}</div>
@@ -1544,6 +1568,7 @@ async function pageStart(el) {
       </div>`;
     
     // Load feeds async after page renders
+    initStartAiPlaceholder();
     loadStartPodcasts();
     loadStartNews();
   } catch(e) {
@@ -1551,11 +1576,36 @@ async function pageStart(el) {
   }
 }
 
-function startFillPrompt(text) {
+let startAiPlaceholderTimer = null;
+const START_AI_PLACEHOLDERS = [
+  'Vem leder tabellen?',
+  'AIK senaste matcher',
+  'Flest mål i Allsvenskan?'
+];
+
+function initStartAiPlaceholder() {
+  const input = document.getElementById('startAiInput');
+  if(startAiPlaceholderTimer) {
+    clearInterval(startAiPlaceholderTimer);
+    startAiPlaceholderTimer = null;
+  }
+  if(!input) return;
+  let idx = 0;
+  const applyPlaceholder = () => {
+    if(document.activeElement === input || (input.value || '').trim()) return;
+    input.placeholder = START_AI_PLACEHOLDERS[idx];
+    idx = (idx + 1) % START_AI_PLACEHOLDERS.length;
+  };
+  applyPlaceholder();
+  startAiPlaceholderTimer = setInterval(applyPlaceholder, 2400);
+}
+
+function startFillPrompt(text, submit = false) {
   const input = document.getElementById('startAiInput');
   if(!input) return;
   input.value = text;
   input.focus();
+  if(submit) startAskAI();
 }
 
 async function startAskAI(event) {
