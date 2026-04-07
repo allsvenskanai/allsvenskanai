@@ -752,12 +752,14 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-ai-empty{font-size:13px;color:var(--muted);line-height:1.6}
 .start-snapshot{
-  display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-bottom:2rem;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:2rem;
+  align-items:stretch;
 }
 .start-mini-card{
   background:var(--dark2);border:1px solid var(--border);
   border-radius:16px;padding:1.05rem 1.1rem;
   box-shadow:0 12px 26px rgba(66,48,18,.05);
+  min-height:100%;
 }
 .start-mini-card.placeholder{
   display:flex;flex-direction:column;
@@ -1573,7 +1575,7 @@ async function pageStart(el) {
           <div class="start-mini-head">
             <div>
               <div class="start-mini-title">Toppen Herr</div>
-              <div class="start-mini-sub">Poäng, målskillnad och form</div>
+              <div class="start-mini-sub">Målskillnad och poäng</div>
             </div>
             <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
           </div>
@@ -1583,7 +1585,7 @@ async function pageStart(el) {
           <div class="start-mini-head">
             <div>
               <div class="start-mini-title">Toppen Dam</div>
-              <div class="start-mini-sub">Damallsvenskan</div>
+              <div class="start-mini-sub">Målskillnad och poäng</div>
             </div>
           </div>
           <div class="start-mini-empty">
