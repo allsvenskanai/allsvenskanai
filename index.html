@@ -842,30 +842,37 @@ main > *{animation:fadeUp .3s ease both}
 .start-tgrid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:2px;
+  gap:10px;
 }
 .start-tcard{
-  background:var(--dark2);cursor:pointer;
+  background:rgba(255,255,255,.72);cursor:pointer;
   display:flex;flex-direction:column;align-items:center;
-  gap:10px;padding:1.5rem 1rem;text-align:center;
-  transition:background .2s;position:relative;overflow:hidden;
+  gap:8px;padding:1.15rem .85rem;text-align:center;
+  transition:background .2s,transform .2s,box-shadow .2s,border-color .2s;
+  position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(108,86,44,.1);
+  box-shadow:0 10px 22px rgba(66,48,18,.05);
 }
 .start-tcard::before{
   content:'';position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(212,175,55,.06) 0%,transparent 60%);
   opacity:0;transition:opacity .3s;
 }
-.start-tcard:hover{background:var(--dark3)}
+.start-tcard:hover{
+  background:rgba(255,255,255,.94);
+  transform:translateY(-2px);
+  box-shadow:0 16px 30px rgba(66,48,18,.1);
+  border-color:rgba(201,165,75,.18);
+}
 .start-tcard:hover::before{opacity:1}
 .start-tcard img{
-  width:64px;height:64px;object-fit:contain;
+  width:58px;height:58px;object-fit:contain;
   filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
   transition:transform .3s;
 }
 .start-tcard:hover img{transform:scale(1.08) translateY(-2px)}
 .start-tn{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  font-size:12px;font-weight:700;letter-spacing:.35px;text-transform:uppercase;
   color:var(--text2);transition:color .2s;line-height:1.2;
 }
 .start-tcard:hover .start-tn{color:var(--text)}
@@ -1077,8 +1084,8 @@ main{max-width:1360px}
 .install-banner .ib-btn{min-height:32px;padding:0 12px;border-radius:999px}
 .install-banner .ib-close{width:30px;height:30px;border-radius:999px}
 .start-hero{box-shadow:0 18px 40px rgba(76,56,24,.06)}
-.start-tgrid,.tgrid{background:var(--border);padding:1px;border-radius:16px;overflow:hidden}
-.start-tcard,.tcard{border-radius:0}
+.tgrid{background:var(--border);padding:1px;border-radius:16px;overflow:hidden}
+.tcard{border-radius:0}
 .team-overview-grid{align-items:start}
 .team-stat-pills,.player-current-pills,.player-career-pills{gap:10px}
 .team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:110px;min-height:84px;display:flex;flex-direction:column;justify-content:center}
@@ -1087,7 +1094,7 @@ main{max-width:1360px}
 
 @media (min-width: 901px){
   .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
-  .start-tgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:1px}
+  .start-tgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .news-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
 }
 
@@ -1126,10 +1133,14 @@ main{max-width:1360px}
   .start-chip-row{gap:6px}
   .start-chip{font-size:11px;padding:.5rem .7rem}
   .start-result-score{font-size:24px}
-  .tgrid,.start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:18px}
-  .tcard,.start-tcard{padding:1rem .55rem;min-height:124px;justify-content:center}
-  .tcard img,.start-tcard img{width:48px;height:48px}
-  .tcard .tn,.start-tn{font-size:12px;line-height:1.15}
+  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:18px}
+  .start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tcard{padding:1rem .55rem;min-height:124px;justify-content:center}
+  .start-tcard{padding:.95rem .55rem;min-height:118px;justify-content:center}
+  .tcard img{width:48px;height:48px}
+  .start-tcard img{width:46px;height:46px}
+  .tcard .tn{font-size:12px;line-height:1.15}
+  .start-tn{font-size:11px;line-height:1.15}
   .profile{border-radius:18px}
   .profile-inner{padding:1.2rem;gap:1rem;align-items:flex-start;text-align:left}
   .p-img{width:84px;height:84px;padding:10px}
