@@ -1756,8 +1756,7 @@ async function startAskAI(event) {
         <div class="start-ai-result-query">${esc(question)}</div>
       </div>
       <div class="start-ai-empty">
-        Jag kunde inte ge ett exakt snabbsvar på den frågan här på startsidan.
-        Testa frågor om tabellen, ett lag eller statistik som mål och assists, eller gå vidare till <button class="start-mini-link" style="padding:0" onclick="go('/statistik')">Statistik</button>.
+        Testa att fråga om tabellen, mål eller ett specifikt lag.
       </div>`;
   } catch(e) {
     result.innerHTML = `
@@ -3254,6 +3253,15 @@ function getNestedVal(obj, path) {
   return path.split('.').reduce((o,k) => o?.[k], obj) || 0;
 }
 
+function renderQuickListAnswer(title, subtitle, itemsHtml){
+  return `
+    <div style="margin-bottom:.65rem">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--text)">${title}</div>
+      ${subtitle ? `<div style="font-size:12px;color:var(--muted);margin-top:.2rem">${subtitle}</div>` : ''}
+    </div>
+    <div style="display:grid;gap:8px">${itemsHtml}</div>`;
+}
+
 // Try to resolve a question using live API-Football data
 async function tryDataAnswer(question) {
   const q = question.toLowerCase();
@@ -3261,7 +3269,8 @@ async function tryDataAnswer(question) {
   // Find which team is mentioned
   const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
     af('standings', {league:LEAGUE, season:2025}));
-  const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team) || [];
+  const standings = standData[0]?.league?.standings?.[0] || [];
+  const teams = standings.map(t=>t.team) || [];
 
   let matchedTeam = null;
   for(const t of teams) {
@@ -3273,10 +3282,73 @@ async function tryDataAnswer(question) {
     }
   }
 
+  if(!matchedTeam && /\baik\b/.test(q)) {
+    matchedTeam = teams.find(t => fixName(t.name) === 'AIK') || null;
+  }
+
   // Find which stat is asked about
   let matchedStat = null, matchedStatLabel = null;
   for(const [word, path] of Object.entries(STAT_KEYS)) {
     if(q.includes(word)) { matchedStat = path; matchedStatLabel = word; break; }
+  }
+
+  if(q.includes('flest mål') || q === 'mål?' || q === 'flest mål?' || q === 'skytteliga' || q === 'skytteligan') {
+    const scorers = await af('players/topscorers', {league:LEAGUE, season:SEASON}).catch(() => []);
+    const top = scorers.slice(0,5);
+    if(top.length) {
+      return renderQuickListAnswer(
+        'Flest mål i Allsvenskan',
+        'Skytteligan just nu',
+        top.map((p, i) => `
+          <div class="start-table-row" onclick="go('/spelare/${p.player?.id || ''}')">
+            <div class="start-rank">${i+1}</div>
+            <img src="${p.statistics?.[0]?.team?.logo || p.player?.photo || ''}" style="width:24px;height:24px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <div class="start-team-name">${esc(p.player?.name || '—')}</div>
+            <div class="start-team-gd">${esc(fixName(p.statistics?.[0]?.team?.name || ''))}</div>
+            <div class="start-points">${p.statistics?.[0]?.goals?.total || 0}</div>
+          </div>`).join('')
+      );
+    }
+  }
+
+  if(q.includes('leder tabellen') || q.includes('flest poäng') || q.includes('tabellen?') || q === 'tabellen' || q === 'tabellen?') {
+    const leader = standings[0];
+    if(leader) {
+      return renderQuickListAnswer(
+        q.includes('tabell') && !q.includes('leder') && !q.includes('flest poäng') ? 'Toppen i tabellen' : 'Leder tabellen',
+        q.includes('flest poäng') ? 'Lag med flest poäng just nu' : 'Aktuellt topplag i Allsvenskan',
+        standings.slice(0, q.includes('tabell') && !q.includes('leder') && !q.includes('flest poäng') ? 5 : 1).map((row, i) => `
+          <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
+            <div class="start-rank">${row.rank || i+1}</div>
+            <img src="${row.team.logo || ''}" style="width:24px;height:24px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <div class="start-team-name">${esc(fixName(row.team.name || '—'))}</div>
+            <div class="start-team-gd">${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}</div>
+            <div class="start-points">${row.points || 0}p</div>
+          </div>`).join('')
+      );
+    }
+  }
+
+  if(matchedTeam && (!matchedStat || q.includes('senaste matcher') || q.endsWith('?') || q === matchedTeam.name.toLowerCase() || q === fixName(matchedTeam.name).toLowerCase())) {
+    const fixtures = await af('fixtures', {team: matchedTeam.id, season: SEASON, last:3}).catch(() => []);
+    if(fixtures.length) {
+      return renderQuickListAnswer(
+        `${esc(fixName(matchedTeam.name))} senaste matcher`,
+        'Tre senaste resultaten',
+        fixtures.map(f => `
+          <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
+            <div class="start-result-top">
+              <div class="start-result-round">${esc(matchStatusLabel(f))}</div>
+              <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
+            </div>
+            <div class="start-result-teams">
+              <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+              <div class="start-result-vs">mot</div>
+              <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+            </div>
+          </div>`).join('')
+      );
+    }
   }
 
   // If both team and stat found â†’ fetch player data and answer directly
@@ -3340,7 +3412,17 @@ async function tryDataAnswer(question) {
       <tbody>${rows}</tbody></table></div>`;
   }
 
-  return null; // Can't answer from data alone
+  return renderQuickListAnswer(
+    'Prova en snabb fråga',
+    '',
+    `
+      <div class="start-ai-empty">Testa att fråga om tabellen, mål eller ett specifikt lag.</div>
+      <div class="start-chip-row" style="margin-top:.2rem">
+        <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen?', true)" type="button">Vem leder tabellen?</button>
+        <button class="start-chip" onclick="startFillPrompt('Flest mål i Allsvenskan?', true)" type="button">Flest mål i Allsvenskan?</button>
+        <button class="start-chip" onclick="startFillPrompt('AIK senaste matcher', true)" type="button">AIK senaste matcher</button>
+      </div>`
+  );
 }
 
 // â”€â”€â”€ REMOVED: FAVORITES / NOTIFICATIONS / TEAM FOLLOWING â”€â”€â”€
