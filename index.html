@@ -847,29 +847,32 @@ main > *{animation:fadeUp .3s ease both}
 .start-tcard{
   background:rgba(255,255,255,.72);cursor:pointer;
   display:flex;flex-direction:column;align-items:center;
-  gap:8px;padding:1.15rem .85rem;text-align:center;
-  transition:background .2s,transform .2s,box-shadow .2s,border-color .2s;
+  gap:7px;padding:1rem .8rem;text-align:center;
+  transition:background .22s,transform .22s,box-shadow .22s,border-color .22s;
   position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(108,86,44,.1);
-  box-shadow:0 10px 22px rgba(66,48,18,.05);
+  box-shadow:0 12px 26px rgba(66,48,18,.07);
 }
 .start-tcard::before{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(212,175,55,.06) 0%,transparent 60%);
+  background:linear-gradient(145deg,rgba(212,175,55,.08) 0%,rgba(255,255,255,.06) 45%,transparent 72%);
   opacity:0;transition:opacity .3s;
 }
 .start-tcard:hover{
   background:rgba(255,255,255,.94);
-  transform:translateY(-2px);
-  box-shadow:0 16px 30px rgba(66,48,18,.1);
+  transform:translateY(-4px) scale(1.012);
+  box-shadow:0 20px 36px rgba(66,48,18,.12);
   border-color:rgba(201,165,75,.18);
 }
 .start-tcard:hover::before{opacity:1}
 .start-tcard img{
   width:58px;height:58px;object-fit:contain;
   filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
-  transition:transform .3s;
+  transition:transform .28s,filter .28s;
 }
-.start-tcard:hover img{transform:scale(1.08) translateY(-2px)}
+.start-tcard:hover img{
+  transform:scale(1.1) translateY(-2px);
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.38));
+}
 .start-tn{
   font-family:'Barlow Condensed',sans-serif;
   font-size:12px;font-weight:700;letter-spacing:.35px;text-transform:uppercase;
