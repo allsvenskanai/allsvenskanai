@@ -588,12 +588,13 @@ main > *{animation:fadeUp .3s ease both}
 .start-hero{
   background:var(--dark2);border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:3rem 2rem;text-align:center;margin-bottom:2rem;
+  padding:2.35rem 1.8rem 2.1rem;text-align:center;margin-bottom:1.6rem;
   position:relative;overflow:hidden;
+  box-shadow:0 16px 34px rgba(76,56,24,.05);
 }
 .start-hero::before{
   content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.08) 0%,transparent 65%);
+  background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.1) 0%,transparent 62%);
   pointer-events:none;
 }
 .start-wordmark{
@@ -610,62 +611,64 @@ main > *{animation:fadeUp .3s ease both}
   color:var(--muted);
 }
 .start-lead{
-  max-width:700px;margin:1rem auto 0;
-  font-size:17px;line-height:1.7;color:var(--text2);
+  max-width:620px;margin:.8rem auto 0;
+  font-size:15px;line-height:1.62;color:var(--text2);
   position:relative;
 }
 .start-proof{
   display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
-  margin:1.2rem 0 1.5rem;position:relative;
+  margin:1rem 0 1.2rem;position:relative;
 }
 .start-proof-pill{
-  padding:.65rem .95rem;border-radius:999px;
-  background:rgba(255,255,255,.62);border:1px solid var(--border);
-  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
-  letter-spacing:1.3px;text-transform:uppercase;color:var(--text2);
+  padding:.55rem .85rem;border-radius:999px;
+  background:rgba(255,255,255,.74);border:1px solid rgba(108,86,44,.12);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);
+  box-shadow:0 8px 16px rgba(76,56,24,.04);
 }
 .start-hero-actions{
   display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
   position:relative;
 }
 .start-primary-btn,.start-secondary-btn{
-  min-height:46px;padding:0 18px;border-radius:12px;cursor:pointer;
+  min-height:44px;padding:0 18px;border-radius:12px;cursor:pointer;
   font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;
-  letter-spacing:1.2px;text-transform:uppercase;transition:transform .18s,opacity .18s,background .18s,border-color .18s;
+  letter-spacing:1.15px;text-transform:uppercase;transition:transform .18s,opacity .18s,background .18s,border-color .18s,box-shadow .18s,color .18s;
 }
 .start-primary-btn{
   background:var(--gold);color:var(--dark);border:none;
-  box-shadow:0 10px 22px rgba(201,165,75,.22);
+  box-shadow:0 10px 22px rgba(201,165,75,.2);
 }
 .start-secondary-btn{
-  background:rgba(255,255,255,.68);color:var(--text);border:1px solid var(--border-hi);
+  background:rgba(255,255,255,.76);color:var(--text);border:1px solid rgba(108,86,44,.16);
 }
-.start-primary-btn:hover,.start-secondary-btn:hover{transform:translateY(-1px);opacity:.92}
+.start-primary-btn:hover{transform:translateY(-1px);opacity:.96;box-shadow:0 14px 26px rgba(201,165,75,.26)}
+.start-secondary-btn:hover{transform:translateY(-1px);opacity:.98;background:rgba(255,255,255,.92);border-color:rgba(201,165,75,.24);box-shadow:0 12px 22px rgba(76,56,24,.08)}
 .start-highlight-grid{
   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;margin:0 0 2rem;
 }
 .start-highlight{
   background:var(--dark2);border:1px solid var(--border);
-  border-radius:16px;padding:1.1rem 1.15rem;
+  border-radius:16px;padding:.95rem 1rem;
   cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
-  box-shadow:0 10px 24px rgba(66,48,18,.05);
+  box-shadow:0 12px 26px rgba(66,48,18,.05);
 }
 .start-highlight:hover{
   border-color:var(--border-hi);transform:translateY(-2px);
-  box-shadow:0 16px 32px rgba(66,48,18,.08);
+  box-shadow:0 16px 30px rgba(66,48,18,.08);
 }
 .start-highlight-kicker{
   font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
   letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);
-  margin-bottom:.55rem;
+  margin-bottom:.4rem;
 }
 .start-highlight-title{
-  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
   letter-spacing:1px;text-transform:uppercase;color:var(--text);line-height:1;
 }
 .start-highlight-copy{
-  margin-top:.55rem;font-size:13px;line-height:1.6;color:var(--text2);
+  margin-top:.45rem;font-size:13px;line-height:1.5;color:var(--text2);
 }
 .start-ai{
   background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(243,235,221,.88));
@@ -958,7 +961,7 @@ main > *{animation:fadeUp .3s ease both}
   .start-tcard{padding:.85rem .4rem;gap:7px}
   .start-tcard img{width:36px;height:36px}
   .start-tn{font-size:10px;letter-spacing:0}
-  .start-hero{padding:1.75rem 1rem;margin-bottom:1.25rem}
+  .start-hero{padding:1.45rem 1rem 1.3rem;margin-bottom:1.1rem}
   .start-wordmark{font-size:36px}
   .start-sub{font-size:11px}
   .tcard{padding:1rem .6rem;gap:8px}
@@ -1041,12 +1044,12 @@ main{max-width:1360px}
   .start-wordmark{font-size:clamp(28px,12vw,42px);letter-spacing:2px}
   .start-sub{font-size:10px;letter-spacing:1.8px;line-height:1.5}
   .start-lead{font-size:14px;line-height:1.65;margin-top:.8rem}
-  .start-proof{margin:1rem 0 1.15rem}
-  .start-proof-pill{font-size:10px;padding:.55rem .75rem}
+  .start-proof{margin:.85rem 0 1rem}
+  .start-proof-pill{font-size:10px;padding:.5rem .7rem}
   .start-hero-actions{flex-direction:column}
   .start-primary-btn,.start-secondary-btn,.start-ai-submit{width:100%}
   .start-highlight-grid,.start-snapshot{grid-template-columns:1fr}
-  .start-highlight{padding:1rem}
+  .start-highlight{padding:.9rem}
   .start-highlight-title{font-size:22px}
   .start-ai{padding:1.1rem;border-radius:18px}
   .start-ai-title{font-size:26px}
@@ -1453,11 +1456,11 @@ async function pageStart(el) {
         <div class="start-hero-inner">
           <div class="start-wordmark">Allsvenskan<span>AI</span></div>
           <div class="start-sub">Allsvenskan, s&ouml;kbar med AI</div>
-          <div class="start-lead">Tabell, resultat, spelarstatistik, &ouml;verg&aring;ngar och klubbdata samlat p&aring; ett st&auml;lle. Byggd f&ouml;r supportrar som vill hitta svar snabbt.</div>
+          <div class="start-lead">Resultat, tabell och spelarstatistik samlat i en snabb vy f&ouml;r supportrar som vill hitta r&auml;tt direkt.</div>
           <div class="start-proof">
             <div class="start-proof-pill">16 lag</div>
-            <div class="start-proof-pill">Live-data</div>
-            <div class="start-proof-pill">Spelarprofiler & statistik</div>
+            <div class="start-proof-pill">240 matcher</div>
+            <div class="start-proof-pill">Live & statistik</div>
           </div>
           <div class="start-hero-actions">
             <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">B&ouml;rja s&ouml;ka</button>
