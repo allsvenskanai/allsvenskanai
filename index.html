@@ -51,39 +51,59 @@ header{
   background:rgba(255,251,244,.88);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   border-bottom:1px solid var(--border);
-  height:58px;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;
+  min-height:54px;display:flex;align-items:center;padding:.55rem 2rem;gap:1.25rem;
   position:sticky;top:0;z-index:100;flex-shrink:0;
+}
+.header-brand{
+  display:flex;flex-direction:column;justify-content:center;gap:3px;
+  min-width:0;
 }
 .logo{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:20px;font-weight:900;letter-spacing:3px;text-transform:uppercase;
+  font-size:20px;font-weight:900;letter-spacing:2.8px;text-transform:uppercase;
   color:var(--text);cursor:pointer;white-space:nowrap;
   display:flex;align-items:center;gap:8px;text-decoration:none;
 }
 .logo-badge{
-  background:var(--gold);color:var(--dark);
-  font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
-  padding:3px 7px;border-radius:2px;
+  background:rgba(201,165,75,.12);color:var(--muted);
+  font-size:8px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+  padding:2px 6px;border-radius:999px;border:1px solid var(--border);
 }
-.logo em{color:var(--gold);font-style:normal}
-.nav-pills{display:flex;gap:0;margin-left:auto}
+.logo em{color:var(--gold);font-style:normal;text-shadow:0 0 14px rgba(201,165,75,.16)}
+.logo-tagline{
+  font-size:11px;line-height:1.2;color:var(--muted);
+  letter-spacing:.3px;white-space:nowrap;
+}
+.nav-pills{display:flex;gap:6px;margin-left:auto}
 .np{
   background:none;border:none;
   color:var(--muted);
   font-family:'Barlow Condensed',sans-serif;
-  font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
   padding:8px 14px;cursor:pointer;
-  transition:color .2s;
+  transition:color .2s,background .2s,border-color .2s;
   position:relative;
+  border:1px solid transparent;border-radius:999px;
 }
 .np::after{
   content:'';position:absolute;bottom:0;left:50%;right:50%;
   height:2px;background:var(--gold);
-  transition:left .2s, right .2s;
+  transition:left .2s, right .2s, opacity .2s;
+  opacity:0;
 }
-.np:hover{color:var(--text)}
-.np.active{color:var(--gold)}
-.np.active::after{left:14px;right:14px}
+.np:hover{color:var(--text);background:rgba(255,255,255,.55);border-color:var(--border)}
+.np:hover::after{left:14px;right:14px;opacity:1}
+.np.active{color:var(--text);background:rgba(201,165,75,.12);border-color:rgba(201,165,75,.22)}
+.np.active::after{left:14px;right:14px;opacity:1}
+.header-cta{
+  margin-left:8px;min-height:40px;padding:0 16px;border:none;border-radius:999px;
+  background:var(--text);color:var(--dark2);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;
+  letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 10px 20px rgba(36,28,18,.12);
+  transition:transform .18s,opacity .18s,box-shadow .18s;
+}
+.header-cta:hover{transform:translateY(-1px);opacity:.95;box-shadow:0 14px 24px rgba(36,28,18,.16)}
 
 /* MAIN */
 main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
@@ -923,8 +943,9 @@ main > *{animation:fadeUp .3s ease both}
 
 /* MOBILE */
 @media(max-width:768px){
-  header{padding:0 1rem;height:52px}
+  header{padding:.5rem 1rem;min-height:52px}
   .logo{font-size:17px}
+  .logo-tagline,.header-cta{display:none}
   .nav-pills{display:none}
   main{padding:1rem 1rem 72px}
   .pg-title{font-size:28px}
@@ -997,9 +1018,11 @@ main{max-width:1360px}
 
 @media (max-width: 900px){
   body{padding-bottom:88px}
-  header{height:56px}
+  header{min-height:56px}
   .logo{font-size:16px;letter-spacing:2px;gap:6px}
   .logo-badge{font-size:8px;padding:3px 6px}
+  .header-brand{gap:2px}
+  .header-cta{display:none}
   main{padding:1rem 1rem 6.4rem}
   .top-ad{display:none!important}
   .install-banner{top:56px;padding:10px 12px;gap:10px}
@@ -1096,10 +1119,13 @@ main{max-width:1360px}
 </head>
 <body>
 <header>
-  <span class="logo" onclick="go('/')">
-    Allsvenskan<em>AI</em>
-    <span class="logo-badge">2026</span>
-  </span>
+  <div class="header-brand">
+    <span class="logo" onclick="go('/')">
+      Allsvenskan<em>AI</em>
+      <span class="logo-badge">2026</span>
+    </span>
+    <div class="logo-tagline">Allsvenskan – resultat, statistik och AI-sök på ett ställe</div>
+  </div>
   <nav class="nav-pills">
     <button class="np" onclick="go('/')">Start</button>
     <button class="np" onclick="go('/lag-lista')">Lag</button>
@@ -1108,6 +1134,7 @@ main{max-width:1360px}
     <button class="np" onclick="go('/overgangar')">Övergångar</button>
     <button class="np" onclick="go('/statistik')">Statistik</button>
   </nav>
+  <button class="header-cta" onclick="go('/statistik')">Utforska statistik</button>
 </header>
 
 <!-- AdSense top banner -->
