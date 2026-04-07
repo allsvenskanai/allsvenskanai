@@ -1174,17 +1174,8 @@ async function af(ep, p={}) {
   return CACHE[key];
 }
 
-// Fetch ALL pages of a paginated endpoint
 async function afAll(ep, p={}) {
-  let page = 1, all = [];
-  while(true) {
-    const d = await af(ep, {...p, page});
-    all = all.concat(d);
-    if(d.length < 20) break; // API-Football returns 20/page
-    page++;
-    if(page > 5) break; // safety
-  }
-  return all;
+  return af(ep, p);
 }
 
 // â”€â”€â”€ ROUTING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2599,23 +2590,6 @@ function getDefaultResultsRound(fixtures, rounds){
   return startedRounds[startedRounds.length - 1]?.key || rounds?.[0]?.key || '';
 }
 
-async function fetchSeasonFixtures(league, season){
-  const fixtures = [];
-  let page = 1;
-  let totalPages = 1;
-  do {
-    const q = new URLSearchParams({_endpoint:'fixtures', league, season, page});
-    const r = await fetch(`${AF}?${q}`);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const d = await r.json();
-    if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
-    fixtures.push(...(d.response || []));
-    totalPages = Math.max(1, Number(d.paging?.total || 1));
-    page++;
-  } while(page <= totalPages);
-  return fixtures;
-}
-
 function setResultsRound(roundKey){
   resultsSelectedRound = roundKey || '';
   pageResults(document.getElementById('mc'));
@@ -2625,7 +2599,7 @@ async function pageResults(el) {
   document.title = 'Resultat — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
   try {
-    const data = await fetchSeasonFixtures(LEAGUE, SEASON);
+    const data = await af('fixtures', {league:LEAGUE, season:SEASON});
     const rounds = getResultsRounds(data);
     if(rounds.length && !rounds.some(r => r.key === resultsSelectedRound)) {
       resultsSelectedRound = getDefaultResultsRound(data, rounds);
@@ -2878,21 +2852,15 @@ async function pageStats(el, year=null, force=false) {
 
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik för ${teams.length} lag…</div>`;
 
-    // Fetch ALL players per team (all pages)
+    // Fetch players per team
     const allPlayers = [];
     const chunks = [];
     for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
     for(const chunk of chunks) {
       await Promise.all(chunk.map(async t => {
-        let page = 1;
-        while(true) {
-          const r = await af('players', {league:LEAGUE, season:statsYear, team:t.id, page}).catch(()=>[]);
-          const arr = Array.isArray(r) ? r : [];
-          allPlayers.push(...arr);
-          if(arr.length < 20) break; // no more pages
-          page++;
-          if(page > 5) break; // safety
-        }
+        const r = await af('players', {league:LEAGUE, season:statsYear, team:t.id}).catch(()=>[]);
+        const arr = Array.isArray(r) ? r : [];
+        allPlayers.push(...arr);
       }));
     }
 
