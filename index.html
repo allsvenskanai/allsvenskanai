@@ -838,11 +838,6 @@ main > *{animation:fadeUp .3s ease both}
   display:flex;align-items:center;gap:8px;
 }
 .start-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.section-update-label{
-  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
-  margin:0 0 .35rem;
-}
 .start-tgrid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -1636,7 +1631,6 @@ async function pageStart(el) {
       </div>
 
       <div style="margin-bottom:2rem">
-        <div class="section-update-label">Senast uppdaterad</div>
         <div class="start-section-label">Senaste nyheter</div>
         <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning som borde synas här? Kontakta info@allsvenskanai.se.</div>
         <div id="news-container">
