@@ -793,22 +793,22 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-table-list{display:grid;gap:8px}
 .start-table-row{
-  display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;
+  display:grid;grid-template-columns:32px 24px minmax(0,1fr) auto auto;gap:10px;align-items:center;
   padding:.7rem .8rem;border-radius:12px;background:rgba(255,255,255,.58);cursor:pointer;
   transition:background .18s,transform .18s,box-shadow .18s;
 }
 .start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px);box-shadow:0 10px 18px rgba(76,56,24,.08)}
 .start-rank{
-  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold);text-align:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--gold);text-align:center;
 }
-.start-team-line{display:flex;align-items:center;gap:8px;min-width:0}
-.start-team-line img{width:22px;height:22px;object-fit:contain;flex-shrink:0}
-.start-team-name{font-size:14px;font-weight:800;color:var(--text);line-height:1.2}
-.start-team-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.start-team-form{display:flex;gap:4px;justify-content:flex-end;margin-top:4px}
-.start-team-form .fd{width:7px;height:7px}
+.start-team-line{display:contents}
+.start-team-line img{width:24px;height:24px;object-fit:contain;flex-shrink:0}
+.start-team-name{font-size:14px;font-weight:800;color:var(--text);line-height:1.2;min-width:0}
+.start-team-gd{
+  font-size:12px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap;
+}
 .start-points{
-  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--text);white-space:nowrap;
 }
 .start-result-list{display:grid;gap:8px}
 .start-result-row{
@@ -1491,18 +1491,13 @@ async function pageStart(el) {
 
     const topRows = topThree.map(row => {
       const gd = row.goalsDiff || 0;
-      const formDots = (row.form || '').slice(-5).split('').filter(Boolean)
-        .map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
       return `
       <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
         <div class="start-rank">${row.rank}</div>
         <div class="start-team-line">
           <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div style="min-width:0">
-            <div class="start-team-name">${esc(fixName(row.team.name))}</div>
-            <div class="start-team-meta">${row.points} poäng · ${gd >= 0 ? '+' : ''}${gd} i målskillnad</div>
-            ${formDots ? `<div class="start-team-form">${formDots}</div>` : ''}
-          </div>
+          <div class="start-team-name">${esc(fixName(row.team.name))}</div>
+          <div class="start-team-gd">${gd >= 0 ? '+' : ''}${gd}</div>
         </div>
         <div class="start-points">${row.points}p</div>
       </div>`;
