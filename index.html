@@ -600,19 +600,24 @@ main > *{animation:fadeUp .3s ease both}
 .start-wordmark{
   font-family:'Barlow Condensed',sans-serif;
   font-size:clamp(42px,8vw,80px);font-weight:900;
-  letter-spacing:4px;text-transform:uppercase;
+  letter-spacing:4.8px;text-transform:uppercase;
   color:var(--text);line-height:1;margin-bottom:.5rem;
   position:relative;
 }
-.start-wordmark span{color:var(--gold)}
+.start-wordmark span{
+  color:var(--gold);
+  margin-left:.32em;
+  display:inline-block;
+  text-shadow:0 0 18px rgba(201,165,75,.16);
+}
 .start-sub{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
+  font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
   color:var(--muted);
 }
 .start-lead{
   max-width:620px;margin:.8rem auto 0;
-  font-size:15px;line-height:1.62;color:var(--text2);
+  font-size:15px;line-height:1.55;color:var(--text2);
   position:relative;
 }
 .start-proof{
@@ -621,10 +626,17 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-proof-pill{
   padding:.55rem .85rem;border-radius:999px;
-  background:rgba(255,255,255,.74);border:1px solid rgba(108,86,44,.12);
+  background:rgba(255,255,255,.86);border:1px solid rgba(108,86,44,.16);
   font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
   letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);
   box-shadow:0 8px 16px rgba(76,56,24,.04);
+  transition:transform .18s,box-shadow .18s,border-color .18s,background .18s;
+}
+.start-proof-pill:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.96);
+  border-color:rgba(201,165,75,.2);
+  box-shadow:0 12px 22px rgba(76,56,24,.08);
 }
 .start-hero-actions{
   display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
@@ -656,7 +668,7 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-highlight:hover{
   border-color:var(--border-hi);transform:translateY(-2px);
-  box-shadow:0 16px 30px rgba(66,48,18,.08);
+  box-shadow:0 20px 34px rgba(66,48,18,.1);
 }
 .start-highlight-kicker{
   font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
@@ -1455,8 +1467,8 @@ async function pageStart(el) {
       <div class="start-hero">
         <div class="start-hero-inner">
           <div class="start-wordmark">Allsvenskan<span>AI</span></div>
-          <div class="start-sub">Allsvenskan, s&ouml;kbar med AI</div>
-          <div class="start-lead">Resultat, tabell och spelarstatistik samlat i en snabb vy f&ouml;r supportrar som vill hitta r&auml;tt direkt.</div>
+          <div class="start-sub">S&ouml;k Allsvenskan med AI</div>
+          <div class="start-lead">Hitta resultat, statistik och spelardata direkt.</div>
           <div class="start-proof">
             <div class="start-proof-pill">16 lag</div>
             <div class="start-proof-pill">240 matcher</div>
