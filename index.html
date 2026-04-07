@@ -2604,7 +2604,7 @@ async function pageResults(el) {
       const hs = f.goals?.home, as_ = f.goals?.away;
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
       const venue = f.fixture?.venue?.name || 'Arena saknas';
-      const comp = svOmgang(f.league?.round || f.league?.name || 'Allsvenskan');
+      const comp = 'Allsvenskan';
       return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')">
         <div class="match-team">
           <img src="${f.teams?.home?.logo||''}" onerror="this.style.opacity='.15'">
