@@ -64,7 +64,11 @@ header{
   color:var(--text);cursor:pointer;white-space:nowrap;
   display:flex;align-items:center;gap:8px;text-decoration:none;
 }
-.logo em{color:var(--gold);font-style:normal;text-shadow:0 0 14px rgba(201,165,75,.16)}
+.logo em{
+  color:var(--gold);font-style:normal;
+  letter-spacing:3.8px;
+  text-shadow:0 0 16px rgba(201,165,75,.24);
+}
 .logo-tagline{
   font-size:11px;line-height:1.2;color:var(--muted);
   letter-spacing:.3px;white-space:nowrap;
@@ -88,7 +92,7 @@ header{
 }
 .np:hover{color:var(--text);background:rgba(255,255,255,.4);border-color:rgba(108,86,44,.1)}
 .np:hover::after{left:14px;right:14px;opacity:1}
-.np.active{color:var(--text);background:rgba(201,165,75,.12);border-color:rgba(201,165,75,.22)}
+.np.active{color:var(--text);background:rgba(201,165,75,.14);border-color:rgba(201,165,75,.24);font-weight:800}
 .np.active::after{left:14px;right:14px;opacity:1}
 .header-cta{
   margin-left:8px;min-height:36px;padding:0 14px;border:1px solid rgba(108,86,44,.14);border-radius:999px;
@@ -96,9 +100,14 @@ header{
   font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
   letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;
   box-shadow:0 8px 16px rgba(36,28,18,.08);
-  transition:transform .18s,opacity .18s,box-shadow .18s;
+  transition:transform .18s,opacity .18s,box-shadow .18s,background .18s,border-color .18s;
 }
-.header-cta:hover{transform:translateY(-1px);opacity:.96;box-shadow:0 12px 20px rgba(36,28,18,.12);border-color:rgba(201,165,75,.24)}
+.header-cta:hover{
+  transform:translateY(-1px);opacity:.97;
+  background:rgba(255,255,255,.8);
+  box-shadow:0 12px 22px rgba(36,28,18,.11);
+  border-color:rgba(201,165,75,.24);
+}
 
 /* MAIN */
 main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
@@ -869,22 +878,22 @@ main > *{animation:fadeUp .3s ease both}
 /* INSTALL BANNER */
 .install-banner{
   background:var(--dark2);border-bottom:1px solid var(--border-hi);
-  padding:8px 1rem;display:flex;align-items:center;gap:9px;
+  padding:6px .9rem;display:flex;align-items:center;gap:8px;
   font-size:12px;
 }
-.install-banner img{width:28px;height:28px;border-radius:8px;flex-shrink:0}
+.install-banner img{width:24px;height:24px;border-radius:7px;flex-shrink:0}
 .install-banner .ib-text{flex:1}
-.install-banner .ib-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.4px}
-.install-banner .ib-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.install-banner .ib-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.35px}
+.install-banner .ib-sub{font-size:9px;color:var(--muted);margin-top:1px}
 .install-banner .ib-btn{
-  background:rgba(255,255,255,.72);color:var(--text);border:1px solid rgba(108,86,44,.14);
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  background:rgba(255,255,255,.62);color:var(--text);border:1px solid rgba(108,86,44,.1);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
   letter-spacing:1px;text-transform:uppercase;
-  padding:0 12px;border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:32px;
+  padding:0 11px;border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:30px;
 }
 .install-banner .ib-close{
   background:none;border:none;color:var(--muted);cursor:pointer;
-  font-size:16px;padding:0 4px;flex-shrink:0;line-height:1;
+  font-size:14px;padding:0 4px;flex-shrink:0;line-height:1;opacity:.8;
 }
 
 /* PAGINATION */
