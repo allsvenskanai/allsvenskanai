@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -13,15 +13,15 @@
 <link rel="apple-touch-icon" href="/icon-180.png">
 <meta name="google-adsense-account" content="ca-pub-4755802199865904">
 <meta name="google-site-verification" content="dObD6yYNWc9SfyoqzhiNtc6wFlPCoBu1GBZNLKgkycE">
-<meta name="description" content="AllsvenskanAI — Statistik, spelardata, övergångar och marknadsvärden för Allsvenskan. Karriärstatistik för alla spelare. Live-resultat och tabell.">
-<meta name="keywords" content="Allsvenskan, svensk fotboll, statistik, spelare, övergångar, marknadsvärden, live, tabell">
-<meta property="og:title" content="AllsvenskanAI — Allsvenskan statistik">
-<meta property="og:description" content="Statistik, spelardata, övergångar och marknadsvärden för Allsvenskan.">
+<meta name="description" content="AllsvenskanAI &mdash; Statistik, spelardata, &ouml;verg&aring;ngar och marknadsv&auml;rden f&ouml;r Allsvenskan. Karri&auml;rstatistik f&ouml;r alla spelare. Live-resultat och tabell.">
+<meta name="keywords" content="Allsvenskan, svensk fotboll, statistik, spelare, &ouml;verg&aring;ngar, marknadsv&auml;rden, live, tabell">
+<meta property="og:title" content="AllsvenskanAI &mdash; Allsvenskan statistik">
+<meta property="og:description" content="Statistik, spelardata, &ouml;verg&aring;ngar och marknadsv&auml;rden f&ouml;r Allsvenskan.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://allsvenskanai.se">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AllsvenskanAI">
-<meta name="twitter:description" content="Allsvenskan statistik, spelardata och övergångar.">
+<meta name="twitter:description" content="Allsvenskan statistik, spelardata och &ouml;verg&aring;ngar.">
 <link rel="canonical" href="https://allsvenskanai.se">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
@@ -1064,7 +1064,7 @@ main{max-width:1360px}
 
 <script>
 
-// ─── CONFIG ──────────────────────────────────────────
+// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LEAGUE = 113;
 let SEASON = 2026; // auto-detects current season
 const AF = '/api/football';
@@ -1156,7 +1156,7 @@ async function afAll(ep, p={}) {
   return all;
 }
 
-// ─── ROUTING ─────────────────────────────────────────
+// â”€â”€â”€ ROUTING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function go(path, push=true) {
   if(push) history.pushState({}, '', path);
   updateNav(path);
@@ -1210,7 +1210,7 @@ function route(path) {
   el.innerHTML = `<div class="err">Sidan hittades inte.</div>`;
 }
 
-// ─── SEARCH ──────────────────────────────────────────
+// â”€â”€â”€ SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let searchTimer;
 function onSearch(v) {
   clearTimeout(searchTimer);
@@ -1261,7 +1261,7 @@ document.addEventListener('click', e => {
   if(!e.target.closest('.search-wrap')) document.getElementById('sr').classList.remove('open');
 });
 
-// ─── START PAGE ──────────────────────────────────────
+// â”€â”€â”€ START PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageStart(el) {
   document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
@@ -1294,19 +1294,19 @@ async function pageStart(el) {
       {
         kicker: 'Snabbt in',
         title: 'Tabell',
-        copy: 'Se poÃ¤ng, form och mÃ¥lskillnad fÃ¶r hela ligan.',
+        copy: 'Se poäng, form och målskillnad för hela ligan.',
         path: '/tabell'
       },
       {
-        kicker: 'FÃ¶lj nu',
+        kicker: 'Följ nu',
         title: 'Resultat',
-        copy: 'Kolla senaste matcherna och Ã¶ppna varje matchrapport.',
+        copy: 'Kolla senaste matcherna och öppna varje matchrapport.',
         path: '/resultat'
       },
       {
         kicker: 'Djupdata',
         title: 'Statistik',
-        copy: 'JÃ¤mfÃ¶r spelare och hitta ligans starkaste siffror.',
+        copy: 'Jämför spelare och hitta ligans starkaste siffror.',
         path: '/statistik'
       }
     ].map(item => `
@@ -1323,7 +1323,7 @@ async function pageStart(el) {
           <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
           <div style="min-width:0">
             <div class="start-team-name">${esc(fixName(row.team.name))}</div>
-            <div class="start-team-meta">${row.all.played} matcher Â· ${row.all.win} vinster</div>
+            <div class="start-team-meta">${row.all.played} matcher · ${row.all.win} vinster</div>
           </div>
         </div>
         <div class="start-points">${row.points}p</div>
@@ -1334,32 +1334,31 @@ async function pageStart(el) {
         <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
           <div class="start-result-top">
             <div class="start-result-round">${esc(svOmgang(f.league?.round || 'Allsvenskan'))}</div>
-            <div class="start-result-score">${f.goals?.home ?? 'â€“'}-${f.goals?.away ?? 'â€“'}</div>
+            <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
           </div>
           <div class="start-result-teams">
-            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || 'â€”'))}</div>
+            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
             <div class="start-result-vs">mot</div>
-            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || 'â€”'))}</div>
+            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
           </div>
         </div>`).join('')
-      : `<div class="start-ai-empty">Inga fÃ¤rska matcher kunde laddas just nu.</div>`;
+      : `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
 
     el.innerHTML = `
       <div class="start-hero">
         <div class="start-hero-inner">
           <div class="start-wordmark">Allsvenskan<span>AI</span></div>
-          <div class="start-sub">Allsvenskan, sÃ¶kbar med AI</div>
-          <div class="start-lead">Tabell, resultat, spelarstatistik, Ã¶vergÃ¥ngar och klubbdata samlat pÃ¥ ett stÃ¤lle. Byggd fÃ¶r supportrar som vill hitta svar snabbt.</div>
+          <div class="start-sub">Allsvenskan, s&ouml;kbar med AI</div>
+          <div class="start-lead">Tabell, resultat, spelarstatistik, &ouml;verg&aring;ngar och klubbdata samlat p&aring; ett st&auml;lle. Byggd f&ouml;r supportrar som vill hitta svar snabbt.</div>
           <div class="start-proof">
             <div class="start-proof-pill">16 lag</div>
             <div class="start-proof-pill">Live-data</div>
             <div class="start-proof-pill">Spelarprofiler & statistik</div>
           </div>
           <div class="start-hero-actions">
-            <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">BÃ¶rja sÃ¶ka</button>
+            <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">B&ouml;rja s&ouml;ka</button>
             <button class="start-secondary-btn" onclick="go('/tabell')">Se tabellen</button>
           </div>
-          <div class="start-sub">Statistik · Spelare · Övergångar · Marknadsvärden</div>
         </div>
       </div>
 
@@ -1368,22 +1367,22 @@ async function pageStart(el) {
       <div class="start-ai">
         <div class="start-ai-head">
           <div>
-            <div class="start-ai-title">FrÃ¥ga AllsvenskanAI</div>
-            <div class="start-ai-copy">Skriv en frÃ¥ga om tabellen eller spelardata. Prova gÃ¤rna en av frÃ¥gorna nedan fÃ¶r att komma igÃ¥ng.</div>
+            <div class="start-ai-title">Fr&aring;ga AllsvenskanAI</div>
+            <div class="start-ai-copy">Skriv en fr&aring;ga om tabellen eller spelardata. Prova g&auml;rna en av fr&aring;gorna nedan f&ouml;r att komma ig&aring;ng.</div>
           </div>
         </div>
         <form class="start-ai-form" onsubmit="startAskAI(event)">
           <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off">
-          <button class="start-ai-submit" type="submit">FrÃ¥ga AI</button>
+          <button class="start-ai-submit" type="submit">Fr&aring;ga AI</button>
         </form>
         <div class="start-chip-row">
           <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?')" type="button">Vem leder tabellen just nu?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest mÃ¥l?')" type="button">Vilka spelare i AIK har flest mÃ¥l?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest poÃ¤ng?')" type="button">Vilket lag har flest poÃ¤ng?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest m&aring;l?')" type="button">Vilka spelare i AIK har flest m&aring;l?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest po&auml;ng?')" type="button">Vilket lag har flest po&auml;ng?</button>
         </div>
-        <div class="start-ai-note">Snabbsvaren nedan bygger pÃ¥ den live-data som redan finns i sajten.</div>
+        <div class="start-ai-note">Snabbsvaren nedan bygger p&aring; den live-data som redan finns i sajten.</div>
         <div id="startAiResult" class="start-ai-result">
-          <div class="start-ai-empty">FrÃ¥ga om tabellen, ett lag eller en spelkategori sÃ¥ visar vi ett direkt svar hÃ¤r.</div>
+          <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>
         </div>
       </div>
 
@@ -1424,49 +1423,13 @@ async function pageStart(el) {
           <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter…</div>
         </div>
       </div>`;
-    normalizeStartHome();
+    
     // Load feeds async after page renders
     loadStartPodcasts();
     loadStartNews();
   } catch(e) {
-    el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
+    el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
   }
-}
-
-function normalizeStartHome() {
-  const hero = document.querySelector('.start-hero-inner');
-  if(hero) {
-    const subs = hero.querySelectorAll('.start-sub');
-    if(subs[0]) subs[0].textContent = 'Allsvenskan, sokbar med AI';
-    if(subs[1]) subs[1].remove();
-    const lead = hero.querySelector('.start-lead');
-    if(lead) lead.textContent = 'Tabell, resultat, spelarstatistik, overgangar och klubbdata samlat pa ett stalle. Byggd for supportrar som vill hitta svar snabbt.';
-    const proofs = hero.querySelectorAll('.start-proof-pill');
-    if(proofs[0]) proofs[0].textContent = '16 lag';
-    if(proofs[1]) proofs[1].textContent = 'Live-data';
-    if(proofs[2]) proofs[2].textContent = 'Spelarprofiler & statistik';
-    const buttons = hero.querySelectorAll('.start-hero-actions button');
-    if(buttons[0]) buttons[0].textContent = 'Borja soka';
-    if(buttons[1]) buttons[1].textContent = 'Se tabellen';
-  }
-  const title = document.querySelector('.start-ai-title');
-  if(title) title.textContent = 'Fraga AllsvenskanAI';
-  const copy = document.querySelector('.start-ai-copy');
-  if(copy) copy.textContent = 'Skriv en fraga om tabellen eller spelardata. Prova garna en av fragorna nedan for att komma igang.';
-  const input = document.getElementById('startAiInput');
-  if(input) input.placeholder = 'Till exempel: Vem leder tabellen just nu?';
-  const submit = document.querySelector('.start-ai-submit');
-  if(submit) submit.textContent = 'Fraga AI';
-  const chips = document.querySelectorAll('.start-chip');
-  if(chips[0]) chips[0].textContent = 'Vem leder tabellen just nu?';
-  if(chips[1]) chips[1].textContent = 'Vilka spelare i AIK har flest mal?';
-  if(chips[1]) chips[1].setAttribute('onclick', "startFillPrompt('Vilka spelare i AIK har flest mal?')");
-  if(chips[2]) chips[2].textContent = 'Vilket lag har flest poang?';
-  if(chips[2]) chips[2].setAttribute('onclick', "startFillPrompt('Vilket lag har flest poang?')");
-  const note = document.querySelector('.start-ai-note');
-  if(note) note.textContent = 'Snabbsvaren nedan bygger pa den live-data som redan finns i sajten.';
-  const empty = document.querySelector('#startAiResult .start-ai-empty');
-  if(empty) empty.textContent = 'Fraga om tabellen, ett lag eller en spelkategori sa visar vi ett direkt svar har.';
 }
 
 function startFillPrompt(text) {
@@ -1483,11 +1446,11 @@ async function startAskAI(event) {
   if(!input || !result) return;
   const question = (input.value || '').trim();
   if(question.length < 3) {
-    result.innerHTML = `<div class="start-ai-empty">Skriv en lite langre fraga, till exempel "Vem leder tabellen just nu?".</div>`;
+    result.innerHTML = `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
     input.focus();
     return;
   }
-  result.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tanker pa din fraga...</div>`;
+  result.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tänker på din fråga...</div>`;
   try {
     const quick = await tryDataAnswer(question);
     if(quick) {
@@ -1496,11 +1459,11 @@ async function startAskAI(event) {
     }
     result.innerHTML = `
       <div class="start-ai-empty">
-        Jag kunde inte ge ett exakt snabbsvar pa den fragan har pa startsidan.
-        Testa fragor om tabellen, ett lag eller statistik som mal och assists, eller ga vidare till <button class="start-mini-link" style="padding:0" onclick="go('/statistik')">Statistik</button>.
+        Jag kunde inte ge ett exakt snabbsvar på den frågan här på startsidan.
+        Testa frågor om tabellen, ett lag eller statistik som mål och assists, eller gå vidare till <button class="start-mini-link" style="padding:0" onclick="go('/statistik')">Statistik</button>.
       </div>`;
   } catch(e) {
-    result.innerHTML = `<div class="start-ai-empty">Det gick inte att ladda svaret just nu: ${esc(e.message)}</div>`;
+    result.innerHTML = `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
   }
 }
 
@@ -1649,7 +1612,7 @@ function renderNews(el, news, opts = {}){
       <div class="news-title">${esc(cleanFeedText(n.title || 'Utan rubrik'))}</div>
       <div class="news-summary">${esc(cleanFeedText(n.summary || ''))}</div>
       ${n.date ? `<div class="news-date">${esc(cleanFeedText(n.date))}</div>` : ''}
-      <div class="news-linkline">Läs artikel →</div>
+      <div class="news-linkline">Läs artikel â†’</div>
     </article>
   `).join('');
 
@@ -1770,7 +1733,7 @@ function renderPodcasts(el, podcasts, opts = {}){
     const summary = cleanFeedText(p.summary || p.description || '');
     const source = p.source || p.podcast || 'Podd';
     const date = p.date || p.published || '';
-    const actionText = p.actionText || 'Lyssna →';
+    const actionText = p.actionText || 'Lyssna â†’';
 
     return `
       <article class="podcast-card" ${link ? `onclick="window.open('${link}','_blank')"` : ''}>
@@ -1802,7 +1765,7 @@ function renderPodcastsEmpty(el, message = PODCAST_EMPTY_MESSAGE){
   `;
 }
 
-// ─── TEAMS ───────────────────────────────────────────
+// â”€â”€â”€ TEAMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
@@ -1821,11 +1784,11 @@ async function pageTeams(el) {
       <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
       <div class="start-tgrid">${cards}</div>`;
   } catch(e) {
-    el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
+    el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
   }
 }
 
-// ─── TEAM PAGE ───────────────────────────────────────
+// â”€â”€â”€ TEAM PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
@@ -1925,13 +1888,13 @@ async function pageTeam(el, teamId) {
         <td><span class="pos-tag">${esc(pos)}</span></td>
         <td>${p.age||info.age||'—'} år</td>
         <td>${nationality !== '—' ? flag(nationality)+' '+esc(nationality) : '—'}</td>
-        <td style="color:var(--muted);font-size:12px">${p.injured?'🚑 Skadad':''}</td>
+        <td style="color:var(--muted);font-size:12px">${p.injured?'ðŸš‘ Skadad':''}</td>
       </tr>`;}).join('');
 
     el.innerHTML = `
       <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         <button class="back" onclick="go('/')">← Alla lag</button>
-        <button class="share" onclick="copyLink()">🔗 Kopiera länk</button>
+        <button class="share" onclick="copyLink()">ðŸ”— Kopiera länk</button>
       </div>
       <div class="pg-header"><div class="pg-title">${esc(team.name)}</div></div>
 
@@ -1939,9 +1902,9 @@ async function pageTeam(el, teamId) {
         <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
         <div class="p-body">
           <div class="p-meta">
-            ${venue.name?`<span>🏟 ${esc(venue.name)}</span>`:''}
-            ${venue.city?`<span>📍 ${esc(venue.city)}</span>`:''}
-            ${venue.capacity?`<span>👥 ${(+venue.capacity).toLocaleString('sv-SE')} platser</span>`:''}
+            ${venue.name?`<span>ðŸŸ ${esc(venue.name)}</span>`:''}
+            ${venue.city?`<span>ðŸ“ ${esc(venue.city)}</span>`:''}
+            ${venue.capacity?`<span>ðŸ‘¥ ${(+venue.capacity).toLocaleString('sv-SE')} platser</span>`:''}
           </div>
           <div class="pills">
             <div class="pill"><div class="pn">${w}</div><div class="pl">Vinster</div></div>
@@ -2076,7 +2039,7 @@ async function loadTeamAI(name, tabId, teamId) {
         <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
         <td style="cursor:pointer;color:var(--blue);font-weight:500" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</td>
         <td><span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:${tr.isInternal?'var(--gold)':isIn?'var(--green)':'var(--red)'}">
-          ${tr.isInternal?'↑ UPP':isIn?'↙ IN':'↗ UT'}
+          ${tr.isInternal?'â†‘ UPP':isIn?'â†™ IN':'â†— UT'}
         </span></td>
         <td>${motpart}</td>
         <td><span style="font-size:10px;padding:3px 9px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;${fc}">${esc(tr.type||'?')}</span></td>
@@ -2092,7 +2055,7 @@ async function loadTeamAI(name, tabId, teamId) {
   }
 }
 
-// ─── PLAYER PAGE ─────────────────────────────────────
+// â”€â”€â”€ PLAYER PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pagePlayer(el, playerId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelardata…</div>`;
   try {
@@ -2236,7 +2199,7 @@ async function pagePlayer(el, playerId) {
     el.innerHTML = `
       <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         ${teamId?`<button class="back" onclick="go('/lag/${teamId}')">← ${esc(teamName)}</button>`:`<button class="back" onclick="go('/')">← Hem</button>`}
-        <button class="share" onclick="copyLink()">🔗 Kopiera länk</button>
+        <button class="share" onclick="copyLink()">ðŸ”— Kopiera länk</button>
       </div>
 
       <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
@@ -2247,7 +2210,7 @@ async function pagePlayer(el, playerId) {
             <span>${flag(p.nationality)} ${esc(p.nationality||'—')}</span>
             <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
-            ${p.height?`<span>📐 ${p.height} / ${p.weight||'—'}</span>`:''}
+            ${p.height?`<span>ðŸ“ ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
           ${teamId?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer" onclick="go('/lag/${teamId}')">
             <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
@@ -2271,7 +2234,7 @@ async function pagePlayer(el, playerId) {
           </div>
           <div style="margin-top:.75rem">
             <button style="background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:6px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;cursor:pointer" onclick="loadMV(this,'${esc(p.name)}')">
-              💰 Hämta marknadsvärde
+              ðŸ’° Hämta marknadsvärde
             </button>
             <div id="mv-${playerId}" style="margin-top:.4rem"></div>
           </div>
@@ -2289,8 +2252,8 @@ async function pagePlayer(el, playerId) {
           <thead><tr>
             <th>Säsong</th><th>Lag</th><th>Liga</th>
             <th title="Matcher">M</th><th title="Minuter">Min</th>
-            <th title="Mål">⚽</th><th title="Assist">🎯</th><th title="Rating">★</th>
-            <th title="Gula kort">🟨</th><th title="Röda kort">🟥</th>
+            <th title="Mål">⚽</th><th title="Assist">ðŸŽ¯</th><th title="Rating">â˜…</th>
+            <th title="Gula kort">ðŸŸ¨</th><th title="Röda kort">ðŸŸ¥</th>
           </tr></thead>
           <tbody>
             ${sTableRows||'<tr><td colspan="10" class="empty">Ingen historisk data</td></tr>'}
@@ -2346,7 +2309,7 @@ async function loadMV(btn, name) {
   const id = btn.parentElement.querySelector('[id^="mv-"]').id;
   const el = document.getElementById(id);
   btn.disabled = true;
-  btn.textContent = '⏳ Hämtar…';
+  btn.textContent = 'â³ Hämtar…';
   try {
     const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
@@ -2357,7 +2320,7 @@ async function loadMV(btn, name) {
     btn.style.display='none';
   } catch(e) {
     el.innerHTML = `<div style="font-size:11px;color:#f08080">Fel: ${esc(e.message)}</div>`;
-    btn.textContent = '💰 Hämta marknadsvärde';
+    btn.textContent = 'ðŸ’° Hämta marknadsvärde';
     btn.disabled = false;
   }
 }
@@ -2385,7 +2348,7 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
         <td><div style="display:flex;align-items:center;gap:6px">
           <img src="${tr.teamOut?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
           <span style="font-size:12px;color:var(--muted)">${esc(tr.teamOut?.name||'?')}</span>
-          <span style="color:var(--muted)">→</span>
+          <span style="color:var(--muted)">â†’</span>
           <img src="${tr.teamIn?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
           <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
         </div></td>
@@ -2400,7 +2363,7 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
   }
 }
 
-// ─── STANDINGS ───────────────────────────────────────
+// â”€â”€â”€ STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageStandings(el) {
   document.title = 'Tabell — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
@@ -2431,7 +2394,7 @@ async function pageStandings(el) {
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 
-// ─── RESULTS ─────────────────────────────────────────
+// â”€â”€â”€ RESULTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatMatchDate(d){
   try{return new Date(d).toLocaleDateString('sv-SE',{day:'2-digit',month:'short'});}
   catch(e){return (d||'').slice(0,10);}
@@ -2524,7 +2487,7 @@ function renderEventsList(events){
       <div class="event-minute">${minute}</div>
       <div class="event-main">
         <div class="type">${esc(typeSv[ev.type] || ev.type || 'Händelse')}${esc(detail)}</div>
-        <div class="player">${esc(ev.player?.name || 'Okänd spelare')}${ev.assist?.name ? ` <span style="color:var(--muted);font-weight:500">→ ${esc(ev.assist.name)}</span>` : ''}</div>
+        <div class="player">${esc(ev.player?.name || 'Okänd spelare')}${ev.assist?.name ? ` <span style="color:var(--muted);font-weight:500">â†’ ${esc(ev.assist.name)}</span>` : ''}</div>
       </div>
       <div class="event-team">
         <img src="${ev.team?.logo||''}" onerror="this.style.opacity='.15'">
@@ -2674,7 +2637,7 @@ async function pageMatch(el, fixtureId) {
   }
 }
 
-// ─── TRANSFERS ───────────────────────────────────────
+// â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let transfersCache = null;
 
 async function pageTransfers(el, page=1) {
@@ -2743,7 +2706,7 @@ async function pageTransfers(el, page=1) {
         <img src="${tr.teamOut?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
         <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
       </div></td>
-      <td style="color:var(--muted)">→</td>
+      <td style="color:var(--muted)">â†’</td>
       <td>${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div style="display:flex;align-items:center;gap:5px">
         <img src="${tr.teamIn.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
         <span style="font-size:12px">${esc(tr.teamIn.name||'?')}</span>
@@ -2756,7 +2719,7 @@ async function pageTransfers(el, page=1) {
   if(page > 1) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page-1}')">← Föregående</button>`);
   const s = Math.max(1,page-2), e2 = Math.min(totalPages,page+2);
   for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===page?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
-  if(page < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page+1}')">Nästa →</button>`);
+  if(page < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page+1}')">Nästa â†’</button>`);
 
   el.innerHTML = `
     <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${unique.length} övergångar · sida ${page} av ${totalPages}</span></div>
@@ -2768,16 +2731,16 @@ async function pageTransfers(el, page=1) {
   window.scrollTo(0,0);
 }
 
-// ─── STATS / TOPPLISTOR ──────────────────────────────
+// â”€â”€â”€ STATS / TOPPLISTOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STAT_CATEGORIES = [
   {id:'goals',    label:'⚽ Skytteliga',   key:'goals.total',        col:'Mål',        api:'players/topscorers'},
-  {id:'assists',  label:'🎯 Assistligan',  key:'goals.assists',      col:'Assist',     api:'players/topassists'},
-  {id:'rating',   label:'★ Bäst rating',  key:'games.rating',       col:'Rating',     api:null},
-  {id:'minutes',  label:'⏱ Mest minuter', key:'games.minutes',      col:'Minuter',    api:null},
+  {id:'assists',  label:'ðŸŽ¯ Assistligan',  key:'goals.assists',      col:'Assist',     api:'players/topassists'},
+  {id:'rating',   label:'â˜… Bäst rating',  key:'games.rating',       col:'Rating',     api:null},
+  {id:'minutes',  label:'â± Mest minuter', key:'games.minutes',      col:'Minuter',    api:null},
   {id:'passes',   label:'🔄 Passningar',   key:'passes.total',       col:'Passningar', api:null},
-  {id:'shots',    label:'🎯 Skott',        key:'shots.total',        col:'Skott',      api:null},
-  {id:'yellow',   label:'🟨 Gula kort',    key:'cards.yellow',       col:'Gula kort',  api:null},
-  {id:'saves',    label:'🧤 Räddningar',   key:'goals.saves',        col:'Räddningar', api:null},
+  {id:'shots',    label:'ðŸŽ¯ Skott',        key:'shots.total',        col:'Skott',      api:null},
+  {id:'yellow',   label:'ðŸŸ¨ Gula kort',    key:'cards.yellow',       col:'Gula kort',  api:null},
+  {id:'saves',    label:'ðŸ§¤ Räddningar',   key:'goals.saves',        col:'Räddningar', api:null},
 ];
 
 let statsCache = null;
@@ -2821,7 +2784,7 @@ async function pageStats(el, year=null, force=false) {
 
     statsCache = allPlayers;
     renderStats(el, currentStatCategory || 'goals');
-  } catch(e) { el.innerHTML=`<div class="err">⚠️ ${esc(e.message)}</div>`; }
+  } catch(e) { el.innerHTML=`<div class="err">âš ï¸ ${esc(e.message)}</div>`; }
 }
 function renderStats(el, catId) {
   currentStatCategory = catId;
@@ -2847,7 +2810,7 @@ function renderStats(el, catId) {
     const rating = x.s.games?.rating ? parseFloat(x.s.games.rating) : null;
     const rc = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
     const displayVal = cat.id==='rating' ? x.val.toFixed(2) : x.val;
-    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const medal = i===0?'ðŸ¥‡':i===1?'ðŸ¥ˆ':i===2?'ðŸ¥‰':'';
     const clubName = esc(fixName(x.s.team?.name||'—'));
     const statClass = `stats-value ${cat.id==='rating'?rc:''}`.trim();
     return `<tr class="link" onclick="go('/spelare/${x.p.id}')">
@@ -2890,7 +2853,7 @@ function renderStats(el, catId) {
     </table></div></div>`;
 }
 
-// ─── AI SEARCH ───────────────────────────────────────
+// â”€â”€â”€ AI SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Stat mappings for quick data lookup
 const STAT_KEYS = {
@@ -2937,7 +2900,7 @@ async function tryDataAnswer(question) {
     if(q.includes(word)) { matchedStat = path; matchedStatLabel = word; break; }
   }
 
-  // If both team and stat found → fetch player data and answer directly
+  // If both team and stat found â†’ fetch player data and answer directly
   if(matchedTeam && matchedStat) {
     const players = await afAll('players', {league:LEAGUE, season:2025, team:matchedTeam.id});
     if(!players.length) return null;
@@ -3001,7 +2964,7 @@ async function tryDataAnswer(question) {
   return null; // Can't answer from data alone
 }
 
-// ─── REMOVED: FAVORITES / NOTIFICATIONS / TEAM FOLLOWING ───
+// â”€â”€â”€ REMOVED: FAVORITES / NOTIFICATIONS / TEAM FOLLOWING â”€â”€â”€
 (function cleanupRemovedFeatures(){
   try {
     const oldToken = localStorage.getItem('aai_notif_token');
@@ -3030,24 +2993,24 @@ async function tryDataAnswer(question) {
   } catch(e) {}
 })();
 
-// ─── HELPERS ─────────────────────────────────────────
+// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(btn,id){
   btn.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   const all=['sq','tai','p-career','p-detail','p-tr'];
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
-function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='✅ Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='âœ… Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
 function fixEnc(s) {
   if(!s) return '';
   try {
     return decodeURIComponent(escape(s));
   } catch(e) {
     return s
-      .replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä').replace(/Ã¥/g,'å')
-      .replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä').replace(/Ã…/g,'Å')
-      .replace(/Ä/g,'č').replace(/Ä/g,'ć').replace(/Å¡/g,'š')
-      .replace(/Å¾/g,'ž').replace(/Ä/g,'đ');
+      .replace(/ÃƒÂ¶/g,'ö').replace(/ÃƒÂ¤/g,'ä').replace(/ÃƒÂ¥/g,'å')
+      .replace(/Ãƒ–/g,'Ö').replace(/Ãƒâ€ž/g,'Ä').replace(/Ãƒ…/g,'Å')
+      .replace(/ÄÂ/g,'Ä').replace(/ÄÂ‡/g,'Ä‡').replace(/ÅÂ¡/g,'Å¡')
+      .replace(/ÅÂ¾/g,'Å¾').replace(/ÄÂ‘/g,'Ä‘');
   }
 }
 function cleanFeedText(s){
@@ -3069,8 +3032,8 @@ function esc(s){
 function calcAge(d){const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
 function formatVal(v){if(!v)return'—';const n=+v;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n;}
 function feeStyle(t){const s=(t||'').toLowerCase();if(s.includes('loan'))return'background:rgba(61,126,191,.15);color:#7EB3E8';if(s==='free'||s.includes('free'))return'background:rgba(58,158,106,.15);color:#5DC492';return'background:rgba(212,175,55,.15);color:var(--gold)';}
-const FLAGS={Sweden:'🇸🇪',Nigeria:'🇳🇬',Ghana:'🇬🇭',Finland:'🇫🇮',Norway:'🇳🇴',Denmark:'🇩🇰',Brazil:'🇧🇷',Argentina:'🇦🇷',England:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',Scotland:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',France:'🇫🇷',Spain:'🇪🇸',Portugal:'🇵🇹',Germany:'🇩🇪',Italy:'🇮🇹',Netherlands:'🇳🇱',Poland:'🇵🇱',Serbia:'🇷🇸',Croatia:'🇭🇷',Kosovo:'🇽🇰',Albania:'🇦🇱',Iceland:'🇮🇸',Ireland:'🇮🇪',USA:'🇺🇸',Senegal:'🇸🇳',Morocco:'🇲🇦',Cameroon:'🇨🇲',Tunisia:'🇹🇳',Mali:'🇲🇱','Ivory Coast':'🇨🇮',Peru:'🇵🇪',Romania:'🇷🇴',Bosnia:'🇧🇦',Slovakia:'🇸🇰',Hungary:'🇭🇺',Greece:'🇬🇷',Turkey:'🇹🇷',Ukraine:'🇺🇦',Austria:'🇦🇹',Switzerland:'🇨🇭',Belgium:'🇧🇪',Colombia:'🇨🇴',Chile:'🇨🇱',Mexico:'🇲🇽',Jamaica:'🇯🇲'};
-function flag(n){return FLAGS[n]||'🌍';}
+const FLAGS={Sweden:'ðŸ‡¸ðŸ‡ª',Nigeria:'ðŸ‡³ðŸ‡¬',Ghana:'ðŸ‡¬ðŸ‡­',Finland:'ðŸ‡«ðŸ‡®',Norway:'ðŸ‡³ðŸ‡´',Denmark:'ðŸ‡©ðŸ‡°',Brazil:'ðŸ‡§ðŸ‡·',Argentina:'ðŸ‡¦ðŸ‡·',England:'ðŸ´ó §ó ¢ó ¥ó ®ó §ó ¿',Scotland:'ðŸ´ó §ó ¢ó ³ó £ó ´ó ¿',France:'ðŸ‡«ðŸ‡·',Spain:'ðŸ‡ªðŸ‡¸',Portugal:'ðŸ‡µðŸ‡¹',Germany:'ðŸ‡©ðŸ‡ª',Italy:'ðŸ‡®ðŸ‡¹',Netherlands:'ðŸ‡³ðŸ‡±',Poland:'ðŸ‡µðŸ‡±',Serbia:'ðŸ‡·ðŸ‡¸',Croatia:'ðŸ‡­ðŸ‡·',Kosovo:'ðŸ‡½ðŸ‡°',Albania:'ðŸ‡¦ðŸ‡±',Iceland:'ðŸ‡®ðŸ‡¸',Ireland:'ðŸ‡®ðŸ‡ª',USA:'ðŸ‡ºðŸ‡¸',Senegal:'ðŸ‡¸ðŸ‡³',Morocco:'ðŸ‡²ðŸ‡¦',Cameroon:'ðŸ‡¨ðŸ‡²',Tunisia:'ðŸ‡¹ðŸ‡³',Mali:'ðŸ‡²ðŸ‡±','Ivory Coast':'ðŸ‡¨ðŸ‡®',Peru:'ðŸ‡µðŸ‡ª',Romania:'ðŸ‡·ðŸ‡´',Bosnia:'ðŸ‡§ðŸ‡¦',Slovakia:'ðŸ‡¸ðŸ‡°',Hungary:'ðŸ‡­ðŸ‡º',Greece:'ðŸ‡¬ðŸ‡·',Turkey:'ðŸ‡¹ðŸ‡·',Ukraine:'ðŸ‡ºðŸ‡¦',Austria:'ðŸ‡¦ðŸ‡¹',Switzerland:'ðŸ‡¨ðŸ‡­',Belgium:'ðŸ‡§ðŸ‡ª',Colombia:'ðŸ‡¨ðŸ‡´',Chile:'ðŸ‡¨ðŸ‡±',Mexico:'ðŸ‡²ðŸ‡½',Jamaica:'ðŸ‡¯ðŸ‡²'};
+function flag(n){return FLAGS[n]||'ðŸŒ';}
 function mdHtml(txt){
   const lines=txt.split('\n');let out='',inT=false;
   for(const line of lines){
@@ -3084,7 +3047,7 @@ function mdHtml(txt){
       if(/^### /.test(line))out+=`<strong style="font-size:13px;color:var(--gold);display:block;margin:6px 0 2px">${inl(line.slice(4))}</strong>`;
       else if(/^## /.test(line))out+=`<strong style="font-size:14px;color:var(--gold);display:block;margin:8px 0 3px">${inl(line.slice(3))}</strong>`;
       else if(/^# /.test(line))out+=`<strong style="font-size:15px;color:var(--gold);display:block;margin:10px 0 4px">${inl(line.slice(2))}</strong>`;
-      else if(/^[-*] /.test(line))out+=`<div style="display:flex;gap:5px;margin:2px 0"><span style="color:var(--gold);flex-shrink:0">•</span>${inl(line.slice(2))}</div>`;
+      else if(/^[-*] /.test(line))out+=`<div style="display:flex;gap:5px;margin:2px 0"><span style="color:var(--gold);flex-shrink:0">â€¢</span>${inl(line.slice(2))}</div>`;
       else if(line.trim()==='')out+='<br>';
       else out+=inl(line)+'<br>';
     }
@@ -3149,8 +3112,8 @@ function showInstallModal(isIOS) {
   
   const isAndroid = /android/i.test(navigator.userAgent);
   const steps = isIOS
-    ? ['Öppna i <strong>Safari</strong> (inte Chrome)', 'Tryck på dela-knappen <strong>□↑</strong> längst ner', 'Välj <strong>"Lägg till på hemskärmen"</strong>', 'Tryck <strong>Lägg till</strong>']
-    : ['Öppna i <strong>Chrome</strong>', 'Tryck på menyn <strong>⋮</strong> uppe till höger', 'Välj <strong>"Lägg till på startskärmen"</strong> eller <strong>"Installera app"</strong>', 'Tryck <strong>Installera</strong>'];
+    ? ['Öppna i <strong>Safari</strong> (inte Chrome)', 'Tryck på dela-knappen <strong>â–¡â†‘</strong> längst ner', 'Välj <strong>"Lägg till på hemskärmen"</strong>', 'Tryck <strong>Lägg till</strong>']
+    : ['Öppna i <strong>Chrome</strong>', 'Tryck på menyn <strong>â‹®</strong> uppe till höger', 'Välj <strong>"Lägg till på startskärmen"</strong> eller <strong>"Installera app"</strong>', 'Tryck <strong>Installera</strong>'];
   
   modal.innerHTML = `<div style="background:#161921;border:1px solid rgba(212,175,55,.3);border-radius:12px;padding:1.5rem;max-width:380px;width:100%">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem">
