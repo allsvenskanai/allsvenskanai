@@ -3279,177 +3279,299 @@ function renderQuickListAnswer(title, subtitle, itemsHtml){
     <div style="display:grid;gap:8px">${itemsHtml}</div>`;
 }
 
-// Try to resolve a question using live API-Football data
-async function tryDataAnswer(question) {
-  const q = question.toLowerCase();
+function normalizeQuestion(question='') {
+  return String(question || '')
+    .toLowerCase()
+    .replace(/[?!.,:;]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  // Find which team is mentioned
+const AI_INTENT_PATTERNS = {
+  top_scorers: ['flest mål', 'gjort flest mål', 'skytteliga', 'skytteligan', 'mål'],
+  latest_matches: ['senaste matcher', 'senaste resultat', 'matcher', 'resultat'],
+  standings: ['tabellen', 'ställning', 'stallning'],
+  table_leader: ['leder tabellen', 'vem leder', 'toppar tabellen'],
+  most_points: ['flest poäng', 'mest poäng'],
+  goal_difference: ['målskillnad', 'malskillnad'],
+  form: ['bäst form', 'best form', 'form'],
+};
+
+function detectIntent(question) {
+  const q = normalizeQuestion(question);
+  const hasTeamOnlyQuery = Object.keys(AI_TEAM_ALIASES).some(alias => q === normalizeQuestion(alias));
+  if (AI_INTENT_PATTERNS.goal_difference.some(token => q.includes(token))) return 'goal_difference';
+  if (AI_INTENT_PATTERNS.form.some(token => q.includes(token))) return 'form';
+  if (AI_INTENT_PATTERNS.most_points.some(token => q.includes(token))) return 'most_points';
+  if (AI_INTENT_PATTERNS.table_leader.some(token => q.includes(token))) return 'table_leader';
+  if (AI_INTENT_PATTERNS.standings.some(token => q.includes(token))) return 'standings';
+  if (AI_INTENT_PATTERNS.latest_matches.some(token => q.includes(token)) || hasTeamOnlyQuery) return 'latest_matches';
+  if (AI_INTENT_PATTERNS.top_scorers.some(token => q.includes(token))) return 'top_scorers';
+  return 'unknown';
+}
+
+function detectTeam(question, teams = []) {
+  const q = normalizeQuestion(question);
+  const byName = [...teams].sort((a,b) => fixName(b.name || '').length - fixName(a.name || '').length);
+  for (const team of byName) {
+    const canonical = normalizeQuestion(fixName(team.name || ''));
+    if (canonical && q.includes(canonical)) return team;
+  }
+  const aliases = Object.entries(AI_TEAM_ALIASES).sort((a,b) => b[0].length - a[0].length);
+  for (const [alias, canonical] of aliases) {
+    if (q.includes(normalizeQuestion(alias))) {
+      return teams.find(team => fixName(team.name) === canonical) || null;
+    }
+  }
+  return null;
+}
+
+function detectPlayer() {
+  return null;
+}
+
+function detectCompetition(question) {
+  return normalizeQuestion(question).includes('allsvenskan') ? 'Allsvenskan' : null;
+}
+
+function detectTimeReference(question) {
+  const q = normalizeQuestion(question);
+  if (q.includes('senaste') || q.includes('just nu')) return 'recent';
+  return null;
+}
+
+function validateAnswerShape(intent, result) {
+  const typeMap = {
+    top_scorers: 'scorers',
+    latest_matches: 'matches',
+    standings: 'teams',
+    table_leader: 'teams',
+    most_points: 'teams',
+    goal_difference: 'teams',
+    form: 'teams',
+  };
+  const ok = !!(result && result.type === typeMap[intent] && Array.isArray(result.rows) && result.rows.length);
+  console.debug('[AI validate]', { intent, expected: typeMap[intent], actual: result?.type, ok });
+  return ok;
+}
+
+function renderRowsAnswer(result) {
+  if (!result) return null;
+  if (result.type === 'matches') {
+    return renderQuickListAnswer(
+      result.title,
+      result.subtitle,
+      result.rows.map(row => `
+        <div class="start-result-row" onclick="go('/match/${row.id}')">
+          <div class="start-result-top">
+            <div class="start-result-round">${esc(row.meta)}</div>
+            <div class="start-result-score">${row.score}</div>
+          </div>
+          <div class="start-result-teams">
+            <div class="start-result-side">${esc(row.home)}</div>
+            <div class="start-result-vs">mot</div>
+            <div class="start-result-side away">${esc(row.away)}</div>
+          </div>
+        </div>`).join('')
+    );
+  }
+
+  return renderQuickListAnswer(
+    result.title,
+    result.subtitle,
+    result.rows.map(row => `
+      <div class="start-table-row" ${row.href ? `onclick="go('${row.href}')"` : ''}>
+        <div class="start-rank">${row.rank}</div>
+        <img src="${row.image || ''}" style="width:24px;height:24px;object-fit:${result.type === 'scorers' ? 'cover' : 'contain'};${result.type === 'scorers' ? 'border-radius:50%;' : ''}" onerror="this.style.opacity='.15'">
+        <div class="start-team-name">${esc(row.label)}</div>
+        <div class="start-team-gd">${esc(row.meta || '')}</div>
+        <div class="start-points">${row.value}</div>
+      </div>`).join('')
+  );
+}
+
+async function getTopScorers({ team, standings }) {
+  if (team) {
+    const players = await afAll('players', { league: LEAGUE, season: SEASON, team: team.id });
+    const rows = players
+      .map(p => ({
+        id: p.player?.id,
+        label: p.player?.name || '—',
+        image: p.player?.photo || '',
+        value: getNestedVal(p.statistics?.[0] || {}, 'goals.total'),
+      }))
+      .filter(p => p.value > 0)
+      .sort((a,b) => b.value - a.value)
+      .slice(0,5)
+      .map((p, index) => ({
+        rank: index + 1,
+        image: p.image,
+        label: p.label,
+        meta: fixName(team.name),
+        value: p.value,
+        href: `/spelare/${p.id}?team=${team.id}`,
+      }));
+    return { type: 'scorers', title: `Flest mål i ${fixName(team.name)}`, subtitle: 'Spelare i laget sorterade efter mål', rows };
+  }
+
+  const scorers = await af('players/topscorers', { league: LEAGUE, season: SEASON }).catch(() => []);
+  const rows = scorers.slice(0,5).map((p, index) => ({
+    rank: index + 1,
+    image: p.player?.photo || p.statistics?.[0]?.team?.logo || '',
+    label: p.player?.name || '—',
+    meta: fixName(p.statistics?.[0]?.team?.name || ''),
+    value: p.statistics?.[0]?.goals?.total || 0,
+    href: `/spelare/${p.player?.id || ''}`,
+  }));
+  return { type: 'scorers', title: 'Flest mål i Allsvenskan', subtitle: 'Skytteligan just nu', rows };
+}
+
+async function getLatestMatches({ team }) {
+  const fixtures = await af('fixtures', team ? { team: team.id, season: SEASON, last: 3 } : { league: LEAGUE, season: SEASON, last: 3 }).catch(() => []);
+  const rows = fixtures.map(f => ({
+    id: f.fixture?.id,
+    meta: matchStatusLabel(f),
+    score: `${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}`,
+    home: fixName(f.teams?.home?.name || '—'),
+    away: fixName(f.teams?.away?.name || '—'),
+  }));
+  return {
+    type: 'matches',
+    title: team ? `${fixName(team.name)} senaste matcher` : 'Senaste matcher',
+    subtitle: team ? 'Tre senaste resultaten' : 'Senaste resultaten i Allsvenskan',
+    rows,
+  };
+}
+
+function getStandingsAnswer({ standings, title = 'Toppen i tabellen', subtitle = '', limit = 5, sorter = null }) {
+  const rows = [...standings];
+  if (sorter) rows.sort(sorter);
+  return {
+    type: 'teams',
+    title,
+    subtitle,
+    rows: rows.slice(0, limit).map((row, index) => ({
+      rank: row.rank || index + 1,
+      image: row.team?.logo || '',
+      label: fixName(row.team?.name || '—'),
+      meta: `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`,
+      value: `${row.points || 0}p`,
+      href: `/lag/${row.team?.id}`,
+    })),
+  };
+}
+
+function getTeamStandingRow(team, standings, title, subtitle, valueKey = 'points', metaBuilder = row => `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`, valueBuilder = row => `${row.points || 0}p`) {
+  const row = standings.find(item => item.team?.id === team?.id);
+  if (!row) return null;
+  return {
+    type: 'teams',
+    title,
+    subtitle,
+    rows: [{
+      rank: row.rank || 1,
+      image: row.team?.logo || '',
+      label: fixName(row.team?.name || '—'),
+      meta: metaBuilder(row),
+      value: valueBuilder(row),
+      href: `/lag/${row.team?.id}`,
+    }],
+  };
+}
+
+async function routeQuestion({ intent, team, player, rawQuestion, normalizedQuestion, standings, competition, timeReference }) {
+  let selectedHandler = 'fallback';
+  let result = null;
+
+  switch (intent) {
+    case 'top_scorers':
+      selectedHandler = 'getTopScorers';
+      result = await getTopScorers({ team, standings });
+      break;
+    case 'latest_matches':
+      selectedHandler = 'getLatestMatches';
+      result = await getLatestMatches({ team });
+      break;
+    case 'standings':
+      selectedHandler = 'getStandings';
+      result = getStandingsAnswer({ standings, title: 'Toppen i tabellen', subtitle: 'Aktuell ställning i Allsvenskan', limit: 5 });
+      break;
+    case 'table_leader':
+      selectedHandler = 'getTableLeader';
+      result = team
+        ? getTeamStandingRow(team, standings, `Läge för ${fixName(team.name)}`, 'Placering i tabellen')
+        : getStandingsAnswer({ standings, title: 'Leder tabellen', subtitle: 'Aktuellt topplag i Allsvenskan', limit: 1 });
+      break;
+    case 'most_points':
+      selectedHandler = 'getMostPoints';
+      result = team
+        ? getTeamStandingRow(team, standings, `Poäng för ${fixName(team.name)}`, 'Aktuell poängskörd')
+        : getStandingsAnswer({ standings, title: 'Flest poäng', subtitle: 'Lag med flest poäng just nu', limit: 1 });
+      break;
+    case 'goal_difference':
+      selectedHandler = 'getGoalDifference';
+      result = team
+        ? getTeamStandingRow(team, standings, `Målskillnad för ${fixName(team.name)}`, 'Nuvarande målskillnad', 'goalsDiff', row => `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`, row => `${row.points || 0}p`)
+        : getStandingsAnswer({
+            standings,
+            title: 'Bäst målskillnad',
+            subtitle: 'Lag med starkast målskillnad just nu',
+            limit: 5,
+            sorter: (a,b) => (b.goalsDiff || 0) - (a.goalsDiff || 0),
+          });
+      break;
+    case 'form':
+      selectedHandler = 'getForm';
+      result = team
+        ? getTeamStandingRow(team, standings, `Form för ${fixName(team.name)}`, 'Senaste formen', 'form', row => row.form || '–', row => `${row.points || 0}p`)
+        : {
+            type: 'teams',
+            title: 'Bäst form just nu',
+            subtitle: 'Senaste fem matcherna',
+            rows: [...standings]
+              .sort((a,b) => ((b.form||'').replace(/D/g,'1').replace(/W/g,'3').replace(/L/g,'0').split('').reduce((s,x)=>s + (+x||0),0)) - ((a.form||'').replace(/D/g,'1').replace(/W/g,'3').replace(/L/g,'0').split('').reduce((s,x)=>s + (+x||0),0)))
+              .slice(0,5)
+              .map((row, index) => ({
+                rank: index + 1,
+                image: row.team?.logo || '',
+                label: fixName(row.team?.name || '—'),
+                meta: row.form || '–',
+                value: `${row.points || 0}p`,
+                href: `/lag/${row.team?.id}`,
+              })),
+          };
+      break;
+    default:
+      result = null;
+  }
+
+  console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, competition, timeReference, selectedHandler, validation: validateAnswerShape(intent, result) });
+  return { selectedHandler, result };
+}
+
+async function tryDataAnswer(question) {
+  const rawQuestion = String(question || '').trim();
+  const normalizedQuestion = normalizeQuestion(rawQuestion);
   const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
     af('standings', {league:LEAGUE, season:2025}));
   const standings = standData[0]?.league?.standings?.[0] || [];
   const teams = standings.map(t=>t.team) || [];
 
-  let matchedTeam = null;
-  for(const t of teams) {
-    const name = fixName(t.name).toLowerCase();
-    const parts = name.split(/\s+/);
-    if(parts.some(p => p.length > 3 && q.includes(p)) || q.includes(name)) {
-      matchedTeam = t;
-      break;
-    }
+  const intent = detectIntent(normalizedQuestion);
+  const team = detectTeam(normalizedQuestion, teams);
+  const player = detectPlayer(normalizedQuestion);
+  const competition = detectCompetition(normalizedQuestion);
+  const timeReference = detectTimeReference(normalizedQuestion);
+
+  console.debug('[AI question]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, competition, timeReference });
+
+  const { result } = await routeQuestion({ intent, team, player, rawQuestion, normalizedQuestion, standings, competition, timeReference });
+
+  if (validateAnswerShape(intent, result)) {
+    return renderRowsAnswer(result);
   }
 
-  if(!matchedTeam) {
-    for(const [alias, canonical] of Object.entries(AI_TEAM_ALIASES)) {
-      if(q.includes(alias.toLowerCase())) {
-        matchedTeam = teams.find(t => fixName(t.name) === canonical) || null;
-        if(matchedTeam) break;
-      }
-    }
-  }
-
-  // Find which stat is asked about
-  let matchedStat = null, matchedStatLabel = null;
-  for(const [word, path] of Object.entries(STAT_KEYS)) {
-    if(q.includes(word)) { matchedStat = path; matchedStatLabel = word; break; }
-  }
-
-  if((q.includes('flest mål') || q === 'mål?' || q === 'flest mål?' || q === 'skytteliga' || q === 'skytteligan') && !matchedTeam) {
-    const scorers = await af('players/topscorers', {league:LEAGUE, season:SEASON}).catch(() => []);
-    const top = scorers.slice(0,5);
-    if(top.length) {
-      return renderQuickListAnswer(
-        'Flest mål i Allsvenskan',
-        'Skytteligan just nu',
-        top.map((p, i) => `
-          <div class="start-table-row" onclick="go('/spelare/${p.player?.id || ''}')">
-            <div class="start-rank">${i+1}</div>
-            <img src="${p.statistics?.[0]?.team?.logo || p.player?.photo || ''}" style="width:24px;height:24px;object-fit:contain" onerror="this.style.opacity='.15'">
-            <div class="start-team-name">${esc(p.player?.name || '—')}</div>
-            <div class="start-team-gd">${esc(fixName(p.statistics?.[0]?.team?.name || ''))}</div>
-            <div class="start-points">${p.statistics?.[0]?.goals?.total || 0}</div>
-          </div>`).join('')
-      );
-    }
-  }
-
-  if(q.includes('leder tabellen') || q.includes('flest poäng') || q.includes('tabellen?') || q === 'tabellen' || q === 'tabellen?') {
-    const leader = standings[0];
-    if(leader) {
-      return renderQuickListAnswer(
-        q.includes('tabell') && !q.includes('leder') && !q.includes('flest poäng') ? 'Toppen i tabellen' : 'Leder tabellen',
-        q.includes('flest poäng') ? 'Lag med flest poäng just nu' : 'Aktuellt topplag i Allsvenskan',
-        standings.slice(0, q.includes('tabell') && !q.includes('leder') && !q.includes('flest poäng') ? 5 : 1).map((row, i) => `
-          <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
-            <div class="start-rank">${row.rank || i+1}</div>
-            <img src="${row.team.logo || ''}" style="width:24px;height:24px;object-fit:contain" onerror="this.style.opacity='.15'">
-            <div class="start-team-name">${esc(fixName(row.team.name || '—'))}</div>
-            <div class="start-team-gd">${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}</div>
-            <div class="start-points">${row.points || 0}p</div>
-          </div>`).join('')
-      );
-    }
-  }
-
-  if(matchedTeam && (!matchedStat || q.includes('senaste matcher') || q.endsWith('?') || q === matchedTeam.name.toLowerCase() || q === fixName(matchedTeam.name).toLowerCase())) {
-    const fixtures = await af('fixtures', {team: matchedTeam.id, season: SEASON, last:3}).catch(() => []);
-    if(fixtures.length) {
-      return renderQuickListAnswer(
-        `${esc(fixName(matchedTeam.name))} senaste matcher`,
-        'Tre senaste resultaten',
-        fixtures.map(f => `
-          <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
-            <div class="start-result-top">
-              <div class="start-result-round">${esc(matchStatusLabel(f))}</div>
-              <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
-            </div>
-            <div class="start-result-teams">
-              <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
-              <div class="start-result-vs">mot</div>
-              <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
-            </div>
-          </div>`).join('')
-      );
-    }
-  }
-
-  // If both team and stat found â†’ fetch player data and answer directly
-  if(matchedTeam && matchedStat) {
-    const players = await afAll('players', {league:LEAGUE, season:2025, team:matchedTeam.id});
-    if(!players.length) return null;
-
-    const sorted = players
-      .map(p => ({
-        name: p.player.name,
-        photo: p.player.photo,
-        id: p.player.id,
-        val: getNestedVal(p.statistics?.[0] || {}, matchedStat)
-      }))
-      .filter(p => p.val > 0)
-      .sort((a,b) => b.val - a.val);
-
-    if(!sorted.length) return null;
-
-    const isMin = q.includes('minst') || q.includes('lägst') || q.includes('färst');
-    const list = isMin ? sorted.reverse() : sorted;
-    const top = list.slice(0, 5);
-
-    const rows = top.map((p,i) => `
-      <tr class="link" onclick="go('/spelare/${p.id}?team=${matchedTeam.id}')">
-        <td style="color:var(--muted);font-weight:700;font-family:'Barlow Condensed',sans-serif">${i+1}</td>
-        <td><div class="pcell">
-          <img src="${p.photo||''}" onerror="this.style.opacity='.15'">
-          <span class="pn">${esc(p.name)}</span>
-        </div></td>
-        <td class="num" style="font-size:20px">${p.val}</td>
-      </tr>`).join('');
-
-    const isGoalsQuery = matchedStat === 'goals.total';
-    if(isGoalsQuery) {
-      return renderQuickListAnswer(
-        `Flest mål i ${esc(fixName(matchedTeam.name))}`,
-        'Spelare i laget sorterade efter mål',
-        top.map((p, i) => `
-          <div class="start-table-row" onclick="go('/spelare/${p.id}?team=${matchedTeam.id}')">
-            <div class="start-rank">${i+1}</div>
-            <img src="${p.photo||''}" style="width:24px;height:24px;object-fit:cover;border-radius:50%" onerror="this.style.opacity='.15'">
-            <div class="start-team-name">${esc(p.name)}</div>
-            <div class="start-team-gd">${esc(fixName(matchedTeam.name))}</div>
-            <div class="start-points">${p.val}</div>
-          </div>`).join('')
-      );
-    }
-
-    const label = matchedStatLabel.charAt(0).toUpperCase() + matchedStatLabel.slice(1);
-    return `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem">
-        <img src="${matchedTeam.logo}" style="width:24px;height:24px;object-fit:contain">
-        <strong style="font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:1px;text-transform:uppercase">${esc(fixName(matchedTeam.name))}</strong>
-        <span style="color:var(--muted);font-size:13px">— ${label} (säsong 2025)</span>
-      </div>
-      <div class="tw"><table>
-        <thead><tr><th>#</th><th>Spelare</th><th>${label}</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:.5rem">Klicka på en spelare för att se full profil</div>`;
-  }
-
-  // Standings question
-  if(q.includes('tabell') || q.includes('leder') || q.includes('etta') || q.includes('toppar')) {
-    const rows = teams.slice(0,16).map((t,i) => `
-      <tr class="link" onclick="go('/lag/${t.id}')">
-        <td style="color:var(--muted);font-weight:700">${i+1}</td>
-        <td><div style="display:flex;align-items:center;gap:7px">
-          <img src="${t.logo}" style="width:18px;height:18px;object-fit:contain">
-          <span style="font-weight:500">${esc(fixName(t.name))}</span>
-        </div></td>
-        <td class="num">${standData[0]?.league?.standings?.[0]?.[i]?.points || ''}</td>
-      </tr>`).join('');
-    return `<div class="tw"><table>
-      <thead><tr><th>#</th><th>Lag</th><th>Poäng</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>`;
-  }
-
+  console.error('[AI route mismatch]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, result });
   return renderQuickListAnswer(
     'Prova en snabb fråga',
     '',
@@ -3462,6 +3584,41 @@ async function tryDataAnswer(question) {
       </div>`
   );
 }
+
+const AI_ROUTING_TESTS = [
+  { question: 'Flest mål?', intent: 'top_scorers', team: null },
+  { question: 'Vem har gjort flest mål i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF' },
+  { question: 'Flest mål i AIK', intent: 'top_scorers', team: 'AIK' },
+  { question: 'AIK senaste matcher', intent: 'latest_matches', team: 'AIK' },
+  { question: 'Malmö senaste matcher', intent: 'latest_matches', team: 'Malmö FF' },
+  { question: 'Vem leder tabellen?', intent: 'table_leader', team: null },
+  { question: 'Vilket lag har flest poäng?', intent: 'most_points', team: null },
+  { question: 'Bäst målskillnad?', intent: 'goal_difference', team: null },
+  { question: 'Bäst form just nu?', intent: 'form', team: null },
+  { question: 'Skytteligan', intent: 'top_scorers', team: null },
+];
+
+function runAiRoutingTests() {
+  const teams = Object.values(AI_TEAM_ALIASES)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .map(name => ({ name }));
+  AI_ROUTING_TESTS.forEach(test => {
+    const normalized = normalizeQuestion(test.question);
+    const intent = detectIntent(normalized);
+    const team = detectTeam(normalized, teams);
+    console.debug('[AI test]', {
+      question: test.question,
+      normalized,
+      detectedIntent: intent,
+      expectedIntent: test.intent,
+      detectedTeam: team?.name || null,
+      expectedTeam: test.team,
+      ok: intent === test.intent && (team?.name || null) === test.team,
+    });
+  });
+}
+
+runAiRoutingTests();
 
 // â”€â”€â”€ REMOVED: FAVORITES / NOTIFICATIONS / TEAM FOLLOWING â”€â”€â”€
 (function cleanupRemovedFeatures(){
