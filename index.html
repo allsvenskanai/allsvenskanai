@@ -698,12 +698,29 @@ main > *{animation:fadeUp .3s ease both}
   font-family:'Barlow Condensed',sans-serif;font-weight:700;
 }
 .start-ai-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.start-ai-input-wrap{position:relative;flex:1 1 420px}
 .start-ai-input{
-  flex:1 1 420px;min-height:50px;padding:0 16px;border-radius:12px;
+  width:100%;min-height:50px;padding:0 16px;border-radius:12px;
   border:1px solid var(--border-hi);background:rgba(255,253,248,.95);
   color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;outline:none;
 }
 .start-ai-input:focus{border-color:var(--gold)}
+.start-ai-suggestions{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:4;
+  display:grid;gap:6px;padding:10px;border-radius:14px;
+  background:rgba(255,253,248,.98);border:1px solid var(--border);
+  box-shadow:0 16px 30px rgba(66,48,18,.1);
+}
+.start-ai-suggestions[hidden]{display:none}
+.start-ai-suggestion{
+  background:rgba(255,255,255,.76);border:1px solid transparent;border-radius:10px;
+  padding:.7rem .8rem;text-align:left;cursor:pointer;
+  font-size:13px;color:var(--text2);transition:background .18s,border-color .18s,transform .18s,color .18s;
+}
+.start-ai-suggestion:hover{
+  background:rgba(255,255,255,.95);border-color:rgba(201,165,75,.18);
+  color:var(--text);transform:translateY(-1px);
+}
 .start-ai-submit{
   min-height:50px;padding:0 18px;border:none;border-radius:12px;
   background:var(--text);color:var(--dark2);cursor:pointer;
@@ -721,6 +738,17 @@ main > *{animation:fadeUp .3s ease both}
 .start-ai-result{
   margin-top:1rem;padding:1rem 1.05rem;border-radius:14px;
   background:rgba(255,253,248,.78);border:1px solid var(--border);
+}
+.start-ai-result-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:.55rem;
+}
+.start-ai-result-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.start-ai-result-query{
+  font-size:12px;color:var(--text2);font-weight:600;
 }
 .start-ai-empty{font-size:13px;color:var(--muted);line-height:1.6}
 .start-snapshot{
@@ -756,16 +784,16 @@ main > *{animation:fadeUp .3s ease both}
 }
 .start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px);box-shadow:0 10px 18px rgba(76,56,24,.08)}
 .start-rank{
-  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--gold);text-align:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--gold);text-align:center;
 }
 .start-team-line{display:flex;align-items:center;gap:8px;min-width:0}
 .start-team-line img{width:22px;height:22px;object-fit:contain;flex-shrink:0}
-.start-team-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
+.start-team-name{font-size:14px;font-weight:800;color:var(--text);line-height:1.2}
 .start-team-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .start-team-form{display:flex;gap:4px;justify-content:flex-end;margin-top:4px}
 .start-team-form .fd{width:7px;height:7px}
 .start-points{
-  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--text);
 }
 .start-result-list{display:grid;gap:8px}
 .start-result-row{
@@ -778,12 +806,12 @@ main > *{animation:fadeUp .3s ease both}
   letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
 }
 .start-result-score{
-  font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--text);line-height:1;
+  font-family:'Barlow Condensed',sans-serif;font-size:35px;font-weight:900;color:var(--text);line-height:1;
 }
 .start-result-teams{
   display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
 }
-.start-result-side{font-size:13px;font-weight:700;color:var(--text)}
+.start-result-side{font-size:13px;font-weight:800;color:var(--text)}
 .start-result-side.away{text-align:right}
 .start-result-vs{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
 .start-teams-section{margin-bottom:2rem}
@@ -1509,7 +1537,10 @@ async function pageStart(el) {
           <div class="start-ai-live">Live-data</div>
         </div>
         <form class="start-ai-form" onsubmit="startAskAI(event)">
-          <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off">
+          <div class="start-ai-input-wrap">
+            <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off" onfocus="showStartAiSuggestions()" oninput="showStartAiSuggestions(this.value)">
+            <div id="startAiSuggestions" class="start-ai-suggestions" hidden></div>
+          </div>
           <button class="start-ai-submit" type="submit">Fr&aring;ga AI</button>
         </form>
         <div class="start-chip-row">
@@ -1519,6 +1550,10 @@ async function pageStart(el) {
         </div>
         <div class="start-ai-note">Snabbsvaren nedan bygger p&aring; den live-data som redan finns i sajten.</div>
         <div id="startAiResult" class="start-ai-result">
+          <div class="start-ai-result-head">
+            <div class="start-ai-result-label">Redo f&ouml;r fr&aring;ga</div>
+            <div class="start-ai-result-query">V&auml;lj en fr&aring;ga eller skriv din egen</div>
+          </div>
           <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>
         </div>
       </div>
@@ -1582,6 +1617,14 @@ const START_AI_PLACEHOLDERS = [
   'AIK senaste matcher',
   'Flest mål i Allsvenskan?'
 ];
+const START_AI_SUGGESTIONS = [
+  'Vem leder tabellen just nu?',
+  'AIK senaste matcher',
+  'Flest mål i Allsvenskan?',
+  'Vilka spelare i AIK har flest mål?',
+  'Vilket lag har flest poäng?'
+];
+let startAiLastQuery = '';
 
 function initStartAiPlaceholder() {
   const input = document.getElementById('startAiInput');
@@ -1600,11 +1643,39 @@ function initStartAiPlaceholder() {
   startAiPlaceholderTimer = setInterval(applyPlaceholder, 2400);
 }
 
+function showStartAiSuggestions(value = '') {
+  const wrap = document.getElementById('startAiSuggestions');
+  const input = document.getElementById('startAiInput');
+  if(!wrap || !input) return;
+  const q = String(value || input.value || '').trim().toLowerCase();
+  const items = START_AI_SUGGESTIONS.filter(s => !q || s.toLowerCase().includes(q)).slice(0,4);
+  if(!items.length) {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.innerHTML = items.map(s => `<button class="start-ai-suggestion" type="button" onclick="applyStartAiSuggestion(${JSON.stringify(s)})">${esc(s)}</button>`).join('');
+  wrap.hidden = false;
+}
+
+function hideStartAiSuggestions() {
+  const wrap = document.getElementById('startAiSuggestions');
+  if(wrap) wrap.hidden = true;
+}
+
+function applyStartAiSuggestion(text) {
+  const input = document.getElementById('startAiInput');
+  if(!input) return;
+  input.value = text;
+  input.focus();
+  hideStartAiSuggestions();
+}
+
 function startFillPrompt(text, submit = false) {
   const input = document.getElementById('startAiInput');
   if(!input) return;
   input.value = text;
   input.focus();
+  hideStartAiSuggestions();
   if(submit) startAskAI();
 }
 
@@ -1615,26 +1686,56 @@ async function startAskAI(event) {
   if(!input || !result) return;
   const question = (input.value || '').trim();
   if(question.length < 3) {
-    result.innerHTML = `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
+    result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Redo för fråga</div>
+        <div class="start-ai-result-query">Välj en fr&aring;ga eller skriv din egen</div>
+      </div>
+      <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
     input.focus();
     return;
   }
-  result.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tänker på din fråga...</div>`;
+  startAiLastQuery = question;
+  hideStartAiSuggestions();
+  result.innerHTML = `
+    <div class="start-ai-result-head">
+      <div class="start-ai-result-label">Söker</div>
+      <div class="start-ai-result-query">${esc(question)}</div>
+    </div>
+    <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tänker på din fråga...</div>`;
   try {
     const quick = await tryDataAnswer(question);
     if(quick) {
-      result.innerHTML = quick;
+      result.innerHTML = `
+        <div class="start-ai-result-head">
+          <div class="start-ai-result-label">Senaste fråga</div>
+          <div class="start-ai-result-query">${esc(question)}</div>
+        </div>
+        ${quick}`;
       return;
     }
     result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Senaste fråga</div>
+        <div class="start-ai-result-query">${esc(question)}</div>
+      </div>
       <div class="start-ai-empty">
         Jag kunde inte ge ett exakt snabbsvar på den frågan här på startsidan.
         Testa frågor om tabellen, ett lag eller statistik som mål och assists, eller gå vidare till <button class="start-mini-link" style="padding:0" onclick="go('/statistik')">Statistik</button>.
       </div>`;
   } catch(e) {
-    result.innerHTML = `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
+    result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Senaste fråga</div>
+        <div class="start-ai-result-query">${esc(question)}</div>
+      </div>
+      <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
   }
 }
+
+document.addEventListener('click', e => {
+  if(!e.target.closest('.start-ai-input-wrap')) hideStartAiSuggestions();
+});
 
 const TEAM_NEWS_KEYS = {
   'ik sirius fk': 'sirius',
