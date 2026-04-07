@@ -400,6 +400,33 @@ tr.season-row td{border-left:2px solid var(--gold)}
   background:rgba(255,255,255,.03);border:1px solid var(--border);font-size:11px;
   color:var(--muted);font-weight:600;letter-spacing:.4px
 }
+.results-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:-.4rem 0 1.2rem;
+}
+.results-round-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+}
+.results-round-controls{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.results-round-select{
+  min-height:42px;min-width:190px;padding:0 42px 0 14px;
+  border-radius:12px;border:1px solid var(--border);
+  background:var(--dark2);color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.8px;cursor:pointer;outline:none;
+}
+.results-round-select:focus{border-color:var(--gold)}
+.results-round-btn{
+  min-height:42px;padding:0 14px;border-radius:12px;
+  border:1px solid var(--border);background:var(--dark2);color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:border-color .18s,transform .18s;
+}
+.results-round-btn:hover:not(:disabled){border-color:var(--border-hi);transform:translateY(-1px)}
+.results-round-btn:disabled{opacity:.45;cursor:default}
 .matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;margin-bottom:1.5rem}
 .match-detail-hero{
   background:linear-gradient(145deg,rgba(212,175,55,.10),rgba(255,255,255,.02)),var(--dark2);
@@ -459,6 +486,10 @@ tr.season-row td{border-left:2px solid var(--gold)}
   .match-detail-team .name{font-size:24px}
   .event-row{grid-template-columns:58px 1fr}
   .event-team{grid-column:1 / -1}
+  .results-toolbar,.results-round-controls{align-items:stretch}
+  .results-round-controls{width:100%}
+  .results-round-select{flex:1 1 100%;width:100%}
+  .results-round-btn{flex:1 1 calc(50% - 5px);justify-content:center}
 }
 .section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:8px}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -2528,12 +2559,48 @@ function renderLineups(lineups){
     </div>`).join('')}</div>`;
 }
 
+let resultsSelectedRound = '';
+
+function getFixtureRoundInfo(f){
+  const raw = String(f?.league?.round || '').trim();
+  const match = raw.match(/(\d+)\s*$/);
+  if(match) return { key: match[1], label: `Omgång ${match[1]}`, number: parseInt(match[1], 10) };
+  return raw ? { key: raw, label: svOmgang(raw), number: Number.POSITIVE_INFINITY } : null;
+}
+
+function getResultsRounds(fixtures){
+  const seen = new Map();
+  (fixtures || []).forEach(f => {
+    const info = getFixtureRoundInfo(f);
+    if(info && !seen.has(info.key)) seen.set(info.key, info);
+  });
+  return [...seen.values()].sort((a,b) => {
+    if(Number.isFinite(a.number) && Number.isFinite(b.number)) return a.number - b.number;
+    if(Number.isFinite(a.number)) return -1;
+    if(Number.isFinite(b.number)) return 1;
+    return a.label.localeCompare(b.label, 'sv');
+  });
+}
+
+function setResultsRound(roundKey){
+  resultsSelectedRound = roundKey || '';
+  pageResults(document.getElementById('mc'));
+}
+
 async function pageResults(el) {
   document.title = 'Resultat — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
   try {
     const data = await af('fixtures', {league:LEAGUE, season:SEASON, last:50});
-    const cards = [...data].sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0)).map(f => {
+    const rounds = getResultsRounds(data);
+    if(rounds.length && !rounds.some(r => r.key === resultsSelectedRound)) {
+      resultsSelectedRound = rounds[rounds.length - 1]?.key || rounds[0]?.key || '';
+    }
+    const activeRound = rounds.find(r => r.key === resultsSelectedRound) || null;
+    const visibleFixtures = activeRound
+      ? data.filter(f => getFixtureRoundInfo(f)?.key === activeRound.key)
+      : data;
+    const cards = [...visibleFixtures].sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0)).map(f => {
       const hs = f.goals?.home, as_ = f.goals?.away;
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
       const venue = f.fixture?.venue?.name || 'Arena saknas';
@@ -2558,8 +2625,21 @@ async function pageResults(el) {
         </div>
       </div>`;
     }).join('');
+    const roundIndex = rounds.findIndex(r => r.key === activeRound?.key);
+    const toolbar = rounds.length ? `
+      <div class="results-toolbar">
+        <div class="results-round-label">Omgång</div>
+        <div class="results-round-controls">
+          <button class="results-round-btn" onclick="setResultsRound('${esc(rounds[Math.max(0, roundIndex - 1)]?.key || activeRound?.key || '')}')" ${roundIndex <= 0 ? 'disabled' : ''}>← Föregående</button>
+          <select class="results-round-select" onchange="setResultsRound(this.value)" aria-label="Välj omgång">
+            ${rounds.map(r => `<option value="${esc(r.key)}" ${r.key===activeRound?.key?'selected':''}>${esc(r.label)}</option>`).join('')}
+          </select>
+          <button class="results-round-btn" onclick="setResultsRound('${esc(rounds[Math.min(rounds.length - 1, roundIndex + 1)]?.key || activeRound?.key || '')}')" ${roundIndex === -1 || roundIndex >= rounds.length - 1 ? 'disabled' : ''}>Nästa →</button>
+        </div>
+      </div>` : '';
     el.innerHTML = `
       <div class="pg-header"><div class="pg-title">Resultat</div><span class="pg-sub">Klicka på en match för statistik, händelser och laguppställningar</span></div>
+      ${toolbar}
       <div class="matches-grid">${cards || '<div class="tw"><div class="empty">Inga matcher</div></div>'}</div>`;
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
