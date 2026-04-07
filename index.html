@@ -571,12 +571,12 @@ tr.season-row td{border-left:2px solid var(--gold)}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
 /* NYHETER */
 .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:1.5rem}
-.news-card{background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.18)),var(--dark2);border:1px solid var(--border);border-radius:18px;padding:1.2rem 1.2rem 1rem;transition:border-color .2s,transform .2s,box-shadow .2s;box-shadow:0 10px 24px rgba(66,48,18,.06);cursor:pointer;position:relative;overflow:hidden}
+.news-card{background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.18)),var(--dark2);border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem .95rem;transition:border-color .2s,transform .2s,box-shadow .2s,background .2s;box-shadow:0 10px 24px rgba(66,48,18,.06);cursor:pointer;position:relative;overflow:hidden}
 .news-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,165,75,.10),transparent 60%);pointer-events:none;opacity:.9}
-.news-card:hover{border-color:var(--border-hi);transform:translateY(-2px);box-shadow:0 16px 32px rgba(66,48,18,.10)}
-.news-source{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);margin-bottom:.55rem;position:relative;z-index:1}
-.news-title{font-size:22px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:.6rem;position:relative;z-index:1}
-.news-summary{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:.85rem;position:relative;z-index:1}
+.news-card:hover{border-color:var(--border-hi);transform:translateY(-3px);box-shadow:0 18px 34px rgba(66,48,18,.12);background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.22)),var(--dark2)}
+.news-source{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);margin-bottom:.45rem;position:relative;z-index:1}
+.news-title{font-size:20px;font-weight:700;line-height:1.28;color:var(--text);margin-bottom:.45rem;position:relative;z-index:1}
+.news-summary{font-size:13px;line-height:1.5;color:var(--text2);margin-bottom:.75rem;position:relative;z-index:1;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .news-date{font-size:11px;color:var(--muted);position:relative;z-index:1}
 .news-linkline{margin-top:.8rem;font-size:11px;color:var(--gold);font-weight:800;letter-spacing:1.1px;text-transform:uppercase;position:relative;z-index:1}
 .news-loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:.35rem 0}
@@ -839,6 +839,11 @@ main > *{animation:fadeUp .3s ease both}
   display:flex;align-items:center;gap:8px;
 }
 .start-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.section-update-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  margin:0 0 .35rem;
+}
 .start-tgrid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -1632,6 +1637,7 @@ async function pageStart(el) {
       </div>
 
       <div style="margin-bottom:2rem">
+        <div class="section-update-label">Senast uppdaterad</div>
         <div class="start-section-label">Senaste nyheter</div>
         <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning som borde synas här? Kontakta info@allsvenskanai.se.</div>
         <div id="news-container">
@@ -1934,11 +1940,11 @@ function renderNews(el, news, opts = {}){
 
   const cards = news.slice(0, 8).map(n => `
     <article class="news-card" ${n.url ? `onclick="window.open('${n.url}','_blank')"` : ''}>
-      <div class="news-source">${esc(cleanFeedText(n.source || 'Nyheter'))}</div>
+      <div class="news-source">${esc(newsSourceLabel(n.source || '', n.url || ''))}</div>
       <div class="news-title">${esc(cleanFeedText(n.title || 'Utan rubrik'))}</div>
-      <div class="news-summary">${esc(cleanFeedText(n.summary || ''))}</div>
+      ${cleanFeedText(n.summary || '') && cleanFeedText(n.summary || '') !== cleanFeedText(n.title || '') ? `<div class="news-summary">${esc(cleanFeedText(n.summary || ''))}</div>` : ''}
       ${n.date ? `<div class="news-date">${esc(cleanFeedText(n.date))}</div>` : ''}
-      <div class="news-linkline">Läs artikel â†’</div>
+      <div class="news-linkline">Läs artikel →</div>
     </article>
   `).join('');
 
@@ -3407,6 +3413,23 @@ function cleanFeedText(s){
     .replace(/&quot;/gi,'"')
     .replace(/\s+/g,' ')
     .trim();
+}
+function newsSourceLabel(source='', url=''){
+  const cleaned = cleanFeedText(source).replace(/^google$/i, '').trim();
+  if(cleaned) return cleaned;
+  try{
+    const host = new URL(url, location.origin).hostname.replace(/^www\./,'');
+    const map = {
+      'aftonbladet.se': 'Aftonbladet',
+      'expressen.se': 'Expressen',
+      'svt.se': 'SVT',
+      'fotbollskanalen.se': 'Fotbollskanalen',
+      'sverigesradio.se': 'Sveriges Radio'
+    };
+    return map[host] || host.split('.')[0].replace(/^\w/, c => c.toUpperCase());
+  } catch(e){
+    return 'Nyheter';
+  }
 }
 function esc(s){
   return fixEnc(fixName(String(s||'')))
