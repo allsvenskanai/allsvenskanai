@@ -3282,6 +3282,7 @@ function renderQuickListAnswer(title, subtitle, itemsHtml){
 function normalizeQuestion(question='') {
   return String(question || '')
     .toLowerCase()
+    .replace(/([?!.,:;])\1+/g, '$1')
     .replace(/[?!.,:;]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -3334,13 +3335,30 @@ function detectCompetition(question) {
   return normalizeQuestion(question).includes('allsvenskan') ? 'Allsvenskan' : null;
 }
 
+function detectTimeScope(question) {
+  const q = normalizeQuestion(question);
+  if (['någonsin', 'genom tiderna', 'historiskt', 'all time'].some(token => q.includes(normalizeQuestion(token)))) return 'all_time';
+  return 'season';
+}
+
 function detectTimeReference(question) {
   const q = normalizeQuestion(question);
   if (q.includes('senaste') || q.includes('just nu')) return 'recent';
+  if (detectTimeScope(q) === 'all_time') return 'historical';
   return null;
 }
 
-function validateAnswerShape(intent, result) {
+function detectEntities(question, teams = []) {
+  return {
+    team: detectTeam(question, teams),
+    player: detectPlayer(question),
+    competition: detectCompetition(question),
+    scope: detectTimeScope(question),
+    timeReference: detectTimeReference(question),
+  };
+}
+
+function validateResult(intent, entities, result) {
   const typeMap = {
     top_scorers: 'scorers',
     latest_matches: 'matches',
@@ -3350,13 +3368,26 @@ function validateAnswerShape(intent, result) {
     goal_difference: 'teams',
     form: 'teams',
   };
-  const ok = !!(result && result.type === typeMap[intent] && Array.isArray(result.rows) && result.rows.length);
-  console.debug('[AI validate]', { intent, expected: typeMap[intent], actual: result?.type, ok });
+  let ok = !!(result && result.type === typeMap[intent] && Array.isArray(result.rows) && result.rows.length);
+  if (ok && entities?.team && ['top_scorers', 'latest_matches'].includes(intent)) {
+    ok = result.teamName === fixName(entities.team.name);
+  }
+  if (ok && entities?.scope === 'all_time') {
+    ok = result.scope === 'all_time';
+  }
+  console.debug('[AI validate]', { intent, team: entities?.team?.name || null, scope: entities?.scope || null, expected: typeMap[intent], actual: result?.type, ok });
   return ok;
 }
 
 function renderRowsAnswer(result) {
   if (!result) return null;
+  if (result.type === 'notice') {
+    return renderQuickListAnswer(
+      result.title,
+      result.subtitle,
+      `<div class="start-ai-empty">${esc(result.rows?.[0]?.label || 'Historisk statistik finns inte tillgänglig ännu.')}</div>`
+    );
+  }
   if (result.type === 'matches') {
     return renderQuickListAnswer(
       result.title,
@@ -3390,7 +3421,17 @@ function renderRowsAnswer(result) {
   );
 }
 
-async function getTopScorers({ team, standings }) {
+async function getTopScorers({ team, scope }) {
+  if (scope === 'all_time') {
+    return {
+      type: 'notice',
+      title: team ? `Flest mål någonsin i ${fixName(team.name)}` : 'Flest mål genom tiderna',
+      subtitle: '',
+      rows: [{ label: 'Historisk statistik finns inte tillgänglig ännu.' }],
+      scope: 'all_time',
+      teamName: team ? fixName(team.name) : null,
+    };
+  }
   if (team) {
     const players = await afAll('players', { league: LEAGUE, season: SEASON, team: team.id });
     const rows = players
@@ -3411,7 +3452,7 @@ async function getTopScorers({ team, standings }) {
         value: p.value,
         href: `/spelare/${p.id}?team=${team.id}`,
       }));
-    return { type: 'scorers', title: `Flest mål i ${fixName(team.name)}`, subtitle: 'Spelare i laget sorterade efter mål', rows };
+    return { type: 'scorers', title: `Flest mål i ${fixName(team.name)}`, subtitle: 'Spelare i laget sorterade efter mål', rows, scope: 'season', teamName: fixName(team.name) };
   }
 
   const scorers = await af('players/topscorers', { league: LEAGUE, season: SEASON }).catch(() => []);
@@ -3423,7 +3464,7 @@ async function getTopScorers({ team, standings }) {
     value: p.statistics?.[0]?.goals?.total || 0,
     href: `/spelare/${p.player?.id || ''}`,
   }));
-  return { type: 'scorers', title: 'Flest mål i Allsvenskan', subtitle: 'Skytteligan just nu', rows };
+  return { type: 'scorers', title: 'Flest mål i Allsvenskan', subtitle: 'Skytteligan just nu', rows, scope: 'season', teamName: null };
 }
 
 async function getLatestMatches({ team }) {
@@ -3440,6 +3481,8 @@ async function getLatestMatches({ team }) {
     title: team ? `${fixName(team.name)} senaste matcher` : 'Senaste matcher',
     subtitle: team ? 'Tre senaste resultaten' : 'Senaste resultaten i Allsvenskan',
     rows,
+    scope: 'season',
+    teamName: team ? fixName(team.name) : null,
   };
 }
 
@@ -3458,6 +3501,8 @@ function getStandingsAnswer({ standings, title = 'Toppen i tabellen', subtitle =
       value: `${row.points || 0}p`,
       href: `/lag/${row.team?.id}`,
     })),
+    scope: 'season',
+    teamName: null,
   };
 }
 
@@ -3476,17 +3521,33 @@ function getTeamStandingRow(team, standings, title, subtitle, valueKey = 'points
       value: valueBuilder(row),
       href: `/lag/${row.team?.id}`,
     }],
+    scope: 'season',
+    teamName: fixName(team.name),
   };
 }
 
-async function routeQuestion({ intent, team, player, rawQuestion, normalizedQuestion, standings, competition, timeReference }) {
+async function routeQuestion({ intent, team, player, scope, rawQuestion, normalizedQuestion, standings, competition, timeReference }) {
   let selectedHandler = 'fallback';
   let result = null;
+
+  if (scope === 'all_time') {
+    selectedHandler = 'historicalUnavailable';
+    result = {
+      type: 'notice',
+      title: team ? `${fixName(team.name)} historiskt` : 'Historisk statistik',
+      subtitle: '',
+      rows: [{ label: 'Historisk statistik finns inte tillgänglig ännu.' }],
+      scope: 'all_time',
+      teamName: team ? fixName(team.name) : null,
+    };
+    console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference, selectedHandler, validation: true });
+    return { selectedHandler, result };
+  }
 
   switch (intent) {
     case 'top_scorers':
       selectedHandler = 'getTopScorers';
-      result = await getTopScorers({ team, standings });
+      result = await getTopScorers({ team, standings, scope });
       break;
     case 'latest_matches':
       selectedHandler = 'getLatestMatches';
@@ -3545,7 +3606,7 @@ async function routeQuestion({ intent, team, player, rawQuestion, normalizedQues
       result = null;
   }
 
-  console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, competition, timeReference, selectedHandler, validation: validateAnswerShape(intent, result) });
+  console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference, selectedHandler, validation: validateResult(intent, { team, scope }, result) });
   return { selectedHandler, result };
 }
 
@@ -3558,20 +3619,22 @@ async function tryDataAnswer(question) {
   const teams = standings.map(t=>t.team) || [];
 
   const intent = detectIntent(normalizedQuestion);
-  const team = detectTeam(normalizedQuestion, teams);
-  const player = detectPlayer(normalizedQuestion);
-  const competition = detectCompetition(normalizedQuestion);
-  const timeReference = detectTimeReference(normalizedQuestion);
+  const entities = detectEntities(normalizedQuestion, teams);
+  const { team, player, competition, scope, timeReference } = entities;
 
-  console.debug('[AI question]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, competition, timeReference });
+  console.debug('[AI question]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference });
 
-  const { result } = await routeQuestion({ intent, team, player, rawQuestion, normalizedQuestion, standings, competition, timeReference });
+  const { result } = await routeQuestion({ intent, team, player, scope, rawQuestion, normalizedQuestion, standings, competition, timeReference });
 
-  if (validateAnswerShape(intent, result)) {
+  if (result?.type === 'notice') {
     return renderRowsAnswer(result);
   }
 
-  console.error('[AI route mismatch]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, result });
+  if (validateResult(intent, entities, result)) {
+    return renderRowsAnswer(result);
+  }
+
+  console.error('[AI route mismatch]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, scope, result });
   return renderQuickListAnswer(
     'Prova en snabb fråga',
     '',
@@ -3586,16 +3649,18 @@ async function tryDataAnswer(question) {
 }
 
 const AI_ROUTING_TESTS = [
-  { question: 'Flest mål?', intent: 'top_scorers', team: null },
-  { question: 'Vem har gjort flest mål i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF' },
-  { question: 'Flest mål i AIK', intent: 'top_scorers', team: 'AIK' },
-  { question: 'AIK senaste matcher', intent: 'latest_matches', team: 'AIK' },
-  { question: 'Malmö senaste matcher', intent: 'latest_matches', team: 'Malmö FF' },
-  { question: 'Vem leder tabellen?', intent: 'table_leader', team: null },
-  { question: 'Vilket lag har flest poäng?', intent: 'most_points', team: null },
-  { question: 'Bäst målskillnad?', intent: 'goal_difference', team: null },
-  { question: 'Bäst form just nu?', intent: 'form', team: null },
-  { question: 'Skytteligan', intent: 'top_scorers', team: null },
+  { question: 'Flest mål?', intent: 'top_scorers', team: null, scope: 'season' },
+  { question: 'Vem har gjort flest mål i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF', scope: 'season' },
+  { question: 'Flest mål i AIK', intent: 'top_scorers', team: 'AIK', scope: 'season' },
+  { question: 'AIK senaste matcher', intent: 'latest_matches', team: 'AIK', scope: 'season' },
+  { question: 'Malmö senaste matcher', intent: 'latest_matches', team: 'Malmö FF', scope: 'season' },
+  { question: 'Vem leder tabellen?', intent: 'table_leader', team: null, scope: 'season' },
+  { question: 'Vilket lag har flest poäng?', intent: 'most_points', team: null, scope: 'season' },
+  { question: 'Bäst målskillnad?', intent: 'goal_difference', team: null, scope: 'season' },
+  { question: 'Bäst form just nu?', intent: 'form', team: null, scope: 'season' },
+  { question: 'Skytteligan', intent: 'top_scorers', team: null, scope: 'season' },
+  { question: 'Flest mål någonsin i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF', scope: 'all_time' },
+  { question: 'Vem har gjort flest mål genom tiderna i AIK?', intent: 'top_scorers', team: 'AIK', scope: 'all_time' },
 ];
 
 function runAiRoutingTests() {
@@ -3605,15 +3670,17 @@ function runAiRoutingTests() {
   AI_ROUTING_TESTS.forEach(test => {
     const normalized = normalizeQuestion(test.question);
     const intent = detectIntent(normalized);
-    const team = detectTeam(normalized, teams);
+    const entities = detectEntities(normalized, teams);
     console.debug('[AI test]', {
       question: test.question,
       normalized,
       detectedIntent: intent,
       expectedIntent: test.intent,
-      detectedTeam: team?.name || null,
+      detectedTeam: entities.team?.name || null,
       expectedTeam: test.team,
-      ok: intent === test.intent && (team?.name || null) === test.team,
+      detectedScope: entities.scope,
+      expectedScope: test.scope,
+      ok: intent === test.intent && (entities.team?.name || null) === test.team && entities.scope === test.scope,
     });
   });
 }
