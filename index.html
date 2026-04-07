@@ -502,6 +502,157 @@ main > *{animation:fadeUp .3s ease both}
   font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
   color:var(--muted);
 }
+.start-lead{
+  max-width:700px;margin:1rem auto 0;
+  font-size:17px;line-height:1.7;color:var(--text2);
+  position:relative;
+}
+.start-proof{
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+  margin:1.2rem 0 1.5rem;position:relative;
+}
+.start-proof-pill{
+  padding:.65rem .95rem;border-radius:999px;
+  background:rgba(255,255,255,.62);border:1px solid var(--border);
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:1.3px;text-transform:uppercase;color:var(--text2);
+}
+.start-hero-actions{
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+  position:relative;
+}
+.start-primary-btn,.start-secondary-btn{
+  min-height:46px;padding:0 18px;border-radius:12px;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;
+  letter-spacing:1.2px;text-transform:uppercase;transition:transform .18s,opacity .18s,background .18s,border-color .18s;
+}
+.start-primary-btn{
+  background:var(--gold);color:var(--dark);border:none;
+  box-shadow:0 10px 22px rgba(201,165,75,.22);
+}
+.start-secondary-btn{
+  background:rgba(255,255,255,.68);color:var(--text);border:1px solid var(--border-hi);
+}
+.start-primary-btn:hover,.start-secondary-btn:hover{transform:translateY(-1px);opacity:.92}
+.start-highlight-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;margin:0 0 2rem;
+}
+.start-highlight{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:16px;padding:1.1rem 1.15rem;
+  cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
+  box-shadow:0 10px 24px rgba(66,48,18,.05);
+}
+.start-highlight:hover{
+  border-color:var(--border-hi);transform:translateY(-2px);
+  box-shadow:0 16px 32px rgba(66,48,18,.08);
+}
+.start-highlight-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:.55rem;
+}
+.start-highlight-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);line-height:1;
+}
+.start-highlight-copy{
+  margin-top:.55rem;font-size:13px;line-height:1.6;color:var(--text2);
+}
+.start-ai{
+  background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(243,235,221,.88));
+  border:1px solid var(--border);border-radius:18px;
+  padding:1.5rem;margin-bottom:2rem;box-shadow:0 14px 34px rgba(66,48,18,.06);
+}
+.start-ai-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.start-ai-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--text);line-height:1;
+}
+.start-ai-copy{max-width:700px;margin-top:.5rem;font-size:14px;line-height:1.7;color:var(--text2)}
+.start-ai-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.start-ai-input{
+  flex:1 1 420px;min-height:50px;padding:0 16px;border-radius:12px;
+  border:1px solid var(--border-hi);background:rgba(255,253,248,.95);
+  color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;outline:none;
+}
+.start-ai-input:focus{border-color:var(--gold)}
+.start-ai-submit{
+  min-height:50px;padding:0 18px;border:none;border-radius:12px;
+  background:var(--text);color:var(--dark2);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+}
+.start-ai-submit:hover{opacity:.92}
+.start-chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem}
+.start-chip{
+  border:1px solid var(--border);background:rgba(255,255,255,.62);
+  color:var(--text2);border-radius:999px;padding:.5rem .85rem;cursor:pointer;
+  font-size:12px;font-weight:600;transition:border-color .18s,color .18s,background .18s;
+}
+.start-chip:hover{border-color:var(--border-hi);color:var(--text);background:rgba(255,255,255,.9)}
+.start-ai-note{margin-top:.8rem;font-size:12px;color:var(--muted)}
+.start-ai-result{
+  margin-top:1rem;padding:1rem 1.05rem;border-radius:14px;
+  background:rgba(255,253,248,.78);border:1px solid var(--border);
+}
+.start-ai-empty{font-size:13px;color:var(--muted);line-height:1.6}
+.start-snapshot{
+  display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-bottom:2rem;
+}
+.start-mini-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:16px;padding:1.1rem 1.15rem;
+}
+.start-mini-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:.9rem;
+}
+.start-mini-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.start-mini-link{
+  background:none;border:none;color:var(--gold);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.start-table-list{display:grid;gap:8px}
+.start-table-row{
+  display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;
+  padding:.7rem .8rem;border-radius:12px;background:rgba(255,255,255,.58);cursor:pointer;
+  transition:background .18s,transform .18s;
+}
+.start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px)}
+.start-rank{
+  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--gold);text-align:center;
+}
+.start-team-line{display:flex;align-items:center;gap:8px;min-width:0}
+.start-team-line img{width:22px;height:22px;object-fit:contain;flex-shrink:0}
+.start-team-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
+.start-team-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.start-points{
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--text);
+}
+.start-result-list{display:grid;gap:8px}
+.start-result-row{
+  padding:.8rem .9rem;border-radius:12px;background:rgba(255,255,255,.58);
+  cursor:pointer;transition:background .18s,transform .18s;
+}
+.start-result-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.start-result-round{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
+}
+.start-result-score{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--text);line-height:1;
+}
+.start-result-teams{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
+}
+.start-result-side{font-size:13px;font-weight:700;color:var(--text)}
+.start-result-side.away{text-align:right}
+.start-result-vs{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
 .start-teams-section{margin-bottom:2rem}
 .start-section-label{
   font-family:'Barlow Condensed',sans-serif;
@@ -779,6 +930,21 @@ main{max-width:1360px}
   .start-hero{padding:1.35rem .9rem;border-radius:18px}
   .start-wordmark{font-size:clamp(28px,12vw,42px);letter-spacing:2px}
   .start-sub{font-size:10px;letter-spacing:1.8px;line-height:1.5}
+  .start-lead{font-size:14px;line-height:1.65;margin-top:.8rem}
+  .start-proof{margin:1rem 0 1.15rem}
+  .start-proof-pill{font-size:10px;padding:.55rem .75rem}
+  .start-hero-actions{flex-direction:column}
+  .start-primary-btn,.start-secondary-btn,.start-ai-submit{width:100%}
+  .start-highlight-grid,.start-snapshot{grid-template-columns:1fr}
+  .start-highlight{padding:1rem}
+  .start-highlight-title{font-size:22px}
+  .start-ai{padding:1.1rem;border-radius:18px}
+  .start-ai-title{font-size:26px}
+  .start-ai-form{gap:8px}
+  .start-ai-input{flex-basis:100%;min-height:46px}
+  .start-chip-row{gap:6px}
+  .start-chip{font-size:11px;padding:.5rem .7rem}
+  .start-result-score{font-size:24px}
   .tgrid,.start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:18px}
   .tcard,.start-tcard{padding:1rem .55rem;min-height:124px;justify-content:center}
   .tcard img,.start-tcard img{width:48px;height:48px}
@@ -1104,7 +1270,19 @@ async function pageStart(el) {
     if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
       data = await af('standings', {league:LEAGUE, season:2025});
     }
-    const teams = (data[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+    const standings = data[0]?.league?.standings?.[0] || [];
+    const teams = standings.map(t=>t.team);
+    const topThree = standings.slice(0,3);
+
+    let recentFixtures = [];
+    try {
+      recentFixtures = await af('fixtures', {league:LEAGUE, season:SEASON, last:3});
+    } catch(e) {
+      recentFixtures = [];
+    }
+    recentFixtures = [...recentFixtures]
+      .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
+      .slice(0,3);
 
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
@@ -1112,16 +1290,122 @@ async function pageStart(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
 
+    const highlights = [
+      {
+        kicker: 'Snabbt in',
+        title: 'Tabell',
+        copy: 'Se poÃ¤ng, form och mÃ¥lskillnad fÃ¶r hela ligan.',
+        path: '/tabell'
+      },
+      {
+        kicker: 'FÃ¶lj nu',
+        title: 'Resultat',
+        copy: 'Kolla senaste matcherna och Ã¶ppna varje matchrapport.',
+        path: '/resultat'
+      },
+      {
+        kicker: 'Djupdata',
+        title: 'Statistik',
+        copy: 'JÃ¤mfÃ¶r spelare och hitta ligans starkaste siffror.',
+        path: '/statistik'
+      }
+    ].map(item => `
+      <div class="start-highlight" onclick="go('${item.path}')">
+        <div class="start-highlight-kicker">${item.kicker}</div>
+        <div class="start-highlight-title">${item.title}</div>
+        <div class="start-highlight-copy">${item.copy}</div>
+      </div>`).join('');
+
+    const topRows = topThree.map(row => `
+      <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
+        <div class="start-rank">${row.rank}</div>
+        <div class="start-team-line">
+          <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div style="min-width:0">
+            <div class="start-team-name">${esc(fixName(row.team.name))}</div>
+            <div class="start-team-meta">${row.all.played} matcher Â· ${row.all.win} vinster</div>
+          </div>
+        </div>
+        <div class="start-points">${row.points}p</div>
+      </div>`).join('');
+
+    const resultRows = recentFixtures.length
+      ? recentFixtures.map(f => `
+        <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
+          <div class="start-result-top">
+            <div class="start-result-round">${esc(svOmgang(f.league?.round || 'Allsvenskan'))}</div>
+            <div class="start-result-score">${f.goals?.home ?? 'â€“'}-${f.goals?.away ?? 'â€“'}</div>
+          </div>
+          <div class="start-result-teams">
+            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || 'â€”'))}</div>
+            <div class="start-result-vs">mot</div>
+            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || 'â€”'))}</div>
+          </div>
+        </div>`).join('')
+      : `<div class="start-ai-empty">Inga fÃ¤rska matcher kunde laddas just nu.</div>`;
+
     el.innerHTML = `
       <div class="start-hero">
         <div class="start-hero-inner">
           <div class="start-wordmark">Allsvenskan<span>AI</span></div>
+          <div class="start-sub">Allsvenskan, sÃ¶kbar med AI</div>
+          <div class="start-lead">Tabell, resultat, spelarstatistik, Ã¶vergÃ¥ngar och klubbdata samlat pÃ¥ ett stÃ¤lle. Byggd fÃ¶r supportrar som vill hitta svar snabbt.</div>
+          <div class="start-proof">
+            <div class="start-proof-pill">16 lag</div>
+            <div class="start-proof-pill">Live-data</div>
+            <div class="start-proof-pill">Spelarprofiler & statistik</div>
+          </div>
+          <div class="start-hero-actions">
+            <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">BÃ¶rja sÃ¶ka</button>
+            <button class="start-secondary-btn" onclick="go('/tabell')">Se tabellen</button>
+          </div>
           <div class="start-sub">Statistik · Spelare · Övergångar · Marknadsvärden</div>
         </div>
       </div>
 
+      <div class="start-highlight-grid">${highlights}</div>
+
+      <div class="start-ai">
+        <div class="start-ai-head">
+          <div>
+            <div class="start-ai-title">FrÃ¥ga AllsvenskanAI</div>
+            <div class="start-ai-copy">Skriv en frÃ¥ga om tabellen eller spelardata. Prova gÃ¤rna en av frÃ¥gorna nedan fÃ¶r att komma igÃ¥ng.</div>
+          </div>
+        </div>
+        <form class="start-ai-form" onsubmit="startAskAI(event)">
+          <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off">
+          <button class="start-ai-submit" type="submit">FrÃ¥ga AI</button>
+        </form>
+        <div class="start-chip-row">
+          <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?')" type="button">Vem leder tabellen just nu?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest mÃ¥l?')" type="button">Vilka spelare i AIK har flest mÃ¥l?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest poÃ¤ng?')" type="button">Vilket lag har flest poÃ¤ng?</button>
+        </div>
+        <div class="start-ai-note">Snabbsvaren nedan bygger pÃ¥ den live-data som redan finns i sajten.</div>
+        <div id="startAiResult" class="start-ai-result">
+          <div class="start-ai-empty">FrÃ¥ga om tabellen, ett lag eller en spelkategori sÃ¥ visar vi ett direkt svar hÃ¤r.</div>
+        </div>
+      </div>
+
+      <div class="start-snapshot">
+        <div class="start-mini-card">
+          <div class="start-mini-head">
+            <div class="start-mini-title">Toppen just nu</div>
+            <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
+          </div>
+          <div class="start-table-list">${topRows}</div>
+        </div>
+        <div class="start-mini-card">
+          <div class="start-mini-head">
+            <div class="start-mini-title">Senaste resultat</div>
+            <button class="start-mini-link" onclick="go('/resultat')">Alla matcher</button>
+          </div>
+          <div class="start-result-list">${resultRows}</div>
+        </div>
+      </div>
+
       <div class="start-teams-section">
-        <div class="start-section-label">Allsvenskan ${SEASON}</div>
+        <div class="start-section-label">Alla lag i Allsvenskan ${SEASON}</div>
         <div class="start-tgrid">${cards}</div>
       </div>
 
@@ -1140,11 +1424,83 @@ async function pageStart(el) {
           <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter…</div>
         </div>
       </div>`;
+    normalizeStartHome();
     // Load feeds async after page renders
     loadStartPodcasts();
     loadStartNews();
   } catch(e) {
     el.innerHTML = `<div class="err">⚠️ ${esc(e.message)}</div>`;
+  }
+}
+
+function normalizeStartHome() {
+  const hero = document.querySelector('.start-hero-inner');
+  if(hero) {
+    const subs = hero.querySelectorAll('.start-sub');
+    if(subs[0]) subs[0].textContent = 'Allsvenskan, sokbar med AI';
+    if(subs[1]) subs[1].remove();
+    const lead = hero.querySelector('.start-lead');
+    if(lead) lead.textContent = 'Tabell, resultat, spelarstatistik, overgangar och klubbdata samlat pa ett stalle. Byggd for supportrar som vill hitta svar snabbt.';
+    const proofs = hero.querySelectorAll('.start-proof-pill');
+    if(proofs[0]) proofs[0].textContent = '16 lag';
+    if(proofs[1]) proofs[1].textContent = 'Live-data';
+    if(proofs[2]) proofs[2].textContent = 'Spelarprofiler & statistik';
+    const buttons = hero.querySelectorAll('.start-hero-actions button');
+    if(buttons[0]) buttons[0].textContent = 'Borja soka';
+    if(buttons[1]) buttons[1].textContent = 'Se tabellen';
+  }
+  const title = document.querySelector('.start-ai-title');
+  if(title) title.textContent = 'Fraga AllsvenskanAI';
+  const copy = document.querySelector('.start-ai-copy');
+  if(copy) copy.textContent = 'Skriv en fraga om tabellen eller spelardata. Prova garna en av fragorna nedan for att komma igang.';
+  const input = document.getElementById('startAiInput');
+  if(input) input.placeholder = 'Till exempel: Vem leder tabellen just nu?';
+  const submit = document.querySelector('.start-ai-submit');
+  if(submit) submit.textContent = 'Fraga AI';
+  const chips = document.querySelectorAll('.start-chip');
+  if(chips[0]) chips[0].textContent = 'Vem leder tabellen just nu?';
+  if(chips[1]) chips[1].textContent = 'Vilka spelare i AIK har flest mal?';
+  if(chips[1]) chips[1].setAttribute('onclick', "startFillPrompt('Vilka spelare i AIK har flest mal?')");
+  if(chips[2]) chips[2].textContent = 'Vilket lag har flest poang?';
+  if(chips[2]) chips[2].setAttribute('onclick', "startFillPrompt('Vilket lag har flest poang?')");
+  const note = document.querySelector('.start-ai-note');
+  if(note) note.textContent = 'Snabbsvaren nedan bygger pa den live-data som redan finns i sajten.';
+  const empty = document.querySelector('#startAiResult .start-ai-empty');
+  if(empty) empty.textContent = 'Fraga om tabellen, ett lag eller en spelkategori sa visar vi ett direkt svar har.';
+}
+
+function startFillPrompt(text) {
+  const input = document.getElementById('startAiInput');
+  if(!input) return;
+  input.value = text;
+  input.focus();
+}
+
+async function startAskAI(event) {
+  if(event) event.preventDefault();
+  const input = document.getElementById('startAiInput');
+  const result = document.getElementById('startAiResult');
+  if(!input || !result) return;
+  const question = (input.value || '').trim();
+  if(question.length < 3) {
+    result.innerHTML = `<div class="start-ai-empty">Skriv en lite langre fraga, till exempel "Vem leder tabellen just nu?".</div>`;
+    input.focus();
+    return;
+  }
+  result.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tanker pa din fraga...</div>`;
+  try {
+    const quick = await tryDataAnswer(question);
+    if(quick) {
+      result.innerHTML = quick;
+      return;
+    }
+    result.innerHTML = `
+      <div class="start-ai-empty">
+        Jag kunde inte ge ett exakt snabbsvar pa den fragan har pa startsidan.
+        Testa fragor om tabellen, ett lag eller statistik som mal och assists, eller ga vidare till <button class="start-mini-link" style="padding:0" onclick="go('/statistik')">Statistik</button>.
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `<div class="start-ai-empty">Det gick inte att ladda svaret just nu: ${esc(e.message)}</div>`;
   }
 }
 
