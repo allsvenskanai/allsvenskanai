@@ -2582,6 +2582,40 @@ function getResultsRounds(fixtures){
   });
 }
 
+function fixtureHasStarted(f){
+  const short = String(f?.fixture?.status?.short || '').toUpperCase();
+  const elapsed = Number(f?.fixture?.status?.elapsed || 0);
+  if(elapsed > 0) return true;
+  return ['1H','HT','2H','ET','BT','P','LIVE','INT','SUSP','FT','AET','PEN','ABD','AWD','WO'].includes(short);
+}
+
+function getDefaultResultsRound(fixtures, rounds){
+  const keyedRounds = new Map((rounds || []).map(r => [r.key, r]));
+  const startedRounds = (fixtures || [])
+    .filter(fixtureHasStarted)
+    .map(f => getFixtureRoundInfo(f))
+    .filter(info => info && keyedRounds.has(info.key))
+    .sort((a,b) => a.number - b.number);
+  return startedRounds[startedRounds.length - 1]?.key || rounds?.[0]?.key || '';
+}
+
+async function fetchSeasonFixtures(league, season){
+  const fixtures = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const q = new URLSearchParams({_endpoint:'fixtures', league, season, page});
+    const r = await fetch(`${AF}?${q}`);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
+    fixtures.push(...(d.response || []));
+    totalPages = Math.max(1, Number(d.paging?.total || 1));
+    page++;
+  } while(page <= totalPages);
+  return fixtures;
+}
+
 function setResultsRound(roundKey){
   resultsSelectedRound = roundKey || '';
   pageResults(document.getElementById('mc'));
@@ -2591,10 +2625,10 @@ async function pageResults(el) {
   document.title = 'Resultat — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
   try {
-    const data = await af('fixtures', {league:LEAGUE, season:SEASON, last:50});
+    const data = await fetchSeasonFixtures(LEAGUE, SEASON);
     const rounds = getResultsRounds(data);
     if(rounds.length && !rounds.some(r => r.key === resultsSelectedRound)) {
-      resultsSelectedRound = rounds[rounds.length - 1]?.key || rounds[0]?.key || '';
+      resultsSelectedRound = getDefaultResultsRound(data, rounds);
     }
     const activeRound = rounds.find(r => r.key === resultsSelectedRound) || null;
     const visibleFixtures = activeRound
