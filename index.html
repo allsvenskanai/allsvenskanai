@@ -2200,11 +2200,23 @@ async function afRawStatic(ep, p={}){
   return staticData;
 }
 async function loadStaticJsonByQuery(ep, p = {}){
-  const directRef = getDeterministicStaticPath(ep, p);
-  if(!directRef) throw new Error(`Static path missing for ${stableQueryKey(ep, p)}`);
-  const response = await fetch(directRef, { cache:'no-store' });
-  if(!response.ok) throw new Error(`Static fetch failed for ${stableQueryKey(ep, p)} (${response.status})`);
-  return response.json();
+  const key = stableQueryKey(ep, p);
+  const manifest = await getStaticManifest();
+  const ref = manifest?.queries?.[key] || getDeterministicStaticPath(ep, p);
+  if(!ref) throw new Error(`Static path missing for ${key}`);
+  const response = await fetch(ref, { cache:'no-store' });
+  if(!response.ok) throw new Error(`Static fetch failed for ${key} (${response.status})`);
+  const text = await response.text();
+  const trimmed = String(text || '').trim();
+  if(!trimmed) throw new Error(`Static data empty for ${key}`);
+  if(trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
+    throw new Error(`Static data missing for ${key}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    throw new Error(`Static JSON invalid for ${key}`);
+  }
 }
 async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }){
   try {
