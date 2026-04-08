@@ -1883,13 +1883,21 @@ function aggregatePlayerSeasonStats(rows = []){
   const subIns = sum(entry => entry.substitutes?.in);
   const subOuts = sum(entry => entry.substitutes?.out);
   const bench = sum(entry => entry.substitutes?.bench);
-  const ratingEntries = comps.map(entry => toStatNumber(entry.games?.rating)).filter(value => value > 0);
+  const ratingEntries = comps
+    .map(entry => ({
+      rating: toStatNumber(entry.games?.rating),
+      appearances: toStatNumber(entry.games?.appearences) || 1,
+    }))
+    .filter(entry => entry.rating > 0);
   const passAccuracyEntries = comps.map(entry => ({
     accuracy: toStatNumber(entry.passes?.accuracy),
     passes: toStatNumber(entry.passes?.total),
   })).filter(entry => entry.accuracy > 0);
-  const rating = ratingEntries.length ? ratingEntries.reduce((total, value) => total + value, 0) / ratingEntries.length : 0;
-  const accuratePasses = passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0);
+  const ratingWeight = ratingEntries.reduce((total, entry) => total + entry.appearances, 0);
+  const rating = ratingEntries.length
+    ? ratingEntries.reduce((total, entry) => total + (entry.rating * entry.appearances), 0) / (ratingWeight || ratingEntries.length)
+    : 0;
+  const accuratePasses = Math.round(passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0));
   const passAccuracy = passes > 0 ? pct(accuratePasses, passes) : (passAccuracyEntries[0]?.accuracy || 0);
   const team = comps[0]?.team || rows?.[0]?.statistics?.[0]?.team || null;
   const position = comps[0]?.games?.position || '';
@@ -1937,7 +1945,7 @@ function aggregatePlayerSeasonStats(rows = []){
       savePercentage: pct(saves, saves + goalsConceded),
       goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
       minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
-      subApps: Math.max(subIns || (appearances - starts), 0),
+      subApps: subIns > 0 ? subIns : Math.max(appearances - starts, 0),
       minutesPerGoal: goals > 0 ? minutes / goals : 0,
       minutesPerContribution: (goals + assists) > 0 ? minutes / (goals + assists) : 0,
     }
