@@ -2551,6 +2551,7 @@ async function loadTeamAI(name, tabId, teamId) {
       });
     });
     all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    await enrichTransferPlayerNames(all);
 
     if(!all.length) {
       el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
@@ -3251,6 +3252,7 @@ async function pageMatch(el, fixtureId) {
 // â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let transfersCache = null;
 let transfersLoadMeta = null;
+let playerProfileNameCache = {};
 let transfersFilters = {
   team: '',
   type: '',
@@ -3271,6 +3273,48 @@ function isPermanentTransfer(type=''){
 function setTransfersFilter(key, value=''){
   transfersFilters = { ...transfersFilters, [key]: value || '' };
   pageTransfers(document.getElementById('mc'), 1);
+}
+
+async function getPlayerProfileDisplayName(playerId){
+  if(!playerId) return '';
+  if(playerProfileNameCache[playerId]) return playerProfileNameCache[playerId];
+  try {
+    const data = await withTimeout(
+      af('players/profiles', {player: playerId}),
+      12000,
+      `Player profile ${playerId}`
+    );
+    const fullName = getPlayerDisplayName(data?.[0]?.player || {});
+    if(fullName && fullName !== '—') {
+      playerProfileNameCache[playerId] = fullName;
+      return fullName;
+    }
+  } catch(e) {
+    console.warn('[player-name] profile lookup failed', { playerId, error: e.message });
+  }
+  return '';
+}
+
+async function enrichTransferPlayerNames(rows = []){
+  const needsLookup = rows.filter(tr => tr?.playerId && looksAbbreviatedPlayerName(tr.playerName || ''));
+  if(!needsLookup.length) return;
+
+  const ids = [...new Set(needsLookup.map(tr => tr.playerId).filter(Boolean))];
+  const batchSize = 4;
+  for(let i = 0; i < ids.length; i += batchSize){
+    const batch = ids.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async playerId => ({
+      playerId,
+      name: await getPlayerProfileDisplayName(playerId)
+    })));
+    results.forEach(result => {
+      if(!result.name) return;
+      rows.forEach(tr => {
+        if(tr.playerId === result.playerId) tr.playerName = result.name;
+      });
+    });
+    if(i + batchSize < ids.length) await delay(350);
+  }
 }
 
 function buildTransferEntries(rows = [], fallbackTeam = null){
@@ -3446,6 +3490,7 @@ async function pageTransfers(el, page=1) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const slice = filtered.slice((safePage-1)*PER_PAGE, safePage*PER_PAGE);
+  await enrichTransferPlayerNames(slice);
   const teamOptions = [...new Set(unique.flatMap(tr => [fixName(tr.teamOut?.name || ''), fixName(tr.teamIn?.name || '')]).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'sv'));
   const filters = `
     <div class="transfer-filters">
