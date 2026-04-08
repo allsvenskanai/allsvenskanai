@@ -1927,6 +1927,15 @@ function stableQueryKey(ep, params = {}){
   const suffix = qs.toString();
   return suffix ? `${ep}?${suffix}` : ep;
 }
+function canonicalStaticQueryKey(epOrKey, params = null){
+  if(params !== null) return stableQueryKey(epOrKey, params);
+  const raw = String(epOrKey || '').trim();
+  if(!raw) return '';
+  const [endpoint, query = ''] = raw.split('?');
+  if(!query) return endpoint;
+  const parsed = Object.fromEntries(new URLSearchParams(query).entries());
+  return stableQueryKey(endpoint, parsed);
+}
 function staticSafeSegment(value = ''){
   return String(value)
     .replace(/[^a-zA-Z0-9_-]+/g, '-')
@@ -1944,18 +1953,13 @@ function toBase64Url(value = ''){
   }
 }
 function getDeterministicStaticPath(ep, params = {}){
-  const key = stableQueryKey(ep, params);
+  const key = canonicalStaticQueryKey(ep, params);
   const token = toBase64Url(key);
   if(!token) return '';
   return `${STATIC_DATA_BASE}/${staticSafeSegment(ep)}-${token}.json`;
 }
 function normalizeStaticQueryKey(key = ''){
-  const raw = String(key || '').trim();
-  if(!raw) return '';
-  const [endpoint, query = ''] = raw.split('?');
-  if(!query) return endpoint;
-  const params = Object.fromEntries(new URLSearchParams(query).entries());
-  return stableQueryKey(endpoint, params);
+  return canonicalStaticQueryKey(key);
 }
 async function parseStaticJsonResponse(response, key = 'static'){
   if(!response?.ok) throw new Error(`Static fetch failed for ${key} (${response?.status || 0})`);
@@ -1981,6 +1985,46 @@ function findStaticManifestRef(manifest, key = ''){
   }
   return '';
 }
+function findStaticManifestNearMatches(manifest, key = '', limit = 6){
+  const queries = manifest?.queries || {};
+  const normalizedTarget = normalizeStaticQueryKey(key);
+  const [targetEndpoint = '', targetQuery = ''] = normalizedTarget.split('?');
+  const targetParams = new URLSearchParams(targetQuery);
+  const targetTeam = targetParams.get('team');
+  const targetSeason = targetParams.get('season');
+  const targetLeague = targetParams.get('league');
+  return Object.keys(queries)
+    .map(manifestKey => {
+      const normalizedKey = normalizeStaticQueryKey(manifestKey);
+      const [endpoint = '', query = ''] = normalizedKey.split('?');
+      const params = new URLSearchParams(query);
+      let score = 0;
+      if(endpoint === targetEndpoint) score += 10;
+      if(targetTeam && params.get('team') === targetTeam) score += 5;
+      if(targetSeason && params.get('season') === targetSeason) score += 4;
+      if(targetLeague && params.get('league') === targetLeague) score += 4;
+      if(normalizedKey === normalizedTarget) score += 100;
+      return { manifestKey, score };
+    })
+    .filter(item => item.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, limit)
+    .map(item => item.manifestKey);
+}
+async function fetchStaticJsonCandidates(key = '', refs = []){
+  const attempts = [];
+  for(const ref of refs){
+    if(!ref) continue;
+    try {
+      const response = await fetch(ref, { cache:'no-store' });
+      const data = await parseStaticJsonResponse(response, key);
+      return { data, ref, attempts };
+    } catch(e) {
+      attempts.push({ ref, error: e.message });
+    }
+  }
+  return { data: null, ref: '', attempts };
+}
 async function getStaticManifest(){
   if(STATIC_MANIFEST_PROMISE) return STATIC_MANIFEST_PROMISE;
   STATIC_MANIFEST_PROMISE = fetch(STATIC_MANIFEST_PATH, { cache:'no-store' })
@@ -1998,35 +2042,32 @@ async function getStaticManifest(){
 }
 async function getStaticApiResponse(ep, params = {}){
   if(!shouldUseStaticEndpoint(ep, params)) return null;
-  const key = stableQueryKey(ep, params);
+  const key = canonicalStaticQueryKey(ep, params);
   if(Object.prototype.hasOwnProperty.call(STATIC_RESPONSE_CACHE, key)) {
     return STATIC_RESPONSE_CACHE[key];
   }
-  const directRef = getDeterministicStaticPath(ep, params);
-  try {
-    if(directRef) {
-      const response = await fetch(directRef, { cache:'no-store' });
-      const data = await parseStaticJsonResponse(response, key);
-      STATIC_RESPONSE_CACHE[key] = data;
-      return data;
-    }
-  } catch(e) {}
   const manifest = await getStaticManifest();
-  const ref = findStaticManifestRef(manifest, key);
-  if(!ref) {
-    STATIC_RESPONSE_CACHE[key] = null;
-    return null;
-  }
-  try {
-    const response = await fetch(ref, { cache:'no-store' });
-    const data = await parseStaticJsonResponse(response, key);
+  const manifestRef = findStaticManifestRef(manifest, key);
+  const directRef = getDeterministicStaticPath(ep, params);
+  const { data, attempts } = await fetchStaticJsonCandidates(key, [manifestRef, directRef]);
+  if(data) {
     STATIC_RESPONSE_CACHE[key] = data;
     return data;
-  } catch(e) {
-    console.warn('[static-data] failed', { key, error: e.message });
+  }
+  if(!manifestRef && !directRef) {
     STATIC_RESPONSE_CACHE[key] = null;
     return null;
   }
+  console.warn('[static-data] failed', {
+    query: stableQueryKey(ep, params),
+    canonicalQuery: key,
+    manifestRef,
+    directRef,
+    attempts,
+    nearMatches: findStaticManifestNearMatches(manifest, key),
+  });
+  STATIC_RESPONSE_CACHE[key] = null;
+  return null;
 }
 function isAllsvenskanLeague(league = {}, leagueId = LEAGUE){
   const idMatch = Number(league?.id || 0) === Number(leagueId || 0);
@@ -2237,18 +2278,31 @@ async function afRawStatic(ep, p={}){
   return staticData;
 }
 async function loadStaticJsonByQuery(ep, p = {}){
-  const key = stableQueryKey(ep, p);
+  const key = canonicalStaticQueryKey(ep, p);
   const manifest = await getStaticManifest();
-  const ref = findStaticManifestRef(manifest, key) || getDeterministicStaticPath(ep, p);
-  if(!ref) throw new Error(`Static path missing for ${key}`);
-  const response = await fetch(ref, { cache:'no-store' });
-  return parseStaticJsonResponse(response, key);
+  const manifestRef = findStaticManifestRef(manifest, key);
+  const directRef = getDeterministicStaticPath(ep, p);
+  const { data, attempts } = await fetchStaticJsonCandidates(key, [manifestRef, directRef]);
+  if(data) return data;
+  console.warn('[static-data] lookup failed', {
+    query: stableQueryKey(ep, p),
+    canonicalQuery: key,
+    manifestRef,
+    directRef,
+    attempts,
+    nearMatches: findStaticManifestNearMatches(manifest, key),
+  });
+  throw new Error(`Static data missing for ${key}`);
 }
 async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }){
   try {
     return await loadStaticJsonByQuery(ep, p);
   } catch(e) {
-    console.warn('[static-data] optional query missing', { query: stableQueryKey(ep, p), error: e.message });
+    console.warn('[static-data] optional query missing', {
+      query: stableQueryKey(ep, p),
+      canonicalQuery: canonicalStaticQueryKey(ep, p),
+      error: e.message
+    });
     return fallback;
   }
 }
