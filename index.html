@@ -1391,6 +1391,61 @@ main{max-width:1360px}
 .team-empty-state{padding:1.1rem 0;color:var(--muted);font-size:13px}
 .team-section-stack{display:grid;gap:1rem}
 .team-note{font-size:12px;color:var(--muted);line-height:1.5}
+.player-history-wrap{display:grid;gap:.8rem}
+.player-history-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  padding:1rem 1.1rem .7rem;border-bottom:1px solid var(--border);
+}
+.player-history-headline{display:grid;gap:4px}
+.player-history-kicker{
+  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.player-history-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;line-height:1;font-weight:900;color:var(--text);
+}
+.player-history-copy{font-size:12px;color:var(--muted);line-height:1.45}
+.player-history-summary{
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
+}
+.player-history-badge{
+  min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,253,248,.74);display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--muted);
+}
+.player-history-badge strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;line-height:1;color:var(--gold);
+}
+.player-history-table{table-layout:fixed}
+.player-history-table thead th{
+  background:rgba(245,241,232,.96);
+  backdrop-filter:blur(10px);
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+}
+.player-history-table tbody tr{transition:background .18s ease}
+.player-history-table tbody tr:nth-child(even):not(.total-row){background:rgba(255,253,248,.38)}
+.player-history-table tbody tr:hover:not(.total-row){background:rgba(212,175,55,.06)}
+.player-history-table td{vertical-align:middle}
+.player-history-table td.num,
+.player-history-table th.num{text-align:center}
+.player-history-team{display:flex;align-items:center;gap:8px;min-width:0}
+.player-history-team img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.player-history-team span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.player-history-league{
+  font-size:12px;color:var(--muted);line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.player-history-rating{font-weight:700}
+.player-history-empty{color:var(--muted);font-weight:500}
+.player-history-table tr.total-row td{
+  background:linear-gradient(180deg,rgba(201,165,75,.08),rgba(255,253,248,.72));
+}
+.player-history-table tr.season-row td{
+  background:rgba(201,165,75,.05);
+}
+.player-history-table td:nth-child(1){width:82px}
+.player-history-table td:nth-child(2){width:180px}
+.player-history-table td:nth-child(3){width:170px}
+.player-history-table td:nth-child(n+4){text-align:center}
 
 @media (min-width: 901px){
   .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
@@ -1478,6 +1533,10 @@ main{max-width:1360px}
   .team-match-row .score{text-align:left;min-width:0}
   .team-season-switcher{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
   .team-season-btn{justify-content:center}
+  .player-history-head{align-items:flex-start;flex-direction:column}
+  .player-history-summary{justify-content:flex-start}
+  .player-history-table{min-width:760px}
+  .player-history-team span,.player-history-league{white-space:normal}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
@@ -3510,19 +3569,19 @@ async function pagePlayer(el, playerId) {
 
     const sTableRows = seasonRows.map(s => `
       <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
-        <td>${s.season}</td>
-        <td><div style="display:flex;align-items:center;gap:6px">
-          <img src="${s.teamLogo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
+        <td><strong>${s.season}</strong></td>
+        <td><div class="player-history-team">
+          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
           <span>${esc(s.team)}</span>
         </div></td>
-        <td style="font-size:12px;color:var(--muted)">${esc(s.league)}</td>
-        <td class="num">${s.m}</td>
-        <td style="color:var(--muted);font-size:12px">${s.mn}</td>
-        <td class="num">${s.g||'—'}</td>
-        <td class="num">${s.a||'—'}</td>
-        <td class="${s.rtClass}" style="font-weight:500">${s.rt?s.rt.toFixed(1):'—'}</td>
-        <td style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y||'—'}</td>
-        <td style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r||'—'}</td>
+        <td><div class="player-history-league">${esc(s.league)}</div></td>
+        <td class="num">${s.m || '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.mn ? s.mn.toLocaleString('sv-SE') : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.g ? s.g : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.a ? s.a : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num ${s.rtClass} player-history-rating">${s.rt?s.rt.toFixed(1):'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y?s.y:'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r?s.r:'<span class="player-history-empty">—</span>'}</td>
       </tr>`).join('');
 
     el.innerHTML = `
@@ -3577,27 +3636,41 @@ async function pagePlayer(el, playerId) {
       </div>
 
       <div id="p-career">
-        <div class="tw"><div style="overflow-x:auto"><table>
+        <div class="tw">
+          <div class="player-history-wrap">
+            <div class="player-history-head">
+              <div class="player-history-headline">
+                <div class="player-history-kicker">Karriärhistorik</div>
+                <div class="player-history-title">Säsong för säsong</div>
+                <div class="player-history-copy">En kompakt översikt över klubb, liga och nyckeltal genom hela karriären.</div>
+              </div>
+              <div class="player-history-summary">
+                <span class="player-history-badge"><strong>${seasonRows.length}</strong> säsonger</span>
+                <span class="player-history-badge"><strong>${careerApps}</strong> matcher</span>
+                <span class="player-history-badge"><strong>${careerGoals}</strong> mål</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto"><table class="player-history-table">
           <thead><tr>
             <th>Säsong</th><th>Lag</th><th>Liga</th>
-            <th title="Matcher">M</th><th title="Minuter">Min</th>
-            <th title="Mål">⚽</th><th title="Assist">ðŸŽ¯</th><th title="Rating">â˜…</th>
-            <th title="Gula kort">ðŸŸ¨</th><th title="Röda kort">ðŸŸ¥</th>
+            <th class="num" title="Matcher spelade">Matcher</th><th class="num" title="Minuter spelade">Minuter</th>
+            <th class="num" title="Mål">Mål</th><th class="num" title="Assist">Assist</th><th class="num" title="Betyg / rating">Rating</th>
+            <th class="num" title="Gula kort">Gula</th><th class="num" title="Röda kort">Röda</th>
           </tr></thead>
           <tbody>
             ${sTableRows||'<tr><td colspan="10" class="empty">Ingen historisk data</td></tr>'}
             <tr class="total-row">
               <td colspan="3" style="color:var(--gold)">Totalt (${seasonRows.length} säsonger)</td>
               <td class="num">${careerApps}</td>
-              <td style="color:var(--muted)">${careerMins}</td>
+              <td class="num">${careerMins.toLocaleString('sv-SE')}</td>
               <td class="num">${careerGoals}</td>
               <td class="num">${careerAssists}</td>
-              <td>—</td>
-              <td style="color:${careerYellow>10?'var(--gold)':'var(--muted)'}">${careerYellow}</td>
-              <td style="color:${careerRed>0?'var(--red)':'var(--muted)'}">${careerRed}</td>
+              <td class="num"><span class="player-history-empty">—</span></td>
+              <td class="num" style="color:${careerYellow>10?'var(--gold)':'var(--muted)'}">${careerYellow || '<span class="player-history-empty">—</span>'}</td>
+              <td class="num" style="color:${careerRed>0?'var(--red)':'var(--muted)'}">${careerRed || '<span class="player-history-empty">—</span>'}</td>
             </tr>
           </tbody>
-        </table></div></div>
+        </table></div></div></div>
       </div>
 
       <div id="p-detail" style="display:none">
