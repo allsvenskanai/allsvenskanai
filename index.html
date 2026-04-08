@@ -3602,14 +3602,14 @@ async function pageTransfers(el, page=1) {
 
 // â”€â”€â”€ STATS / TOPPLISTOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STAT_CATEGORIES = [
-  {id:'goals',    label:'⚽ Skytteliga',   key:'goals.total',        col:'Mål',        api:'players/topscorers'},
-  {id:'assists',  label:'ðŸŽ¯ Assistligan',  key:'goals.assists',      col:'Assist',     api:'players/topassists'},
-  {id:'rating',   label:'â˜… Bäst rating',  key:'games.rating',       col:'Rating',     api:null},
-  {id:'minutes',  label:'â± Mest minuter', key:'games.minutes',      col:'Minuter',    api:null},
-  {id:'passes',   label:'🔄 Passningar',   key:'passes.total',       col:'Passningar', api:null},
-  {id:'shots',    label:'ðŸŽ¯ Skott',        key:'shots.total',        col:'Skott',      api:null},
-  {id:'yellow',   label:'ðŸŸ¨ Gula kort',    key:'cards.yellow',       col:'Gula kort',  api:null},
-  {id:'saves',    label:'ðŸ§¤ Räddningar',   key:'goals.saves',        col:'Räddningar', api:null},
+  {id:'goals',    label:'Skytteliga',    key:'goals.total',        col:'Mål',        api:'players/topscorers'},
+  {id:'assists',  label:'Assistligan',   key:'goals.assists',      col:'Assist',     api:'players/topassists'},
+  {id:'rating',   label:'Bäst rating',   key:'games.rating',       col:'Rating',     api:null},
+  {id:'minutes',  label:'Mest minuter',  key:'games.minutes',      col:'Minuter',    api:null},
+  {id:'passes',   label:'Passningar',    key:'passes.total',       col:'Passningar', api:null},
+  {id:'shots',    label:'Skott',         key:'shots.total',        col:'Skott',      api:null},
+  {id:'yellow',   label:'Gula kort',     key:'cards.yellow',       col:'Gula kort',  api:null},
+  {id:'saves',    label:'Räddningar',    key:'goals.saves',        col:'Räddningar', api:null},
 ];
 
 let statsCache = null;
@@ -3647,7 +3647,7 @@ async function pageStats(el, year=null, force=false) {
 
     statsCache = allPlayers;
     renderStats(el, currentStatCategory || 'goals');
-  } catch(e) { el.innerHTML=`<div class="err">âš ï¸ ${esc(e.message)}</div>`; }
+  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
 function renderStats(el, catId) {
   currentStatCategory = catId;
@@ -3673,7 +3673,7 @@ function renderStats(el, catId) {
     const rating = x.s.games?.rating ? parseFloat(x.s.games.rating) : null;
     const rc = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
     const displayVal = cat.id==='rating' ? x.val.toFixed(2) : x.val;
-    const medal = i===0?'ðŸ¥‡':i===1?'ðŸ¥ˆ':i===2?'ðŸ¥‰':'';
+    const medal = i===0?'&#x1F947;':i===1?'&#x1F948;':i===2?'&#x1F949;':'';
     const clubName = esc(fixName(x.s.team?.name||'—'));
     const statClass = `stats-value ${cat.id==='rating'?rc:''}`.trim();
     return `<tr class="link" onclick="go('/spelare/${x.p.id}')">
