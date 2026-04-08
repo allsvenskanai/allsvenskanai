@@ -1677,6 +1677,19 @@ function svOmgang(s=''){
 function svDomare(s=''){
   return String(s || '').replace(/,\s*Sweden$/i, ', Sverige');
 }
+function formatSvDate(input, opts = { day:'2-digit', month:'short' }){
+  if(!input) return '—';
+  try {
+    const date = new Date(input);
+    if(Number.isNaN(date.getTime())) return String(input || '').slice(0, 10) || '—';
+    return date.toLocaleDateString('sv-SE', opts);
+  } catch(e) {
+    return String(input || '').slice(0, 10) || '—';
+  }
+}
+function svDate(input){
+  return formatSvDate(input);
+}
 
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
@@ -3055,7 +3068,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     ].map(item => `<div class="team-metric-card"><div class="label">${item.label}</div><div class="value">${item.value}</div><div class="sub">${item.copy}</div></div>`).join('');
 
     const minuteCard = (title, rows) => `<div class="tw" style="min-width:0"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div><div style="padding:1rem 1.1rem">${rows.length ? rows.map(item => `<div class="team-detail-row" style="padding:.42rem 0;border-bottom:1px solid var(--border)"><span>${esc(item.range)}</span><strong>${item.total}</strong></div>`).join('') : `<div class="team-empty-state">Ingen data ännu.</div>`}</div></div>`;
-    const matchRow = (item, isUpcoming = false) => `<div class="team-match-row" onclick="go('/match/${item.id}')"><div class="meta">${esc(item.venueLabel)} • ${svDate(item.date)}</div><div class="teams"><div><strong>${esc(team.name)}</strong> vs ${esc(item.opponentName)}</div><div style="font-size:12px;color:var(--muted)">${isUpcoming ? 'Kommande match' : (item.result === 'W' ? 'Vinst' : item.result === 'D' ? 'Oavgjort' : 'Förlust')}</div></div><div class="score ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Se match' : `${item.goalsFor}-${item.goalsAgainst}`}</div></div>`;
+    const matchRow = (item, isUpcoming = false) => `<div class="team-match-row" onclick="go('/match/${item.id}')"><div class="meta">${esc(item.venueLabel)} • ${esc(formatSvDate(item.date))}</div><div class="teams"><div><strong>${esc(team.name)}</strong> vs ${esc(item.opponentName)}</div><div style="font-size:12px;color:var(--muted)">${isUpcoming ? 'Kommande match' : (item.result === 'W' ? 'Vinst' : item.result === 'D' ? 'Oavgjort' : 'Förlust')}</div></div><div class="score ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Se match' : `${item.goalsFor}-${item.goalsAgainst}`}</div></div>`;
 
     const historyRowsHtml = historyRows.map(row => `<tr class="${row.season === selectedSeason ? 'season-row' : ''}"><td>${row.season}</td><td class="num">${row.rank}</td><td class="num">${row.points}</td><td class="num">${row.played}</td><td class="num">${row.wins}-${row.draws}-${row.losses}</td><td class="num">${row.goalsFor}-${row.goalsAgainst}</td><td class="num">${row.goalDiff > 0 ? '+' : ''}${row.goalDiff}</td><td class="num">${row.pointsPerMatch.toFixed(2)}</td></tr>`).join('');
     const bestSeason = [...historyRows].sort((a,b) => b.pointsPerMatch - a.pointsPerMatch || b.points - a.points)[0];
@@ -3585,12 +3598,16 @@ async function pageStandings(el) {
 
 // â”€â”€â”€ RESULTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatMatchDate(d){
-  try{return new Date(d).toLocaleDateString('sv-SE',{day:'2-digit',month:'short'});}
-  catch(e){return (d||'').slice(0,10);}
+  return formatSvDate(d, {day:'2-digit',month:'short'});
 }
 function formatMatchDateTime(d){
-  try{return new Date(d).toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});}
-  catch(e){return d||'—';}
+  if(!d) return '—';
+  try{
+    const date = new Date(d);
+    if(Number.isNaN(date.getTime())) return String(d || '').slice(0, 16) || '—';
+    return date.toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  }
+  catch(e){return String(d || '').slice(0, 16) || '—';}
 }
 function matchStatusLabel(f){
   const short = f?.fixture?.status?.short || '';
