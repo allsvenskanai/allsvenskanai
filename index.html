@@ -1904,6 +1904,60 @@ function renderNationalityDisplay(...sources){
 }
 const PLAYER_DEFAULT_SEASON = 2026;
 const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+const STATIC_DATA_BASE = '/data/static';
+const STATIC_MANIFEST_PATH = `${STATIC_DATA_BASE}/manifest.json`;
+let STATIC_MANIFEST_PROMISE = null;
+const STATIC_RESPONSE_CACHE = {};
+function shouldUseStaticEndpoint(ep, params = {}){
+  if(['fixtures/statistics','fixtures/events','fixtures/lineups'].includes(ep)) return false;
+  if(ep === 'fixtures') {
+    if(params?.id || params?.last || params?.next || params?.live) return false;
+    return !!params?.team;
+  }
+  return true;
+}
+
+function stableQueryKey(ep, params = {}){
+  const qs = new URLSearchParams();
+  Object.keys(params || {}).sort().forEach(key => {
+    if(params[key] !== undefined && params[key] !== null && params[key] !== '') {
+      qs.set(key, String(params[key]));
+    }
+  });
+  const suffix = qs.toString();
+  return suffix ? `${ep}?${suffix}` : ep;
+}
+async function getStaticManifest(){
+  if(STATIC_MANIFEST_PROMISE) return STATIC_MANIFEST_PROMISE;
+  STATIC_MANIFEST_PROMISE = fetch(STATIC_MANIFEST_PATH, { cache:'no-store' })
+    .then(async res => res.ok ? res.json() : { queries:{} })
+    .catch(() => ({ queries:{} }));
+  return STATIC_MANIFEST_PROMISE;
+}
+async function getStaticApiResponse(ep, params = {}){
+  if(!shouldUseStaticEndpoint(ep, params)) return null;
+  const key = stableQueryKey(ep, params);
+  if(Object.prototype.hasOwnProperty.call(STATIC_RESPONSE_CACHE, key)) {
+    return STATIC_RESPONSE_CACHE[key];
+  }
+  const manifest = await getStaticManifest();
+  const ref = manifest?.queries?.[key];
+  if(!ref) {
+    STATIC_RESPONSE_CACHE[key] = null;
+    return null;
+  }
+  try {
+    const response = await fetch(ref, { cache:'no-store' });
+    if(!response.ok) throw new Error(`Static ${response.status}`);
+    const data = await response.json();
+    STATIC_RESPONSE_CACHE[key] = data;
+    return data;
+  } catch(e) {
+    console.warn('[static-data] failed', { key, error: e.message });
+    STATIC_RESPONSE_CACHE[key] = null;
+    return null;
+  }
+}
 function isAllsvenskanLeague(league = {}, leagueId = LEAGUE){
   const idMatch = Number(league?.id || 0) === Number(leagueId || 0);
   const normalizedName = normalizeText(String(league?.name || ''));
@@ -2076,6 +2130,11 @@ function svDate(input){
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
+  const staticData = await getStaticApiResponse(ep, p);
+  if(staticData) {
+    CACHE[key] = staticData.response || [];
+    return CACHE[key];
+  }
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetch(`${AF}?${q}`);
   if(!r.ok) throw new Error('HTTP '+r.status);
@@ -2086,6 +2145,8 @@ async function af(ep, p={}) {
 }
 
 async function afRaw(ep, p={}) {
+  const staticData = await getStaticApiResponse(ep, p);
+  if(staticData) return staticData;
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
