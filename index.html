@@ -354,6 +354,60 @@ tr.season-row td{border-left:2px solid var(--gold)}
 
 /* TRANSFER BADGE */
 .fee-tag{font-size:10px;padding:3px 9px;border-radius:2px;white-space:nowrap;flex-shrink:0;font-weight:600;letter-spacing:.5px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.transfer-filters{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-.25rem 0 1rem;
+}
+.transfer-filter{
+  min-height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--border);
+  background:var(--dark2);color:var(--text);outline:none;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;
+}
+.transfer-filter.search{
+  min-width:220px;flex:1 1 240px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;letter-spacing:0;
+}
+.transfer-filter:focus{border-color:var(--gold)}
+.transfer-row{
+  cursor:pointer;transition:background .18s,transform .18s,box-shadow .18s;
+}
+.transfer-row:hover td{
+  background:rgba(255,255,255,.045);
+}
+.transfer-row:hover{
+  transform:translateY(-1px);
+  box-shadow:inset 0 0 0 1px rgba(201,165,75,.08);
+}
+.transfer-row.is-permanent td{
+  background:rgba(212,175,55,.035);
+}
+.transfer-player{
+  color:var(--text);font-weight:700;font-size:14px;
+}
+.transfer-flow{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.transfer-club{
+  display:flex;align-items:center;gap:6px;min-width:0;
+}
+.transfer-club img{
+  width:18px;height:18px;object-fit:contain;flex-shrink:0;
+}
+.transfer-club span{
+  font-size:12px;line-height:1.2;min-width:0;
+}
+.transfer-arrow{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold);
+  line-height:1;flex-shrink:0;
+}
+.transfer-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:26px;padding:0 9px;border-radius:999px;
+  font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;border:1px solid transparent;
+}
+.pagination-meta{
+  font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.8px;
+  display:flex;align-items:center;justify-content:center;margin-top:.85rem;
+}
 
 /* RATING */
 .rg{color:#3A9E6A;font-weight:700}
@@ -641,6 +695,8 @@ tr.season-row td{border-left:2px solid var(--gold)}
   .match-card.upcoming .match-score .score{font-size:36px;letter-spacing:5px}
   .match-meta-row{gap:6px;margin-top:.2rem}
   .match-meta-pill{font-size:10px;padding:5px 9px}
+  .transfer-filters{gap:8px}
+  .transfer-filter,.transfer-filter.search{width:100%;min-width:0;flex:1 1 100%}
 }
 .section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:8px}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -3133,6 +3189,27 @@ async function pageMatch(el, fixtureId) {
 
 // â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let transfersCache = null;
+let transfersFilters = {
+  team: '',
+  type: '',
+  search: ''
+};
+
+function normalizeTransferType(type=''){
+  const raw = String(type || '').toLowerCase();
+  if(raw.includes('loan')) return 'loan';
+  if(raw.includes('free') || raw.includes('okänd') || raw.includes('unknown') || raw === '-' || !raw) return 'neutral';
+  return 'transfer';
+}
+
+function isPermanentTransfer(type=''){
+  return normalizeTransferType(type) === 'transfer';
+}
+
+function setTransfersFilter(key, value=''){
+  transfersFilters = { ...transfersFilters, [key]: value || '' };
+  pageTransfers(document.getElementById('mc'), 1);
+}
 
 async function pageTransfers(el, page=1) {
   document.title = 'Övergångar — AllsvenskanAI';
@@ -3188,40 +3265,76 @@ async function pageTransfers(el, page=1) {
   }
 
   const unique = transfersCache;
-  const totalPages = Math.ceil(unique.length / PER_PAGE);
-  const slice = unique.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const filterTeam = transfersFilters.team || '';
+  const filterType = transfersFilters.type || '';
+  const filterSearch = normalizeText(transfersFilters.search || '');
+  const filtered = unique.filter(tr => {
+    if(filterTeam) {
+      const inName = fixName(tr.teamIn?.name || '');
+      const outName = fixName(tr.teamOut?.name || '');
+      if(inName !== filterTeam && outName !== filterTeam) return false;
+    }
+    if(filterType && normalizeTransferType(tr.type) !== filterType) return false;
+    if(filterSearch && !normalizeText(tr.playerName || '').includes(filterSearch)) return false;
+    return true;
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const slice = filtered.slice((safePage-1)*PER_PAGE, safePage*PER_PAGE);
+  const teamOptions = [...new Set(unique.flatMap(tr => [fixName(tr.teamOut?.name || ''), fixName(tr.teamIn?.name || '')]).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'sv'));
+  const filters = `
+    <div class="transfer-filters">
+      <select class="transfer-filter" onchange="setTransfersFilter('team', this.value)" aria-label="Filtrera på lag">
+        <option value="">Alla lag</option>
+        ${teamOptions.map(name => `<option value="${esc(name)}" ${name === filterTeam ? 'selected' : ''}>${esc(name)}</option>`).join('')}
+      </select>
+      <select class="transfer-filter" onchange="setTransfersFilter('type', this.value)" aria-label="Filtrera på övergångstyp">
+        <option value="">Alla typer</option>
+        <option value="transfer" ${filterType === 'transfer' ? 'selected' : ''}>Transfer</option>
+        <option value="loan" ${filterType === 'loan' ? 'selected' : ''}>Lån</option>
+        <option value="neutral" ${filterType === 'neutral' ? 'selected' : ''}>Fri/okänd</option>
+      </select>
+      <input class="transfer-filter search" type="search" value="${esc(transfersFilters.search || '')}" placeholder="Sök spelare" oninput="setTransfersFilter('search', this.value)" aria-label="Sök spelare">
+    </div>`;
 
   const rows = slice.map(tr => {
     const fc = feeStyle(tr.type);
-    return `<tr>
+    const playerTarget = tr.playerId ? `/spelare/${tr.playerId}?team=${tr.teamIn?.id||tr.teamOut?.id||''}` : '';
+    return `<tr class="transfer-row ${isPermanentTransfer(tr.type) ? 'is-permanent' : ''}" ${playerTarget ? `onclick="go('${playerTarget}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('${playerTarget}')}" aria-label="Öppna spelaren ${esc(tr.playerName||'')}"` : ''}>
       <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
-      <td style="font-weight:500;color:var(--blue);cursor:pointer" onclick="go('/spelare/${tr.playerId}?team=${tr.teamIn?.id||''}')">${esc(tr.playerName||'—')}</td>
-      <td><div style="display:flex;align-items:center;gap:5px">
-        <img src="${tr.teamOut?.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-        <span style="font-size:12px">${esc(tr.teamOut?.name||'?')}</span>
-      </div></td>
-      <td style="color:var(--muted)">â†’</td>
-      <td>${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div style="display:flex;align-items:center;gap:5px">
-        <img src="${tr.teamIn.logo||''}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-        <span style="font-size:12px">${esc(tr.teamIn.name||'?')}</span>
-      </div>` : '<span style="color:var(--muted)">—</span>'}</td>
-      <td><span style="font-size:10px;padding:2px 8px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;${fc}">${esc(tr.type||'?')}</span></td>
+      <td class="transfer-player">${esc(tr.playerName||'—')}</td>
+      <td colspan="3">
+        <div class="transfer-flow">
+          <div class="transfer-club">
+            <img src="${tr.teamOut?.logo||''}" onerror="this.style.opacity='.15'">
+            <span>${esc(tr.teamOut?.name||'?')}</span>
+          </div>
+          <span class="transfer-arrow">→</span>
+          ${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div class="transfer-club">
+            <img src="${tr.teamIn.logo||''}" onerror="this.style.opacity='.15'">
+            <span>${esc(tr.teamIn.name||'?')}</span>
+          </div>` : '<span style="color:var(--muted)">—</span>'}
+        </div>
+      </td>
+      <td><span class="transfer-badge" style="${fc}">${esc(tr.type||'?')}</span></td>
     </tr>`;
   }).join('');
 
   const pageBtns = [];
-  if(page > 1) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page-1}')">← Föregående</button>`);
-  const s = Math.max(1,page-2), e2 = Math.min(totalPages,page+2);
-  for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===page?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
-  if(page < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${page+1}')">Nästa â†’</button>`);
+  if(safePage > 1) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage-1}')">← Föregående sida</button>`);
+  const s = Math.max(1,safePage-2), e2 = Math.min(totalPages,safePage+2);
+  for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===safePage?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
+  if(safePage < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage+1}')">Nästa sida →</button>`);
 
   el.innerHTML = `
-    <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${unique.length} övergångar · sida ${page} av ${totalPages}</span></div>
+    <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${filtered.length} övergångar · sida ${safePage} av ${totalPages}</span></div>
+    ${filters}
     <div class="tw"><div style="overflow-x:auto"><table>
-      <thead><tr><th>Datum</th><th>Spelare</th><th>Från</th><th></th><th>Till</th><th>Typ</th></tr></thead>
+      <thead><tr><th>Datum</th><th>Spelare</th><th colspan="3">Övergång</th><th>Typ</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
     </table></div></div>
-    <div class="pagination">${pageBtns.join('')}</div>`;
+    <div class="pagination">${pageBtns.join('')}</div>
+    <div class="pagination-meta">Visar ${slice.length} av ${filtered.length} övergångar</div>`;
   window.scrollTo(0,0);
 }
 
@@ -3864,7 +3977,12 @@ function esc(s){
 }
 function calcAge(d){const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
 function formatVal(v){if(!v)return'—';const n=+v;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n;}
-function feeStyle(t){const s=(t||'').toLowerCase();if(s.includes('loan'))return'background:rgba(61,126,191,.15);color:#7EB3E8';if(s==='free'||s.includes('free'))return'background:rgba(58,158,106,.15);color:#5DC492';return'background:rgba(212,175,55,.15);color:var(--gold)';}
+function feeStyle(t){
+  const s=(t||'').toLowerCase();
+  if(s.includes('loan')) return 'background:rgba(61,126,191,.14);color:#7EB3E8;border-color:rgba(61,126,191,.24)';
+  if(s==='free'||s.includes('free')||s.includes('okänd')||s.includes('unknown')||s==='-') return 'background:rgba(108,86,44,.08);color:var(--muted);border-color:rgba(108,86,44,.14)';
+  return 'background:rgba(212,175,55,.14);color:var(--gold);border-color:rgba(212,175,55,.22)';
+}
 const FLAGS={Sweden:'ðŸ‡¸ðŸ‡ª',Nigeria:'ðŸ‡³ðŸ‡¬',Ghana:'ðŸ‡¬ðŸ‡­',Finland:'ðŸ‡«ðŸ‡®',Norway:'ðŸ‡³ðŸ‡´',Denmark:'ðŸ‡©ðŸ‡°',Brazil:'ðŸ‡§ðŸ‡·',Argentina:'ðŸ‡¦ðŸ‡·',England:'ðŸ´ó §ó ¢ó ¥ó ®ó §ó ¿',Scotland:'ðŸ´ó §ó ¢ó ³ó £ó ´ó ¿',France:'ðŸ‡«ðŸ‡·',Spain:'ðŸ‡ªðŸ‡¸',Portugal:'ðŸ‡µðŸ‡¹',Germany:'ðŸ‡©ðŸ‡ª',Italy:'ðŸ‡®ðŸ‡¹',Netherlands:'ðŸ‡³ðŸ‡±',Poland:'ðŸ‡µðŸ‡±',Serbia:'ðŸ‡·ðŸ‡¸',Croatia:'ðŸ‡­ðŸ‡·',Kosovo:'ðŸ‡½ðŸ‡°',Albania:'ðŸ‡¦ðŸ‡±',Iceland:'ðŸ‡®ðŸ‡¸',Ireland:'ðŸ‡®ðŸ‡ª',USA:'ðŸ‡ºðŸ‡¸',Senegal:'ðŸ‡¸ðŸ‡³',Morocco:'ðŸ‡²ðŸ‡¦',Cameroon:'ðŸ‡¨ðŸ‡²',Tunisia:'ðŸ‡¹ðŸ‡³',Mali:'ðŸ‡²ðŸ‡±','Ivory Coast':'ðŸ‡¨ðŸ‡®',Peru:'ðŸ‡µðŸ‡ª',Romania:'ðŸ‡·ðŸ‡´',Bosnia:'ðŸ‡§ðŸ‡¦',Slovakia:'ðŸ‡¸ðŸ‡°',Hungary:'ðŸ‡­ðŸ‡º',Greece:'ðŸ‡¬ðŸ‡·',Turkey:'ðŸ‡¹ðŸ‡·',Ukraine:'ðŸ‡ºðŸ‡¦',Austria:'ðŸ‡¦ðŸ‡¹',Switzerland:'ðŸ‡¨ðŸ‡­',Belgium:'ðŸ‡§ðŸ‡ª',Colombia:'ðŸ‡¨ðŸ‡´',Chile:'ðŸ‡¨ðŸ‡±',Mexico:'ðŸ‡²ðŸ‡½',Jamaica:'ðŸ‡¯ðŸ‡²'};
 function flag(n){return FLAGS[n]||'ðŸŒ';}
 function mdHtml(txt){
