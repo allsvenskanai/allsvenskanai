@@ -1851,13 +1851,27 @@ function renderNationalityDisplay(...sources){
 }
 const PLAYER_DEFAULT_SEASON = 2026;
 const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+function isAllsvenskanLeague(league = {}, leagueId = LEAGUE){
+  const idMatch = Number(league?.id || 0) === Number(leagueId || 0);
+  const normalizedName = normalizeText(String(league?.name || ''));
+  const nameMatch = normalizedName.includes('allsvenskan') && !normalizedName.includes('dam');
+  return idMatch || nameMatch;
+}
+function isNationalTeamStat(entry = {}){
+  const teamName = String(entry?.team?.name || '').trim();
+  const leagueCountry = String(entry?.league?.country || '').trim();
+  const normalizedTeam = normalizeText(teamName);
+  const normalizedCountry = normalizeText(leagueCountry);
+  if(!normalizedTeam) return false;
+  if(normalizedCountry && (normalizedTeam === normalizedCountry || normalizedTeam.startsWith(`${normalizedCountry} u`))) return true;
+  return /\bu\d{1,2}\b/i.test(teamName) && !!leagueCountry;
+}
 function filterPlayerLeagueRows(rows = [], leagueId = LEAGUE){
-  const wantedLeagueId = Number(leagueId || 0);
-  if(!Array.isArray(rows) || !wantedLeagueId) return rows || [];
+  if(!Array.isArray(rows)) return rows || [];
   return rows
     .map(item => ({
       ...item,
-      statistics: (item?.statistics || []).filter(entry => Number(entry?.league?.id || 0) === wantedLeagueId)
+      statistics: (item?.statistics || []).filter(entry => isAllsvenskanLeague(entry?.league, leagueId))
     }))
     .filter(item => (item?.statistics || []).length);
 }
@@ -3631,7 +3645,7 @@ async function pagePlayer(el, playerId) {
     const hasCurrentAllsvenskanData = !!aggregatePlayerSeasonStats(allsvSeasonResults[0]);
 
     // Prefer team from URL (where user came from) over API data
-    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => Number(entry?.league?.id || 0) === Number(LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
     let teamName = getTeamDisplayName(curStats.team) || '—';
     let teamLogo = curStats.team?.logo || '';
 
@@ -3698,6 +3712,7 @@ async function pagePlayer(el, playerId) {
     // Build career table
     let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
     const seasonRows = [];
+    const clubCareerRows = [];
     allsvSeasonResults.forEach((data, idx) => {
       const season = PLAYER_HISTORY_SEASONS[idx];
       if(!data.length) return;
@@ -3721,12 +3736,53 @@ async function pagePlayer(el, playerId) {
         seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: s.team?.logo||'', m, mn, g, a, rt, rtClass, y, r, isCur});
       });
     });
+    seasonResults.forEach((data, idx) => {
+      const season = PLAYER_HISTORY_SEASONS[idx];
+      if(!data.length) return;
+      data.forEach(item => {
+        (item.statistics || []).forEach(s => {
+          if(!s || !s.league || !s.team || isNationalTeamStat(s)) return;
+          const g  = s.goals?.total||0;
+          const a  = s.goals?.assists||0;
+          const m  = s.games?.appearences||0;
+          const mn = s.games?.minutes||0;
+          const y  = s.cards?.yellow||0;
+          const r  = s.cards?.red||0;
+          const rt = s.games?.rating ? parseFloat(s.games.rating) : null;
+          const rtClass = rt ? (rt>=7.5?'rg':rt>=6.5?'ry':'rr') : '';
+          clubCareerRows.push({
+            season,
+            league: s.league?.name||'—',
+            team: getTeamDisplayName(s.team) || '—',
+            teamLogo: s.team?.logo||'',
+            m, mn, g, a, rt, rtClass, y, r
+          });
+        });
+      });
+    });
 
     // Sort by season desc
     seasonRows.sort((a,b) => b.season - a.season || 0);
+    clubCareerRows.sort((a,b) => b.season - a.season || a.team.localeCompare(b.team, 'sv'));
 
     const sTableRows = seasonRows.map(s => `
       <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
+        <td><strong>${s.season}</strong></td>
+        <td><div class="player-history-team">
+          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
+          <span>${esc(s.team)}</span>
+        </div></td>
+        <td><div class="player-history-league">${esc(s.league)}</div></td>
+        <td class="num">${s.m || '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.mn ? s.mn.toLocaleString('sv-SE') : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.g ? s.g : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.a ? s.a : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num ${s.rtClass} player-history-rating">${s.rt?s.rt.toFixed(1):'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y?s.y:'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r?s.r:'<span class="player-history-empty">—</span>'}</td>
+      </tr>`).join('');
+    const clubCareerTableRows = clubCareerRows.map(s => `
+      <tr>
         <td><strong>${s.season}</strong></td>
         <td><div class="player-history-team">
           <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
@@ -3900,6 +3956,7 @@ async function pagePlayer(el, playerId) {
         <button class="tab active" onclick="switchTab(this,'p-career')">Allsvenskan-karriär (${seasonRows.length} säsonger)</button>
         <button class="tab" onclick="switchTab(this,'p-detail')">Allsvenskan ${curSeasonYear}</button>
         <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,${p.player?.id||playerId},'p-tr')">Övergångar</button>
+        <button class="tab" onclick="switchTab(this,'p-club-career')">Spelarkarriär</button>
       </div>
 
       <div id="p-career">
@@ -3948,6 +4005,33 @@ async function pagePlayer(el, playerId) {
 
       <div id="p-tr" style="display:none">
         <div class="tw"><div style="padding:1rem;color:var(--muted);font-size:13px">Klicka på fliken för att ladda…</div></div>
+      </div>
+
+      <div id="p-club-career" style="display:none">
+        <div class="tw">
+          <div class="player-history-wrap">
+            <div class="player-history-head">
+              <div class="player-history-headline">
+                <div class="player-history-kicker">Spelarkarriär</div>
+                <div class="player-history-title">Hela klubbhistoriken</div>
+                <div class="player-history-copy">År för år genom spelarens klubbkarriär, utan landslags- och ungdomslandslagsrader.</div>
+              </div>
+              <div class="player-history-summary">
+                <span class="player-history-badge"><strong>${clubCareerRows.length}</strong> rader</span>
+                <span class="player-history-badge"><strong>${[...new Set(clubCareerRows.map(row => row.team))].length}</strong> klubbar</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto"><table class="player-history-table">
+              <thead><tr>
+                <th>Säsong</th><th>Klubb</th><th>Liga</th>
+                <th class="num" title="Matcher spelade">Matcher</th><th class="num" title="Minuter spelade">Minuter</th>
+                <th class="num" title="Mål">Mål</th><th class="num" title="Assist">Assist</th><th class="num" title="Betyg / rating">Rating</th>
+                <th class="num" title="Gula kort">Gula</th><th class="num" title="Röda kort">Röda</th>
+              </tr></thead>
+              <tbody>${clubCareerTableRows || '<tr><td colspan="10" class="empty">Ingen klubbkarriär-data tillgänglig</td></tr>'}</tbody>
+            </table></div>
+          </div>
+        </div>
       </div>`;
 
   } catch(e) {
