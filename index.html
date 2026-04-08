@@ -2653,11 +2653,14 @@ function buildTeamHistoryRows(historyResponses = [], teamId){
 function getTeamPlayerLeader(players, categoryId){
   const category = STAT_CATEGORIES.find(item => item.id === categoryId);
   if(!category) return null;
-  const rows = (players || [])
+  const baseRows = (players || [])
     .filter(player => !category.playerFilter || category.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, category) }))
-    .filter(item => Number.isFinite(item.value) && item.value > (category.minValue ?? 0))
-    .sort(getCategorySorter(category));
+    .filter(item => Number.isFinite(item.value));
+  const rows = (baseRows.filter(item => item.value > (category.minValue ?? 0)).length
+    ? baseRows.filter(item => item.value > (category.minValue ?? 0))
+    : baseRows
+  ).sort(getCategorySorter(category));
   return rows[0] || null;
 }
 
@@ -2686,11 +2689,14 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
     </div>`;
   }).filter(Boolean).join('');
 
-  const rows = (players || [])
+  const baseRows = (players || [])
     .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
-    .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
-    .sort(getCategorySorter(activeCategory))
+    .filter(item => Number.isFinite(item.value));
+  const rows = (baseRows.filter(item => item.value > (activeCategory.minValue ?? 0)).length
+    ? baseRows.filter(item => item.value > (activeCategory.minValue ?? 0))
+    : baseRows
+  ).sort(getCategorySorter(activeCategory))
     .slice(0, activeCategory.limit || 10)
     .map((item, index) => {
       const secondary = getCategorySecondary(activeCategory, item.player);
@@ -3027,8 +3033,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const scoredMin = Object.entries(stats?.goals?.for?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
     const concededMin = Object.entries(stats?.goals?.against?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
 
-    const teamPlayers = buildNormalizedStatsDataset(seasonPlayers, selectedSeason)
-      .filter(player => String(player.teamId || '') === String(teamId) || player.teamName === team.name);
+    const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason);
     window.__teamPlayerStatsData = { players: teamPlayers };
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
@@ -4533,6 +4538,70 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
         goalkeeper: String(acc.position || '').toLowerCase().includes('goalkeeper') || saves > 0 || goalsConceded > 0,
       }
     };
+  });
+}
+
+function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], team = {}, season = SEASON){
+  const normalized = buildNormalizedStatsDataset(rawPlayers, season);
+  const byPlayer = new Map(normalized.map(player => [player.playerId, {
+    ...player,
+    teamId: player.teamId || team.id || null,
+    teamName: player.teamName || fixName(team.name || ''),
+    teamLogo: player.teamLogo || team.logo || '',
+  }]));
+
+  (squadPlayers || []).forEach(squadPlayer => {
+    const playerId = squadPlayer?.id;
+    if(!playerId) return;
+    const existing = byPlayer.get(playerId);
+    if(existing){
+      existing.playerName = getPlayerDisplayName(squadPlayer, existing.playerName);
+      existing.firstname = existing.firstname || squadPlayer.firstname || '';
+      existing.lastname = existing.lastname || squadPlayer.lastname || '';
+      existing.photo = existing.photo || squadPlayer.photo || '';
+      existing.position = existing.position || squadPlayer.position || '';
+      existing.teamId = existing.teamId || team.id || null;
+      existing.teamName = existing.teamName || fixName(team.name || '');
+      existing.teamLogo = existing.teamLogo || team.logo || '';
+      return;
+    }
+
+    byPlayer.set(playerId, {
+      playerId,
+      playerName: getPlayerDisplayName(squadPlayer),
+      firstname: squadPlayer.firstname || '',
+      lastname: squadPlayer.lastname || '',
+      teamId: team.id || null,
+      teamName: fixName(team.name || ''),
+      teamLogo: team.logo || '',
+      photo: squadPlayer.photo || '',
+      position: squadPlayer.position || '',
+      stats: {
+        appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
+        goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+        tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
+        foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
+        saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
+        penaltiesMissed: 0, penaltiesWon: 0, penaltiesCommitted: 0, rating: 0,
+      },
+      derived: {
+        goalContributions: 0, goalsPer90: 0, assistsPer90: 0, pointsPer90: 0,
+        shotsPer90: 0, keyPassesPer90: 0, conversionRate: 0, shotsPerGoal: 0,
+        shotAccuracy: 0, passAccuracy: 0, accuratePasses: 0, passesPer90: 0,
+        defActions: 0, defActionsPer90: 0, duelWinRate: 0, savePercentage: 0,
+        goalsConcededPerMatch: 0, minutesPerMatch: 0, subApps: 0,
+        minutesPerGoal: 0, minutesPerContribution: 0,
+      },
+      flags: {
+        goalkeeper: String(squadPlayer.position || '').toLowerCase().includes('goalkeeper'),
+      }
+    });
+  });
+
+  return [...byPlayer.values()].sort((a,b) => {
+    const minutesDiff = (b.stats?.minutes || 0) - (a.stats?.minutes || 0);
+    if(minutesDiff) return minutesDiff;
+    return String(a.playerName || '').localeCompare(String(b.playerName || ''), 'sv');
   });
 }
 
