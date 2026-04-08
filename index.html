@@ -3084,6 +3084,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
     const squadPlayers = squadD?.[0]?.players || [];
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
+    await enrichSquadNationalities(squadPlayers, playerInfoById);
     const selectedStanding = (standingsD?.[0]?.league?.standings?.[0] || []).find(row => row?.team?.id === teamId) || null;
     const historyRows = buildTeamHistoryRows(historyStandings, teamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
@@ -4025,6 +4026,7 @@ let transfersCache = null;
 let transfersLoadMeta = null;
 let transfersLeagueTeams = [];
 let playerProfileNameCache = {};
+let playerProfileMetaCache = {};
 let transfersFilters = {
   team: '',
   type: '',
@@ -4101,6 +4103,58 @@ async function getPlayerProfileDisplayName(playerId){
   }
 
   return '';
+}
+
+async function getPlayerProfileMeta(playerId){
+  if(!playerId) return {};
+  if(playerProfileMetaCache[playerId]) return playerProfileMetaCache[playerId];
+  try {
+    const data = await withTimeout(
+      af('players/profiles', {player: playerId}),
+      12000,
+      `Player profile meta ${playerId}`
+    );
+    const player = data?.[0]?.player || {};
+    const meta = {
+      nationality: player.nationality || '',
+      nationalityCode: player.nationalityCode || player.nationality_code || '',
+      birthCountry: player.birth?.country || '',
+      photo: player.photo || '',
+      firstname: player.firstname || '',
+      lastname: player.lastname || '',
+      name: player.name || '',
+    };
+    playerProfileMetaCache[playerId] = meta;
+    return meta;
+  } catch(e) {
+    return {};
+  }
+}
+
+async function enrichSquadNationalities(players = [], playerInfoById = {}){
+  const needsLookup = (players || []).filter(player => {
+    const info = playerInfoById[player.id] || {};
+    return !(info.nationality || player.nationality || info.birth?.country || player.birth?.country || info.nationalityCode || player.nationalityCode);
+  });
+  if(!needsLookup.length) return playerInfoById;
+  const ids = [...new Set(needsLookup.map(player => player.id).filter(Boolean))];
+  const batchSize = 4;
+  for(let i = 0; i < ids.length; i += batchSize){
+    const batch = ids.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async playerId => ({
+      playerId,
+      meta: await getPlayerProfileMeta(playerId)
+    })));
+    results.forEach(result => {
+      if(!result?.playerId || !result?.meta) return;
+      playerInfoById[result.playerId] = {
+        ...(playerInfoById[result.playerId] || {}),
+        ...result.meta,
+      };
+    });
+    if(i + batchSize < ids.length) await delay(250);
+  }
+  return playerInfoById;
 }
 
 async function enrichTransferPlayerNames(rows = []){
