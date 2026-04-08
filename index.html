@@ -2199,6 +2199,13 @@ async function afRawStatic(ep, p={}){
   if(!staticData) throw new Error(`Static data missing for ${stableQueryKey(ep, p)}`);
   return staticData;
 }
+async function loadStaticJsonByQuery(ep, p = {}){
+  const directRef = getDeterministicStaticPath(ep, p);
+  if(!directRef) throw new Error(`Static path missing for ${stableQueryKey(ep, p)}`);
+  const response = await fetch(directRef, { cache:'no-store' });
+  if(!response.ok) throw new Error(`Static fetch failed for ${stableQueryKey(ep, p)} (${response.status})`);
+  return response.json();
+}
 
 async function fetchAllPages(ep, p = {}, opts = {}) {
   const pageParam = opts.pageParam || 'page';
@@ -3490,12 +3497,15 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
-    const [teamInfoD, standingsD, historyStandings, statsD, squadD, seasonPlayers, fixturesSeason] = await Promise.all([
-      afStatic('teams', {id:teamId}).catch(()=>[]),
-      afStatic('standings', {league:LEAGUE, season:selectedSeason}).catch(()=>[]),
-      Promise.all(TEAM_PAGE_SEASONS.map(season => afStatic('standings', {league:LEAGUE, season}).catch(()=>[]))),
-      afStatic('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}).catch(()=>null),
-      afStatic('players/squads', {team:teamId}).catch(()=>[]),
+    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
+      loadStaticJsonByQuery('teams', {id:teamId}),
+      loadStaticJsonByQuery('standings', {league:LEAGUE, season:selectedSeason}),
+      Promise.all(TEAM_PAGE_SEASONS.map(async season => {
+        try { return await loadStaticJsonByQuery('standings', {league:LEAGUE, season}); }
+        catch(e) { return { response: [] }; }
+      })),
+      loadStaticJsonByQuery('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}),
+      loadStaticJsonByQuery('players/squads', {team:teamId}),
       fetchAllPagesStatic('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
@@ -3503,14 +3513,18 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
           return `${playerId}-${statTeamId}-${statSeason}`;
         }
-      }).catch(()=>[]),
+      }),
       fetchAllPagesStatic('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => item?.fixture?.id || ''
-      }).catch(()=>[])
+      })
     ]);
 
-    const stats = Array.isArray(statsD) ? statsD[0] : statsD;
-    const teamInfo = teamInfoD?.[0]?.team || {};
+    const teamInfoD = teamInfoRaw?.response || [];
+    const standingsD = standingsRaw?.response || [];
+    const statsD = statsRaw?.response || null;
+    const squadD = squadRaw?.response || [];
+    const stats = statsD?.league ? statsD : (Array.isArray(statsD) ? statsD[0] : statsD);
+    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || {};
     const team = stats?.team || teamInfo || {id:teamId, name:'Lag', logo:''};
     const teamDisplayName = getTeamDisplayName(team);
     const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
