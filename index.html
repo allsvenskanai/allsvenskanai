@@ -3252,6 +3252,7 @@ async function pageMatch(el, fixtureId) {
 // â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let transfersCache = null;
 let transfersLoadMeta = null;
+let transfersLeagueTeams = [];
 let playerProfileNameCache = {};
 let transfersFilters = {
   team: '',
@@ -3273,6 +3274,13 @@ function isPermanentTransfer(type=''){
 function setTransfersFilter(key, value=''){
   transfersFilters = { ...transfersFilters, [key]: value || '' };
   pageTransfers(document.getElementById('mc'), 1);
+}
+
+function getAllsvenskanTeams(){
+  return sortTeamsByOrder(transfersLeagueTeams || []).map(team => ({
+    id: team?.id || null,
+    name: fixName(team?.name || '')
+  })).filter(team => team.name);
 }
 
 async function getPlayerProfileDisplayName(playerId){
@@ -3409,6 +3417,7 @@ async function loadTransfersCache(el){
   console.info('[transfers] standings request success');
 
   const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+  transfersLeagueTeams = [...teams];
   const batchSize = 3;
   const batchDelay = 1300;
   const all = [];
@@ -3487,6 +3496,7 @@ async function pageTransfers(el, page=1) {
         empty: true,
         failed: true
       };
+      transfersLeagueTeams = [];
     } finally {
       if(!Array.isArray(transfersCache)) transfersCache = [];
       if(!transfersLoadMeta) {
@@ -3520,7 +3530,7 @@ async function pageTransfers(el, page=1) {
   const safePage = Math.min(Math.max(1, page), totalPages);
   const slice = filtered.slice((safePage-1)*PER_PAGE, safePage*PER_PAGE);
   await enrichTransferPlayerNames(slice);
-  const teamOptions = [...new Set(unique.flatMap(tr => [fixName(tr.teamOut?.name || ''), fixName(tr.teamIn?.name || '')]).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'sv'));
+  const teamOptions = getAllsvenskanTeams().map(team => team.name);
   const filters = `
     <div class="transfer-filters">
       <select class="transfer-filter" onchange="setTransfersFilter('team', this.value)" aria-label="Filtrera på lag">
