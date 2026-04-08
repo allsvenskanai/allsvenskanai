@@ -2987,7 +2987,7 @@ async function pageTeam(el, teamId) {
     el.innerHTML = `
       <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         <button class="back" onclick="go('/')">← Alla lag</button>
-        <button class="share" onclick="copyLink()">ðŸ”— Kopiera länk</button>
+        <button class="share" onclick="copyLink()">Kopiera länk</button>
       </div>
       <div class="pg-header"><div class="pg-title">${esc(team.name)}</div></div>
 
@@ -3539,7 +3539,7 @@ async function pagePlayer(el, playerId) {
             <span>${renderNationalityDisplay(p)}</span>
             <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
-            ${p.height?`<span>ðŸ“ ${p.height} / ${p.weight||'—'}</span>`:''}
+            ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
           ${teamId?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer" onclick="go('/lag/${teamId}')">
             <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
@@ -3563,7 +3563,7 @@ async function pagePlayer(el, playerId) {
           </div>
           <div style="margin-top:.75rem">
             <button style="background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:6px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;cursor:pointer" onclick="loadMV(this,${JSON.stringify(playerDisplayName)})">
-              ðŸ’° Hämta marknadsvärde
+              Hämta marknadsvärde
             </button>
             <div id="mv-${playerId}" style="margin-top:.4rem"></div>
           </div>
@@ -3649,7 +3649,7 @@ async function loadMV(btn, name) {
     btn.style.display='none';
   } catch(e) {
     el.innerHTML = `<div style="font-size:11px;color:#f08080">Fel: ${esc(e.message)}</div>`;
-    btn.textContent = 'ðŸ’° Hämta marknadsvärde';
+    btn.textContent = 'Hämta marknadsvärde';
     btn.disabled = false;
   }
 }
@@ -5422,7 +5422,7 @@ function switchTab(btn,id){
   const all=['t-overview','t-players','sq','tai','p-career','p-detail','p-tr'];
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
-function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='âœ… Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
 function fixEnc(s) {
   if(!s) return '';
   try {
