@@ -439,19 +439,22 @@ tr.season-row td{border-left:2px solid var(--gold)}
   grid-auto-rows:minmax(0,auto);
   align-items:center;
   gap:.9rem;
-  transition:transform .18s,border-color .18s,box-shadow .18s,background .18s;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;
   cursor:pointer;
   text-align:center;
   box-shadow:0 10px 24px rgba(0,0,0,.18);
   min-height:162px;
 }
 .match-card:hover{
-  transform:translateY(-3px);
+  transform:translateY(-4px);
   border-color:var(--border-hi);
-  box-shadow:0 20px 38px rgba(0,0,0,.26);
+  box-shadow:0 24px 42px rgba(0,0,0,.28);
   background:linear-gradient(180deg,rgba(212,175,55,.08),rgba(255,255,255,.02)),var(--dark2);
 }
 .match-card.live{border-color:rgba(200,75,75,.35);background:linear-gradient(180deg,rgba(200,75,75,.10),rgba(255,255,255,.02)),var(--dark2)}
+.match-card.finished{
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),var(--dark2);
+}
 .match-card.upcoming{
   opacity:.96;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015)),var(--dark2);
@@ -476,17 +479,35 @@ tr.season-row td{border-left:2px solid var(--gold)}
 .match-score{
   text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   width:132px;min-width:132px;
-  padding:.4rem .1rem;
+  padding:.5rem .1rem;
   justify-self:center;align-self:center;
 }
 .match-score .score{
-  font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;
-  letter-spacing:1.8px;color:var(--text);line-height:.95;
+  font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;
+  letter-spacing:1.8px;color:var(--text);line-height:.92;
+  text-shadow:0 6px 18px rgba(0,0,0,.16);
 }
 .match-score .score.win-home{color:var(--green)}
 .match-score .time{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:22px;padding:0 8px;border-radius:999px;
   font-size:9px;color:var(--muted);letter-spacing:1.8px;text-transform:uppercase;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;opacity:.82;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;opacity:.9;
+  border:1px solid rgba(108,86,44,.12);
+  background:rgba(255,255,255,.03);
+}
+.match-score .time.live{
+  color:#E07070;border-color:rgba(200,75,75,.28);background:rgba(200,75,75,.10);
+  animation:livepulse 1.9s infinite;
+}
+.match-score .time.live::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;
+}
+.match-score .time.finished{
+  color:var(--gold);border-color:rgba(201,165,75,.18);background:rgba(212,175,55,.08);
+}
+.match-score .time.upcoming{
+  color:var(--muted);border-color:rgba(108,86,44,.1);background:rgba(255,255,255,.025);
 }
 .match-card.upcoming .match-score{
   gap:9px;
@@ -494,7 +515,7 @@ tr.season-row td{border-left:2px solid var(--gold)}
   padding:.55rem .15rem;
 }
 .match-card.upcoming .match-score .score{
-  font-size:40px;
+  font-size:42px;
   letter-spacing:6px;
   color:var(--gold);
   transform:translateX(3px);
@@ -502,7 +523,6 @@ tr.season-row td{border-left:2px solid var(--gold)}
 .match-card.upcoming .match-score .time{
   font-size:10px;
   letter-spacing:1.8px;
-  color:var(--muted);
 }
 .match-meta-row{
   display:flex;justify-content:center;align-items:center;gap:8px;
@@ -511,9 +531,9 @@ tr.season-row td{border-left:2px solid var(--gold)}
 }
 .match-meta-pill{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  min-height:30px;padding:5px 10px;border-radius:999px;
-  background:rgba(255,255,255,.045);border:1px solid var(--border);font-size:10px;
-  color:var(--muted);font-weight:700;letter-spacing:.55px;line-height:1.1;
+  min-height:28px;padding:4px 9px;border-radius:999px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(108,86,44,.08);font-size:9px;
+  color:rgba(93,76,45,.72);font-weight:700;letter-spacing:.5px;line-height:1.1;
 }
 .results-toolbar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -525,6 +545,13 @@ tr.season-row td{border-left:2px solid var(--gold)}
 }
 .results-round-controls{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.results-round-current{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:42px;padding:0 12px;border-radius:12px;
+  border:1px solid rgba(201,165,75,.18);background:rgba(212,175,55,.08);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
 }
 .results-round-select{
   min-height:42px;min-width:190px;padding:0 42px 0 14px;
@@ -603,13 +630,13 @@ tr.season-row td{border-left:2px solid var(--gold)}
   .event-team{grid-column:1 / -1}
   .results-toolbar,.results-round-controls{align-items:stretch}
   .results-round-controls{width:100%}
-  .results-round-select{flex:1 1 100%;width:100%}
+  .results-round-select,.results-round-current{flex:1 1 100%;width:100%}
   .results-round-btn{flex:1 1 calc(50% - 5px);justify-content:center}
   .match-team{gap:6px}
   .match-team img{width:40px;height:40px}
   .match-team .name{font-size:12px}
   .match-score{width:100%;min-width:0;padding:.15rem 0}
-  .match-score .score{font-size:34px}
+  .match-score .score{font-size:36px}
   .match-card.upcoming .match-score{width:100%;min-width:0;padding:.35rem 0 .15rem}
   .match-card.upcoming .match-score .score{font-size:36px;letter-spacing:5px}
   .match-meta-row{gap:6px;margin-top:.2rem}
@@ -2811,7 +2838,13 @@ function matchStatusClass(f){
   const short = f?.fixture?.status?.short || '';
   if(['1H','2H','ET','BT','LIVE','HT'].includes(short)) return 'live';
   if(short === 'NS') return 'upcoming';
-  return '';
+  return 'finished';
+}
+function matchStatusToneClass(f){
+  const short = f?.fixture?.status?.short || '';
+  if(['1H','2H','ET','BT','LIVE','HT'].includes(short)) return 'live';
+  if(short === 'NS') return 'upcoming';
+  return 'finished';
 }
 function renderDuelStats(stats){
   const home = stats?.[0]?.statistics || [];
@@ -2985,14 +3018,14 @@ async function pageResults(el) {
       const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
       const venue = f.fixture?.venue?.name || 'Arena saknas';
       const comp = 'Allsvenskan';
-      return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')">
+      return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')" role="link" tabindex="0" aria-label="Öppna matchen ${esc(fixName(f.teams?.home?.name || ''))} mot ${esc(fixName(f.teams?.away?.name || ''))}" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/match/${f.fixture?.id}')}">
         <div class="match-team">
           <img src="${f.teams?.home?.logo||''}" onerror="this.style.opacity='.15'">
           <span class="name">${esc(fixName(f.teams?.home?.name || '—'))}</span>
         </div>
         <div class="match-score">
           <div class="score">${score}</div>
-          <div class="time">${esc(matchStatusLabel(f))}</div>
+          <div class="time ${matchStatusToneClass(f)}">${esc(matchStatusLabel(f))}</div>
         </div>
         <div class="match-team away">
           <img src="${f.teams?.away?.logo||''}" onerror="this.style.opacity='.15'">
@@ -3014,6 +3047,7 @@ async function pageResults(el) {
           <select class="results-round-select" onchange="setResultsRound(this.value)" aria-label="Välj omgång">
             ${rounds.map(r => `<option value="${esc(r.key)}" ${r.key===activeRound?.key?'selected':''}>${esc(r.label)}</option>`).join('')}
           </select>
+          <div class="results-round-current">${esc(activeRound?.label || 'Alla matcher')}</div>
           <button class="results-round-btn" onclick="setResultsRound('${esc(rounds[Math.min(rounds.length - 1, roundIndex + 1)]?.key || activeRound?.key || '')}')" ${roundIndex === -1 || roundIndex >= rounds.length - 1 ? 'disabled' : ''}>Nästa →</button>
         </div>
       </div>` : '';
