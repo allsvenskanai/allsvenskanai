@@ -1472,12 +1472,7 @@ async function pageStart(el) {
       .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
       .slice(0,3);
 
-    const teamOrderIndex = new Map(TEAM_GRID_ORDER.map((name, index) => [name, index]));
-    const orderedTeams = [...teams].sort((a,b) => {
-      const ai = teamOrderIndex.get(fixName(a.name)) ?? Number.MAX_SAFE_INTEGER;
-      const bi = teamOrderIndex.get(fixName(b.name)) ?? Number.MAX_SAFE_INTEGER;
-      return ai - bi || fixName(a.name).localeCompare(fixName(b.name), 'sv');
-    });
+    const orderedTeams = sortTeamsByOrder(teams);
 
     const cards = orderedTeams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
@@ -1811,7 +1806,7 @@ const AI_TEAM_ALIASES = {
   'ifk goteborg': 'IFK Göteborg'
 };
 
-const TEAM_GRID_ORDER = [
+const TEAM_ORDER = [
   'AIK',
   'BK Häcken',
   'Degerfors IF',
@@ -1830,6 +1825,8 @@ const TEAM_GRID_ORDER = [
   'Örgryte IS'
 ];
 
+const TEAM_ORDER_INDEX = new Map(TEAM_ORDER.map((name, index) => [name, index]));
+
 function normalizeTeamName(name=''){
   return String(name || '')
     .toLowerCase()
@@ -1838,6 +1835,14 @@ function normalizeTeamName(name=''){
     .replace(/ö/g, 'o')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function sortTeamsByOrder(teams = []){
+  return [...teams].sort((a,b) => {
+    const ai = TEAM_ORDER_INDEX.get(fixName(a?.name)) ?? Number.MAX_SAFE_INTEGER;
+    const bi = TEAM_ORDER_INDEX.get(fixName(b?.name)) ?? Number.MAX_SAFE_INTEGER;
+    return ai - bi || fixName(a?.name).localeCompare(fixName(b?.name), 'sv');
+  });
 }
 
 const TEAM_PODCAST_KEYS = { ...TEAM_NEWS_KEYS };
@@ -2109,7 +2114,7 @@ async function pageTeams(el) {
     if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
       data = await af('standings', {league:LEAGUE, season:2025});
     }
-    const teams = (data[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+    const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
         <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
