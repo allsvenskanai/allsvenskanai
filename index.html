@@ -4068,7 +4068,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
     .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
     .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
     .sort(getCategorySorter(activeCategory))
-    .slice(0, activeCategory.limit || 20);
+    .slice(0, activeCategory.limit || 10);
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
