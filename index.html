@@ -3607,6 +3607,7 @@ async function pagePlayer(el, playerId) {
     // Read team context from URL if available (set when clicking from a team page)
     const urlParams = new URLSearchParams(location.search);
     const urlTeamId = urlParams.get('team') ? +urlParams.get('team') : null;
+    const urlSeason = urlParams.get('season') ? +urlParams.get('season') : null;
 
     const [profileD, ...seasonResults] = await Promise.all([
       af('players/profiles', {player: playerId}),
@@ -3619,8 +3620,17 @@ async function pagePlayer(el, playerId) {
     const playerDisplayName = getPlayerDisplayName(p);
     document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
 
-    const curSeasonYear = PLAYER_DEFAULT_SEASON;
-    const curStats = aggregatePlayerSeasonStats(allsvSeasonResults[0]) || {
+    const availableAllsvSeasonYears = allsvSeasonResults
+      .map((data, idx) => ((data?.[0]?.statistics || []).length ? PLAYER_HISTORY_SEASONS[idx] : null))
+      .filter(season => season && season >= 2018);
+    const allsvSeasonYears = [...new Set(availableAllsvSeasonYears)].sort((a,b) => b - a);
+    const selectedAllsvSeason = allsvSeasonYears.includes(urlSeason)
+      ? urlSeason
+      : (allsvSeasonYears.includes(PLAYER_DEFAULT_SEASON) ? PLAYER_DEFAULT_SEASON : (allsvSeasonYears[0] || PLAYER_DEFAULT_SEASON));
+    const selectedSeasonIndex = PLAYER_HISTORY_SEASONS.indexOf(selectedAllsvSeason);
+    const selectedAllsvRows = selectedSeasonIndex >= 0 ? allsvSeasonResults[selectedSeasonIndex] : [];
+    const curSeasonYear = selectedAllsvSeason;
+    const curStats = aggregatePlayerSeasonStats(selectedAllsvRows) || {
       games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
       goals: { total:0, assists:0, conceded:0, saves:0 },
       cards: { yellow:0, red:0 },
@@ -3642,10 +3652,10 @@ async function pagePlayer(el, playerId) {
       },
       flags: { hasAllsvenskanData: false }
     };
-    const hasCurrentAllsvenskanData = !!aggregatePlayerSeasonStats(allsvSeasonResults[0]);
+    const hasCurrentAllsvenskanData = !!aggregatePlayerSeasonStats(selectedAllsvRows);
 
     // Prefer team from URL (where user came from) over API data
-    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE) && entry?.league?.season === selectedAllsvSeason)?.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
     let teamName = getTeamDisplayName(curStats.team) || '—';
     let teamLogo = curStats.team?.logo || '';
 
@@ -3764,6 +3774,19 @@ async function pagePlayer(el, playerId) {
     // Sort by season desc
     seasonRows.sort((a,b) => b.season - a.season || 0);
     clubCareerRows.sort((a,b) => b.season - a.season || a.team.localeCompare(b.team, 'sv'));
+    const playerSeasonHref = season => {
+      const q = new URLSearchParams();
+      if(teamId) q.set('team', String(teamId));
+      q.set('season', String(season));
+      return `/spelare/${playerId}?${q.toString()}`;
+    };
+    const seasonSwitcher = allsvSeasonYears.length ? `
+      <div style="margin:.7rem 0 1rem">
+        <div class="section-label" style="margin-bottom:.45rem">Allsvenskan-år</div>
+        <div class="team-season-switcher">
+          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${season === curSeasonYear ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">Allsvenskan ${season}</button>`).join('')}
+        </div>
+      </div>` : '';
 
     const sTableRows = seasonRows.map(s => `
       <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
@@ -3926,6 +3949,7 @@ async function pagePlayer(el, playerId) {
             <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
             <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
           </div>`:''}
+          ${seasonSwitcher}
           <span class="season-label">Allsvenskan ${curSeasonYear}</span>
           ${!hasCurrentAllsvenskanData ? `<div style="margin:.55rem 0 .2rem;color:var(--muted);font-size:12px">Ingen Allsvenskan-data tillgänglig för ${curSeasonYear} ännu.</div>` : ''}
           <div class="pills player-current-pills">
