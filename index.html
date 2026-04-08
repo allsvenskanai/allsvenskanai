@@ -2622,7 +2622,11 @@ function calculateRecentForm(fixtures = [], limit = 5){
   const goalsFor = recent.reduce((sum, item) => sum + item.goalsFor, 0);
   const goalsAgainst = recent.reduce((sum, item) => sum + item.goalsAgainst, 0);
   const cleanSheets = recent.filter(item => item.goalsAgainst === 0).length;
-  return { recent, points, goalsFor, goalsAgainst, cleanSheets };
+  const wins = recent.filter(item => item.result === 'W').length;
+  const draws = recent.filter(item => item.result === 'D').length;
+  const losses = recent.filter(item => item.result === 'L').length;
+  const formTokens = recent.map(item => item.result === 'W' ? 'V' : item.result === 'D' ? 'O' : 'F');
+  return { recent, points, goalsFor, goalsAgainst, cleanSheets, wins, draws, losses, formTokens, formSummary: `${wins}V ${draws}O ${losses}F` };
 }
 
 function buildTeamHistoryRows(historyResponses = [], teamId){
@@ -2653,12 +2657,17 @@ function buildTeamHistoryRows(historyResponses = [], teamId){
 function getTeamPlayerLeader(players, categoryId){
   const category = STAT_CATEGORIES.find(item => item.id === categoryId);
   if(!category) return null;
+  const qualifies = (value) => {
+    const min = category.minValue ?? 0;
+    if(!Number.isFinite(value)) return false;
+    return category.sort === 'asc' ? value >= min : value >= min;
+  };
   const baseRows = (players || [])
     .filter(player => !category.playerFilter || category.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, category) }))
     .filter(item => Number.isFinite(item.value));
-  const rows = (baseRows.filter(item => item.value > (category.minValue ?? 0)).length
-    ? baseRows.filter(item => item.value > (category.minValue ?? 0))
+  const rows = (baseRows.filter(item => qualifies(item.value)).length
+    ? baseRows.filter(item => qualifies(item.value))
     : baseRows
   ).sort(getCategorySorter(category));
   return rows[0] || null;
@@ -2671,6 +2680,11 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
   const activeCategory = categories.find(category => category.id === catId) || categories[0] || STAT_CATEGORIES[0];
   currentTeamPlayerStatGroup = activeCategory.group;
   currentTeamPlayerStatCategory = activeCategory.id;
+  const qualifies = (value) => {
+    const min = activeCategory.minValue ?? 0;
+    if(!Number.isFinite(value)) return false;
+    return activeCategory.sort === 'asc' ? value >= min : value >= min;
+  };
 
   const leaders = [
     { kicker:'Skytteligaledare', category:'goals' },
@@ -2693,8 +2707,8 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
     .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
     .filter(item => Number.isFinite(item.value));
-  const rows = (baseRows.filter(item => item.value > (activeCategory.minValue ?? 0)).length
-    ? baseRows.filter(item => item.value > (activeCategory.minValue ?? 0))
+  const rows = (baseRows.filter(item => qualifies(item.value)).length
+    ? baseRows.filter(item => qualifies(item.value))
     : baseRows
   ).sort(getCategorySorter(activeCategory))
     .slice(0, activeCategory.limit || 10)
@@ -3164,8 +3178,8 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Historik</div><div style="overflow-x:auto"><table class="team-history-table"><thead><tr><th>Säsong</th><th>#</th><th>Poäng</th><th>M</th><th>V-O-F</th><th>Mål</th><th>GS</th><th>PPM</th></tr></thead><tbody>${historyRowsHtml || `<tr><td colspan="8" class="empty">Ingen historik hittades ännu.</td></tr>`}</tbody></table></div></div>
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
               <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
-              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points}</strong></div>
-              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.recent.map(item => item.result).join(' ') || '—'}</strong></div>
+              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
+              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? `${recentTen.formTokens.join(' ')} · ${recentTen.formSummary}` : 'Ingen formdata ännu'}</strong></div>
               <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
             </div></div>
           </div>
