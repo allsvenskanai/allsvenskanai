@@ -1436,6 +1436,56 @@ main{max-width:1360px}
 }
 .player-history-rating{font-weight:700}
 .player-history-empty{color:var(--muted);font-weight:500}
+.transfer-table{width:100%;border-collapse:separate;border-spacing:0 10px}
+.transfer-table thead th{
+  background:transparent;border:none;padding:0 14px 8px;
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)
+}
+.transfer-table tbody tr{
+  background:rgba(255,255,255,.62);box-shadow:0 12px 28px rgba(66,48,18,.05);
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease
+}
+.transfer-table tbody tr:hover{
+  transform:translateY(-2px);background:rgba(255,255,255,.92);
+  box-shadow:0 16px 32px rgba(66,48,18,.09)
+}
+.transfer-table tbody td{
+  padding:14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle
+}
+.transfer-table tbody td:first-child{border-left:1px solid var(--border);border-radius:14px 0 0 14px}
+.transfer-table tbody td:last-child{border-right:1px solid var(--border);border-radius:0 14px 14px 0}
+.transfer-date{display:grid;gap:4px}
+.transfer-date strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:.4px;color:var(--text)
+}
+.transfer-date span{font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+.transfer-player-link{color:var(--text);font-weight:800;text-decoration:none;cursor:pointer;transition:color .18s ease}
+.transfer-player-link:hover{color:var(--gold)}
+.transfer-direction-badge{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:76px;
+  padding:8px 12px;border-radius:999px;border:1px solid transparent;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase
+}
+.transfer-direction-badge.in{background:rgba(47,143,103,.12);color:var(--green);border-color:rgba(47,143,103,.22)}
+.transfer-direction-badge.out{background:rgba(182,81,81,.1);color:var(--red);border-color:rgba(182,81,81,.2)}
+.transfer-direction-badge.internal{background:rgba(201,165,75,.12);color:var(--gold);border-color:rgba(201,165,75,.24)}
+.transfer-club-chip{
+  display:inline-flex;align-items:center;gap:9px;min-width:0;max-width:100%;
+  padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.52);border:1px solid rgba(108,86,44,.12)
+}
+.transfer-club-chip img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.transfer-club-chip span{font-size:13px;color:var(--text2);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.transfer-type-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:7px 11px;border-radius:999px;border:1px solid transparent;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap
+}
+.transfer-type-stack{display:grid;gap:6px;justify-items:start}
+.transfer-flow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.transfer-flow-arrow{
+  width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(201,165,75,.12);border:1px solid rgba(201,165,75,.2);color:var(--gold);font-size:15px;font-weight:800
+}
+.transfer-meta-note{font-size:11px;color:var(--muted);margin-top:4px}
 .player-history-table tr.total-row td{
   background:linear-gradient(180deg,rgba(201,165,75,.08),rgba(255,253,248,.72));
 }
@@ -1565,6 +1615,9 @@ main{max-width:1360px}
   .player-history-team span,.player-history-league{white-space:normal}
   .player-detail-grid{grid-template-columns:1fr}
   .player-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .transfer-table{min-width:820px}
+  .transfer-flow{grid-template-columns:minmax(0,1fr)}
+  .transfer-flow-arrow{justify-self:start}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
@@ -3573,27 +3626,22 @@ async function loadTeamAI(tabId, teamId) {
 
     const rows = all.map(tr => {
       const isIn = !tr.isInternal && tr.teamIn?.id == teamId;
-      const fc = feeStyle(tr.type);
-      const motpart = tr.isInternal
-        ? `<span style="font-size:12px;color:var(--muted)">Intern flytt</span>`
-        : `<div style="display:flex;align-items:center;gap:5px">
-            <img src="${isIn?(tr.teamOut?.logo||''):(tr.teamIn?.logo||'')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.opacity='.15'">
-            <span style="font-size:12px">${esc(isIn?(tr.teamOut?.name||'—'):(tr.teamIn?.name||'—'))}</span>
-          </div>`;
+      const direction = transferDirectionMeta(tr.isInternal ? 'internal' : (isIn ? 'in' : 'out'));
+      const counterparty = tr.isInternal
+        ? `<div class="transfer-meta-note">Intern flytt i klubben</div>`
+        : renderTransferClubChip(isIn ? tr.teamOut : tr.teamIn, 'Motpart saknas');
       return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
-        <td style="cursor:pointer;color:var(--blue);font-weight:500" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</td>
-        <td><span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:${tr.isInternal?'var(--gold)':isIn?'var(--green)':'var(--red)'}">
-          ${tr.isInternal?'â†‘ UPP':isIn?'â†™ IN':'â†— UT'}
-        </span></td>
-        <td>${motpart}</td>
-        <td><span style="font-size:10px;padding:3px 9px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;${fc}">${esc(tr.type||'?')}</span></td>
+        <td>${renderTransferDate(tr.date)}</td>
+        <td><span class="transfer-player-link" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</span></td>
+        <td><span class="transfer-direction-badge ${direction.cls}">${direction.arrow} ${direction.label}</span></td>
+        <td>${counterparty}</td>
+        <td><div class="transfer-type-stack">${renderTransferTypeBadge(tr.type)}</div></td>
       </tr>`;
     }).join('');
 
-    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table>
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table class="transfer-table">
       <thead><tr><th>Datum</th><th>Spelare</th><th>Riktning</th><th>Motpart</th><th>Typ</th></tr></thead>
-      <tbody>${rows}</tbody>
+    <tbody>${rows}</tbody>
     </table></div></div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
@@ -4105,19 +4153,21 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
     })));
     transfers.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const rows = transfers.map(tr => {
-      const fc = feeStyle(tr.type);
+      const outClub = renderTransferClubChip(tr.teamOut, 'Klubb saknas');
+      const inClub = renderTransferClubChip(tr.teamIn, 'Klubb saknas');
       return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
-        <td><div style="display:flex;align-items:center;gap:6px">
-          <img src="${tr.teamOut?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px;color:var(--muted)">${esc(tr.teamOut?.name||'?')}</span>
-          <span style="color:var(--muted)">â†’</span>
-          <img src="${tr.teamIn?.logo||''}" style="width:18px;height:18px;object-fit:contain" onerror="this.style.opacity='.15'">
-          <span style="font-size:12px">${esc(tr.teamIn?.name||'?')}</span>
-        </div></td>
-        <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;${fc}">${esc(tr.type||'?')}</span></td>
+        <td>${renderTransferDate(tr.date)}</td>
+        <td>
+          <div class="transfer-flow">
+            ${outClub}
+            <span class="transfer-flow-arrow">→</span>
+            ${inClub}
+          </div>
+          <div class="transfer-meta-note">Från klubb till klubb i spelarens karriär</div>
+        </td>
+        <td><div class="transfer-type-stack">${renderTransferTypeBadge(tr.type)}</div></td>
       </tr>`;}).join('');
-    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table>
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table class="transfer-table">
       <thead><tr><th>Datum</th><th>Övergång</th><th>Typ</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div></div>`;
@@ -5909,6 +5959,27 @@ function feeStyle(t){
   if(s.includes('loan')) return 'background:rgba(61,126,191,.14);color:#7EB3E8;border-color:rgba(61,126,191,.24)';
   if(s==='free'||s.includes('free')||s.includes('okänd')||s.includes('unknown')||s==='-') return 'background:rgba(108,86,44,.08);color:var(--muted);border-color:rgba(108,86,44,.14)';
   return 'background:rgba(212,175,55,.14);color:var(--gold);border-color:rgba(212,175,55,.22)';
+}
+function transferDirectionMeta(kind=''){
+  if(kind === 'in') return { cls:'in', label:'In', arrow:'↓' };
+  if(kind === 'out') return { cls:'out', label:'Ut', arrow:'↑' };
+  return { cls:'internal', label:'Upp', arrow:'↗' };
+}
+function renderTransferClubChip(team, fallback='Okänd klubb'){
+  const name = getTeamDisplayName(team) || fallback;
+  return `<div class="transfer-club-chip">
+    <img src="${team?.logo || ''}" onerror="this.style.opacity='.18'">
+    <span>${esc(name)}</span>
+  </div>`;
+}
+function renderTransferTypeBadge(type=''){
+  return `<span class="transfer-type-badge" style="${feeStyle(type)}">${esc(type || 'Okänd')}</span>`;
+}
+function renderTransferDate(date=''){
+  return `<div class="transfer-date">
+    <strong>${esc(formatSvDate(date, { day:'2-digit', month:'short' }))}</strong>
+    <span>${esc(date || 'Datum saknas')}</span>
+  </div>`;
 }
 function flag(n){
   const key = normalizeCountryKey(fixEnc(n));
