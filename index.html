@@ -3179,7 +3179,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
               <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
               <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
-              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? `${recentTen.formTokens.join(' ')} · ${recentTen.formSummary}` : 'Ingen formdata ännu'}</strong></div>
+              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? recentTen.formTokens.join(' ') : 'Ingen formdata ännu'}</strong></div>
               <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
             </div></div>
           </div>
