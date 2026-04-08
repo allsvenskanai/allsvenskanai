@@ -3278,20 +3278,49 @@ function setTransfersFilter(key, value=''){
 async function getPlayerProfileDisplayName(playerId){
   if(!playerId) return '';
   if(playerProfileNameCache[playerId]) return playerProfileNameCache[playerId];
+
+  const remember = (name='') => {
+    const clean = String(name || '').trim();
+    if(clean && clean !== '—' && !looksAbbreviatedPlayerName(clean)) {
+      playerProfileNameCache[playerId] = clean;
+      return clean;
+    }
+    return '';
+  };
+
   try {
     const data = await withTimeout(
       af('players/profiles', {player: playerId}),
       12000,
       `Player profile ${playerId}`
     );
-    const fullName = getPlayerDisplayName(data?.[0]?.player || {});
-    if(fullName && fullName !== '—') {
-      playerProfileNameCache[playerId] = fullName;
+    const profilePlayer = data?.[0]?.player || {};
+    const fullName = remember(getPlayerDisplayName(profilePlayer));
+    if(fullName) {
       return fullName;
     }
   } catch(e) {
     console.warn('[player-name] profile lookup failed', { playerId, error: e.message });
   }
+
+  const seasonsToTry = [SEASON, 2025, 2024, 2023];
+  for(const season of seasonsToTry){
+    try {
+      const data = await withTimeout(
+        af('players', {id: playerId, season}),
+        12000,
+        `Player season ${playerId} ${season}`
+      );
+      const player = data?.[0]?.player || {};
+      const fullName = remember(getPlayerDisplayName(player));
+      if(fullName) {
+        return fullName;
+      }
+    } catch(e) {
+      console.warn('[player-name] season lookup failed', { playerId, season, error: e.message });
+    }
+  }
+
   return '';
 }
 
