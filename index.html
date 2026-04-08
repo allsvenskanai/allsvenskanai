@@ -1927,6 +1927,28 @@ function stableQueryKey(ep, params = {}){
   const suffix = qs.toString();
   return suffix ? `${ep}?${suffix}` : ep;
 }
+function staticSafeSegment(value = ''){
+  return String(value)
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'query';
+}
+function toBase64Url(value = ''){
+  try {
+    return btoa(unescape(encodeURIComponent(String(value))))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  } catch(e) {
+    return '';
+  }
+}
+function getDeterministicStaticPath(ep, params = {}){
+  const key = stableQueryKey(ep, params);
+  const token = toBase64Url(key);
+  if(!token) return '';
+  return `${STATIC_DATA_BASE}/${staticSafeSegment(ep)}-${token}.json`;
+}
 async function getStaticManifest(){
   if(STATIC_MANIFEST_PROMISE) return STATIC_MANIFEST_PROMISE;
   STATIC_MANIFEST_PROMISE = fetch(STATIC_MANIFEST_PATH, { cache:'no-store' })
@@ -1940,6 +1962,17 @@ async function getStaticApiResponse(ep, params = {}){
   if(Object.prototype.hasOwnProperty.call(STATIC_RESPONSE_CACHE, key)) {
     return STATIC_RESPONSE_CACHE[key];
   }
+  const directRef = getDeterministicStaticPath(ep, params);
+  try {
+    if(directRef) {
+      const response = await fetch(directRef, { cache:'no-store' });
+      if(response.ok) {
+        const data = await response.json();
+        STATIC_RESPONSE_CACHE[key] = data;
+        return data;
+      }
+    }
+  } catch(e) {}
   const manifest = await getStaticManifest();
   const ref = manifest?.queries?.[key];
   if(!ref) {
