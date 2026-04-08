@@ -2206,6 +2206,14 @@ async function loadStaticJsonByQuery(ep, p = {}){
   if(!response.ok) throw new Error(`Static fetch failed for ${stableQueryKey(ep, p)} (${response.status})`);
   return response.json();
 }
+async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }){
+  try {
+    return await loadStaticJsonByQuery(ep, p);
+  } catch(e) {
+    console.warn('[static-data] optional query missing', { query: stableQueryKey(ep, p), error: e.message });
+    return fallback;
+  }
+}
 
 async function fetchAllPages(ep, p = {}, opts = {}) {
   const pageParam = opts.pageParam || 'page';
@@ -3501,11 +3509,10 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       loadStaticJsonByQuery('teams', {id:teamId}),
       loadStaticJsonByQuery('standings', {league:LEAGUE, season:selectedSeason}),
       Promise.all(TEAM_PAGE_SEASONS.map(async season => {
-        try { return await loadStaticJsonByQuery('standings', {league:LEAGUE, season}); }
-        catch(e) { return { response: [] }; }
+        return loadStaticJsonByQuerySafe('standings', {league:LEAGUE, season}, { response: [] });
       })),
-      loadStaticJsonByQuery('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}),
-      loadStaticJsonByQuery('players/squads', {team:teamId}),
+      loadStaticJsonByQuerySafe('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}, { response: null }),
+      loadStaticJsonByQuerySafe('players/squads', {team:teamId}, { response: [] }),
       fetchAllPagesStatic('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
@@ -3513,9 +3520,15 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
           return `${playerId}-${statTeamId}-${statSeason}`;
         }
+      }).catch(e => {
+        console.warn('[team-page] season players missing', { teamId, selectedSeason, error: e.message });
+        return [];
       }),
       fetchAllPagesStatic('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => item?.fixture?.id || ''
+      }).catch(e => {
+        console.warn('[team-page] fixtures missing', { teamId, selectedSeason, error: e.message });
+        return [];
       })
     ]);
 
