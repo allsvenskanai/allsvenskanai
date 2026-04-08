@@ -1471,6 +1471,17 @@ async function af(ep, p={}) {
   return CACHE[key];
 }
 
+function delay(ms){
+  return new Promise(res => setTimeout(res, ms));
+}
+
+function normalizeText(str){
+  return (str || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function withTimeout(promise, ms = 12000, label = 'Request') {
   let timer = null;
   const timeout = new Promise((_, reject) => {
@@ -3225,6 +3236,126 @@ function setTransfersFilter(key, value=''){
   pageTransfers(document.getElementById('mc'), 1);
 }
 
+function buildTransferEntries(rows = [], fallbackTeam = null){
+  const all = [];
+  rows.forEach(tr => {
+    (tr.transfers||[]).forEach(x => {
+      const year = parseInt((x.date||'').slice(0,4));
+      const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
+      if(year >= 2024 && validDate) {
+        const type = x.type || '';
+        const teamIn = x.teams?.in;
+        const teamOut = x.teams?.out;
+        const isInternal = type === 'Raise' || type === 'Loan Return' ||
+          (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
+        const resolvedTeam = teamIn || teamOut || fallbackTeam;
+        if(type === '-' && !teamIn && !teamOut) return;
+        all.push({
+          date: x.date,
+          type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
+          playerName: tr.player?.name,
+          playerId: tr.player?.id,
+          teamIn: isInternal ? resolvedTeam : (teamIn || null),
+          teamOut: isInternal ? resolvedTeam : (teamOut || null),
+          isInternal,
+        });
+      }
+    });
+  });
+  return all;
+}
+
+async function fetchTransfersSafe(team){
+  console.info('[transfers] team request start', { teamId: team.id, teamName: team.name });
+  try {
+    const rows = await withTimeout(
+      af('transfers', {team:team.id}),
+      12000,
+      `Transfers ${team.name || team.id}`
+    );
+    console.info('[transfers] team request success', { teamId: team.id, teamName: team.name, rows: rows.length || 0 });
+    return {
+      ok: true,
+      team,
+      transfers: buildTransferEntries(rows, team)
+    };
+  } catch(e) {
+    console.warn('[transfers] team request failure', { teamId: team.id, teamName: team.name, error: e.message });
+    return {
+      ok: false,
+      team,
+      error: e
+    };
+  }
+}
+
+async function loadTransfersCache(el){
+  console.info('[transfers] standings request start', { season: SEASON });
+  const standData = await withTimeout(
+    af('standings', {league:LEAGUE, season:SEASON}),
+    12000,
+    'Standings'
+  );
+  console.info('[transfers] standings request success');
+
+  const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+  const batchSize = 3;
+  const batchDelay = 1300;
+  const all = [];
+  let successCount = 0;
+  let failedCount = 0;
+
+  for(let i = 0; i < teams.length; i += batchSize){
+    const batch = teams.slice(i, i + batchSize);
+    if(el) {
+      el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag… ${Math.min(i + batch.length, teams.length)}/${teams.length}</div>`;
+    }
+
+    const results = await Promise.all(batch.map(team => fetchTransfersSafe(team)));
+    results.forEach(result => {
+      if(result.ok) {
+        successCount += 1;
+        all.push(...result.transfers);
+      } else {
+        failedCount += 1;
+      }
+    });
+
+    console.info('[transfers] batch complete', {
+      batchStart: i,
+      batchSize: batch.length,
+      successCount,
+      failedCount
+    });
+
+    if(i + batchSize < teams.length) {
+      await delay(batchDelay);
+    }
+  }
+
+  const seen = new Set();
+  const unique = all.filter(t => {
+    const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  console.info('[transfers] request summary', { successCount, failedCount, totalTeams: teams.length });
+
+  return {
+    transfers: unique,
+    meta: {
+      successCount,
+      failedCount,
+      totalTeams: teams.length,
+      partial: failedCount > 0 && successCount > 0,
+      empty: !unique.length,
+      failed: successCount === 0 && failedCount > 0
+    }
+  };
+}
+
 async function pageTransfers(el, page=1) {
   document.title = 'Övergångar — AllsvenskanAI';
   const PER_PAGE = 50;
@@ -3232,73 +3363,9 @@ async function pageTransfers(el, page=1) {
   if(!transfersCache) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag...</div>`;
     try {
-      console.info('[transfers] standings request start', { season: SEASON });
-      const standData = await withTimeout(
-        af('standings', {league:LEAGUE, season:SEASON}),
-        12000,
-        'Standings'
-      );
-      console.info('[transfers] standings request success');
-      const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
-      el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag...</div>`;
-      const all = [];
-      const settled = await Promise.allSettled(teams.map(async t => {
-        console.info('[transfers] team request start', { teamId: t.id, teamName: t.name });
-        try {
-          const d = await withTimeout(
-            af('transfers', {team:t.id}),
-            12000,
-            `Transfers ${t.name || t.id}`
-          );
-          console.info('[transfers] team request success', { teamId: t.id, teamName: t.name, rows: d.length || 0 });
-          d.forEach(tr => {
-            (tr.transfers||[]).forEach(x => {
-              const year = parseInt((x.date||'').slice(0,4));
-              const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
-              if(year >= 2024 && validDate) {
-                const type = x.type || '';
-                const teamIn = x.teams?.in;
-                const teamOut = x.teams?.out;
-                const isInternal = type === 'Raise' || type === 'Loan Return' ||
-                  (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
-                // For Raise: use the current team (t) since API doesn't provide team info
-                const resolvedTeam = teamIn || teamOut || t;
-                // Skip unknown type "-" entries with no team info
-                if(type === '-' && !teamIn && !teamOut) return;
-                all.push({
-                  date: x.date,
-                  type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
-                  playerName: tr.player?.name, playerId: tr.player?.id,
-                  teamIn: isInternal ? resolvedTeam : (teamIn || null),
-                  teamOut: isInternal ? resolvedTeam : (teamOut || null),
-                  isInternal,
-                });
-              }
-            });
-          });
-          return { ok: true, teamId: t.id };
-        } catch(e) {
-          console.warn('[transfers] team request failure', { teamId: t.id, teamName: t.name, error: e.message });
-          throw e;
-        }
-      }));
-      const successCount = settled.filter(item => item.status === 'fulfilled').length;
-      const failedCount = settled.length - successCount;
-      console.info('[transfers] request summary', { successCount, failedCount, totalTeams: teams.length });
-      const seen = new Set();
-      transfersCache = all.filter(t => {
-        const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
-        if(seen.has(key)) return false;
-        seen.add(key); return true;
-      }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-      transfersLoadMeta = {
-        successCount,
-        failedCount,
-        totalTeams: teams.length,
-        partial: failedCount > 0 && successCount > 0,
-        empty: !transfersCache.length,
-        failed: successCount === 0 && failedCount > 0
-      };
+      const loaded = await loadTransfersCache(el);
+      transfersCache = loaded.transfers;
+      transfersLoadMeta = loaded.meta;
     } catch(e) {
       console.error('[transfers] page load failure', e);
       transfersCache = [];
@@ -3310,8 +3377,18 @@ async function pageTransfers(el, page=1) {
         empty: true,
         failed: true
       };
-      el.innerHTML = `<div class="err">Kunde inte hämta övergångar just nu.</div>`;
-      return;
+    } finally {
+      if(!Array.isArray(transfersCache)) transfersCache = [];
+      if(!transfersLoadMeta) {
+        transfersLoadMeta = {
+          successCount: 0,
+          failedCount: 0,
+          totalTeams: 0,
+          partial: false,
+          empty: true,
+          failed: false
+        };
+      }
     }
   }
 
