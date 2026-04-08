@@ -1641,14 +1641,99 @@ function getPlayerDisplayName(...sources){
   }
   return '—';
 }
+function normalizeCountryKey(value=''){
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+const COUNTRY_META = {
+  SE:{ sv:'Sverige', names:['Sweden','Sverige'] },
+  NO:{ sv:'Norge', names:['Norway','Norge'] },
+  DK:{ sv:'Danmark', names:['Denmark','Danmark'] },
+  FI:{ sv:'Finland', names:['Finland'] },
+  IS:{ sv:'Island', names:['Iceland','Island'] },
+  RS:{ sv:'Serbien', names:['Serbia','Serbien'] },
+  DE:{ sv:'Tyskland', names:['Germany','Tyskland'] },
+  FR:{ sv:'Frankrike', names:['France','Frankrike'] },
+  NL:{ sv:'Nederländerna', names:['Netherlands','Nederland','Nederländerna','Holland'] },
+  GB:{ sv:'Storbritannien', names:['United Kingdom','Great Britain','Storbritannien'] },
+  EN:{ sv:'England', names:['England'] },
+  SC:{ sv:'Skottland', names:['Scotland','Skottland'] },
+  WA:{ sv:'Wales', names:['Wales'] },
+  ES:{ sv:'Spanien', names:['Spain','Spanien'] },
+  IT:{ sv:'Italien', names:['Italy','Italien'] },
+  PT:{ sv:'Portugal', names:['Portugal'] },
+  BR:{ sv:'Brasilien', names:['Brazil','Brasilien'] },
+  AR:{ sv:'Argentina', names:['Argentina'] },
+  US:{ sv:'USA', names:['USA','United States','United States of America'] },
+  NG:{ sv:'Nigeria', names:['Nigeria'] },
+  GH:{ sv:'Ghana', names:['Ghana'] },
+  HR:{ sv:'Kroatien', names:['Croatia','Kroatien'] },
+  XK:{ sv:'Kosovo', names:['Kosovo'] },
+  AL:{ sv:'Albanien', names:['Albania','Albanien'] },
+  IE:{ sv:'Irland', names:['Ireland','Irland'] },
+  SN:{ sv:'Senegal', names:['Senegal'] },
+  MA:{ sv:'Marocko', names:['Morocco','Marocko'] },
+  CM:{ sv:'Kamerun', names:['Cameroon','Kamerun'] },
+  TN:{ sv:'Tunisien', names:['Tunisia','Tunisien'] },
+  ML:{ sv:'Mali', names:['Mali'] },
+  CI:{ sv:'Elfenbenskusten', names:['Ivory Coast','Côte d’Ivoire','Cote dIvoire','Elfenbenskusten'] },
+  PE:{ sv:'Peru', names:['Peru'] },
+  RO:{ sv:'Rumänien', names:['Romania','Rumänien'] },
+  BA:{ sv:'Bosnien och Hercegovina', names:['Bosnia','Bosnia and Herzegovina','Bosnien','Bosnien och Hercegovina'] },
+  SK:{ sv:'Slovakien', names:['Slovakia','Slovakien'] },
+  HU:{ sv:'Ungern', names:['Hungary','Ungern'] },
+  GR:{ sv:'Grekland', names:['Greece','Grekland'] },
+  TR:{ sv:'Turkiet', names:['Turkey','Turkiet'] },
+  UA:{ sv:'Ukraina', names:['Ukraine','Ukraina'] },
+  AT:{ sv:'Österrike', names:['Austria','Österrike'] },
+  CH:{ sv:'Schweiz', names:['Switzerland','Schweiz'] },
+  BE:{ sv:'Belgien', names:['Belgium','Belgien'] },
+  CO:{ sv:'Colombia', names:['Colombia'] },
+  CL:{ sv:'Chile', names:['Chile'] },
+  MX:{ sv:'Mexiko', names:['Mexico','Mexiko'] },
+  JM:{ sv:'Jamaica', names:['Jamaica'] },
+  PL:{ sv:'Polen', names:['Poland','Polen'] },
+};
+const COUNTRY_LOOKUP = Object.entries(COUNTRY_META).reduce((acc, [code, meta]) => {
+  acc[normalizeCountryKey(code)] = code;
+  (meta.names || []).forEach(name => { acc[normalizeCountryKey(name)] = code; });
+  return acc;
+}, {});
+function countryCodeToFlag(code=''){
+  const normalized = String(code || '').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(normalized)) return '';
+  return String.fromCodePoint(...[...normalized].map(char => 127397 + char.charCodeAt(0)));
+}
 function svLand(s){
-  const map = {
-    'Sweden':'Sverige','Norway':'Norge','Denmark':'Danmark','Finland':'Finland',
-    'Iceland':'Island','England':'England','Scotland':'Skottland','Wales':'Wales',
-    'Germany':'Tyskland','France':'Frankrike','Spain':'Spanien','Italy':'Italien',
-    'Brazil':'Brasilien','Argentina':'Argentina','USA':'USA'
-  };
-  return map[s] || s;
+  const key = normalizeCountryKey(fixEnc(s));
+  const code = COUNTRY_LOOKUP[key];
+  return code ? COUNTRY_META[code]?.sv || fixEnc(s) : fixEnc(s);
+}
+function getNationalityDisplay(...sources){
+  let code = '';
+  let rawLabel = '';
+  for(const source of sources){
+    if(!source) continue;
+    if(typeof source === 'string'){
+      rawLabel ||= fixEnc(source);
+      const maybeCode = COUNTRY_LOOKUP[normalizeCountryKey(source)] || '';
+      if(maybeCode && !code) code = maybeCode;
+      continue;
+    }
+    const sourceCode = source.nationalityCode || source.nationality_code || source.countryCode || source.country_code || source.code || '';
+    const sourceLabel = source.nationality || source.country || source.birth?.country || source.name || '';
+    rawLabel ||= fixEnc(sourceLabel);
+    if(!code && sourceCode && COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)];
+    if(!code && sourceLabel && COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)];
+  }
+  if(!code && rawLabel) code = COUNTRY_LOOKUP[normalizeCountryKey(rawLabel)] || '';
+  const swedishName = code ? (COUNTRY_META[code]?.sv || rawLabel) : svLand(rawLabel);
+  const flagEmoji = code ? countryCodeToFlag(code === 'EN' || code === 'SC' || code === 'WA' ? 'GB' : code) : '';
+  if(!swedishName) return 'Okänd';
+  return `${flagEmoji ? `${flagEmoji} ` : ''}${swedishName}`;
 }
 function svStatus(longStatus=''){
   const map = {
@@ -2857,7 +2942,7 @@ async function pageTeam(el, teamId) {
       const info = playerInfoById[p.id] || {};
       const rawPos = p.position || info.position || '—';
       const pos = posLabel[rawPos] || rawPos;
-      const nationality = info.nationality || p.nationality || info.birth?.country || p.birth?.country || '—';
+      const nationalityDisplay = getNationalityDisplay(info, p);
       let sep = '';
       if(rawPos!==lastPos && posSection[rawPos]) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
@@ -2868,7 +2953,7 @@ async function pageTeam(el, teamId) {
         </div></td>
         <td><span class="pos-tag">${esc(pos)}</span></td>
         <td>${p.age||info.age||'—'} år</td>
-        <td>${nationality !== '—' ? flag(nationality)+' '+esc(nationality) : '—'}</td>
+        <td>${esc(nationalityDisplay)}</td>
         <td style="color:var(--muted);font-size:12px">${p.injured?'ðŸš‘ Skadad':''}</td>
       </tr>`;}).join('');
 
@@ -3102,10 +3187,10 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       const info = playerInfoById[player.id] || {};
       const rawPos = player.position || info.position || '—';
       const pos = posLabel[rawPos] || rawPos;
-      const nationality = info.nationality || player.nationality || info.birth?.country || player.birth?.country || '—';
+      const nationalityDisplay = getNationalityDisplay(info, player);
       let sep = '';
       if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
-      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${teamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationality !== '—' ? flag(nationality)+' '+esc(nationality) : '—'}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
+      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${teamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${esc(nationalityDisplay)}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
     document.title = `${team.name} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
@@ -3422,7 +3507,7 @@ async function pagePlayer(el, playerId) {
         <div class="p-body">
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
-            <span>${flag(p.nationality)} ${esc(p.nationality||'—')}</span>
+            <span>${esc(getNationalityDisplay(p))}</span>
             <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
             ${p.height?`<span>ðŸ“ ${p.height} / ${p.weight||'—'}</span>`:''}
@@ -5309,8 +5394,12 @@ function feeStyle(t){
   if(s==='free'||s.includes('free')||s.includes('okänd')||s.includes('unknown')||s==='-') return 'background:rgba(108,86,44,.08);color:var(--muted);border-color:rgba(108,86,44,.14)';
   return 'background:rgba(212,175,55,.14);color:var(--gold);border-color:rgba(212,175,55,.22)';
 }
-const FLAGS={Sweden:'ðŸ‡¸ðŸ‡ª',Nigeria:'ðŸ‡³ðŸ‡¬',Ghana:'ðŸ‡¬ðŸ‡­',Finland:'ðŸ‡«ðŸ‡®',Norway:'ðŸ‡³ðŸ‡´',Denmark:'ðŸ‡©ðŸ‡°',Brazil:'ðŸ‡§ðŸ‡·',Argentina:'ðŸ‡¦ðŸ‡·',England:'ðŸ´ó §ó ¢ó ¥ó ®ó §ó ¿',Scotland:'ðŸ´ó §ó ¢ó ³ó £ó ´ó ¿',France:'ðŸ‡«ðŸ‡·',Spain:'ðŸ‡ªðŸ‡¸',Portugal:'ðŸ‡µðŸ‡¹',Germany:'ðŸ‡©ðŸ‡ª',Italy:'ðŸ‡®ðŸ‡¹',Netherlands:'ðŸ‡³ðŸ‡±',Poland:'ðŸ‡µðŸ‡±',Serbia:'ðŸ‡·ðŸ‡¸',Croatia:'ðŸ‡­ðŸ‡·',Kosovo:'ðŸ‡½ðŸ‡°',Albania:'ðŸ‡¦ðŸ‡±',Iceland:'ðŸ‡®ðŸ‡¸',Ireland:'ðŸ‡®ðŸ‡ª',USA:'ðŸ‡ºðŸ‡¸',Senegal:'ðŸ‡¸ðŸ‡³',Morocco:'ðŸ‡²ðŸ‡¦',Cameroon:'ðŸ‡¨ðŸ‡²',Tunisia:'ðŸ‡¹ðŸ‡³',Mali:'ðŸ‡²ðŸ‡±','Ivory Coast':'ðŸ‡¨ðŸ‡®',Peru:'ðŸ‡µðŸ‡ª',Romania:'ðŸ‡·ðŸ‡´',Bosnia:'ðŸ‡§ðŸ‡¦',Slovakia:'ðŸ‡¸ðŸ‡°',Hungary:'ðŸ‡­ðŸ‡º',Greece:'ðŸ‡¬ðŸ‡·',Turkey:'ðŸ‡¹ðŸ‡·',Ukraine:'ðŸ‡ºðŸ‡¦',Austria:'ðŸ‡¦ðŸ‡¹',Switzerland:'ðŸ‡¨ðŸ‡­',Belgium:'ðŸ‡§ðŸ‡ª',Colombia:'ðŸ‡¨ðŸ‡´',Chile:'ðŸ‡¨ðŸ‡±',Mexico:'ðŸ‡²ðŸ‡½',Jamaica:'ðŸ‡¯ðŸ‡²'};
-function flag(n){return FLAGS[n]||'ðŸŒ';}
+function flag(n){
+  const key = normalizeCountryKey(fixEnc(n));
+  const code = COUNTRY_LOOKUP[key] || '';
+  if(!code) return '🌍';
+  return countryCodeToFlag(code === 'EN' || code === 'SC' || code === 'WA' ? 'GB' : code) || '🌍';
+}
 function mdHtml(txt){
   const lines=txt.split('\n');let out='',inT=false;
   for(const line of lines){
