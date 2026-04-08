@@ -2041,32 +2041,6 @@ async function getStaticManifest(){
   return STATIC_MANIFEST_PROMISE;
 }
 async function getStaticApiResponse(ep, params = {}){
-  if(!shouldUseStaticEndpoint(ep, params)) return null;
-  const key = canonicalStaticQueryKey(ep, params);
-  if(Object.prototype.hasOwnProperty.call(STATIC_RESPONSE_CACHE, key)) {
-    return STATIC_RESPONSE_CACHE[key];
-  }
-  const manifest = await getStaticManifest();
-  const manifestRef = findStaticManifestRef(manifest, key);
-  const directRef = getDeterministicStaticPath(ep, params);
-  const { data, attempts } = await fetchStaticJsonCandidates(key, [manifestRef, directRef]);
-  if(data) {
-    STATIC_RESPONSE_CACHE[key] = data;
-    return data;
-  }
-  if(!manifestRef && !directRef) {
-    STATIC_RESPONSE_CACHE[key] = null;
-    return null;
-  }
-  console.warn('[static-data] failed', {
-    query: stableQueryKey(ep, params),
-    canonicalQuery: key,
-    manifestRef,
-    directRef,
-    attempts,
-    nearMatches: findStaticManifestNearMatches(manifest, key),
-  });
-  STATIC_RESPONSE_CACHE[key] = null;
   return null;
 }
 function isAllsvenskanLeague(league = {}, leagueId = LEAGUE){
@@ -2241,11 +2215,6 @@ function svDate(input){
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
-  const staticData = await getStaticApiResponse(ep, p);
-  if(staticData) {
-    CACHE[key] = staticData.response || [];
-    return CACHE[key];
-  }
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetch(`${AF}?${q}`);
   if(!r.ok) throw new Error('HTTP '+r.status);
@@ -2256,8 +2225,6 @@ async function af(ep, p={}) {
 }
 
 async function afRaw(ep, p={}) {
-  const staticData = await getStaticApiResponse(ep, p);
-  if(staticData) return staticData;
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
@@ -3202,6 +3169,12 @@ function teamSeasonButton(teamId, season, active, available){
   const className = `team-season-btn ${active ? 'active' : ''} ${available ? '' : 'muted'}`.trim();
   return `<button class="${className}" onclick="setTeamSeason(${teamId},${season})">${season}</button>`;
 }
+function pickResolvedTeam(...candidates){
+  for(const candidate of candidates){
+    if(candidate && (candidate.id || candidate.name || candidate.logo)) return candidate;
+  }
+  return null;
+}
 
 function normalizeTeamFixture(fixture, teamId){
   const homeId = fixture?.teams?.home?.id;
@@ -3593,33 +3566,34 @@ async function pageTeam(el, teamId) {
 }
 
 async function pageTeam(el, teamId, explicitSeason = null) {
+  const routeTeamId = Number(teamId) || 0;
   const selectedSeason = getTeamPageSeason(explicitSeason);
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
     const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
-      loadStaticJsonByQuerySafe('teams', {id:teamId}, { response: [] }),
-      loadStaticJsonByQuerySafe('standings', {league:LEAGUE, season:selectedSeason}, { response: [] }),
+      afRaw('teams', {id:routeTeamId}),
+      afRaw('standings', {league:LEAGUE, season:selectedSeason}),
       Promise.all(TEAM_PAGE_SEASONS.map(async season => {
-        return loadStaticJsonByQuerySafe('standings', {league:LEAGUE, season}, { response: [] });
+        return afRaw('standings', {league:LEAGUE, season}).catch(() => ({ response: [] }));
       })),
-      loadStaticJsonByQuerySafe('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}, { response: null }),
-      loadStaticJsonByQuerySafe('players/squads', {team:teamId}, { response: [] }),
-      fetchAllPagesStatic('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+      afRaw('teams/statistics', {league:LEAGUE, season:selectedSeason, team:routeTeamId}).catch(() => ({ response: null })),
+      afRaw('players/squads', {team:routeTeamId}).catch(() => ({ response: [] })),
+      fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
-          const statTeamId = item?.statistics?.[0]?.team?.id || teamId || '';
+          const statTeamId = item?.statistics?.[0]?.team?.id || routeTeamId || '';
           const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
           return `${playerId}-${statTeamId}-${statSeason}`;
         }
       }).catch(e => {
-        console.warn('[team-page] season players missing', { teamId, selectedSeason, error: e.message });
+        console.warn('[team-page] season players missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
       }),
-      fetchAllPagesStatic('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+      fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
         dedupeKey: item => item?.fixture?.id || ''
       }).catch(e => {
-        console.warn('[team-page] fixtures missing', { teamId, selectedSeason, error: e.message });
+        console.warn('[team-page] fixtures missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
       })
     ]);
@@ -3630,11 +3604,25 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const statsD = statsRaw?.response || null;
     const squadD = squadRaw?.response || [];
     const stats = statsD?.league ? statsD : (Array.isArray(statsD) ? statsD[0] : statsD);
-    const selectedStanding = standingRows.find(row => row?.team?.id === teamId) || null;
-    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || selectedStanding?.team || {};
-    const team = stats?.team || teamInfo || selectedStanding?.team || {id:teamId, name:'Lag', logo:''};
+    const selectedStanding = standingRows.find(row => Number(row?.team?.id || 0) === routeTeamId) || null;
+    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || null;
+    const team = pickResolvedTeam(
+      stats?.team,
+      teamInfo,
+      selectedStanding?.team,
+      {id:routeTeamId, name:'Lag', logo:''}
+    );
     const teamDisplayName = getTeamDisplayName(team);
     const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
+    console.debug('[team-page] route resolution', {
+      routeTeamId,
+      selectedSeason,
+      statsTeamId: stats?.team?.id || null,
+      teamInfoId: teamInfo?.id || null,
+      standingTeamId: selectedStanding?.team?.id || null,
+      resolvedTeamId: team?.id || null,
+      resolvedTeamName: teamDisplayName,
+    });
     const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
       id: item?.player?.id,
       name: item?.player?.name || '',
@@ -3648,7 +3636,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     })).filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
     await enrichSquadNationalities(squadPlayers, playerInfoById);
-    const historyRows = buildTeamHistoryRows(historyStandings, teamId);
+    const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
     const seasonRow = historyMap.get(selectedSeason) || null;
 
@@ -3686,7 +3674,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const homeWinPct = homePlayed ? Math.round((homeW / homePlayed) * 100) : 0;
     const awayWinPct = awayPlayed ? Math.round((awayW / awayPlayed) * 100) : 0;
 
-    const normalizedFixtures = (fixturesSeason || []).map(item => normalizeTeamFixture(item, teamId)).filter(Boolean);
+    const normalizedFixtures = (fixturesSeason || []).map(item => normalizeTeamFixture(item, routeTeamId)).filter(Boolean);
     const recentFive = calculateRecentForm(normalizedFixtures, 5);
     const recentTen = calculateRecentForm(normalizedFixtures, 10);
     const latestPlayed = [...normalizedFixtures].filter(item => item.started).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 5);
@@ -3701,7 +3689,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
     const seasonButtons = TEAM_PAGE_SEASONS
       .filter(season => historyMap.has(season) || season === selectedSeason)
-      .map(season => teamSeasonButton(teamId, season, season === selectedSeason, historyMap.has(season)))
+      .map(season => teamSeasonButton(routeTeamId, season, season === selectedSeason, historyMap.has(season)))
       .join('');
 
     const summaryCards = [
@@ -3753,7 +3741,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       const nationalityDisplay = renderNationalityDisplay(info, player);
       let sep = '';
       if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
-      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${teamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
+      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
     document.title = `${teamDisplayName} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
@@ -3779,7 +3767,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
           <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
           <button class="tab" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
-          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${teamId})">Övergångar</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${routeTeamId})">Övergångar</button>
         </div>
 
         <div id="t-overview" class="team-section-stack">
@@ -4846,8 +4834,7 @@ async function getPlayerProfileDisplayName(playerId){
   };
 
   try {
-    const staticProfile = await getStaticApiResponse('players/profiles', {player: playerId});
-    const data = staticProfile ? (staticProfile.response || []) : await withTimeout(
+    const data = await withTimeout(
       af('players/profiles', {player: playerId}),
       12000,
       `Player profile ${playerId}`
@@ -4886,8 +4873,7 @@ async function getPlayerProfileMeta(playerId){
   if(!playerId) return {};
   if(playerProfileMetaCache[playerId]) return playerProfileMetaCache[playerId];
   try {
-    const staticProfile = await getStaticApiResponse('players/profiles', {player: playerId});
-    const data = staticProfile ? (staticProfile.response || []) : await withTimeout(
+    const data = await withTimeout(
       af('players/profiles', {player: playerId}),
       12000,
       `Player profile meta ${playerId}`
