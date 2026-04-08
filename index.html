@@ -1723,14 +1723,14 @@ function getNationalityDisplay(...sources){
       if(maybeCode && !code) code = maybeCode;
       continue;
     }
-    const sourceCode = source.nationalityCode || source.nationality_code || source.countryCode || source.country_code || source.code || '';
-    const sourceLabel = source.nationality || source.country || source.birth?.country || source.name || '';
+    const sourceCode = source.nationalityCode || source.nationality_code || source.countryCode || source.country_code || '';
+    const sourceLabel = source.nationality || source.birth?.country || '';
     rawLabel ||= fixEnc(sourceLabel);
     if(!code && sourceCode && COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)];
     if(!code && sourceLabel && COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)];
   }
   if(!code && rawLabel) code = COUNTRY_LOOKUP[normalizeCountryKey(rawLabel)] || '';
-  const swedishName = code ? (COUNTRY_META[code]?.sv || rawLabel) : svLand(rawLabel);
+  const swedishName = code ? (COUNTRY_META[code]?.sv || rawLabel) : (rawLabel ? svLand(rawLabel) : '');
   const flagEmoji = code ? countryCodeToFlag(code === 'EN' || code === 'SC' || code === 'WA' ? 'GB' : code) : '';
   if(!swedishName) return 'Okänd';
   return `${flagEmoji ? `${flagEmoji} ` : ''}${swedishName}`;
