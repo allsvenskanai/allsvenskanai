@@ -3536,7 +3536,7 @@ async function pagePlayer(el, playerId) {
         <div class="p-body">
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
-            <span>${esc(getNationalityDisplay(p))}</span>
+            <span>${renderNationalityDisplay(p)}</span>
             <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
             ${p.height?`<span>ðŸ“ ${p.height} / ${p.weight||'—'}</span>`:''}
