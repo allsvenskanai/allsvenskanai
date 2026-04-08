@@ -2188,6 +2188,18 @@ async function afRaw(ep, p={}) {
   return d;
 }
 
+async function afStatic(ep, p={}){
+  const staticData = await getStaticApiResponse(ep, p);
+  if(!staticData) throw new Error(`Static data missing for ${stableQueryKey(ep, p)}`);
+  return staticData.response || [];
+}
+
+async function afRawStatic(ep, p={}){
+  const staticData = await getStaticApiResponse(ep, p);
+  if(!staticData) throw new Error(`Static data missing for ${stableQueryKey(ep, p)}`);
+  return staticData;
+}
+
 async function fetchAllPages(ep, p = {}, opts = {}) {
   const pageParam = opts.pageParam || 'page';
   const dedupeKey = opts.dedupeKey || null;
@@ -2205,6 +2217,34 @@ async function fetchAllPages(ep, p = {}, opts = {}) {
       } catch(e) {
         console.warn('[pagination] page fetch failed', { endpoint: ep, page, params: p, error: e.message });
       }
+    }
+  }
+
+  if(!dedupeKey) return rows;
+
+  const seen = new Set();
+  return rows.filter(item => {
+    const key = dedupeKey(item);
+    if(!key) return true;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function fetchAllPagesStatic(ep, p = {}, opts = {}) {
+  const pageParam = opts.pageParam || 'page';
+  const dedupeKey = opts.dedupeKey || null;
+  const first = await afRawStatic(ep, p);
+  const firstRows = Array.isArray(first?.response) ? first.response : [];
+  const totalPages = Number(first?.paging?.total || first?.pagination?.total || 1);
+  let rows = [...firstRows];
+
+  if(totalPages > 1) {
+    for(let page = 2; page <= totalPages; page += 1) {
+      const next = await afRawStatic(ep, { ...p, [pageParam]: page });
+      const nextRows = Array.isArray(next?.response) ? next.response : [];
+      rows.push(...nextRows);
     }
   }
 
@@ -3451,12 +3491,12 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
     const [teamInfoD, standingsD, historyStandings, statsD, squadD, seasonPlayers, fixturesSeason] = await Promise.all([
-      af('teams', {id:teamId}).catch(()=>[]),
-      af('standings', {league:LEAGUE, season:selectedSeason}).catch(()=>[]),
-      Promise.all(TEAM_PAGE_SEASONS.map(season => af('standings', {league:LEAGUE, season}).catch(()=>[]))),
-      af('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}).catch(()=>null),
-      af('players/squads', {team:teamId}).catch(()=>[]),
-      fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+      afStatic('teams', {id:teamId}).catch(()=>[]),
+      afStatic('standings', {league:LEAGUE, season:selectedSeason}).catch(()=>[]),
+      Promise.all(TEAM_PAGE_SEASONS.map(season => afStatic('standings', {league:LEAGUE, season}).catch(()=>[]))),
+      afStatic('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}).catch(()=>null),
+      afStatic('players/squads', {team:teamId}).catch(()=>[]),
+      fetchAllPagesStatic('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
           const statTeamId = item?.statistics?.[0]?.team?.id || teamId || '';
@@ -3464,7 +3504,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           return `${playerId}-${statTeamId}-${statSeason}`;
         }
       }).catch(()=>[]),
-      fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+      fetchAllPagesStatic('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
         dedupeKey: item => item?.fixture?.id || ''
       }).catch(()=>[])
     ]);
@@ -4676,7 +4716,8 @@ async function getPlayerProfileDisplayName(playerId){
   };
 
   try {
-    const data = await withTimeout(
+    const staticProfile = await getStaticApiResponse('players/profiles', {player: playerId});
+    const data = staticProfile ? (staticProfile.response || []) : await withTimeout(
       af('players/profiles', {player: playerId}),
       12000,
       `Player profile ${playerId}`
@@ -4715,7 +4756,8 @@ async function getPlayerProfileMeta(playerId){
   if(!playerId) return {};
   if(playerProfileMetaCache[playerId]) return playerProfileMetaCache[playerId];
   try {
-    const data = await withTimeout(
+    const staticProfile = await getStaticApiResponse('players/profiles', {player: playerId});
+    const data = staticProfile ? (staticProfile.response || []) : await withTimeout(
       af('players/profiles', {player: playerId}),
       12000,
       `Player profile meta ${playerId}`
@@ -4731,6 +4773,9 @@ async function getPlayerProfileMeta(playerId){
       name: player.name || '',
     };
     playerProfileMetaCache[playerId] = meta;
+    if(meta.name && !playerProfileNameCache[playerId] && !looksAbbreviatedPlayerName(meta.name)) {
+      playerProfileNameCache[playerId] = meta.name;
+    }
     return meta;
   } catch(e) {
     return {};
