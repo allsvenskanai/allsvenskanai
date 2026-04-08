@@ -5829,7 +5829,7 @@ runAiRoutingTests();
 function switchTab(btn,id){
   btn.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  const all=['t-overview','t-players','sq','tai','p-career','p-detail','p-tr'];
+  const all=['t-overview','t-players','sq','tai','p-career','p-detail','p-tr','p-club-career'];
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
 function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
