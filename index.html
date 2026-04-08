@@ -4107,13 +4107,6 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
     </tr>`;
   }).join('');
 
-  const overviewCards = [
-    { label:'Spelare', value: cache.meta.playerCount, copy:'Normaliserade och deduplicerade säsongsprofiler.' },
-    { label:'Lag', value: cache.meta.teamCount, copy:'Allsvenska lag i vald säsong.' },
-    { label:'Kategorier', value: cache.meta.categoryCount, copy:'Direkta och beräknade topplistor.' },
-    { label:'Raw-fält', value: cache.meta.fieldCount, copy:'Inventerade statistikfält från API:t.' },
-  ].map(card => `<div class="stats-overview-card"><div class="stats-overview-label">${card.label}</div><div class="stats-overview-value">${card.value}</div><div class="stats-overview-copy">${card.copy}</div></div>`).join('');
-
   const groupMeta = STAT_GROUPS.find(group => group.id === currentStatGroup) || STAT_GROUPS[0];
   el.innerHTML = `
     <div class="stats-shell">
@@ -4125,7 +4118,6 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
         <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
       </div>
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
-      <div class="stats-overview-grid">${overviewCards}</div>
       <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
       <div class="stats-category-panel">
         <div class="stats-category-kicker">${groupMeta.label}</div>
@@ -4147,7 +4139,6 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
         <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="3" class="empty">Ingen data</td></tr>'}</tbody>
       </table></div></div>
-      <div class="stats-empty-note">Inventerade API-fält: matcher, starter, minuter, rating, mål, assist, skott, skott på mål, passningar, nyckelpass, passningsprocent, tacklingar, interceptions, blockar, dueller, fouls, kort, offside, straffar och målvaktsfält. xG/xA finns inte tillgängligt i det här datalagret ännu, så alla avancerade topplistor räknas centralt från samma normaliserade säsongsdataset.</div>
     </div>`;
 }
 
