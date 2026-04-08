@@ -1851,8 +1851,12 @@ function renderNationalityDisplay(...sources){
 }
 const PLAYER_DEFAULT_SEASON = 2026;
 const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
-function aggregatePlayerSeasonStats(rows = []){
-  const comps = (rows?.[0]?.statistics || []).filter(Boolean);
+function aggregatePlayerSeasonStats(rows = [], opts = {}){
+  const leagueId = opts.leagueId ? Number(opts.leagueId) : null;
+  const seasonStats = rows?.[0]?.statistics || [];
+  const comps = seasonStats
+    .filter(Boolean)
+    .filter(entry => !leagueId || Number(entry?.league?.id || 0) === leagueId);
   if(!comps.length) return null;
   const sum = getter => comps.reduce((total, entry) => total + toStatNumber(getter(entry)), 0);
   const minutes = sum(entry => entry.games?.minutes);
@@ -3591,7 +3595,7 @@ async function pagePlayer(el, playerId) {
     document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
 
     const curSeasonYear = PLAYER_DEFAULT_SEASON;
-    const curStats = aggregatePlayerSeasonStats(seasonResults[0]) || {
+    const curStats = aggregatePlayerSeasonStats(seasonResults[0], { leagueId: LEAGUE }) || {
       games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
       goals: { total:0, assists:0, conceded:0, saves:0 },
       cards: { yellow:0, red:0 },
