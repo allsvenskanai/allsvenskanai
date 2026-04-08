@@ -1851,6 +1851,16 @@ function renderNationalityDisplay(...sources){
 }
 const PLAYER_DEFAULT_SEASON = 2026;
 const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+function filterPlayerLeagueRows(rows = [], leagueId = LEAGUE){
+  const wantedLeagueId = Number(leagueId || 0);
+  if(!Array.isArray(rows) || !wantedLeagueId) return rows || [];
+  return rows
+    .map(item => ({
+      ...item,
+      statistics: (item?.statistics || []).filter(entry => Number(entry?.league?.id || 0) === wantedLeagueId)
+    }))
+    .filter(item => (item?.statistics || []).length);
+}
 function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const leagueId = opts.leagueId ? Number(opts.leagueId) : null;
   const seasonStats = rows?.[0]?.statistics || [];
@@ -3588,6 +3598,7 @@ async function pagePlayer(el, playerId) {
       af('players/profiles', {player: playerId}),
       ...PLAYER_HISTORY_SEASONS.map(season => af('players', {id:playerId, season}).catch(()=>[])),
     ]);
+    const allsvSeasonResults = seasonResults.map(data => filterPlayerLeagueRows(data, LEAGUE));
 
     const p = profileD[0]?.player;
     if(!p) throw new Error('Spelare hittades inte');
@@ -3595,7 +3606,7 @@ async function pagePlayer(el, playerId) {
     document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
 
     const curSeasonYear = PLAYER_DEFAULT_SEASON;
-    const curStats = aggregatePlayerSeasonStats(seasonResults[0], { leagueId: LEAGUE }) || {
+    const curStats = aggregatePlayerSeasonStats(allsvSeasonResults[0]) || {
       games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
       goals: { total:0, assists:0, conceded:0, saves:0 },
       cards: { yellow:0, red:0 },
@@ -3614,11 +3625,13 @@ async function pagePlayer(el, playerId) {
         passAccuracy:0, accuratePasses:0, passesPer90:0, conversionRate:0, shotsPerGoal:0, shotAccuracy:0,
         defActions:0, defActionsPer90:0, duelWinRate:0, savePercentage:0, goalsConcededPerMatch:0,
         minutesPerMatch:0, subApps:0, minutesPerGoal:0, minutesPerContribution:0,
-      }
+      },
+      flags: { hasAllsvenskanData: false }
     };
+    const hasCurrentAllsvenskanData = !!aggregatePlayerSeasonStats(allsvSeasonResults[0]);
 
     // Prefer team from URL (where user came from) over API data
-    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => Number(entry?.league?.id || 0) === Number(LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
     let teamName = getTeamDisplayName(curStats.team) || '—';
     let teamLogo = curStats.team?.logo || '';
 
@@ -3685,7 +3698,7 @@ async function pagePlayer(el, playerId) {
     // Build career table
     let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
     const seasonRows = [];
-    seasonResults.forEach((data, idx) => {
+    allsvSeasonResults.forEach((data, idx) => {
       const season = PLAYER_HISTORY_SEASONS[idx];
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
@@ -3746,10 +3759,11 @@ async function pagePlayer(el, playerId) {
         <div class="value">${card.value}</div>
         <div class="copy">${card.copy}</div>
       </div>`).join('');
+    const isGoalkeeperProfile = /goalkeeper|målvakt/i.test(String(curStats.games?.position || p.position || ''));
     const detailSections = [
       {
         kicker:'Offensiv',
-        title:`Säsongen ${curSeasonYear}`,
+        title:`Allsvenskan ${curSeasonYear}`,
         rows:[
           ['Mål', curGoals],
           ['Assist', curAssists],
@@ -3796,8 +3810,9 @@ async function pagePlayer(el, playerId) {
         ]
       },
       {
+        hidden: !isGoalkeeperProfile && !curSaves && !curGoalsConceded && !curPenaltySaved,
         kicker:'Speltid',
-        title:'Belastning & målvaktsfält',
+        title: isGoalkeeperProfile ? 'Belastning & målvaktsfält' : 'Belastning',
         rows:[
           ['Matcher', curApps],
           ['Starter', curStarts],
@@ -3807,6 +3822,14 @@ async function pagePlayer(el, playerId) {
           ['Minuter / mål', curMinutesPerGoal ? formatMetric(curMinutesPerGoal, 1) : '—'],
           ['Minuter / poäng', curMinutesPerContribution ? formatMetric(curMinutesPerContribution, 1) : '—'],
           ['Rating', curRating ? curRating.toFixed(2) : '—'],
+          ['Gula / Röda', `${curYellow} / ${curRed}`],
+        ]
+      },
+      {
+        hidden: !isGoalkeeperProfile && !curSaves && !curGoalsConceded && !curPenaltySaved,
+        kicker:'Målvakt',
+        title:'Målvaktsdata',
+        rows:[
           ['Räddningar', curSaves],
           ['Räddningsprocent', curSaves ? formatMetric(curSavePct, 1, '%') : '—'],
           ['Insläppta mål', curGoalsConceded],
@@ -3815,7 +3838,7 @@ async function pagePlayer(el, playerId) {
           ['Straffräddningar', curPenaltySaved]
         ]
       }
-    ];
+    ].filter(section => !section.hidden);
     const detailPanels = detailSections.map(section => `
       <div class="player-detail-panel">
         <div class="player-detail-panel-head">
@@ -3835,7 +3858,7 @@ async function pagePlayer(el, playerId) {
 
       <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
         <img class="p-photo" src="${p.photo||''}" onerror="this.src='';this.style.background='var(--dark4)'">
-        <div class="p-body">
+          <div class="p-body">
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
             <span>${renderNationalityDisplay(p)}</span>
@@ -3847,7 +3870,8 @@ async function pagePlayer(el, playerId) {
             <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
             <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
           </div>`:''}
-          <span class="season-label">Säsong ${curSeasonYear}</span>
+          <span class="season-label">Allsvenskan ${curSeasonYear}</span>
+          ${!hasCurrentAllsvenskanData ? `<div style="margin:.55rem 0 .2rem;color:var(--muted);font-size:12px">Ingen Allsvenskan-data tillgänglig för ${curSeasonYear} ännu.</div>` : ''}
           <div class="pills player-current-pills">
             <div class="pill"><div class="pn">${curApps}</div><div class="pl">Matcher</div></div>
             <div class="pill"><div class="pn">${curMins}</div><div class="pl">Minuter</div></div>
@@ -3857,7 +3881,7 @@ async function pagePlayer(el, playerId) {
           </div>
         </div>
         <div style="text-align:right">
-          <span class="season-label">Karriärtotalt</span>
+          <span class="season-label">Allsvenskan totalt</span>
           <div class="pills player-career-pills" style="justify-content:flex-end">
             <div class="pill"><div class="pn">${careerApps}</div><div class="pl">Matcher</div></div>
             <div class="pill"><div class="pn">${careerGoals}</div><div class="pl">Mål</div></div>
@@ -3873,8 +3897,8 @@ async function pagePlayer(el, playerId) {
       </div></div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(this,'p-career')">Karriärstatistik (${seasonRows.length} säsonger)</button>
-        <button class="tab" onclick="switchTab(this,'p-detail')">Detaljerad ${curSeasonYear}</button>
+        <button class="tab active" onclick="switchTab(this,'p-career')">Allsvenskan-karriär (${seasonRows.length} säsonger)</button>
+        <button class="tab" onclick="switchTab(this,'p-detail')">Allsvenskan ${curSeasonYear}</button>
         <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,${p.player?.id||playerId},'p-tr')">Övergångar</button>
       </div>
 
@@ -3883,9 +3907,9 @@ async function pagePlayer(el, playerId) {
           <div class="player-history-wrap">
             <div class="player-history-head">
               <div class="player-history-headline">
-                <div class="player-history-kicker">Karriärhistorik</div>
+                <div class="player-history-kicker">Allsvenskan-karriär</div>
                 <div class="player-history-title">Säsong för säsong</div>
-                <div class="player-history-copy">En kompakt översikt över klubb, liga och nyckeltal genom hela karriären.</div>
+                <div class="player-history-copy">En kompakt översikt över spelarens Allsvenskan-säsonger, klubbskiften och nyckeltal.</div>
               </div>
               <div class="player-history-summary">
                 <span class="player-history-badge"><strong>${seasonRows.length}</strong> säsonger</span>
@@ -3901,9 +3925,9 @@ async function pagePlayer(el, playerId) {
             <th class="num" title="Gula kort">Gula</th><th class="num" title="Röda kort">Röda</th>
           </tr></thead>
           <tbody>
-            ${sTableRows||'<tr><td colspan="10" class="empty">Ingen historisk data</td></tr>'}
+            ${sTableRows||'<tr><td colspan="10" class="empty">Ingen Allsvenskan-data tillgänglig</td></tr>'}
             <tr class="total-row">
-              <td colspan="3" style="color:var(--gold)">Totalt (${seasonRows.length} säsonger)</td>
+              <td colspan="3" style="color:var(--gold)">Allsvenskan totalt (${seasonRows.length} säsonger)</td>
               <td class="num">${careerApps}</td>
               <td class="num">${careerMins.toLocaleString('sv-SE')}</td>
               <td class="num">${careerGoals}</td>
@@ -3917,6 +3941,7 @@ async function pagePlayer(el, playerId) {
       </div>
 
       <div id="p-detail" style="display:none">
+        <div class="player-history-copy" style="margin-bottom:.85rem">Alla sektioner nedan bygger enbart på spelarens Allsvenskan-statistik för ${curSeasonYear}.</div>
         <div class="player-detail-summary">${summaryCards}</div>
         <div class="player-detail-grid">${detailPanels}</div>
       </div>
