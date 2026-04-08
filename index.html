@@ -1288,6 +1288,109 @@ main{max-width:1360px}
 .team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:110px;min-height:84px;display:flex;flex-direction:column;justify-content:center}
 .news-title{word-break:break-word}
 .podcast-title{word-break:break-word}
+.team-shell{display:grid;gap:1rem}
+.team-hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:14px;align-items:stretch}
+.team-title-block{display:grid;gap:.8rem}
+.team-kicker{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-title-line{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.team-title-line .pg-title{margin:0}
+.team-rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(201,165,75,.18),rgba(201,165,75,.08));
+  border:1px solid rgba(201,165,75,.26);color:var(--gold);
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+}
+.team-subline{display:flex;gap:8px;flex-wrap:wrap}
+.team-subpill{
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:34px;padding:0 12px;border-radius:999px;
+  background:rgba(255,253,248,.78);border:1px solid var(--border);
+  color:var(--muted);font-size:12px;
+}
+.team-season-switcher{display:flex;gap:8px;flex-wrap:wrap}
+.team-season-btn{
+  min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,253,248,.72);color:var(--muted);font-family:'Barlow',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;transition:.18s ease;
+}
+.team-season-btn:hover{transform:translateY(-1px);border-color:var(--border-hi);color:var(--text)}
+.team-season-btn.active{background:rgba(201,165,75,.14);border-color:rgba(201,165,75,.25);color:var(--gold)}
+.team-season-btn.muted{opacity:.55}
+.team-hero-side{display:grid;gap:10px}
+.team-hero-stats{
+  background:var(--dark3);border:1px solid var(--border);border-radius:18px;
+  padding:1rem 1.05rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+}
+.team-hero-stat{
+  background:rgba(255,253,248,.76);border:1px solid var(--border);
+  border-radius:14px;padding:.85rem .9rem;display:grid;gap:4px;
+}
+.team-hero-stat .value{
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;line-height:1;
+  font-weight:900;color:var(--text);
+}
+.team-hero-stat .label{
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.team-hero-stat .sub{font-size:12px;color:var(--muted)}
+.team-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.team-summary-card{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;
+  padding:1rem;display:grid;gap:6px;box-shadow:0 14px 34px rgba(76,56,24,.05);
+}
+.team-summary-card .value{font-family:'Barlow Condensed',sans-serif;font-size:34px;line-height:1;font-weight:900;color:var(--gold)}
+.team-summary-card .label{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-summary-card .copy{font-size:12px;color:var(--muted);line-height:1.45}
+.team-dual-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.team-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.team-metric-card{
+  background:rgba(255,253,248,.72);border:1px solid var(--border);border-radius:14px;
+  padding:.95rem 1rem;display:grid;gap:6px;
+}
+.team-metric-card .value{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;line-height:1;color:var(--text)}
+.team-metric-card .label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-metric-card .sub{font-size:12px;color:var(--muted)}
+.team-detail-list{display:grid;gap:.7rem}
+.team-detail-row{display:flex;justify-content:space-between;gap:14px;align-items:center;font-size:13px}
+.team-detail-row strong{color:var(--gold);font-weight:700}
+.team-form-strip{display:flex;gap:6px;flex-wrap:wrap}
+.team-form-pill{
+  min-width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;
+  border:1px solid var(--border);background:rgba(255,253,248,.7);color:var(--text)
+}
+.team-form-pill.win{color:var(--green);border-color:rgba(84,131,108,.22);background:rgba(84,131,108,.1)}
+.team-form-pill.draw{color:var(--muted)}
+.team-form-pill.loss{color:var(--red);border-color:rgba(166,97,87,.2);background:rgba(166,97,87,.08)}
+.team-match-list{display:grid;gap:8px}
+.team-match-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  background:rgba(255,253,248,.68);border:1px solid var(--border);border-radius:14px;
+  padding:.85rem .95rem;cursor:pointer;transition:.18s ease;
+}
+.team-match-row:hover{transform:translateY(-1px);box-shadow:0 14px 26px rgba(76,56,24,.06);border-color:var(--border-hi)}
+.team-match-row .meta{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.team-match-row .teams{display:grid;gap:2px}
+.team-match-row .score{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1;
+  font-weight:900;color:var(--text);min-width:78px;text-align:right;
+}
+.team-match-row .score.upcoming{font-size:18px;color:var(--muted)}
+.team-history-table td:first-child,.team-history-table th:first-child{white-space:nowrap}
+.team-player-shell{display:grid;gap:1rem}
+.team-player-highlight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.team-player-highlight{
+  background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:1rem;
+  display:grid;gap:4px;
+}
+.team-player-highlight .kicker{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-player-highlight .name{font-size:14px;font-weight:700;color:var(--text)}
+.team-player-highlight .meta{font-size:12px;color:var(--muted)}
+.team-player-highlight .value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;color:var(--gold)}
+.team-empty-state{padding:1.1rem 0;color:var(--muted);font-size:13px}
+.team-section-stack{display:grid;gap:1rem}
+.team-note{font-size:12px;color:var(--muted);line-height:1.5}
 
 @media (min-width: 901px){
   .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
@@ -1366,6 +1469,15 @@ main{max-width:1360px}
   .stats-category-panel{padding:.95rem}
   .stats-category-title{font-size:23px;line-height:1}
   .stats-value-meta{font-size:10px}
+  .team-hero{grid-template-columns:1fr}
+  .team-summary-grid,.team-player-highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .team-dual-grid{grid-template-columns:1fr}
+  .team-metric-grid{grid-template-columns:1fr}
+  .team-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .team-match-row{grid-template-columns:1fr;gap:6px}
+  .team-match-row .score{text-align:left;min-width:0}
+  .team-season-switcher{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .team-season-btn{justify-content:center}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
@@ -2432,6 +2544,199 @@ async function pageTeams(el) {
 }
 
 // â”€â”€â”€ TEAM PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const TEAM_PAGE_SEASONS = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
+let currentTeamPlayerStatGroup = 'offense';
+let currentTeamPlayerStatCategory = 'goals';
+let currentTeamStatsSeason = SEASON;
+window.__teamPlayerStatsData = { players: [] };
+
+function getTeamPageSeason(explicitSeason = null){
+  const qs = new URLSearchParams(location.search);
+  const season = explicitSeason || Number(qs.get('season')) || SEASON;
+  return TEAM_PAGE_SEASONS.includes(season) ? season : SEASON;
+}
+
+function setTeamSeason(teamId, season){
+  const path = season === SEASON ? `/lag/${teamId}` : `/lag/${teamId}?season=${season}`;
+  history.replaceState({}, '', path);
+  pageTeam(document.getElementById('mc'), teamId, season);
+}
+
+function teamSeasonButton(teamId, season, active, available){
+  const className = `team-season-btn ${active ? 'active' : ''} ${available ? '' : 'muted'}`.trim();
+  return `<button class="${className}" onclick="setTeamSeason(${teamId},${season})">${season}</button>`;
+}
+
+function normalizeTeamFixture(fixture, teamId){
+  const homeId = fixture?.teams?.home?.id;
+  const awayId = fixture?.teams?.away?.id;
+  const isHome = homeId === teamId;
+  const isAway = awayId === teamId;
+  if(!isHome && !isAway) return null;
+  const goalsFor = Number(isHome ? fixture?.goals?.home ?? 0 : fixture?.goals?.away ?? 0);
+  const goalsAgainst = Number(isHome ? fixture?.goals?.away ?? 0 : fixture?.goals?.home ?? 0);
+  const started = fixtureHasStarted(fixture);
+  const short = String(fixture?.fixture?.status?.short || '').toUpperCase();
+  const finished = ['FT','AET','PEN'].includes(short);
+  const opponent = isHome ? fixture?.teams?.away : fixture?.teams?.home;
+  let result = '';
+  if(started){
+    if(goalsFor > goalsAgainst) result = 'W';
+    else if(goalsFor < goalsAgainst) result = 'L';
+    else result = 'D';
+  }
+  return {
+    id: fixture?.fixture?.id,
+    date: fixture?.fixture?.date || '',
+    venueLabel: isHome ? 'Hemma' : 'Borta',
+    opponentName: opponent?.name || '—',
+    opponentLogo: opponent?.logo || '',
+    goalsFor,
+    goalsAgainst,
+    started,
+    finished,
+    result,
+    short,
+  };
+}
+
+function calculateRecentForm(fixtures = [], limit = 5){
+  const recent = [...fixtures]
+    .filter(item => item.started)
+    .sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, limit);
+  const points = recent.reduce((sum, item) => sum + (item.result === 'W' ? 3 : item.result === 'D' ? 1 : 0), 0);
+  const goalsFor = recent.reduce((sum, item) => sum + item.goalsFor, 0);
+  const goalsAgainst = recent.reduce((sum, item) => sum + item.goalsAgainst, 0);
+  const cleanSheets = recent.filter(item => item.goalsAgainst === 0).length;
+  return { recent, points, goalsFor, goalsAgainst, cleanSheets };
+}
+
+function buildTeamHistoryRows(historyResponses = [], teamId){
+  return TEAM_PAGE_SEASONS.map((season, index) => {
+    const rows = historyResponses[index]?.[0]?.league?.standings?.[0] || [];
+    const row = rows.find(item => item?.team?.id === teamId);
+    if(!row) return null;
+    const played = row?.all?.played || 0;
+    const goalsFor = row?.all?.goals?.for || 0;
+    const goalsAgainst = row?.all?.goals?.against || 0;
+    const points = row?.points || 0;
+    return {
+      season,
+      rank: row?.rank || '—',
+      points,
+      played,
+      wins: row?.all?.win || 0,
+      draws: row?.all?.draw || 0,
+      losses: row?.all?.lose || 0,
+      goalsFor,
+      goalsAgainst,
+      goalDiff: row?.goalsDiff ?? (goalsFor - goalsAgainst),
+      pointsPerMatch: played ? points / played : 0,
+    };
+  }).filter(Boolean);
+}
+
+function getTeamPlayerLeader(players, categoryId){
+  const category = STAT_CATEGORIES.find(item => item.id === categoryId);
+  if(!category) return null;
+  const rows = (players || [])
+    .filter(player => !category.playerFilter || category.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, category) }))
+    .filter(item => Number.isFinite(item.value) && item.value > (category.minValue ?? 0))
+    .sort(getCategorySorter(category));
+  return rows[0] || null;
+}
+
+function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStatGroup, catId = currentTeamPlayerStatCategory){
+  if(!el) return;
+  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
+  const categories = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
+  const activeCategory = categories.find(category => category.id === catId) || categories[0] || STAT_CATEGORIES[0];
+  currentTeamPlayerStatGroup = activeCategory.group;
+  currentTeamPlayerStatCategory = activeCategory.id;
+
+  const leaders = [
+    { kicker:'Skytteligaledare', category:'goals' },
+    { kicker:'Assistkung', category:'assists' },
+    { kicker:'Flest minuter', category:'minutes' },
+    { kicker:'Bäst rating', category:'rating' },
+  ].map(item => {
+    const leader = getTeamPlayerLeader(players, item.category);
+    const category = STAT_CATEGORIES.find(cat => cat.id === item.category);
+    if(!leader || !category) return null;
+    return `<div class="team-player-highlight">
+      <div class="kicker">${item.kicker}</div>
+      <div class="name">${esc(leader.player.playerName)}</div>
+      <div class="value">${getCategoryDisplayValue(category, leader.player, leader.value)}</div>
+      <div class="meta">${esc(leader.player.position || leader.player.teamName || 'Spelare')}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const rows = (players || [])
+    .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
+    .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
+    .sort(getCategorySorter(activeCategory))
+    .slice(0, activeCategory.limit || 10)
+    .map((item, index) => {
+      const secondary = getCategorySecondary(activeCategory, item.player);
+      return `<tr class="link" onclick="go('/spelare/${item.player.playerId}?team=${item.player.teamId || ''}')">
+        <td style="width:64px"><strong style="color:${index < 3 ? 'var(--gold)' : 'var(--text)'}">${index + 1}</strong></td>
+        <td>
+          <div class="pcell">
+            <img src="${item.player.photo || ''}" onerror="this.style.opacity='.15'" loading="lazy" style="border-radius:50%">
+            <div>
+              <div class="pn">${esc(item.player.playerName)}</div>
+              <div class="ps">${esc(item.player.position || item.player.teamName || 'Spelare')}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="stats-value-wrap">
+            <strong class="${activeCategory.ratingClass ? ratingCls(item.value) : ''}">${getCategoryDisplayValue(activeCategory, item.player, item.value)}</strong>
+            ${secondary ? `<span class="stats-value-meta">${esc(secondary)}</span>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+  const groupTabs = STAT_GROUPS.map(group => {
+    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+    return `<button class="stats-group-chip ${group.id===currentTeamPlayerStatGroup?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${group.id}', null)">${group.label}<small>${count}</small></button>`;
+  }).join('');
+  const categoryTabs = STAT_CATEGORIES
+    .filter(category => category.group === currentTeamPlayerStatGroup)
+    .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${currentTeamPlayerStatGroup}', '${category.id}')">${category.label}</button>`)
+    .join('');
+
+  el.innerHTML = `
+    <div class="team-player-shell">
+      ${leaders ? `<div class="team-player-highlight-grid">${leaders}</div>` : ''}
+      <div class="stats-category-panel">
+        <div class="stats-category-kicker">Spelarstatistik</div>
+        <div class="stats-category-head">
+          <div>
+            <div class="stats-category-title">${activeCategory.title}</div>
+            <div class="stats-category-copy">${activeCategory.description} Filtrerat till det valda lagets spelare.</div>
+          </div>
+          <div class="stats-category-badges">
+            <span class="stats-category-badge">${players.length} spelare</span>
+            <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:1rem">Grupper</div>
+        <div class="stats-group-tabs">${groupTabs}</div>
+        <div class="section-label" style="margin-top:1rem">Kategori</div>
+        <div class="stats-category-tabs">${categoryTabs}</div>
+      </div>
+      <div class="tw"><div><table class="stats-table">
+        <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="3" class="empty">Ingen spelardata tillgänglig för ${currentTeamStatsSeason}</td></tr>`}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
 async function pageTeam(el, teamId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
@@ -2628,6 +2933,239 @@ async function pageTeam(el, teamId) {
     loadTeamNews(team.name, 'team-news-container');
   } catch(e) {
     el.innerHTML = `<button class="back" onclick="go('/')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+async function pageTeam(el, teamId, explicitSeason = null) {
+  const selectedSeason = getTeamPageSeason(explicitSeason);
+  currentTeamStatsSeason = selectedSeason;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
+  try {
+    const [teamInfoD, standingsD, historyStandings, statsD, squadD, seasonPlayers, fixturesSeason] = await Promise.all([
+      af('teams', {id:teamId}).catch(()=>[]),
+      af('standings', {league:LEAGUE, season:selectedSeason}).catch(()=>[]),
+      Promise.all(TEAM_PAGE_SEASONS.map(season => af('standings', {league:LEAGUE, season}).catch(()=>[]))),
+      af('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}).catch(()=>null),
+      af('players/squads', {team:teamId}).catch(()=>[]),
+      fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+        dedupeKey: item => {
+          const playerId = item?.player?.id || '';
+          const statTeamId = item?.statistics?.[0]?.team?.id || teamId || '';
+          const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
+          return `${playerId}-${statTeamId}-${statSeason}`;
+        }
+      }).catch(()=>[]),
+      fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+        dedupeKey: item => item?.fixture?.id || ''
+      }).catch(()=>[])
+    ]);
+
+    const stats = Array.isArray(statsD) ? statsD[0] : statsD;
+    const teamInfo = teamInfoD?.[0]?.team || {};
+    const team = stats?.team || teamInfo || {id:teamId, name:'Lag', logo:''};
+    const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
+    const squadPlayers = squadD?.[0]?.players || [];
+    const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
+    const selectedStanding = (standingsD?.[0]?.league?.standings?.[0] || []).find(row => row?.team?.id === teamId) || null;
+    const historyRows = buildTeamHistoryRows(historyStandings, teamId);
+    const historyMap = new Map(historyRows.map(row => [row.season, row]));
+    const seasonRow = historyMap.get(selectedSeason) || null;
+
+    const w = stats?.fixtures?.wins?.total || seasonRow?.wins || 0;
+    const d = stats?.fixtures?.draws?.total || seasonRow?.draws || 0;
+    const l = stats?.fixtures?.loses?.total || seasonRow?.losses || 0;
+    const played = stats?.fixtures?.played?.total || seasonRow?.played || (w + d + l);
+    const points = seasonRow?.points ?? (w * 3 + d);
+    const gf = stats?.goals?.for?.total?.total || seasonRow?.goalsFor || 0;
+    const ga = stats?.goals?.against?.total?.total || seasonRow?.goalsAgainst || 0;
+    const goalDiff = seasonRow?.goalDiff ?? (gf - ga);
+    const cs = stats?.clean_sheet?.total || 0;
+    const failedToScore = stats?.failed_to_score?.total || 0;
+    const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || (played ? gf / played : 0);
+    const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || (played ? ga / played : 0);
+    const pointsPerMatch = played ? points / played : 0;
+    const pointsPct = played ? Math.round((points / (played * 3)) * 100) : 0;
+    const winPct = played ? Math.round((w / played) * 100) : 0;
+    const selectedRank = seasonRow?.rank || selectedStanding?.rank || '—';
+
+    const homeW = stats?.fixtures?.wins?.home || 0;
+    const awayW = stats?.fixtures?.wins?.away || 0;
+    const homeD = stats?.fixtures?.draws?.home || 0;
+    const awayD = stats?.fixtures?.draws?.away || 0;
+    const homeL = stats?.fixtures?.loses?.home || 0;
+    const awayL = stats?.fixtures?.loses?.away || 0;
+    const homePlayed = stats?.fixtures?.played?.home || 0;
+    const awayPlayed = stats?.fixtures?.played?.away || 0;
+    const homeGF = stats?.goals?.for?.total?.home || 0;
+    const awayGF = stats?.goals?.for?.total?.away || 0;
+    const homeGA = stats?.goals?.against?.total?.home || 0;
+    const awayGA = stats?.goals?.against?.total?.away || 0;
+    const homePoints = homeW * 3 + homeD;
+    const awayPoints = awayW * 3 + awayD;
+    const homeWinPct = homePlayed ? Math.round((homeW / homePlayed) * 100) : 0;
+    const awayWinPct = awayPlayed ? Math.round((awayW / awayPlayed) * 100) : 0;
+
+    const normalizedFixtures = (fixturesSeason || []).map(item => normalizeTeamFixture(item, teamId)).filter(Boolean);
+    const recentFive = calculateRecentForm(normalizedFixtures, 5);
+    const recentTen = calculateRecentForm(normalizedFixtures, 10);
+    const latestPlayed = [...normalizedFixtures].filter(item => item.started).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 5);
+    const upcoming = [...normalizedFixtures].filter(item => !item.started).sort((a,b) => String(a.date || '').localeCompare(String(b.date || ''))).slice(0, 3);
+
+    const scoredMin = Object.entries(stats?.goals?.for?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
+    const concededMin = Object.entries(stats?.goals?.against?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
+
+    const teamPlayers = buildNormalizedStatsDataset(seasonPlayers, selectedSeason)
+      .filter(player => String(player.teamId || '') === String(teamId) || player.teamName === team.name);
+    window.__teamPlayerStatsData = { players: teamPlayers };
+
+    const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
+    const seasonButtons = TEAM_PAGE_SEASONS
+      .filter(season => historyMap.has(season) || season === selectedSeason)
+      .map(season => teamSeasonButton(teamId, season, season === selectedSeason, historyMap.has(season)))
+      .join('');
+
+    const summaryCards = [
+      { label:'Poäng', value: points, copy:`${pointsPerMatch.toFixed(2)} per match` },
+      { label:'Målskillnad', value:`${goalDiff > 0 ? '+' : ''}${goalDiff}`, copy:`${gf} gjorda • ${ga} insläppta` },
+      { label:'Form senaste 5', value:`${recentFive.points}p`, copy:`${recentFive.goalsFor}-${recentFive.goalsAgainst} i mål` },
+      { label:'Vinstprocent', value:`${winPct}%`, copy:`${w} segrar på ${played} matcher` },
+    ].map(card => `<div class="team-summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div><div class="copy">${card.copy}</div></div>`).join('');
+
+    const heroStats = [
+      { label:'Placering', value:selectedRank, sub:`Allsvenskan ${selectedSeason}` },
+      { label:'Poängsnitt', value:pointsPerMatch.toFixed(2), sub:`${pointsPct}% av maxpoängen` },
+      { label:'Mål per match', value:avgFor.toFixed(2), sub:`${gf} mål totalt` },
+      { label:'Insläppta / match', value:avgAgainst.toFixed(2), sub:`${ga} mål totalt` },
+    ].map(item => `<div class="team-hero-stat"><div class="label">${item.label}</div><div class="value">${item.value}</div><div class="sub">${item.sub}</div></div>`).join('');
+
+    const homeAwayRows = `
+      <tr><td>Vinster</td><td class="num">${homeW}</td><td class="num">${awayW}</td><td class="num">${w}</td></tr>
+      <tr><td>Oavgjorda</td><td class="num">${homeD}</td><td class="num">${awayD}</td><td class="num">${d}</td></tr>
+      <tr><td>Förluster</td><td class="num">${homeL}</td><td class="num">${awayL}</td><td class="num">${l}</td></tr>
+      <tr><td>Poäng</td><td class="num">${homePoints}</td><td class="num">${awayPoints}</td><td class="num">${points}</td></tr>
+      <tr><td>Vinstprocent</td><td class="num">${homeWinPct}%</td><td class="num">${awayWinPct}%</td><td class="num">${winPct}%</td></tr>
+      <tr><td>Gjorda mål</td><td class="num">${homeGF}</td><td class="num">${awayGF}</td><td class="num">${gf}</td></tr>
+      <tr><td>Insläppta mål</td><td class="num">${homeGA}</td><td class="num">${awayGA}</td><td class="num">${ga}</td></tr>`;
+
+    const resultCards = [
+      { label:'2+ mål framåt', value: normalizedFixtures.filter(item => item.started && item.goalsFor >= 2).length, copy:'Matcher med tydlig offensiv output.' },
+      { label:'2+ mål insläppta', value: normalizedFixtures.filter(item => item.started && item.goalsAgainst >= 2).length, copy:'Matcher där försvaret satts under press.' },
+      { label:'Nollor', value: cs, copy:`${recentFive.cleanSheets} under senaste fem` },
+      { label:'Mållösa matcher', value: failedToScore, copy:'Matcher utan mål för laget.' },
+    ].map(item => `<div class="team-metric-card"><div class="label">${item.label}</div><div class="value">${item.value}</div><div class="sub">${item.copy}</div></div>`).join('');
+
+    const minuteCard = (title, rows) => `<div class="tw" style="min-width:0"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div><div style="padding:1rem 1.1rem">${rows.length ? rows.map(item => `<div class="team-detail-row" style="padding:.42rem 0;border-bottom:1px solid var(--border)"><span>${esc(item.range)}</span><strong>${item.total}</strong></div>`).join('') : `<div class="team-empty-state">Ingen data ännu.</div>`}</div></div>`;
+    const matchRow = (item, isUpcoming = false) => `<div class="team-match-row" onclick="go('/match/${item.id}')"><div class="meta">${esc(item.venueLabel)} • ${svDate(item.date)}</div><div class="teams"><div><strong>${esc(team.name)}</strong> vs ${esc(item.opponentName)}</div><div style="font-size:12px;color:var(--muted)">${isUpcoming ? 'Kommande match' : (item.result === 'W' ? 'Vinst' : item.result === 'D' ? 'Oavgjort' : 'Förlust')}</div></div><div class="score ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Se match' : `${item.goalsFor}-${item.goalsAgainst}`}</div></div>`;
+
+    const historyRowsHtml = historyRows.map(row => `<tr class="${row.season === selectedSeason ? 'season-row' : ''}"><td>${row.season}</td><td class="num">${row.rank}</td><td class="num">${row.points}</td><td class="num">${row.played}</td><td class="num">${row.wins}-${row.draws}-${row.losses}</td><td class="num">${row.goalsFor}-${row.goalsAgainst}</td><td class="num">${row.goalDiff > 0 ? '+' : ''}${row.goalDiff}</td><td class="num">${row.pointsPerMatch.toFixed(2)}</td></tr>`).join('');
+    const bestSeason = [...historyRows].sort((a,b) => b.pointsPerMatch - a.pointsPerMatch || b.points - a.points)[0];
+    const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
+
+    const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[a.position]||5)-(posOrder[b.position]||5));
+    let lastPos = '';
+    const playerRows = sortedSquad.map(player => {
+      const info = playerInfoById[player.id] || {};
+      const rawPos = player.position || info.position || '—';
+      const pos = posLabel[rawPos] || rawPos;
+      const nationality = info.nationality || player.nationality || info.birth?.country || player.birth?.country || '—';
+      let sep = '';
+      if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
+      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${teamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationality !== '—' ? flag(nationality)+' '+esc(nationality) : '—'}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
+    }).join('');
+
+    document.title = `${team.name} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
+    el.innerHTML = `
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="back" onclick="go('/lag-lista')">← Alla lag</button>
+        <button class="share" onclick="copyLink()">Kopiera länk</button>
+      </div>
+      <div class="team-shell">
+        <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
+          <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
+          <div class="p-body team-title-block">
+            <div class="team-kicker">Lagöversikt</div>
+            <div class="team-title-line"><div class="pg-title">${esc(team.name)}</div><div class="team-rank-badge">${selectedRank}</div></div>
+            <div class="pg-sub">En rikare lagöversikt med säsongsstatistik, historik, form och intern spelarstatistik för ${esc(team.name)}.</div>
+            <div class="team-subline">${venue.name ? `<span class="team-subpill">${esc(venue.name)}</span>` : ''}${venue.city ? `<span class="team-subpill">${esc(venue.city)}</span>` : ''}${venue.capacity ? `<span class="team-subpill">${(+venue.capacity).toLocaleString('sv-SE')} platser</span>` : ''}<span class="team-subpill">${selectedSeason} års säsong</span></div>
+            <div><div class="section-label">Säsonger</div><div class="team-season-switcher">${seasonButtons || teamSeasonButton(teamId, selectedSeason, true, false)}</div></div>
+          </div>
+          <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${stats?.fixtures?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${stats.fixtures.form.slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
+        </div></div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
+          <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
+          <button class="tab" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI(${JSON.stringify(team.name)},'tai',${teamId})">Övergångar</button>
+        </div>
+
+        <div id="t-overview" class="team-section-stack">
+          <div class="team-summary-grid">${summaryCards}</div>
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagstatistik</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Matcher</span><strong>${played}</strong></div>
+              <div class="team-detail-row"><span>Poäng</span><strong>${points}</strong></div>
+              <div class="team-detail-row"><span>Vinster / kryss / förluster</span><strong>${w} / ${d} / ${l}</strong></div>
+              <div class="team-detail-row"><span>Gjorda mål</span><strong>${gf}</strong></div>
+              <div class="team-detail-row"><span>Insläppta mål</span><strong>${ga}</strong></div>
+              <div class="team-detail-row"><span>Målskillnad</span><strong>${goalDiff > 0 ? '+' : ''}${goalDiff}</strong></div>
+              <div class="team-detail-row"><span>Poängprocent</span><strong>${pointsPct}%</strong></div>
+              <div class="team-detail-row"><span>Vinstprocent</span><strong>${winPct}%</strong></div>
+              <div class="team-detail-row"><span>Mål per match</span><strong>${avgFor.toFixed(2)}</strong></div>
+              <div class="team-detail-row"><span>Insläppta per match</span><strong>${avgAgainst.toFixed(2)}</strong></div>
+              <div class="team-detail-row"><span>Hållna nollor</span><strong>${cs}</strong></div>
+              <div class="team-detail-row"><span>Mållösa matcher</span><strong>${failedToScore}</strong></div>
+            </div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Trend & form</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Poäng senaste 5</span><strong>${recentFive.points}</strong></div>
+              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points}</strong></div>
+              <div class="team-detail-row"><span>Mål senaste 5</span><strong>${recentFive.goalsFor}-${recentFive.goalsAgainst}</strong></div>
+              <div class="team-detail-row"><span>Nollor senaste 5</span><strong>${recentFive.cleanSheets}</strong></div>
+              <div class="team-detail-row"><span>Bästa säsong</span><strong>${bestSeason ? `${bestSeason.season} (${bestSeason.points}p)` : '—'}</strong></div>
+              <div class="team-detail-row"><span>Tuffaste säsong</span><strong>${worstSeason ? `${worstSeason.season} (${worstSeason.points}p)` : '—'}</strong></div>
+              <div class="team-note">Formen bygger på spelade matcher i vald säsong och uppdateras när nya resultat kommer in.</div>
+            </div></div>
+          </div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Hemma vs borta</div><div style="overflow-x:auto"><table><thead><tr><th>Statistik</th><th>Hemma</th><th>Borta</th><th>Totalt</th></tr></thead><tbody>${homeAwayRows}</tbody></table></div></div>
+            <div class="team-metric-grid">${resultCards}</div>
+          </div>
+
+          <div class="team-dual-grid">${minuteCard('Farligaste målperioder', scoredMin)}${minuteCard('Mest insläppta målperioder', concededMin)}</div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Senaste matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${latestPlayed.length ? latestPlayed.map(item => matchRow(item)).join('') : `<div class="team-empty-state">Inga spelade matcher för ${selectedSeason} ännu.</div>`}</div></div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Kommande matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${upcoming.length ? upcoming.map(item => matchRow(item, true)).join('') : `<div class="team-empty-state">Inga kommande matcher i datan just nu.</div>`}</div></div></div>
+          </div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Historik</div><div style="overflow-x:auto"><table class="team-history-table"><thead><tr><th>Säsong</th><th>#</th><th>Poäng</th><th>M</th><th>V-O-F</th><th>Mål</th><th>GS</th><th>PPM</th></tr></thead><tbody>${historyRowsHtml || `<tr><td colspan="8" class="empty">Ingen historik hittades ännu.</td></tr>`}</tbody></table></div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points}</strong></div>
+              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.recent.map(item => item.result).join(' ') || '—'}</strong></div>
+              <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
+            </div></div>
+          </div>
+
+          <div style="margin-bottom:1.2rem"><div class="section-label">Senaste poddar om ${esc(team.name)}</div><div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ${esc(team.name)}.</div><div id="team-podcasts-container"><div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(team.name)}…</div></div></div>
+          <div style="margin-bottom:1.2rem"><div class="section-label">Senaste nyheter om ${esc(team.name)}</div><div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning av ${esc(team.name)}? Kontakta info@allsvenskanai.se.</div><div id="team-news-container"><div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(team.name)}…</div></div></div>
+        </div>
+
+        <div id="t-players" style="display:none"><div id="team-player-stats"></div></div>
+        <div id="sq" style="display:none"><div class="tw"><div style="overflow-x:auto"><table><thead><tr><th>Spelare</th><th>Position</th><th>Ålder</th><th>Nationalitet</th><th></th></tr></thead><tbody>${playerRows || '<tr><td colspan="5" class="empty">Inga spelare</td></tr>'}</tbody></table></div></div></div>
+        <div id="tai" style="display:none"><div class="tw"><div style="padding:1.25rem;color:var(--muted);font-size:13px">Klicka på fliken för att hämta data…</div></div></div>
+      </div>`;
+
+    renderTeamPlayerStats(document.getElementById('team-player-stats'), teamPlayers);
+    loadTeamPodcasts(team.name, 'team-podcasts-container');
+    loadTeamNews(team.name, 'team-news-container');
+  } catch(e) {
+    el.innerHTML = `<button class="back" onclick="go('/lag-lista')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
   }
 }
 
@@ -4614,7 +5152,7 @@ runAiRoutingTests();
 function switchTab(btn,id){
   btn.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  const all=['sq','tai','p-career','p-detail','p-tr'];
+  const all=['t-overview','t-players','sq','tai','p-career','p-detail','p-tr'];
   all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
 }
 function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='âœ… Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
