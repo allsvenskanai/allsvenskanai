@@ -1152,9 +1152,73 @@ main > *{animation:fadeUp .3s ease both}
 .stats-rank.medal{font-size:22px}
 .stats-value{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:1;color:var(--gold);white-space:nowrap}
 .stats-value.rg{color:#3A9E6A}.stats-value.ry{color:var(--gold)}.stats-value.rr{color:#C84B4B}
+.stats-value-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.stats-value-meta{font-size:11px;color:var(--muted);font-weight:700;line-height:1.2;text-align:right}
 .stats-table tbody tr:hover td{background:rgba(201,165,75,.045)}
 .stats-table tbody td{padding:14px 14px}
 .stats-table thead th{padding:12px 14px}
+.stats-shell{display:grid;gap:1rem}
+.stats-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stats-overview-card{
+  background:linear-gradient(145deg,rgba(212,175,55,.08),rgba(255,255,255,.02)),var(--dark2);
+  border:1px solid var(--border);border-radius:16px;padding:1rem 1.05rem;
+  box-shadow:0 10px 24px rgba(66,48,18,.06);
+}
+.stats-overview-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.stats-overview-value{
+  margin-top:.45rem;font-family:'Barlow Condensed',sans-serif;font-size:34px;
+  font-weight:900;line-height:1;color:var(--text);
+}
+.stats-overview-copy{
+  margin-top:.35rem;font-size:12px;line-height:1.45;color:var(--text2);
+}
+.stats-group-tabs,.stats-category-tabs{
+  display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;
+}
+.stats-group-tabs::-webkit-scrollbar,.stats-category-tabs::-webkit-scrollbar{display:none}
+.stats-group-chip{
+  min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,255,255,.55);color:var(--text2);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;transition:border-color .18s,background .18s,color .18s,transform .18s;
+  white-space:nowrap;
+}
+.stats-group-chip:hover{border-color:var(--border-hi);background:rgba(255,255,255,.86);color:var(--text)}
+.stats-group-chip.active{
+  background:rgba(212,175,55,.14);border-color:rgba(212,175,55,.3);color:var(--text);
+  transform:translateY(-1px);
+}
+.stats-group-chip small{
+  font-size:10px;color:inherit;opacity:.75;margin-left:6px;
+}
+.stats-category-panel{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem;
+  box-shadow:0 14px 32px rgba(66,48,18,.06);
+}
+.stats-category-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:1.7px;text-transform:uppercase;color:var(--gold);
+}
+.stats-category-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:.35rem;
+}
+.stats-category-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:var(--text);
+}
+.stats-category-copy{
+  margin-top:.35rem;max-width:760px;font-size:13px;line-height:1.6;color:var(--text2);
+}
+.stats-category-badges{display:flex;gap:8px;flex-wrap:wrap}
+.stats-category-badge{
+  display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 10px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;
+}
+.stats-empty-note{
+  padding:1rem 0 0;color:var(--muted);font-size:12px;line-height:1.6;
+}
 
 /* MOBILE */
 @media(max-width:768px){
@@ -1295,6 +1359,13 @@ main{max-width:1360px}
   .tab.active{background:rgba(201,165,75,.12)}
   .stat-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}
   .stat-tab{padding:10px 12px;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal}
+  .stats-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats-overview-card{padding:.9rem}
+  .stats-overview-value{font-size:28px}
+  .stats-group-chip{min-height:40px;padding:0 12px}
+  .stats-category-panel{padding:.95rem}
+  .stats-category-title{font-size:23px;line-height:1}
+  .stats-value-meta{font-size:10px}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
@@ -3642,21 +3713,295 @@ async function pageTransfers(el, page=1) {
 }
 
 // â”€â”€â”€ STATS / TOPPLISTOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const PLAYER_STATS_INVENTORY = [
+  'games.appearences','games.lineups','games.minutes','games.rating','games.position',
+  'substitutes.in','substitutes.out','substitutes.bench',
+  'goals.total','goals.assists','goals.conceded','goals.saves',
+  'shots.total','shots.on',
+  'passes.total','passes.key','passes.accuracy',
+  'tackles.total','tackles.interceptions','tackles.blocks',
+  'dribbles.success','duels.won','duels.total',
+  'fouls.committed','fouls.drawn',
+  'cards.yellow','cards.red',
+  'penalty.saved','penalty.scored','penalty.missed','penalty.won','penalty.commited',
+  'offsides'
+];
+
+const STAT_GROUPS = [
+  { id:'offense', label:'Offensiv', blurb:'Mål, assist och avslut' },
+  { id:'passing', label:'Passningsspel', blurb:'Tempo, precision och kreativitet' },
+  { id:'defense', label:'Defensiv', blurb:'Brytningar, dueller och aktioner' },
+  { id:'discipline', label:'Disciplin', blurb:'Kort, fouls och kaos' },
+  { id:'goalkeeping', label:'Målvakt', blurb:'Räddningar och insläppta mål' },
+  { id:'playingTime', label:'Speltid', blurb:'Minuter, starter och belastning' },
+  { id:'advanced', label:'Avancerat', blurb:'Per 90, effektivitet och impact' },
+];
+
 const STAT_CATEGORIES = [
-  {id:'goals',    label:'Skytteliga',    key:'goals.total',        col:'Mål',        api:'players/topscorers'},
-  {id:'assists',  label:'Assistligan',   key:'goals.assists',      col:'Assist',     api:'players/topassists'},
-  {id:'rating',   label:'Bäst rating',   key:'games.rating',       col:'Rating',     api:null},
-  {id:'minutes',  label:'Mest minuter',  key:'games.minutes',      col:'Minuter',    api:null},
-  {id:'passes',   label:'Passningar',    key:'passes.total',       col:'Passningar', api:null},
-  {id:'shots',    label:'Skott',         key:'shots.total',        col:'Skott',      api:null},
-  {id:'yellow',   label:'Gula kort',     key:'cards.yellow',       col:'Gula kort',  api:null},
-  {id:'saves',    label:'Räddningar',    key:'goals.saves',        col:'Räddningar', api:null},
+  { id:'goals', label:'Mål', title:'Skytteliga', group:'offense', type:'direct', source:'stats.goals', col:'Mål', description:'Flest mål under vald Allsvensk säsong.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.goalsPer90, 2)} /90` },
+  { id:'assists', label:'Assist', title:'Assistligan', group:'offense', type:'direct', source:'stats.assists', col:'Assist', description:'Spelare med flest målgivande passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.assistsPer90, 2)} /90` },
+  { id:'goalContributions', label:'Mål + assist', title:'Poängligan', group:'offense', type:'derived', compute:p => p.derived.goalContributions, col:'Poäng', description:'Summerar mål och assist till en tydlig impact-ranking.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.pointsPer90, 2)} /90` },
+  { id:'shots', label:'Skott', title:'Flest skott', group:'offense', type:'direct', source:'stats.shots', col:'Skott', description:'Vilka avslutar mest totalt.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.shotsOn || 0)} på mål` },
+  { id:'shotsOn', label:'Skott på mål', title:'Skott på mål', group:'offense', type:'direct', source:'stats.shotsOn', col:'På mål', description:'Ren avslutskvalitet mot mål.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.shotAccuracy, 1)}% träff` },
+  { id:'keyPasses', label:'Nyckelpass', title:'Nyckelpassningar', group:'offense', type:'direct', source:'stats.keyPasses', col:'Nyckelpass', description:'Kreatörer som sätter lagkamrater i läge.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.keyPassesPer90, 2)} /90` },
+  { id:'goalsPer90', label:'Mål /90', title:'Mål per 90', group:'offense', type:'derived', compute:p => p.derived.goalsPer90, col:'Mål /90', description:'Produktivitet justerad för speltid.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.goals || 0)} mål` },
+  { id:'assistsPer90', label:'Assist /90', title:'Assist per 90', group:'offense', type:'derived', compute:p => p.derived.assistsPer90, col:'Assist /90', description:'Hur ofta en spelare skapar mål över 90 minuter.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.assists || 0)} assist` },
+  { id:'pointsPer90', label:'Poäng /90', title:'Poäng per 90', group:'offense', type:'derived', compute:p => p.derived.pointsPer90, col:'Poäng /90', description:'Mål + assist relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.15, secondary:p => `${Math.round(p.derived.goalContributions || 0)} totalt` },
+  { id:'conversionRate', label:'Avslut %', title:'Avslutseffektivitet', group:'offense', type:'derived', compute:p => p.derived.conversionRate, col:'Avslut %', description:'Hur stor andel av skotten som blir mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${formatStatValue(p.derived.shotsPerGoal, 1)} skott/mål`, playerFilter:p => p.stats.shots >= 5 },
+  { id:'shotsPerGoal', label:'Skott / mål', title:'Skott per mål', group:'offense', type:'derived', compute:p => p.derived.shotsPerGoal, col:'Skott/mål', description:'Lägre värde betyder högre effektivitet.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:0.1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 && p.stats.shots >= 5 },
+  { id:'passes', label:'Passningar', title:'Flest passningar', group:'passing', type:'direct', source:'stats.passes', col:'Pass', description:'Spelare som sätter tempot i possession-spelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
+  { id:'accuratePasses', label:'Lyckade pass', title:'Lyckade passningar', group:'passing', type:'derived', compute:p => p.derived.accuratePasses, col:'Lyckade', description:'Beräknas från total passvolym och passningsprocent.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.passes || 0)} totalt` },
+  { id:'passAccuracy', label:'Passnings%', title:'Passningsprocent', group:'passing', type:'derived', compute:p => p.derived.passAccuracy, col:'Pass %', description:'Passningssäkerhet över hela säsongen.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:50, secondary:p => `${Math.round(p.stats.passes || 0)} pass`, playerFilter:p => p.stats.passes >= 100 },
+  { id:'passesPer90', label:'Pass /90', title:'Passningar per 90', group:'passing', type:'derived', compute:p => p.derived.passesPer90, col:'Pass /90', description:'Hur mycket en spelare är involverad per full match.', formatter:v => formatStatValue(v, 1), minValue:5, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
+  { id:'keyPassesPer90', label:'Nyckelpass /90', title:'Nyckelpass per 90', group:'passing', type:'derived', compute:p => p.derived.keyPassesPer90, col:'KP /90', description:'Kreativ output relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.keyPasses || 0)} totalt` },
+  { id:'tackles', label:'Tacklingar', title:'Flest tacklingar', group:'defense', type:'direct', source:'stats.tackles', col:'Tacklingar', description:'Vem som går in i flest dueller på marken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.interceptions || 0)} brytningar` },
+  { id:'interceptions', label:'Interceptions', title:'Flest brytningar', group:'defense', type:'direct', source:'stats.interceptions', col:'Brytningar', description:'Läser spelet och bryter passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.blocks || 0)} blockar` },
+  { id:'blocks', label:'Blockar', title:'Flest blockar', group:'defense', type:'direct', source:'stats.blocks', col:'Blockar', description:'Skott- och passblockeringar över säsongen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.tackles || 0)} tacklingar` },
+  { id:'duelsWon', label:'Vunna dueller', title:'Vunna dueller', group:'defense', type:'direct', source:'stats.duelsWon', col:'Dueller', description:'Total mängd vunna dueller.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.duelWinRate, 1)}% vinst` },
+  { id:'duelWinRate', label:'Duellvinst %', title:'Duellvinstprocent', group:'defense', type:'derived', compute:p => p.derived.duelWinRate, col:'Vinst %', description:'Vem som vinner störst andel av sina dueller.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:40, secondary:p => `${Math.round(p.stats.duelsWon || 0)} vunna`, playerFilter:p => p.stats.duelsTotal >= 20 },
+  { id:'defActionsPer90', label:'Def aktioner /90', title:'Defensiva aktioner per 90', group:'defense', type:'derived', compute:p => p.derived.defActionsPer90, col:'Aktioner /90', description:'Tacklingar, brytningar och blockar per full match.', formatter:v => formatStatValue(v, 2), minValue:0.2, secondary:p => `${Math.round(p.derived.defActions || 0)} totalt` },
+  { id:'yellow', label:'Gula kort', title:'Mest varnade', group:'discipline', type:'direct', source:'stats.yellow', col:'Gula', description:'Spelare som samlat flest gula kort.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.red || 0)} röda` },
+  { id:'red', label:'Röda kort', title:'Mest utvisade', group:'discipline', type:'direct', source:'stats.red', col:'Röda', description:'Röda kort i ligaspelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.yellow || 0)} gula` },
+  { id:'foulsCommitted', label:'Fouls', title:'Mest foulande', group:'discipline', type:'direct', source:'stats.foulsCommitted', col:'Fouls', description:'Vilka som drar på sig flest frisparkar emot.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsDrawn || 0)} foulade` },
+  { id:'foulsDrawn', label:'Foulade', title:'Mest foulade', group:'discipline', type:'direct', source:'stats.foulsDrawn', col:'Foulad', description:'Spelare som oftast drar fouls till sitt lag.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsCommitted || 0)} commits` },
+  { id:'offsides', label:'Offside', title:'Flest offsides', group:'discipline', type:'direct', source:'stats.offsides', col:'Offside', description:'Anfallare som oftast går för tidigt.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.shots || 0)} skott` },
+  { id:'saves', label:'Räddningar', title:'Flest räddningar', group:'goalkeeping', type:'direct', source:'stats.saves', col:'Räddningar', description:'Målvakter med flest räddningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.savePercentage, 1)}% räddnings%`, playerFilter:p => p.flags.goalkeeper },
+  { id:'savePercentage', label:'Räddnings%', title:'Räddningsprocent', group:'goalkeeping', type:'derived', compute:p => p.derived.savePercentage, col:'Räddnings%', description:'Andel räddade avslut av saves + insläppta mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper && (p.stats.saves + p.stats.goalsConceded) > 0 },
+  { id:'goalsConceded', label:'Insläppta', title:'Minst insläppta mål', group:'goalkeeping', type:'direct', source:'stats.goalsConceded', col:'Insläppta', description:'Målvakter med lägst insläppta mål över säsongen.', formatter:v => Math.round(v), sort:'asc', minValue:-1, secondary:p => `${formatStatValue(p.derived.goalsConcededPerMatch, 2)} /match`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances > 0 },
+  { id:'goalsConcededPerMatch', label:'Insläppta / match', title:'Insläppta mål per match', group:'goalkeeping', type:'derived', compute:p => p.derived.goalsConcededPerMatch, col:'GA /match', description:'Insäppta mål justerat för spelade matcher.', formatter:v => formatStatValue(v, 2), sort:'asc', minValue:-1, secondary:p => `${Math.round(p.stats.goalsConceded || 0)} totalt`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances >= 3 },
+  { id:'penaltiesSaved', label:'Straffräddningar', title:'Straffräddningar', group:'goalkeeping', type:'direct', source:'stats.penaltiesSaved', col:'Straffrädd.', description:'Räddade straffar bland målvakter.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper },
+  { id:'minutes', label:'Minuter', title:'Mest spelade minuter', group:'playingTime', type:'direct', source:'stats.minutes', col:'Minuter', description:'Vilka som burit mest belastning.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
+  { id:'appearances', label:'Matcher', title:'Flest matcher', group:'playingTime', type:'direct', source:'stats.appearances', col:'Matcher', description:'Totalt antal framträdanden.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.starts || 0)} starter` },
+  { id:'starts', label:'Starter', title:'Flest starter', group:'playingTime', type:'direct', source:'stats.starts', col:'Starter', description:'Spelare som startat flest matcher.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.derived.subApps || 0)} inhopp` },
+  { id:'subApps', label:'Inhopp', title:'Flest inhopp', group:'playingTime', type:'derived', compute:p => p.derived.subApps, col:'Inhopp', description:'Matcher från bänken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
+  { id:'minutesPerMatch', label:'Min / match', title:'Minuter per match', group:'playingTime', type:'derived', compute:p => p.derived.minutesPerMatch, col:'Min/match', description:'Genomsnittlig speltid per framträdande.', formatter:v => formatStatValue(v, 1), minValue:1, secondary:p => `${Math.round(p.stats.minutes || 0)} min totalt` },
+  { id:'rating', label:'Rating', title:'Bäst rating', group:'advanced', type:'direct', source:'stats.rating', col:'Rating', description:'Viktad snittrating över säsongen.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.minutes || 0)} min`, ratingClass:true, playerFilter:p => p.stats.appearances >= 3 },
+  { id:'shotsPer90', label:'Skott /90', title:'Skott per 90', group:'advanced', type:'derived', compute:p => p.derived.shotsPer90, col:'Skott /90', description:'Volymskyttar justerat för speltid.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.shots || 0)} skott` },
+  { id:'shotAccuracy', label:'Träff%', title:'Träffprocent', group:'advanced', type:'derived', compute:p => p.derived.shotAccuracy, col:'Träff %', description:'Andel skott som träffar mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.shotsOn || 0)} på mål`, playerFilter:p => p.stats.shots >= 5 },
+  { id:'minutesPerGoal', label:'Min / mål', title:'Minuter per mål', group:'advanced', type:'derived', compute:p => p.derived.minutesPerGoal, col:'Min/mål', description:'Hur ofta en spelare gör mål sett till speltid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 },
+  { id:'minutesPerContribution', label:'Min / poäng', title:'Minuter per poäng', group:'advanced', type:'derived', compute:p => p.derived.minutesPerContribution, col:'Min/poäng', description:'Hur ofta mål eller assist kommer över tid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.derived.goalContributions || 0)} poäng`, playerFilter:p => p.derived.goalContributions > 0 },
 ];
 
 let statsCache = null;
 let currentStatCategory = 'goals';
-
+let currentStatGroup = 'offense';
 let statsYear = 2026; // default to current season
+
+function toStatNumber(value){
+  if(value === null || value === undefined || value === '') return 0;
+  const cleaned = String(value).replace('%','').replace(',', '.').trim();
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatStatValue(value, decimals = 1){
+  const num = Number(value || 0);
+  if(!Number.isFinite(num)) return '0';
+  return num.toLocaleString('sv-SE', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function per90(value, minutes){
+  return minutes > 0 ? (value / minutes) * 90 : 0;
+}
+
+function pct(part, total){
+  return total > 0 ? (part / total) * 100 : 0;
+}
+
+function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
+  const byPlayer = new Map();
+
+  rawPlayers.forEach(item => {
+    const player = item?.player || {};
+    const playerId = player?.id;
+    if(!playerId) return;
+
+    const entries = (item.statistics || []).filter(entry => entry?.league?.season === season);
+    const statEntries = entries.length ? entries : (item.statistics || []);
+    if(!statEntries.length) return;
+
+    if(!byPlayer.has(playerId)) {
+      byPlayer.set(playerId, {
+        playerId,
+        playerName: getPlayerDisplayName(player),
+        firstname: player.firstname || '',
+        lastname: player.lastname || '',
+        photo: player.photo || '',
+        teamId: null,
+        teamName: '',
+        teamLogo: '',
+        position: '',
+        dominantMinutes: -1,
+        ratingWeighted: 0,
+        ratingWeight: 0,
+        ratingFallbackTotal: 0,
+        ratingFallbackCount: 0,
+        passAccuracyWeighted: 0,
+        passAccuracyWeight: 0,
+        passAccuracyFallbackTotal: 0,
+        passAccuracyFallbackCount: 0,
+        stats: {
+          appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
+          goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+          tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
+          foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
+          saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
+          penaltiesMissed: 0, penaltiesWon: 0, penaltiesCommitted: 0,
+        }
+      });
+    }
+
+    const acc = byPlayer.get(playerId);
+    acc.playerName = getPlayerDisplayName(player, acc.playerName);
+    acc.firstname = acc.firstname || player.firstname || '';
+    acc.lastname = acc.lastname || player.lastname || '';
+    acc.photo = acc.photo || player.photo || '';
+
+    statEntries.forEach(entry => {
+      const minutes = toStatNumber(entry?.games?.minutes);
+      const appearances = toStatNumber(entry?.games?.appearences);
+      const starts = toStatNumber(entry?.games?.lineups);
+      const passes = toStatNumber(entry?.passes?.total);
+      const rating = toStatNumber(entry?.games?.rating);
+      const passAccuracy = toStatNumber(entry?.passes?.accuracy);
+
+      if(minutes > acc.dominantMinutes){
+        acc.dominantMinutes = minutes;
+        acc.teamId = entry?.team?.id || acc.teamId;
+        acc.teamName = fixName(entry?.team?.name || acc.teamName || '');
+        acc.teamLogo = entry?.team?.logo || acc.teamLogo;
+        acc.position = entry?.games?.position || acc.position;
+      }
+
+      acc.stats.appearances += appearances;
+      acc.stats.starts += starts;
+      acc.stats.subIns += toStatNumber(entry?.substitutes?.in);
+      acc.stats.subOuts += toStatNumber(entry?.substitutes?.out);
+      acc.stats.bench += toStatNumber(entry?.substitutes?.bench);
+      acc.stats.minutes += minutes;
+      acc.stats.goals += toStatNumber(entry?.goals?.total);
+      acc.stats.assists += toStatNumber(entry?.goals?.assists);
+      acc.stats.goalsConceded += toStatNumber(entry?.goals?.conceded);
+      acc.stats.saves += toStatNumber(entry?.goals?.saves);
+      acc.stats.shots += toStatNumber(entry?.shots?.total);
+      acc.stats.shotsOn += toStatNumber(entry?.shots?.on);
+      acc.stats.passes += passes;
+      acc.stats.keyPasses += toStatNumber(entry?.passes?.key);
+      acc.stats.tackles += toStatNumber(entry?.tackles?.total);
+      acc.stats.interceptions += toStatNumber(entry?.tackles?.interceptions);
+      acc.stats.blocks += toStatNumber(entry?.tackles?.blocks);
+      acc.stats.duelsWon += toStatNumber(entry?.duels?.won);
+      acc.stats.duelsTotal += toStatNumber(entry?.duels?.total);
+      acc.stats.foulsCommitted += toStatNumber(entry?.fouls?.committed);
+      acc.stats.foulsDrawn += toStatNumber(entry?.fouls?.drawn);
+      acc.stats.yellow += toStatNumber(entry?.cards?.yellow);
+      acc.stats.red += toStatNumber(entry?.cards?.red);
+      acc.stats.offsides += toStatNumber(entry?.offsides);
+      acc.stats.penaltiesSaved += toStatNumber(entry?.penalty?.saved);
+      acc.stats.penaltiesScored += toStatNumber(entry?.penalty?.scored);
+      acc.stats.penaltiesMissed += toStatNumber(entry?.penalty?.missed);
+      acc.stats.penaltiesWon += toStatNumber(entry?.penalty?.won);
+      acc.stats.penaltiesCommitted += toStatNumber(entry?.penalty?.commited || entry?.penalty?.committed);
+
+      if(rating > 0) {
+        const weight = minutes || appearances || 1;
+        acc.ratingWeighted += rating * weight;
+        acc.ratingWeight += weight;
+        acc.ratingFallbackTotal += rating;
+        acc.ratingFallbackCount += 1;
+      }
+      if(passAccuracy > 0) {
+        if(passes > 0) {
+          acc.passAccuracyWeighted += passAccuracy * passes;
+          acc.passAccuracyWeight += passes;
+        }
+        acc.passAccuracyFallbackTotal += passAccuracy;
+        acc.passAccuracyFallbackCount += 1;
+      }
+    });
+  });
+
+  return [...byPlayer.values()].map(acc => {
+    const appearances = acc.stats.appearances;
+    const minutes = acc.stats.minutes;
+    const goals = acc.stats.goals;
+    const assists = acc.stats.assists;
+    const shots = acc.stats.shots;
+    const passes = acc.stats.passes;
+    const saves = acc.stats.saves;
+    const goalsConceded = acc.stats.goalsConceded;
+    const rating = acc.ratingWeight > 0 ? acc.ratingWeighted / acc.ratingWeight : (acc.ratingFallbackCount > 0 ? acc.ratingFallbackTotal / acc.ratingFallbackCount : 0);
+    const passAccuracy = acc.passAccuracyWeight > 0 ? acc.passAccuracyWeighted / acc.passAccuracyWeight : (acc.passAccuracyFallbackCount > 0 ? acc.passAccuracyFallbackTotal / acc.passAccuracyFallbackCount : 0);
+    const accuratePasses = passes * (passAccuracy / 100);
+    const goalContributions = goals + assists;
+    const defActions = acc.stats.tackles + acc.stats.interceptions + acc.stats.blocks;
+    const subApps = Math.max(acc.stats.subIns || (appearances - acc.stats.starts), 0);
+
+    return {
+      playerId: acc.playerId,
+      playerName: acc.playerName,
+      firstname: acc.firstname,
+      lastname: acc.lastname,
+      teamId: acc.teamId,
+      teamName: acc.teamName,
+      teamLogo: acc.teamLogo,
+      photo: acc.photo,
+      position: acc.position,
+      stats: { ...acc.stats, rating },
+      derived: {
+        goalContributions,
+        goalsPer90: per90(goals, minutes),
+        assistsPer90: per90(assists, minutes),
+        pointsPer90: per90(goalContributions, minutes),
+        shotsPer90: per90(shots, minutes),
+        keyPassesPer90: per90(acc.stats.keyPasses, minutes),
+        conversionRate: pct(goals, shots),
+        shotsPerGoal: goals > 0 ? shots / goals : 0,
+        shotAccuracy: pct(acc.stats.shotsOn, shots),
+        passAccuracy,
+        accuratePasses,
+        passesPer90: per90(passes, minutes),
+        defActions,
+        defActionsPer90: per90(defActions, minutes),
+        duelWinRate: pct(acc.stats.duelsWon, acc.stats.duelsTotal),
+        savePercentage: pct(saves, saves + goalsConceded),
+        goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
+        minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
+        subApps,
+        minutesPerGoal: goals > 0 ? minutes / goals : 0,
+        minutesPerContribution: goalContributions > 0 ? minutes / goalContributions : 0,
+      },
+      flags: {
+        goalkeeper: String(acc.position || '').toLowerCase().includes('goalkeeper') || saves > 0 || goalsConceded > 0,
+      }
+    };
+  });
+}
+
+function getCategoryValue(player, category){
+  if(category.type === 'derived' && typeof category.compute === 'function') return category.compute(player);
+  return getNestedVal(player, category.source || '') || 0;
+}
+
+function getCategorySorter(category){
+  if(category.sort === 'asc') return (a,b) => a.value - b.value || b.player.stats.minutes - a.player.stats.minutes;
+  return (a,b) => b.value - a.value || b.player.stats.minutes - a.player.stats.minutes;
+}
+
+function getCategoryDisplayValue(category, player, value){
+  return typeof category.formatter === 'function' ? category.formatter(value, player) : Math.round(value);
+}
+
+function getCategorySecondary(category, player){
+  return typeof category.secondary === 'function' ? category.secondary(player) : '';
+}
+
+function setStatsGroup(groupId){
+  renderStats(document.getElementById('mc'), null, groupId);
+}
 
 async function pageStats(el, year=null, force=false) {
   if(year) statsYear = year;
@@ -3695,75 +4040,115 @@ async function pageStats(el, year=null, force=false) {
       }));
     }
 
-    statsCache = allPlayers;
-    renderStats(el, currentStatCategory || 'goals');
+    const players = buildNormalizedStatsDataset(allPlayers, statsYear);
+    statsCache = {
+      year: statsYear,
+      players,
+      meta: {
+        playerCount: players.length,
+        teamCount: teams.length,
+        categoryCount: STAT_CATEGORIES.length,
+        fieldCount: PLAYER_STATS_INVENTORY.length,
+      }
+    };
+    renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
-function renderStats(el, catId) {
-  currentStatCategory = catId;
-  const cat = STAT_CATEGORIES.find(c=>c.id===catId);
-  const all = statsCache || [];
+function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
+  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
+  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
+  const categoriesInGroup = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
+  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || STAT_CATEGORIES[0];
 
-  const sorted = all
-    .map(p => {
-      // Find stats for selected year
-      const s = (p.statistics||[]).find(x=>x.league?.season===statsYear) || p.statistics?.[0] || {};
-      const val = getNestedVal(s, cat.key);
-      return {p: p.player, s, val: cat.id==='rating' ? (val?parseFloat(val):0) : (+val||0)};
-    })
-    .filter(x => x.val > 0)
-    .sort((a,b) => b.val - a.val)
-    .slice(0, 20);
+  currentStatGroup = activeCategory.group;
+  currentStatCategory = activeCategory.id;
 
-  const tabs = STAT_CATEGORIES.map(c =>
-    `<button class="stat-tab ${c.id===catId?'active':''}" onclick="renderStats(document.getElementById('mc'),'${c.id}')">${c.label}</button>`
-  ).join('');
-
-  const rows = sorted.map((x,i) => {
-    const rating = x.s.games?.rating ? parseFloat(x.s.games.rating) : null;
-    const rc = rating ? (rating>=7.5?'rg':rating>=6.5?'ry':'rr') : '';
-    const displayVal = cat.id==='rating' ? x.val.toFixed(2) : x.val;
-    const medal = i===0?'&#x1F947;':i===1?'&#x1F948;':i===2?'&#x1F949;':'';
-    const clubName = esc(fixName(x.s.team?.name||'—'));
-    const statClass = `stats-value ${cat.id==='rating'?rc:''}`.trim();
-    return `<tr class="link" onclick="go('/spelare/${x.p.id}')">
-      <td><span class="stats-rank ${medal?'medal':''}">${medal||i+1}</span></td>
-      <td>
-        <div class="stats-player-cell">
-          <img class="stats-player-photo" src="${x.p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div class="stats-player-meta">
-            <div class="stats-player-name">${esc(getPlayerDisplayName(x.p))}</div>
-            <div class="stats-player-club" onclick="event.stopPropagation();go('/lag/${x.s.team?.id}')">
-              <img src="${x.s.team?.logo||''}" onerror="this.style.opacity='.15'">
-              <span>${clubName}</span>
-            </div>
-          </div>
-        </div>
-      </td>
-      <td><span class="${statClass}">${displayVal}</span></td>
-    </tr>`;
-  }).join('');
+  const sorted = (cache.players || [])
+    .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
+    .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
+    .sort(getCategorySorter(activeCategory))
+    .slice(0, activeCategory.limit || 20);
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
     `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y},true)">${y}</button>`
   ).join('');
+  const groupTabs = STAT_GROUPS.map(group => {
+    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+    return `<button class="stats-group-chip ${group.id===currentStatGroup?'active':''}" onclick="setStatsGroup('${group.id}')">${group.label}<small>${count}</small></button>`;
+  }).join('');
+  const categoryTabs = STAT_CATEGORIES
+    .filter(category => category.group === currentStatGroup)
+    .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderStats(document.getElementById('mc'),'${category.id}','${currentStatGroup}')">${category.label}</button>`)
+    .join('');
 
+  const rows = sorted.map((item, index) => {
+    const medal = index===0?'&#x1F947;':index===1?'&#x1F948;':index===2?'&#x1F949;':'';
+    const ratingClass = activeCategory.ratingClass ? (item.player.stats.rating>=7.5?'rg':item.player.stats.rating>=6.5?'ry':'rr') : '';
+    const statClass = `stats-value ${ratingClass}`.trim();
+    const displayValue = getCategoryDisplayValue(activeCategory, item.player, item.value);
+    const secondary = getCategorySecondary(activeCategory, item.player);
+    return `<tr class="link" onclick="go('/spelare/${item.player.playerId}')">
+      <td><span class="stats-rank ${medal?'medal':''}">${medal||index+1}</span></td>
+      <td>
+        <div class="stats-player-cell">
+          <img class="stats-player-photo" src="${item.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div class="stats-player-meta">
+            <div class="stats-player-name">${esc(item.player.playerName)}</div>
+            <div class="stats-player-club" onclick="event.stopPropagation();go('/lag/${item.player.teamId||''}')">
+              <img src="${item.player.teamLogo||''}" onerror="this.style.opacity='.15'">
+              <span>${esc(item.player.teamName||'—')}</span>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td><div class="stats-value-wrap"><span class="${statClass}">${displayValue}</span>${secondary ? `<span class="stats-value-meta">${esc(secondary)}</span>` : ''}</div></td>
+    </tr>`;
+  }).join('');
+
+  const overviewCards = [
+    { label:'Spelare', value: cache.meta.playerCount, copy:'Normaliserade och deduplicerade säsongsprofiler.' },
+    { label:'Lag', value: cache.meta.teamCount, copy:'Allsvenska lag i vald säsong.' },
+    { label:'Kategorier', value: cache.meta.categoryCount, copy:'Direkta och beräknade topplistor.' },
+    { label:'Raw-fält', value: cache.meta.fieldCount, copy:'Inventerade statistikfält från API:t.' },
+  ].map(card => `<div class="stats-overview-card"><div class="stats-overview-label">${card.label}</div><div class="stats-overview-value">${card.value}</div><div class="stats-overview-copy">${card.copy}</div></div>`).join('');
+
+  const groupMeta = STAT_GROUPS.find(group => group.id === currentStatGroup) || STAT_GROUPS[0];
   el.innerHTML = `
-    <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div class="pg-title">Statistik <em>${statsYear}</em></div>
-      <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">🔄 Uppdatera statistik</button>
-    </div>
-    <div style="margin-bottom:.75rem">
-      <div class="section-label">Säsong</div>
-      <div class="stat-tabs">${yearBtns}</div>
-    </div>
-    <div class="section-label" style="margin-top:1rem">Kategori</div>
-    <div class="stat-tabs">${tabs}</div>
-    <div class="tw" style="margin-top:1rem"><div><table class="stats-table">
-      <thead><tr><th>#</th><th>Spelare</th><th>${cat.col}</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="3" class="empty">Ingen data</td></tr>'}</tbody>
-    </table></div></div>`;
+    <div class="stats-shell">
+      <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="pg-title">Statistik <em>${statsYear}</em></div>
+          <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
+        </div>
+        <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
+      </div>
+      <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
+      <div class="stats-overview-grid">${overviewCards}</div>
+      <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
+      <div class="stats-category-panel">
+        <div class="stats-category-kicker">${groupMeta.label}</div>
+        <div class="stats-category-head">
+          <div>
+            <div class="stats-category-title">${activeCategory.title}</div>
+            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}.</div>
+          </div>
+          <div class="stats-category-badges">
+            <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
+            <span class="stats-category-badge">${activeCategory.col}</span>
+            <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:1rem">Kategori</div>
+        <div class="stats-category-tabs">${categoryTabs}</div>
+      </div>
+      <div class="tw"><div><table class="stats-table">
+        <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="3" class="empty">Ingen data</td></tr>'}</tbody>
+      </table></div></div>
+      <div class="stats-empty-note">Inventerade API-fält: matcher, starter, minuter, rating, mål, assist, skott, skott på mål, passningar, nyckelpass, passningsprocent, tacklingar, interceptions, blockar, dueller, fouls, kort, offside, straffar och målvaktsfält. xG/xA finns inte tillgängligt i det här datalagret ännu, så alla avancerade topplistor räknas centralt från samma normaliserade säsongsdataset.</div>
+    </div>`;
 }
 
 // â”€â”€â”€ AI SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
