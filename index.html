@@ -1949,10 +1949,50 @@ function getDeterministicStaticPath(ep, params = {}){
   if(!token) return '';
   return `${STATIC_DATA_BASE}/${staticSafeSegment(ep)}-${token}.json`;
 }
+function normalizeStaticQueryKey(key = ''){
+  const raw = String(key || '').trim();
+  if(!raw) return '';
+  const [endpoint, query = ''] = raw.split('?');
+  if(!query) return endpoint;
+  const params = Object.fromEntries(new URLSearchParams(query).entries());
+  return stableQueryKey(endpoint, params);
+}
+async function parseStaticJsonResponse(response, key = 'static'){
+  if(!response?.ok) throw new Error(`Static fetch failed for ${key} (${response?.status || 0})`);
+  const text = await response.text();
+  const trimmed = String(text || '').trim();
+  if(!trimmed) throw new Error(`Static data empty for ${key}`);
+  if(trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
+    throw new Error(`Static data missing for ${key}`);
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch(e) {
+    throw new Error(`Static JSON invalid for ${key}`);
+  }
+}
+function findStaticManifestRef(manifest, key = ''){
+  const queries = manifest?.queries || {};
+  if(queries[key]) return queries[key];
+  const normalizedTarget = normalizeStaticQueryKey(key);
+  if(!normalizedTarget) return '';
+  for(const [manifestKey, ref] of Object.entries(queries)){
+    if(normalizeStaticQueryKey(manifestKey) === normalizedTarget) return ref;
+  }
+  return '';
+}
 async function getStaticManifest(){
   if(STATIC_MANIFEST_PROMISE) return STATIC_MANIFEST_PROMISE;
   STATIC_MANIFEST_PROMISE = fetch(STATIC_MANIFEST_PATH, { cache:'no-store' })
-    .then(async res => res.ok ? res.json() : { queries:{} })
+    .then(async res => {
+      try {
+        const data = await parseStaticJsonResponse(res, 'manifest');
+        return data?.queries ? data : { queries:{} };
+      } catch(e) {
+        console.warn('[static-data] manifest unavailable', e.message);
+        return { queries:{} };
+      }
+    })
     .catch(() => ({ queries:{} }));
   return STATIC_MANIFEST_PROMISE;
 }
@@ -1966,23 +2006,20 @@ async function getStaticApiResponse(ep, params = {}){
   try {
     if(directRef) {
       const response = await fetch(directRef, { cache:'no-store' });
-      if(response.ok) {
-        const data = await response.json();
-        STATIC_RESPONSE_CACHE[key] = data;
-        return data;
-      }
+      const data = await parseStaticJsonResponse(response, key);
+      STATIC_RESPONSE_CACHE[key] = data;
+      return data;
     }
   } catch(e) {}
   const manifest = await getStaticManifest();
-  const ref = manifest?.queries?.[key];
+  const ref = findStaticManifestRef(manifest, key);
   if(!ref) {
     STATIC_RESPONSE_CACHE[key] = null;
     return null;
   }
   try {
     const response = await fetch(ref, { cache:'no-store' });
-    if(!response.ok) throw new Error(`Static ${response.status}`);
-    const data = await response.json();
+    const data = await parseStaticJsonResponse(response, key);
     STATIC_RESPONSE_CACHE[key] = data;
     return data;
   } catch(e) {
@@ -2202,21 +2239,10 @@ async function afRawStatic(ep, p={}){
 async function loadStaticJsonByQuery(ep, p = {}){
   const key = stableQueryKey(ep, p);
   const manifest = await getStaticManifest();
-  const ref = manifest?.queries?.[key] || getDeterministicStaticPath(ep, p);
+  const ref = findStaticManifestRef(manifest, key) || getDeterministicStaticPath(ep, p);
   if(!ref) throw new Error(`Static path missing for ${key}`);
   const response = await fetch(ref, { cache:'no-store' });
-  if(!response.ok) throw new Error(`Static fetch failed for ${key} (${response.status})`);
-  const text = await response.text();
-  const trimmed = String(text || '').trim();
-  if(!trimmed) throw new Error(`Static data empty for ${key}`);
-  if(trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
-    throw new Error(`Static data missing for ${key}`);
-  }
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    throw new Error(`Static JSON invalid for ${key}`);
-  }
+  return parseStaticJsonResponse(response, key);
 }
 async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }){
   try {
@@ -2414,10 +2440,10 @@ async function runSearch(q) {
   }
 }
 function handleSearchKey(e) {
-  if(e.key==='Escape') document.getElementById('sr').classList.remove('open');
+  if(e.key==='Escape') document.getElementById('sr')?.classList.remove('open');
 }
 document.addEventListener('click', e => {
-  if(!e.target.closest('.search-wrap')) document.getElementById('sr').classList.remove('open');
+  if(!e.target.closest('.search-wrap')) document.getElementById('sr')?.classList.remove('open');
 });
 
 // â”€â”€â”€ START PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
