@@ -3174,7 +3174,7 @@ function calculateRecentForm(fixtures = [], limit = 5){
 
 function buildTeamHistoryRows(historyResponses = [], teamId){
   return TEAM_PAGE_SEASONS.map((season, index) => {
-    const rows = historyResponses[index]?.[0]?.league?.standings?.[0] || [];
+    const rows = historyResponses[index]?.response?.[0]?.league?.standings?.[0] || [];
     const row = rows.find(item => item?.team?.id === teamId);
     if(!row) return null;
     const played = row?.all?.played || 0;
@@ -3518,8 +3518,8 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
     const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
-      loadStaticJsonByQuery('teams', {id:teamId}),
-      loadStaticJsonByQuery('standings', {league:LEAGUE, season:selectedSeason}),
+      loadStaticJsonByQuerySafe('teams', {id:teamId}, { response: [] }),
+      loadStaticJsonByQuerySafe('standings', {league:LEAGUE, season:selectedSeason}, { response: [] }),
       Promise.all(TEAM_PAGE_SEASONS.map(async season => {
         return loadStaticJsonByQuerySafe('standings', {league:LEAGUE, season}, { response: [] });
       })),
@@ -3546,17 +3546,28 @@ async function pageTeam(el, teamId, explicitSeason = null) {
 
     const teamInfoD = teamInfoRaw?.response || [];
     const standingsD = standingsRaw?.response || [];
+    const standingRows = standingsD?.[0]?.league?.standings?.[0] || [];
     const statsD = statsRaw?.response || null;
     const squadD = squadRaw?.response || [];
     const stats = statsD?.league ? statsD : (Array.isArray(statsD) ? statsD[0] : statsD);
-    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || {};
-    const team = stats?.team || teamInfo || {id:teamId, name:'Lag', logo:''};
+    const selectedStanding = standingRows.find(row => row?.team?.id === teamId) || null;
+    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || selectedStanding?.team || {};
+    const team = stats?.team || teamInfo || selectedStanding?.team || {id:teamId, name:'Lag', logo:''};
     const teamDisplayName = getTeamDisplayName(team);
     const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
-    const squadPlayers = squadD?.[0]?.players || [];
+    const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
+      id: item?.player?.id,
+      name: item?.player?.name || '',
+      firstname: item?.player?.firstname || '',
+      lastname: item?.player?.lastname || '',
+      age: item?.player?.age || null,
+      number: item?.statistics?.[0]?.games?.number || null,
+      position: item?.statistics?.[0]?.games?.position || '',
+      photo: item?.player?.photo || '',
+      injured: false,
+    })).filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
     await enrichSquadNationalities(squadPlayers, playerInfoById);
-    const selectedStanding = (standingsD?.[0]?.league?.standings?.[0] || []).find(row => row?.team?.id === teamId) || null;
     const historyRows = buildTeamHistoryRows(historyStandings, teamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
     const seasonRow = historyMap.get(selectedSeason) || null;
