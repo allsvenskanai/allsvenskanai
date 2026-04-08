@@ -93,6 +93,34 @@ function normalizeText(value = '') {
     .trim();
 }
 
+function looksAbbreviatedPlayerName(name = '') {
+  return /^[A-ZÅÄÖ]\.\s+/u.test(String(name || '').trim());
+}
+
+function buildPlayerFullName(firstname = '', lastname = '') {
+  return [firstname, lastname]
+    .map(part => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+function getPlayerDisplayName(player = {}) {
+  const fullname = player?.fullname || player?.full_name || '';
+  if (String(fullname || '').trim()) return String(fullname).trim();
+
+  const firstLast = buildPlayerFullName(
+    player?.firstname || player?.first_name || '',
+    player?.lastname || player?.last_name || ''
+  );
+  const rawName = String(player?.name || '').trim();
+
+  if (firstLast && (!rawName || looksAbbreviatedPlayerName(rawName))) return firstLast;
+  if (rawName && !looksAbbreviatedPlayerName(rawName)) return rawName;
+  if (firstLast) return firstLast;
+  return rawName || '—';
+}
+
 function extractJson(text = '') {
   const match = String(text).match(/\{[\s\S]*\}/);
   if (!match) return null;
@@ -296,7 +324,7 @@ async function runIntent({ footballApiKey, interpretation, standings }) {
         const players = await fetchFootball(footballApiKey, 'players', { league: LEAGUE_ID, season: year, team: team.id }).catch(() => []);
         const rows = players
           .map(item => ({
-            player: item.player?.name || '—',
+            player: getPlayerDisplayName(item.player),
             team: team.name,
             goals: item.statistics?.[0]?.goals?.total || 0,
           }))
@@ -309,7 +337,7 @@ async function runIntent({ footballApiKey, interpretation, standings }) {
 
       const scorers = await fetchFootball(footballApiKey, 'players/topscorers', { league: LEAGUE_ID, season: year }).catch(() => []);
       const rows = scorers.slice(0, 5).map(item => ({
-        player: item.player?.name || '—',
+        player: getPlayerDisplayName(item.player),
         team: item.statistics?.[0]?.team?.name || '—',
         goals: item.statistics?.[0]?.goals?.total || 0,
       }));
