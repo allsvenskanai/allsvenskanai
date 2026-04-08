@@ -1471,6 +1471,19 @@ async function af(ep, p={}) {
   return CACHE[key];
 }
 
+function withTimeout(promise, ms = 12000, label = 'Request') {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timeout efter ${Math.round(ms/1000)} sekunder`)), ms);
+  });
+  return Promise.race([
+    Promise.resolve(promise).finally(() => {
+      if (timer) clearTimeout(timer);
+    }),
+    timeout
+  ]);
+}
+
 async function afAll(ep, p={}) {
   return af(ep, p);
 }
@@ -3189,6 +3202,7 @@ async function pageMatch(el, fixtureId) {
 
 // â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let transfersCache = null;
+let transfersLoadMeta = null;
 let transfersFilters = {
   team: '',
   type: '',
@@ -3218,13 +3232,25 @@ async function pageTransfers(el, page=1) {
   if(!transfersCache) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag...</div>`;
     try {
-      const standData = await af('standings', {league:LEAGUE, season:SEASON});
+      console.info('[transfers] standings request start', { season: SEASON });
+      const standData = await withTimeout(
+        af('standings', {league:LEAGUE, season:SEASON}),
+        12000,
+        'Standings'
+      );
+      console.info('[transfers] standings request success');
       const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
       el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag...</div>`;
       const all = [];
-      await Promise.all(teams.map(async t => {
+      const settled = await Promise.allSettled(teams.map(async t => {
+        console.info('[transfers] team request start', { teamId: t.id, teamName: t.name });
         try {
-          const d = await af('transfers', {team:t.id});
+          const d = await withTimeout(
+            af('transfers', {team:t.id}),
+            12000,
+            `Transfers ${t.name || t.id}`
+          );
+          console.info('[transfers] team request success', { teamId: t.id, teamName: t.name, rows: d.length || 0 });
           d.forEach(tr => {
             (tr.transfers||[]).forEach(x => {
               const year = parseInt((x.date||'').slice(0,4));
@@ -3250,16 +3276,41 @@ async function pageTransfers(el, page=1) {
               }
             });
           });
-        } catch(e) {}
+          return { ok: true, teamId: t.id };
+        } catch(e) {
+          console.warn('[transfers] team request failure', { teamId: t.id, teamName: t.name, error: e.message });
+          throw e;
+        }
       }));
+      const successCount = settled.filter(item => item.status === 'fulfilled').length;
+      const failedCount = settled.length - successCount;
+      console.info('[transfers] request summary', { successCount, failedCount, totalTeams: teams.length });
       const seen = new Set();
       transfersCache = all.filter(t => {
         const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
         if(seen.has(key)) return false;
         seen.add(key); return true;
       }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      transfersLoadMeta = {
+        successCount,
+        failedCount,
+        totalTeams: teams.length,
+        partial: failedCount > 0 && successCount > 0,
+        empty: !transfersCache.length,
+        failed: successCount === 0 && failedCount > 0
+      };
     } catch(e) {
-      el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+      console.error('[transfers] page load failure', e);
+      transfersCache = [];
+      transfersLoadMeta = {
+        successCount: 0,
+        failedCount: 0,
+        totalTeams: 0,
+        partial: false,
+        empty: true,
+        failed: true
+      };
+      el.innerHTML = `<div class="err">Kunde inte hämta övergångar just nu.</div>`;
       return;
     }
   }
@@ -3326,12 +3377,25 @@ async function pageTransfers(el, page=1) {
   for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===safePage?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
   if(safePage < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage+1}')">Nästa sida →</button>`);
 
+  const noResultsMessage = transfersLoadMeta?.failed && !unique.length
+    ? 'Kunde inte hämta övergångar just nu.'
+    : filtered.length === 0 && unique.length > 0
+      ? 'Inga övergångar matchar filtren.'
+      : 'Inga övergångar';
+
+  const loadNote = transfersLoadMeta?.failed
+    ? `<div class="feed-note">Kunde inte hämta övergångar just nu.</div>`
+    : transfersLoadMeta?.partial
+      ? `<div class="feed-note">Visar tillgängliga övergångar just nu. ${transfersLoadMeta.successCount} lag laddade, ${transfersLoadMeta.failedCount} misslyckades.</div>`
+      : '';
+
   el.innerHTML = `
     <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${filtered.length} övergångar · sida ${safePage} av ${totalPages}</span></div>
+    ${loadNote}
     ${filters}
     <div class="tw"><div style="overflow-x:auto"><table>
       <thead><tr><th>Datum</th><th>Spelare</th><th colspan="3">Övergång</th><th>Typ</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="6" class="empty">Inga övergångar</td></tr>'}</tbody>
+      <tbody>${rows||`<tr><td colspan="6" class="empty">${noResultsMessage}</td></tr>`}</tbody>
     </table></div></div>
     <div class="pagination">${pageBtns.join('')}</div>
     <div class="pagination-meta">Visar ${slice.length} av ${filtered.length} övergångar</div>`;
