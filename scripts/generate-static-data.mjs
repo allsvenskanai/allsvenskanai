@@ -1,125 +1,6345 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'data', 'static');
-
-const API_KEY = process.env.APIFOOTBALL_KEY;
-const BASE_URL = 'https://v3.football.api-sports.io';
-const LEAGUE = 113;
-const SEASONS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018];
-
-if (!API_KEY) {
-  console.error('APIFOOTBALL_KEY saknas');
-  process.exit(1);
+﻿<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllsvenskanAI</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AllsvenskanAI">
+<meta name="theme-color" content="#080A0E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<meta name="google-adsense-account" content="ca-pub-4755802199865904">
+<meta name="google-site-verification" content="dObD6yYNWc9SfyoqzhiNtc6wFlPCoBu1GBZNLKgkycE">
+<meta name="description" content="AllsvenskanAI &mdash; Statistik, spelardata, &ouml;verg&aring;ngar och marknadsv&auml;rden f&ouml;r Allsvenskan. Karri&auml;rstatistik f&ouml;r alla spelare. Live-resultat och tabell.">
+<meta name="keywords" content="Allsvenskan, svensk fotboll, statistik, spelare, &ouml;verg&aring;ngar, marknadsv&auml;rden, live, tabell">
+<meta property="og:title" content="AllsvenskanAI &mdash; Allsvenskan statistik">
+<meta property="og:description" content="Statistik, spelardata, &ouml;verg&aring;ngar och marknadsv&auml;rden f&ouml;r Allsvenskan.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://allsvenskanai.se">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AllsvenskanAI">
+<meta name="twitter:description" content="Allsvenskan statistik, spelardata och &ouml;verg&aring;ngar.">
+<link rel="canonical" href="https://allsvenskanai.se">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A54B;--gold-light:#E6C977;--gold-dim:rgba(201,165,75,.14);
+  --dark:#F7F3EB;--dark2:#FFFDF8;--dark3:#F3EBDD;--dark4:#E9DFC9;--dark5:#DED0B3;
+  --border:rgba(108,86,44,0.14);--border-hi:rgba(108,86,44,0.28);
+  --text:#241C12;--text2:#5D503D;--muted:#8A7A63;
+  --red:#B65151;--green:#2F8F67;--blue:#7AA8D8;
+  --radius:12px;
 }
 
-await fs.mkdir(OUT_DIR, { recursive: true });
+/* BASE */
+html{scroll-behavior:smooth}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--dark);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;
+  /* Subtle noise texture */
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
 
-const manifest = {
-  generatedAt: new Date().toISOString(),
-  queries: {},
+/* HEADER */
+header{
+  background:rgba(255,251,244,.88);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  min-height:54px;display:flex;align-items:center;padding:.55rem 2rem;gap:1.25rem;
+  position:sticky;top:0;z-index:100;flex-shrink:0;
+}
+.header-brand{
+  display:flex;flex-direction:column;justify-content:center;gap:3px;
+  min-width:0;
+}
+.logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;font-weight:900;letter-spacing:2.8px;text-transform:uppercase;
+  color:var(--text);cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;gap:8px;text-decoration:none;
+}
+.logo em{
+  color:var(--gold);font-style:normal;
+  letter-spacing:3.8px;
+  text-shadow:0 0 16px rgba(201,165,75,.24);
+}
+.logo-tagline{
+  font-size:11px;line-height:1.2;color:var(--muted);
+  letter-spacing:.3px;white-space:nowrap;
+}
+.nav-pills{display:flex;gap:6px;margin-left:auto}
+.np{
+  background:none;border:none;
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  padding:8px 14px;cursor:pointer;
+  transition:color .2s,background .2s,border-color .2s;
+  position:relative;
+  border:1px solid transparent;border-radius:999px;
+}
+.np::after{
+  content:'';position:absolute;bottom:0;left:50%;right:50%;
+  height:2px;background:var(--gold);
+  transition:left .22s ease, right .22s ease, opacity .22s ease;
+  opacity:0;
+}
+.np:hover{color:var(--text);background:rgba(255,255,255,.4);border-color:rgba(108,86,44,.1)}
+.np:hover::after{left:14px;right:14px;opacity:1}
+.np.active{color:var(--text);background:rgba(201,165,75,.14);border-color:rgba(201,165,75,.24);font-weight:800}
+.np.active::after{left:14px;right:14px;opacity:1}
+.header-cta{
+  margin-left:8px;min-height:36px;padding:0 14px;border:1px solid rgba(108,86,44,.14);border-radius:999px;
+  background:rgba(255,255,255,.62);color:var(--text);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
+  letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 8px 16px rgba(36,28,18,.08);
+  transition:transform .18s,opacity .18s,box-shadow .18s,background .18s,border-color .18s;
+}
+.header-cta:hover{
+  transform:translateY(-1px);opacity:.97;
+  background:rgba(255,255,255,.8);
+  box-shadow:0 12px 22px rgba(36,28,18,.11);
+  border-color:rgba(201,165,75,.24);
+}
+
+/* MAIN */
+main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
+
+/* PAGE HEADER */
+.pg-header{
+  margin-bottom:2rem;
+  padding-bottom:1.25rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:baseline;gap:14px;
+}
+.pg-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:42px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text);line-height:1;
+}
+.pg-title em{color:var(--gold);font-style:normal}
+.pg-sub{font-size:13px;color:var(--muted);font-weight:400;letter-spacing:.5px}
+.back{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:1.25rem;padding:0;
+  transition:color .2s;
+}
+.back:hover{color:var(--text)}
+.back::before{content:'←';font-size:16px}
+
+/* TEAM GRID */
+.tgrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:2px;
+}
+.tcard{
+  background:var(--dark2);
+  cursor:pointer;
+  transition:background .2s;
+  display:flex;flex-direction:column;align-items:center;
+  gap:12px;text-align:center;
+  padding:1.5rem 1rem;
+  position:relative;overflow:hidden;
+}
+.tcard::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(212,175,55,.06) 0%,transparent 60%);
+  opacity:0;transition:opacity .3s;
+}
+.tcard:hover{background:var(--dark3)}
+.tcard:hover::before{opacity:1}
+.tcard img{
+  width:60px;height:60px;object-fit:contain;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  transition:transform .3s;
+}
+.tcard:hover img{transform:scale(1.08) translateY(-2px)}
+.tcard .tn{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text2);transition:color .2s;
+}
+.tcard:hover .tn{color:var(--text)}
+
+/* PROFILE CARD */
+.profile{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:1.5rem;
+  overflow:hidden;
+  position:relative;
+}
+.profile-inner{
+  padding:1.75rem 2rem;
+  display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;
+  position:relative;z-index:1;
+}
+.profile-bg{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(212,175,55,.04) 0%,transparent 50%);
+  pointer-events:none;
+}
+.p-img{
+  width:88px;height:88px;object-fit:contain;flex-shrink:0;
+  background:var(--dark3);border-radius:var(--radius);padding:8px;
+  border:1px solid var(--border);
+}
+.p-photo{
+  width:80px;height:80px;border-radius:50%;object-fit:cover;flex-shrink:0;
+  background:var(--dark3);border:2px solid var(--border);
+}
+.p-body{flex:1;min-width:180px}
+.p-body h1{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:32px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text);line-height:1;margin-bottom:.5rem;
+}
+.p-meta{
+  font-size:12px;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:0 16px;line-height:2;
+  margin-bottom:.75rem;
+  font-weight:500;letter-spacing:.3px;
+}
+.p-meta span{display:flex;align-items:center;gap:4px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  background:var(--dark3);border:1px solid var(--border);
+  padding:.6rem 1rem;text-align:center;min-width:72px;
+  border-radius:var(--radius);
+}
+.pill .pn{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:24px;font-weight:800;color:var(--gold);line-height:1;
+}
+.pill .pl{
+  font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);margin-top:3px;font-weight:600;
+}
+.season-label{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.4rem;display:block;
+}
+
+/* TABS */
+.tabs{
+  display:flex;
+  border-bottom:1px solid var(--border);
+  margin-bottom:1.5rem;
+  gap:0;
+}
+.tab{
+  background:none;border:none;
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:10px 18px;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .2s,border-color .2s;
+  white-space:nowrap;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* TABLE */
+.tw{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;margin-bottom:1.5rem;
+}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--dark3)}
+th{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:10px 14px;text-align:left;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+td{
+  font-size:13px;padding:9px 14px;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  color:var(--text);font-weight:400;
+}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+tr.link{cursor:pointer}
+tr.total-row td{
+  background:var(--dark3);font-weight:600;
+  border-top:1px solid var(--border);
+}
+tr.season-row td{border-left:2px solid var(--gold)}
+.num{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:17px;font-weight:700;color:var(--gold);
+}
+.pos-tag{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  background:var(--dark4);border-radius:2px;padding:3px 8px;color:var(--muted);
+}
+.pcell{display:flex;align-items:center;gap:10px}
+.pcell img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--dark4);flex-shrink:0}
+.pcell .pn{font-weight:500;font-size:13px}
+.pcell .ps{font-size:11px;color:var(--muted)}
+.pos-sep td{
+  background:var(--dark);
+  color:var(--gold);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:6px 14px;border-left:none!important;
+  border-bottom:1px solid var(--border)!important;
+}
+.form-row{display:flex;gap:3px}
+.fd{width:8px;height:8px;border-radius:50%}
+.fw{background:var(--green)}.fd-d{background:#333}.fl{background:var(--red)}
+.standings-wrap{overflow-x:auto;overflow-y:auto;max-width:100%}
+.standings-table thead th{
+  position:sticky;top:0;z-index:2;
+  background:rgba(245,241,232,.96);
+  backdrop-filter:blur(10px);
+}
+.standings-table tbody tr.link{
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.standings-table tbody tr.link:hover td{
+  background:rgba(255,255,255,.05);
+}
+.standings-table tbody tr.link:hover{
+  transform:translateY(-1px);
+  box-shadow:inset 0 0 0 1px rgba(201,165,75,.1);
+}
+.standings-rank{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:800;letter-spacing:.3px;
+}
+.standings-team{
+  display:flex;align-items:center;gap:9px;min-width:0;
+}
+.standings-team img{
+  width:20px;height:20px;object-fit:contain;flex-shrink:0;
+}
+.standings-team-name{
+  min-width:0;font-weight:600;color:var(--text);
+}
+.standings-points{
+  font-size:22px;font-weight:900;color:var(--text);
+}
+.standings-form{
+  display:inline-flex;align-items:center;
+}
+.standings-table tbody tr.rank-top td:first-child{
+  color:var(--gold);
+}
+.standings-table tbody tr.rank-top .standings-team-name{
+  font-weight:700;
+}
+.standings-table tbody tr.rank-top-1 td{
+  background-image:linear-gradient(90deg,rgba(201,165,75,.08),transparent 18%);
+}
+.standings-table tbody tr.rank-top-2 td,
+.standings-table tbody tr.rank-top-3 td{
+  background-image:linear-gradient(90deg,rgba(201,165,75,.04),transparent 16%);
+}
+
+/* TRANSFER BADGE */
+.fee-tag{font-size:10px;padding:3px 9px;border-radius:2px;white-space:nowrap;flex-shrink:0;font-weight:600;letter-spacing:.5px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.transfer-filters{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-.25rem 0 1rem;
+}
+.transfer-filter{
+  min-height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--border);
+  background:var(--dark2);color:var(--text);outline:none;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;
+}
+.transfer-filter.search{
+  min-width:220px;flex:1 1 240px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;letter-spacing:0;
+}
+.transfer-filter:focus{border-color:var(--gold)}
+.transfer-row{
+  cursor:pointer;transition:background .18s,transform .18s,box-shadow .18s;
+}
+.transfer-row:hover td{
+  background:rgba(255,255,255,.045);
+}
+.transfer-row:hover{
+  transform:translateY(-1px);
+  box-shadow:inset 0 0 0 1px rgba(201,165,75,.08);
+}
+.transfer-row.is-permanent td{
+  background:rgba(212,175,55,.035);
+}
+.transfer-player{
+  color:var(--text);font-weight:700;font-size:14px;
+}
+.transfer-flow{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.transfer-club{
+  display:flex;align-items:center;gap:6px;min-width:0;
+}
+.transfer-club img{
+  width:18px;height:18px;object-fit:contain;flex-shrink:0;
+}
+.transfer-club span{
+  font-size:12px;line-height:1.2;min-width:0;
+}
+.transfer-arrow{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold);
+  line-height:1;flex-shrink:0;
+}
+.transfer-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:26px;padding:0 9px;border-radius:999px;
+  font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;border:1px solid transparent;
+}
+.pagination-meta{
+  font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.8px;
+  display:flex;align-items:center;justify-content:center;margin-top:.85rem;
+}
+
+/* RATING */
+.rg{color:#3A9E6A;font-weight:700}
+.ry{color:var(--gold);font-weight:700}
+.rr{color:#C84B4B;font-weight:700}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;gap:12px;padding:5rem;color:var(--muted);font-size:13px;letter-spacing:1px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;font-weight:600}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.err{
+  background:rgba(200,75,75,.06);border:1px solid rgba(200,75,75,.2);
+  border-radius:var(--radius);padding:1rem 1.25rem;color:#E07070;
+  font-size:13px;margin:.75rem 0;line-height:1.7;
+}
+.share{
+  background:none;border:1px solid var(--border);
+  border-radius:2px;color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:5px 10px;cursor:pointer;margin-left:auto;
+  transition:border-color .2s,color .2s;
+}
+.share:hover{border-color:var(--border-hi);color:var(--text)}
+
+/* AI BUTTON */
+.ai-btn{
+  background:var(--gold-dim);border:1px solid var(--border-hi);
+  border-radius:var(--radius);color:var(--gold);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:7px 14px;cursor:pointer;transition:background .2s;
+}
+.ai-btn:hover{background:rgba(212,175,55,.22)}
+
+/* STANDINGS COLORS */
+.pos-cl{border-left:3px solid #4A90D9}
+.pos-el{border-left:3px solid #E87722}
+.pos-rel{border-left:3px solid var(--red)}
+
+/* MOBILE NAV */
+.mobile-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(8,10,14,.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  height:58px;z-index:200;
+  justify-content:space-around;align-items:center;
+  padding:0 .5rem;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.mnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:.4rem .6rem;border-radius:2px;cursor:pointer;
+  transition:color .2s;min-width:48px;
+}
+.mnav-btn .icon{font-size:18px;line-height:1}
+.mnav-btn.active{color:var(--gold)}
+
+/* LIVE */
+.live-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(200,75,75,.12);color:#E07070;
+  border:1px solid rgba(200,75,75,.25);
+  border-radius:2px;font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;animation:livepulse 2s infinite;
+}
+.live-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#E07070;display:inline-block;animation:livepulse 1s infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.5}}
+.match-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01)),var(--dark2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:.82rem .95rem;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);
+  grid-auto-rows:minmax(0,auto);
+  align-items:center;
+  gap:.9rem;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;
+  cursor:pointer;
+  text-align:center;
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+  min-height:162px;
+}
+.match-card:hover{
+  transform:translateY(-4px);
+  border-color:var(--border-hi);
+  box-shadow:0 24px 42px rgba(0,0,0,.28);
+  background:linear-gradient(180deg,rgba(212,175,55,.08),rgba(255,255,255,.02)),var(--dark2);
+}
+.match-card.live{border-color:rgba(200,75,75,.35);background:linear-gradient(180deg,rgba(200,75,75,.10),rgba(255,255,255,.02)),var(--dark2)}
+.match-card.finished{
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),var(--dark2);
+}
+.match-card.upcoming{
+  opacity:.96;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015)),var(--dark2);
+}
+.match-team{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;
+  text-transform:uppercase;letter-spacing:.7px;min-width:0;width:100%;
+}
+.match-team.away{text-align:center}
+.match-team img{
+  width:44px;height:44px;object-fit:contain;flex-shrink:0;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.18));
+  padding:2px;
+}
+.match-team .name{
+  display:-webkit-box;white-space:normal;line-height:1.12;min-width:0;max-width:100%;
+  overflow:hidden;overflow-wrap:break-word;word-break:normal;hyphens:auto;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;
+  text-wrap:balance;
+}
+.match-score{
+  text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  width:132px;min-width:132px;
+  padding:.5rem .1rem;
+  justify-self:center;align-self:center;
+}
+.match-score .score{
+  font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;
+  letter-spacing:1.8px;color:var(--text);line-height:.92;
+  text-shadow:0 6px 18px rgba(0,0,0,.16);
+}
+.match-score .score.win-home{color:var(--green)}
+.match-score .time{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:22px;padding:0 8px;border-radius:999px;
+  font-size:9px;color:var(--muted);letter-spacing:1.8px;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;opacity:.9;
+  border:1px solid rgba(108,86,44,.12);
+  background:rgba(255,255,255,.03);
+}
+.match-score .time.live{
+  color:#E07070;border-color:rgba(200,75,75,.28);background:rgba(200,75,75,.10);
+  animation:livepulse 1.9s infinite;
+}
+.match-score .time.live::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;
+}
+.match-score .time.finished{
+  color:var(--gold);border-color:rgba(201,165,75,.18);background:rgba(212,175,55,.08);
+}
+.match-score .time.upcoming{
+  color:var(--muted);border-color:rgba(108,86,44,.1);background:rgba(255,255,255,.025);
+}
+.match-card.upcoming .match-score{
+  gap:9px;
+  width:132px;min-width:132px;
+  padding:.55rem .15rem;
+}
+.match-card.upcoming .match-score .score{
+  font-size:42px;
+  letter-spacing:6px;
+  color:var(--gold);
+  transform:translateX(3px);
+}
+.match-card.upcoming .match-score .time{
+  font-size:10px;
+  letter-spacing:1.8px;
+}
+.match-meta-row{
+  display:flex;justify-content:center;align-items:center;gap:8px;
+  flex-wrap:wrap;margin-top:.45rem;
+  align-self:start;
+}
+.match-meta-pill{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:28px;padding:4px 9px;border-radius:999px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(108,86,44,.08);font-size:9px;
+  color:rgba(93,76,45,.72);font-weight:700;letter-spacing:.5px;line-height:1.1;
+}
+.results-toolbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:-.4rem 0 1.2rem;
+}
+.results-round-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+}
+.results-round-controls{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.results-round-current{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:42px;padding:0 12px;border-radius:12px;
+  border:1px solid rgba(201,165,75,.18);background:rgba(212,175,55,.08);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.results-round-select{
+  min-height:42px;min-width:190px;padding:0 42px 0 14px;
+  border-radius:12px;border:1px solid var(--border);
+  background:var(--dark2);color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.8px;cursor:pointer;outline:none;
+}
+.results-round-select:focus{border-color:var(--gold)}
+.results-round-btn{
+  min-height:42px;padding:0 14px;border-radius:12px;
+  border:1px solid var(--border);background:var(--dark2);color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:border-color .18s,transform .18s;
+}
+.results-round-btn:hover:not(:disabled){border-color:var(--border-hi);transform:translateY(-1px)}
+.results-round-btn:disabled{opacity:.45;cursor:default}
+.matches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;margin-bottom:1.5rem}
+.match-detail-hero{
+  background:linear-gradient(145deg,rgba(212,175,55,.10),rgba(255,255,255,.02)),var(--dark2);
+  border:1px solid var(--border-hi);border-radius:16px;padding:1.5rem;margin-bottom:1rem;
+  box-shadow:0 18px 40px rgba(0,0,0,.18)
+}
+.match-detail-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center}
+.match-detail-team{display:flex;flex-direction:column;align-items:center;gap:.75rem;text-align:center}
+.match-detail-team img{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.22))}
+.match-detail-team .name{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.match-detail-mid{text-align:center;min-width:180px}
+.match-detail-mid .score{font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;letter-spacing:3px;line-height:1;color:var(--text)}
+.match-detail-mid .status{margin-top:.45rem;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;color:var(--gold)}
+.match-detail-meta{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1rem}
+.stat-box{
+  background:var(--dark2);border:1px solid var(--border);border-radius:12px;
+  padding:1rem 1.1rem;box-shadow:0 10px 22px rgba(0,0,0,.12)
+}
+.stat-box .label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
+.stat-box .value{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;color:var(--gold)}
+.duel-stat{display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center;padding:.8rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.duel-stat:last-child{border-bottom:none}
+.duel-stat .val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--text)}
+.duel-stat .lab{font-size:12px;color:var(--muted);text-align:center;font-weight:600}
+.duel-track{height:10px;border-radius:999px;background:rgba(108,86,44,.08);overflow:hidden;position:relative}
+.duel-home,.duel-away{position:absolute;top:0;bottom:0}
+.duel-home{left:0;background:linear-gradient(90deg,var(--gold),var(--gold-light))}
+.duel-away{right:0;background:linear-gradient(90deg,var(--blue),#7cb1e8)}
+.event-list{display:grid;gap:10px}
+.event-row{
+  background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;
+  display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center
+}
+.event-minute{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--gold)}
+.event-main{display:flex;flex-direction:column;gap:2px}
+.event-main .type{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.event-main .player{font-size:14px;font-weight:700}
+.event-team{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.event-team img{width:18px;height:18px;object-fit:contain}
+.lineups-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.lineup-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem}
+.lineup-head{display:flex;align-items:center;gap:10px;margin-bottom:.85rem}
+.lineup-head img{width:32px;height:32px;object-fit:contain}
+.lineup-head .ln{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;letter-spacing:.8px;text-transform:uppercase}
+.lineup-form{font-size:11px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;font-weight:700;margin-left:auto}
+.lineup-player{display:flex;justify-content:space-between;gap:8px;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.lineup-player:last-child{border-bottom:none}
+.lineup-player .num{font-size:15px}
+.lineup-player .nm{font-size:13px;font-weight:600}
+.lineup-player .pos{font-size:11px;color:var(--muted)}
+@media(max-width:768px){
+  .matches-grid{grid-template-columns:1fr}
+  .match-card{grid-template-columns:minmax(0,1fr);gap:.7rem;padding:.78rem .85rem;min-height:0}
+  .match-detail-grid{grid-template-columns:1fr;gap:1.1rem}
+  .match-detail-mid .score{font-size:48px}
+  .match-detail-team .name{font-size:24px}
+  .event-row{grid-template-columns:58px 1fr}
+  .event-team{grid-column:1 / -1}
+  .results-toolbar,.results-round-controls{align-items:stretch}
+  .results-round-controls{width:100%}
+  .results-round-select,.results-round-current{flex:1 1 100%;width:100%}
+  .results-round-btn{flex:1 1 calc(50% - 5px);justify-content:center}
+  .match-team{gap:6px}
+  .match-team img{width:40px;height:40px}
+  .match-team .name{font-size:12px}
+  .match-score{width:100%;min-width:0;padding:.15rem 0}
+  .match-score .score{font-size:36px}
+  .match-card.upcoming .match-score{width:100%;min-width:0;padding:.35rem 0 .15rem}
+  .match-card.upcoming .match-score .score{font-size:36px;letter-spacing:5px}
+  .match-meta-row{gap:6px;margin-top:.2rem}
+  .match-meta-pill{font-size:10px;padding:5px 9px}
+  .transfer-filters{gap:8px}
+  .transfer-filter,.transfer-filter.search{width:100%;min-width:0;flex:1 1 100%}
+}
+.section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+/* NYHETER */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:1.5rem}
+.news-card{background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.18)),var(--dark2);border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem .95rem;transition:border-color .2s,transform .2s,box-shadow .2s,background .2s;box-shadow:0 10px 24px rgba(66,48,18,.06);cursor:pointer;position:relative;overflow:hidden}
+.news-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,165,75,.10),transparent 60%);pointer-events:none;opacity:.9}
+.news-card:hover{border-color:var(--border-hi);transform:translateY(-3px);box-shadow:0 18px 34px rgba(66,48,18,.12);background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.22)),var(--dark2)}
+.news-title{font-size:20px;font-weight:700;line-height:1.28;color:var(--text);margin-bottom:.5rem;position:relative;z-index:1}
+.news-meta{font-size:11px;color:var(--muted);position:relative;z-index:1;line-height:1.4}
+.news-summary{font-size:13px;line-height:1.5;color:var(--text2);margin:.7rem 0 0;position:relative;z-index:1;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.news-linkline{margin-top:.7rem;font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.6px;position:relative;z-index:1}
+.news-loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:.35rem 0}
+/* PAGE ENTER ANIMATION */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+main > *{animation:fadeUp .3s ease both}
+
+/* START PAGE */
+.start-hero{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:2.35rem 1.8rem 2.1rem;text-align:center;margin-bottom:1.6rem;
+  position:relative;overflow:hidden;
+  box-shadow:0 16px 34px rgba(76,56,24,.05);
+}
+.start-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.1) 0%,transparent 62%);
+  pointer-events:none;
+}
+.start-wordmark{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(42px,8vw,80px);font-weight:900;
+  letter-spacing:4.8px;text-transform:uppercase;
+  color:var(--text);line-height:1;margin-bottom:.5rem;
+  position:relative;
+}
+.start-wordmark span{
+  color:var(--gold);
+  margin-left:.32em;
+  display:inline-block;
+  text-shadow:0 0 18px rgba(201,165,75,.16);
+}
+.start-sub{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);
+}
+.start-lead{
+  max-width:620px;margin:.8rem auto 0;
+  font-size:15px;line-height:1.55;color:var(--text2);
+  position:relative;
+}
+.start-proof{
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+  margin:1rem 0 1.2rem;position:relative;
+}
+.start-proof-pill{
+  padding:.55rem .85rem;border-radius:999px;
+  background:rgba(255,255,255,.86);border:1px solid rgba(108,86,44,.16);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);
+  box-shadow:0 8px 16px rgba(76,56,24,.04);
+  transition:transform .18s,box-shadow .18s,border-color .18s,background .18s;
+}
+.start-proof-pill:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.96);
+  border-color:rgba(201,165,75,.2);
+  box-shadow:0 12px 22px rgba(76,56,24,.08);
+}
+.start-hero-actions{
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+  position:relative;
+}
+.start-primary-btn,.start-secondary-btn{
+  min-height:44px;padding:0 18px;border-radius:12px;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;
+  letter-spacing:1.15px;text-transform:uppercase;transition:transform .18s,opacity .18s,background .18s,border-color .18s,box-shadow .18s,color .18s;
+}
+.start-primary-btn{
+  background:var(--gold);color:var(--dark);border:none;
+  box-shadow:0 10px 22px rgba(201,165,75,.2);
+}
+.start-secondary-btn{
+  background:rgba(255,255,255,.76);color:var(--text);border:1px solid rgba(108,86,44,.16);
+}
+.start-primary-btn:hover{transform:translateY(-1px);opacity:.96;box-shadow:0 14px 26px rgba(201,165,75,.26)}
+.start-secondary-btn:hover{transform:translateY(-1px);opacity:.98;background:rgba(255,255,255,.92);border-color:rgba(201,165,75,.24);box-shadow:0 12px 22px rgba(76,56,24,.08)}
+.start-highlight-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;margin:0 0 2rem;
+}
+.start-highlight{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:16px;padding:.95rem 1rem;
+  cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;
+  box-shadow:0 12px 26px rgba(66,48,18,.05);
+}
+.start-highlight:hover{
+  border-color:var(--border-hi);transform:translateY(-2px);
+  box-shadow:0 20px 34px rgba(66,48,18,.1);
+}
+.start-highlight-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:.4rem;
+}
+.start-highlight-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);line-height:1;
+}
+.start-highlight-copy{
+  margin-top:.45rem;font-size:13px;line-height:1.5;color:var(--text2);
+}
+.start-ai{
+  background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(243,235,221,.88));
+  border:1px solid var(--border);border-radius:18px;
+  padding:1.5rem;margin-bottom:2rem;box-shadow:0 14px 34px rgba(66,48,18,.06);
+}
+.start-ai-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.start-ai-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--text);line-height:1;
+}
+.start-ai-copy{max-width:700px;margin-top:.5rem;font-size:14px;line-height:1.7;color:var(--text2)}
+.start-ai-live{
+  font-size:10px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+}
+.start-ai-form{display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.start-ai-input-wrap{position:relative;flex:1 1 420px}
+.start-ai-input{
+  width:100%;min-height:50px;padding:0 16px;border-radius:12px;
+  border:1px solid var(--border-hi);background:rgba(255,253,248,.95);
+  color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;outline:none;
+}
+.start-ai-input:focus{border-color:var(--gold)}
+.start-ai-suggestions{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:4;
+  display:grid;gap:6px;padding:10px;border-radius:14px;
+  background:rgba(255,253,248,.98);border:1px solid var(--border);
+  box-shadow:0 16px 30px rgba(66,48,18,.1);
+}
+.start-ai-suggestions[hidden]{display:none}
+.start-ai-suggestion{
+  background:rgba(255,255,255,.76);border:1px solid transparent;border-radius:10px;
+  padding:.7rem .8rem;text-align:left;cursor:pointer;
+  font-size:13px;color:var(--text2);transition:background .18s,border-color .18s,transform .18s,color .18s;
+}
+.start-ai-suggestion:hover{
+  background:rgba(255,255,255,.95);border-color:rgba(201,165,75,.18);
+  color:var(--text);transform:translateY(-1px);
+}
+.start-ai-submit{
+  min-height:50px;padding:0 18px;border:none;border-radius:12px;
+  background:var(--text);color:var(--dark2);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+}
+.start-ai-submit:hover{opacity:.92}
+.start-chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem}
+.start-chip{
+  border:1px solid var(--border);background:rgba(255,255,255,.62);
+  color:var(--text2);border-radius:999px;padding:.5rem .85rem;cursor:pointer;
+  font-size:12px;font-weight:600;transition:border-color .18s,color .18s,background .18s;
+}
+.start-chip:hover{border-color:var(--border-hi);color:var(--text);background:rgba(255,255,255,.9)}
+.start-ai-note{margin-top:.8rem;font-size:12px;color:var(--muted)}
+.start-ai-result{
+  margin-top:1rem;padding:1rem 1.05rem;border-radius:14px;
+  background:rgba(255,253,248,.78);border:1px solid var(--border);
+}
+.start-ai-result-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:.55rem;
+}
+.start-ai-result-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.start-ai-result-query{
+  font-size:12px;color:var(--text2);font-weight:600;
+}
+.start-ai-empty{font-size:13px;color:var(--muted);line-height:1.6}
+.start-snapshot{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:2rem;
+  align-items:stretch;
+}
+.start-mini-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:16px;padding:1.05rem 1.1rem;
+  box-shadow:0 12px 26px rgba(66,48,18,.05);
+  min-height:100%;
+}
+.start-mini-card.placeholder{
+  display:flex;flex-direction:column;
+}
+.start-mini-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:.8rem;
+}
+.start-mini-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.start-mini-sub{
+  margin-top:.2rem;font-size:10px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+}
+.start-mini-empty{
+  flex:1;min-height:238px;display:flex;align-items:center;justify-content:center;
+  text-align:center;border-radius:14px;background:rgba(255,255,255,.5);border:1px dashed rgba(108,86,44,.14);
+  color:var(--muted);padding:1rem;
+}
+.start-mini-empty strong{
+  display:block;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text2);
+}
+.start-mini-empty span{
+  display:block;margin-top:.45rem;font-size:12px;line-height:1.5;
+}
+.start-mini-link{
+  background:none;border:none;color:var(--gold);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.start-table-list{display:grid;gap:8px}
+.start-table-row{
+  display:grid;grid-template-columns:32px 24px minmax(0,1fr) auto auto;gap:10px;align-items:center;
+  padding:.7rem .8rem;border-radius:12px;background:rgba(255,255,255,.58);cursor:pointer;
+  transition:background .18s,transform .18s,box-shadow .18s;
+}
+.start-table-row:hover,.start-result-row:hover{background:rgba(255,255,255,.9);transform:translateY(-1px);box-shadow:0 10px 18px rgba(76,56,24,.08)}
+.start-rank{
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--gold);text-align:center;
+}
+.start-team-line{display:contents}
+.start-team-line img{width:24px;height:24px;object-fit:contain;flex-shrink:0}
+.start-team-name{font-size:14px;font-weight:800;color:var(--text);line-height:1.2;min-width:0}
+.start-team-gd{
+  font-size:12px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap;
+}
+.start-points{
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:var(--text);white-space:nowrap;
+}
+.start-result-list{display:grid;gap:8px}
+.start-result-row{
+  padding:.8rem .9rem;border-radius:12px;background:rgba(255,255,255,.58);
+  cursor:pointer;transition:background .18s,transform .18s,box-shadow .18s;
+}
+.start-result-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.start-result-round{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
+}
+.start-result-score{
+  font-family:'Barlow Condensed',sans-serif;font-size:35px;font-weight:900;color:var(--text);line-height:1;
+}
+.start-result-teams{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
+}
+.start-result-side{font-size:13px;font-weight:800;color:var(--text)}
+.start-result-side.away{text-align:right}
+.start-result-vs{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.start-teams-section{margin-bottom:2rem}
+.start-section-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.75rem;
+  display:flex;align-items:center;gap:8px;
+}
+.start-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.start-tgrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.start-tcard{
+  background:rgba(255,255,255,.72);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  gap:7px;padding:1rem .8rem;text-align:center;
+  transition:background .22s,transform .22s,box-shadow .22s,border-color .22s;
+  position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(108,86,44,.1);
+  box-shadow:0 12px 26px rgba(66,48,18,.07);
+}
+.start-tcard::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(145deg,rgba(212,175,55,.08) 0%,rgba(255,255,255,.06) 45%,transparent 72%);
+  opacity:0;transition:opacity .3s;
+}
+.start-tcard:hover{
+  background:rgba(255,255,255,.94);
+  transform:translateY(-4px) scale(1.012);
+  box-shadow:0 20px 36px rgba(66,48,18,.12);
+  border-color:rgba(201,165,75,.18);
+}
+.start-tcard:hover::before{opacity:1}
+.start-tcard img{
+  width:58px;height:58px;object-fit:contain;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  transition:transform .28s,filter .28s;
+}
+.start-tcard:hover img{
+  transform:scale(1.1) translateY(-2px);
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.38));
+}
+.start-tn{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.35px;text-transform:uppercase;
+  color:var(--text2);transition:color .2s;line-height:1.2;
+}
+.start-tcard:hover .start-tn{color:var(--text)}
+
+/* NYHETER */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1.5rem}
+.news-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.1rem 1.25rem;
+  transition:border-color .2s;cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;
+}
+.news-card:hover{border-color:var(--border-hi)}
+.news-source{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--gold);
+}
+.news-title{font-size:14px;font-weight:500;line-height:1.4;color:var(--text)}
+.news-summary{font-size:12px;color:var(--muted);line-height:1.5}
+.news-date{font-size:11px;color:var(--muted);margin-top:2px}
+.news-loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:.5rem 0}
+.feed-note{font-size:12px;line-height:1.6;color:var(--muted);margin:.35rem 0 .9rem}
+.podcast-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1.5rem}
+.podcast-card{background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;transition:border-color .2s;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.podcast-card:hover{border-color:var(--border-hi)}
+.podcast-source{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
+.podcast-title{font-size:14px;font-weight:600;line-height:1.45;color:var(--text)}
+.podcast-summary{font-size:12px;color:var(--muted);line-height:1.5}
+.podcast-date{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* MINA LAG */
+.fav-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:20px;padding:4px;line-height:1;
+  transition:transform .2s;flex-shrink:0;
+}
+.fav-btn:hover{transform:scale(1.2)}
+.notif-panel{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem 1.5rem;
+  margin-bottom:1.5rem;
+}
+.notif-panel h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;
+  font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text);margin-bottom:.5rem;
+}
+.notif-toggle{
+  display:flex;align-items:center;gap:10px;
+  background:var(--dark3);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.75rem 1rem;cursor:pointer;
+  transition:border-color .2s;
+}
+.notif-toggle:hover{border-color:var(--border-hi)}
+.toggle-switch{
+  width:40px;height:22px;background:var(--dark5);
+  border-radius:11px;position:relative;transition:background .2s;flex-shrink:0;
+}
+.toggle-switch.on{background:var(--gold)}
+.toggle-switch::after{
+  content:'';position:absolute;width:16px;height:16px;
+  background:white;border-radius:50%;top:3px;left:3px;
+  transition:transform .2s;
+}
+.toggle-switch.on::after{transform:translateX(18px)}
+.my-teams-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:8px;margin-top:1rem;
+}
+.my-team-card{
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:.75rem;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  transition:border-color .2s;
+}
+.my-team-card:hover{border-color:var(--border-hi)}
+.my-team-card img{width:24px;height:24px;object-fit:contain}
+.my-team-card .mtn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex:1}
+
+/* INSTALL BANNER */
+.install-banner{
+  background:var(--dark2);border-bottom:1px solid var(--border-hi);
+  padding:6px .9rem;display:flex;align-items:center;gap:8px;
+  font-size:12px;
+}
+.install-banner img{width:24px;height:24px;border-radius:7px;flex-shrink:0}
+.install-banner .ib-text{flex:1}
+.install-banner .ib-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.35px}
+.install-banner .ib-sub{font-size:9px;color:var(--muted);margin-top:1px}
+.install-banner .ib-btn{
+  background:rgba(255,255,255,.62);color:var(--text);border:1px solid rgba(108,86,44,.1);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:0 11px;border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:30px;
+}
+.install-banner .ib-close{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:14px;padding:0 4px;flex-shrink:0;line-height:1;opacity:.8;
+}
+
+/* PAGINATION */
+.pagination{display:flex;gap:4px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.page-btn{
+  background:var(--dark2);border:1px solid var(--border);
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;padding:7px 14px;border-radius:var(--radius);
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+}
+.page-btn:hover{background:var(--dark3);color:var(--text);border-color:var(--border-hi)}
+.page-btn.active{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+
+/* STAT TABS */
+.stat-tabs{
+  display:flex;gap:4px;flex-wrap:wrap;
+  background:var(--dark2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:6px;
+}
+.stat-tab{
+  background:none;border:none;
+  color:var(--muted);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:6px 12px;border-radius:2px;cursor:pointer;
+  transition:background .15s,color .15s;white-space:nowrap;
+}
+.stat-tab:hover{background:var(--dark3);color:var(--text)}
+.stat-tab.active{background:var(--gold);color:var(--dark)}
+
+
+
+/* COMPACT STATS TABLE */
+.stats-table{width:100%;table-layout:fixed}
+.stats-table th:nth-child(1), .stats-table td:nth-child(1){width:74px}
+.stats-table th:nth-child(3), .stats-table td:nth-child(3){width:120px;text-align:right}
+.stats-player-cell{display:flex;align-items:center;gap:12px;min-width:0}
+.stats-player-photo{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--dark3);flex-shrink:0}
+.stats-player-meta{min-width:0;display:flex;flex-direction:column;gap:3px}
+.stats-player-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-player-club{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-player-club img{width:16px;height:16px;object-fit:contain;flex-shrink:0}
+.stats-rank{color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px}
+.stats-rank.medal{font-size:22px}
+.stats-value{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:1;color:var(--gold);white-space:nowrap}
+.stats-value.rg{color:#3A9E6A}.stats-value.ry{color:var(--gold)}.stats-value.rr{color:#C84B4B}
+.stats-value-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.stats-value-meta{font-size:11px;color:var(--muted);font-weight:700;line-height:1.2;text-align:right}
+.stats-table tbody tr:hover td{background:rgba(201,165,75,.045)}
+.stats-table tbody td{padding:14px 14px}
+.stats-table thead th{padding:12px 14px}
+.stats-shell{display:grid;gap:1rem}
+.stats-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stats-overview-card{
+  background:linear-gradient(145deg,rgba(212,175,55,.08),rgba(255,255,255,.02)),var(--dark2);
+  border:1px solid var(--border);border-radius:16px;padding:1rem 1.05rem;
+  box-shadow:0 10px 24px rgba(66,48,18,.06);
+}
+.stats-overview-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.stats-overview-value{
+  margin-top:.45rem;font-family:'Barlow Condensed',sans-serif;font-size:34px;
+  font-weight:900;line-height:1;color:var(--text);
+}
+.stats-overview-copy{
+  margin-top:.35rem;font-size:12px;line-height:1.45;color:var(--text2);
+}
+.stats-group-tabs,.stats-category-tabs{
+  display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;
+}
+.stats-group-tabs::-webkit-scrollbar,.stats-category-tabs::-webkit-scrollbar{display:none}
+.stats-group-chip{
+  min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,255,255,.55);color:var(--text2);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;transition:border-color .18s,background .18s,color .18s,transform .18s;
+  white-space:nowrap;
+}
+.stats-group-chip:hover{border-color:var(--border-hi);background:rgba(255,255,255,.86);color:var(--text)}
+.stats-group-chip.active{
+  background:rgba(212,175,55,.14);border-color:rgba(212,175,55,.3);color:var(--text);
+  transform:translateY(-1px);
+}
+.stats-group-chip small{
+  font-size:10px;color:inherit;opacity:.75;margin-left:6px;
+}
+.stats-category-panel{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem;
+  box-shadow:0 14px 32px rgba(66,48,18,.06);
+}
+.stats-category-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:1.7px;text-transform:uppercase;color:var(--gold);
+}
+.stats-category-head{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:.35rem;
+}
+.stats-category-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:var(--text);
+}
+.stats-category-copy{
+  margin-top:.35rem;max-width:760px;font-size:13px;line-height:1.6;color:var(--text2);
+}
+.stats-category-badges{display:flex;gap:8px;flex-wrap:wrap}
+.stats-category-badge{
+  display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 10px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;
+}
+.stats-empty-note{
+  padding:1rem 0 0;color:var(--muted);font-size:12px;line-height:1.6;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  header{padding:.5rem 1rem;min-height:52px}
+  .logo{font-size:17px}
+  .logo-tagline,.header-cta{display:none}
+  .nav-pills{display:none}
+  main{padding:1rem 1rem 72px}
+  .pg-title{font-size:28px}
+  .tgrid{grid-template-columns:repeat(3,1fr);gap:2px}
+  .start-tgrid{grid-template-columns:repeat(4,1fr);gap:2px}
+  .start-tcard{padding:.85rem .4rem;gap:7px}
+  .start-tcard img{width:36px;height:36px}
+  .start-tn{font-size:10px;letter-spacing:0}
+  .start-hero{padding:1.45rem 1rem 1.3rem;margin-bottom:1.1rem}
+  .start-wordmark{font-size:36px}
+  .start-sub{font-size:11px}
+  .tcard{padding:1rem .6rem;gap:8px}
+  .tcard img{width:44px;height:44px}
+  .tcard .tn{font-size:11px}
+  .profile-inner{flex-direction:column;gap:1rem;padding:1.25rem}
+  .p-img{width:64px;height:64px}
+  .p-photo{width:60px;height:60px}
+  .p-body h1{font-size:22px}
+  .pills{gap:4px}
+  .pill{min-width:60px;padding:.5rem .7rem}
+  .pill .pn{font-size:18px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tab{white-space:nowrap;flex-shrink:0;padding:8px 14px;font-size:12px}
+  table{min-width:480px}
+  .tw > div{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  th,td{padding:7px 10px;font-size:12px}
+  .mobile-nav{display:flex}
+  .profile > div:last-child{width:100%;text-align:left!important}
+  .profile > div:last-child .pills{justify-content:flex-start!important}
+}
+
+
+/* ROUTE/UI ENHANCEMENTS */
+.top-ad{
+  background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(247,243,235,.92));
+}
+.top-ad.route-hidden{display:none!important}
+header{box-shadow:0 10px 30px rgba(70,50,18,.05)}
+main{max-width:1360px}
+.pg-header{justify-content:space-between}
+.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel{
+  box-shadow:0 14px 34px rgba(76,56,24,.06);
+}
+.tw > div{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tw thead th{position:sticky;top:0;z-index:2}
+.entity-topbar{justify-content:space-between}
+.section-label{margin-bottom:.8rem}
+.section-label + .feed-note{margin-top:.15rem}
+.news-linkline{margin-top:auto}
+.share{min-height:38px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,253,248,.78)}
+.ai-btn{min-height:42px;border-radius:10px}
+.install-banner{display:none;position:sticky;top:58px;z-index:95;box-shadow:0 6px 14px rgba(76,56,24,.05)}
+.install-banner.route-hidden{display:none!important}
+.install-banner .ib-btn{min-height:32px;padding:0 12px;border-radius:999px}
+.install-banner .ib-close{width:30px;height:30px;border-radius:999px}
+.start-hero{box-shadow:0 18px 40px rgba(76,56,24,.06)}
+.tgrid{background:var(--border);padding:1px;border-radius:16px;overflow:hidden}
+.tcard{border-radius:0}
+.team-overview-grid{align-items:start}
+.team-stat-pills,.player-current-pills,.player-career-pills{gap:10px}
+.team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:110px;min-height:84px;display:flex;flex-direction:column;justify-content:center}
+.news-title{word-break:break-word}
+.podcast-title{word-break:break-word}
+.team-shell{display:grid;gap:1rem}
+.team-hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:14px;align-items:stretch}
+.team-title-block{display:grid;gap:.8rem}
+.team-kicker{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-title-line{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.team-title-line .pg-title{margin:0}
+.team-rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(201,165,75,.18),rgba(201,165,75,.08));
+  border:1px solid rgba(201,165,75,.26);color:var(--gold);
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+}
+.team-subline{display:flex;gap:8px;flex-wrap:wrap}
+.team-subpill{
+  display:inline-flex;align-items:center;gap:6px;
+  min-height:34px;padding:0 12px;border-radius:999px;
+  background:rgba(255,253,248,.78);border:1px solid var(--border);
+  color:var(--muted);font-size:12px;
+}
+.team-season-switcher{display:flex;gap:8px;flex-wrap:wrap}
+.team-season-btn{
+  min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,253,248,.72);color:var(--muted);font-family:'Barlow',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;transition:.18s ease;
+}
+.team-season-btn:hover{transform:translateY(-1px);border-color:var(--border-hi);color:var(--text)}
+.team-season-btn.active{background:rgba(201,165,75,.14);border-color:rgba(201,165,75,.25);color:var(--gold)}
+.team-season-btn.muted{opacity:.55}
+.team-hero-side{display:grid;gap:10px}
+.team-hero-stats{
+  background:var(--dark3);border:1px solid var(--border);border-radius:18px;
+  padding:1rem 1.05rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+}
+.team-hero-stat{
+  background:rgba(255,253,248,.76);border:1px solid var(--border);
+  border-radius:14px;padding:.85rem .9rem;display:grid;gap:4px;
+}
+.team-hero-stat .value{
+  font-family:'Barlow Condensed',sans-serif;font-size:30px;line-height:1;
+  font-weight:900;color:var(--text);
+}
+.team-hero-stat .label{
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.team-hero-stat .sub{font-size:12px;color:var(--muted)}
+.team-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.team-summary-card{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;
+  padding:1rem;display:grid;gap:6px;box-shadow:0 14px 34px rgba(76,56,24,.05);
+}
+.team-summary-card .value{font-family:'Barlow Condensed',sans-serif;font-size:34px;line-height:1;font-weight:900;color:var(--gold)}
+.team-summary-card .label{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-summary-card .copy{font-size:12px;color:var(--muted);line-height:1.45}
+.team-dual-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.team-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.team-metric-card{
+  background:rgba(255,253,248,.72);border:1px solid var(--border);border-radius:14px;
+  padding:.95rem 1rem;display:grid;gap:6px;
+}
+.team-metric-card .value{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;line-height:1;color:var(--text)}
+.team-metric-card .label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-metric-card .sub{font-size:12px;color:var(--muted)}
+.team-detail-list{display:grid;gap:.7rem}
+.team-detail-row{display:flex;justify-content:space-between;gap:14px;align-items:center;font-size:13px}
+.team-detail-row strong{color:var(--gold);font-weight:700}
+.team-form-strip{display:flex;gap:6px;flex-wrap:wrap}
+.team-form-pill{
+  min-width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;
+  border:1px solid var(--border);background:rgba(255,253,248,.7);color:var(--text)
+}
+.team-form-pill.win{color:var(--green);border-color:rgba(84,131,108,.22);background:rgba(84,131,108,.1)}
+.team-form-pill.draw{color:var(--muted)}
+.team-form-pill.loss{color:var(--red);border-color:rgba(166,97,87,.2);background:rgba(166,97,87,.08)}
+.team-match-list{display:grid;gap:8px}
+.team-match-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  background:rgba(255,253,248,.68);border:1px solid var(--border);border-radius:14px;
+  padding:.85rem .95rem;cursor:pointer;transition:.18s ease;
+}
+.team-match-row:hover{transform:translateY(-1px);box-shadow:0 14px 26px rgba(76,56,24,.06);border-color:var(--border-hi)}
+.team-match-row .meta{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.team-match-row .teams{display:grid;gap:2px}
+.team-match-row .score{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1;
+  font-weight:900;color:var(--text);min-width:78px;text-align:right;
+}
+.team-match-row .score.upcoming{font-size:18px;color:var(--muted)}
+.team-history-table td:first-child,.team-history-table th:first-child{white-space:nowrap}
+.team-player-shell{display:grid;gap:1rem}
+.team-player-highlight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.team-player-highlight{
+  background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:1rem;
+  display:grid;gap:4px;
+}
+.team-player-highlight .kicker{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.team-player-highlight .name{font-size:14px;font-weight:700;color:var(--text)}
+.team-player-highlight .meta{font-size:12px;color:var(--muted)}
+.team-player-highlight .value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;color:var(--gold)}
+.team-empty-state{padding:1.1rem 0;color:var(--muted);font-size:13px}
+.team-section-stack{display:grid;gap:1rem}
+.team-note{font-size:12px;color:var(--muted);line-height:1.5}
+.player-history-wrap{display:grid;gap:.8rem}
+.player-history-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  padding:1rem 1.1rem .7rem;border-bottom:1px solid var(--border);
+}
+.player-history-headline{display:grid;gap:4px}
+.player-history-kicker{
+  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.player-history-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;line-height:1;font-weight:900;color:var(--text);
+}
+.player-history-copy{font-size:12px;color:var(--muted);line-height:1.45}
+.player-history-summary{
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
+}
+.player-history-badge{
+  min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,253,248,.74);display:inline-flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--muted);
+}
+.player-history-badge strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;line-height:1;color:var(--gold);
+}
+.player-history-table{table-layout:fixed}
+.player-history-table thead th{
+  background:rgba(245,241,232,.96);
+  backdrop-filter:blur(10px);
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+}
+.player-history-table tbody tr{transition:background .18s ease}
+.player-history-table tbody tr:nth-child(even):not(.total-row){background:rgba(255,253,248,.38)}
+.player-history-table tbody tr:hover:not(.total-row){background:rgba(212,175,55,.06)}
+.player-history-table td{vertical-align:middle}
+.player-history-table td.num,
+.player-history-table th.num{text-align:center}
+.player-history-team{display:flex;align-items:center;gap:8px;min-width:0}
+.player-history-team img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.player-history-team span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.player-history-league{
+  font-size:12px;color:var(--muted);line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.player-history-rating{font-weight:700}
+.player-history-empty{color:var(--muted);font-weight:500}
+.transfer-table{width:100%;border-collapse:separate;border-spacing:0 10px}
+.transfer-table thead th{
+  background:transparent;border:none;padding:0 14px 8px;
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)
+}
+.transfer-table tbody tr{
+  background:rgba(255,255,255,.62);box-shadow:0 12px 28px rgba(66,48,18,.05);
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease
+}
+.transfer-table tbody tr:hover{
+  transform:translateY(-2px);background:rgba(255,255,255,.92);
+  box-shadow:0 16px 32px rgba(66,48,18,.09)
+}
+.transfer-table tbody td{
+  padding:14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle
+}
+.transfer-table tbody td:first-child{border-left:1px solid var(--border);border-radius:14px 0 0 14px}
+.transfer-table tbody td:last-child{border-right:1px solid var(--border);border-radius:0 14px 14px 0}
+.transfer-date{display:grid;gap:4px}
+.transfer-date strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:.4px;color:var(--text)
+}
+.transfer-date span{font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+.transfer-player-link{color:var(--text);font-weight:800;text-decoration:none;cursor:pointer;transition:color .18s ease}
+.transfer-player-link:hover{color:var(--gold)}
+.transfer-direction-badge{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:76px;
+  padding:8px 12px;border-radius:999px;border:1px solid transparent;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase
+}
+.transfer-direction-badge.in{background:rgba(47,143,103,.12);color:var(--green);border-color:rgba(47,143,103,.22)}
+.transfer-direction-badge.out{background:rgba(182,81,81,.1);color:var(--red);border-color:rgba(182,81,81,.2)}
+.transfer-direction-badge.internal{background:rgba(201,165,75,.12);color:var(--gold);border-color:rgba(201,165,75,.24)}
+.transfer-club-chip{
+  display:inline-flex;align-items:center;gap:9px;min-width:0;max-width:100%;
+  padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.52);border:1px solid rgba(108,86,44,.12)
+}
+.transfer-club-chip img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.transfer-club-chip span{font-size:13px;color:var(--text2);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.transfer-type-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:7px 11px;border-radius:999px;border:1px solid transparent;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap
+}
+.transfer-type-stack{display:grid;gap:6px;justify-items:start}
+.transfer-flow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.transfer-flow-arrow{
+  width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(201,165,75,.12);border:1px solid rgba(201,165,75,.2);color:var(--gold);font-size:15px;font-weight:800
+}
+.transfer-meta-note{font-size:11px;color:var(--muted);margin-top:4px}
+.player-history-table tr.total-row td{
+  background:linear-gradient(180deg,rgba(201,165,75,.08),rgba(255,253,248,.72));
+}
+.player-history-table tr.season-row td{
+  background:rgba(201,165,75,.05);
+}
+.player-history-table td:nth-child(1){width:82px}
+.player-history-table td:nth-child(2){width:180px}
+.player-history-table td:nth-child(3){width:170px}
+.player-history-table td:nth-child(n+4){text-align:center}
+.player-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.player-detail-panel{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;
+  overflow:hidden;box-shadow:0 12px 28px rgba(76,56,24,.05);
+}
+.player-detail-panel-head{
+  padding:1rem 1.05rem;border-bottom:1px solid var(--border);
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;
+}
+.player-detail-panel table{min-width:0}
+.player-detail-panel tbody td:first-child{color:var(--muted);width:58%}
+.player-detail-panel tbody td:last-child{font-weight:600;text-align:right}
+.player-detail-summary{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem;
+}
+.player-detail-chip{
+  background:rgba(255,253,248,.74);border:1px solid var(--border);border-radius:14px;
+  padding:.85rem .9rem;display:grid;gap:4px;
+}
+.player-detail-chip .label{
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.player-detail-chip .value{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1;font-weight:900;color:var(--gold);
+}
+.player-detail-chip .copy{font-size:12px;color:var(--muted)}
+
+@media (min-width: 901px){
+  .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
+  .start-tgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .news-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+}
+
+@media (max-width: 900px){
+  body{padding-bottom:88px}
+  header{min-height:56px}
+  .logo{font-size:16px;letter-spacing:2px;gap:6px}
+  .logo-badge{font-size:8px;padding:3px 6px}
+  .header-brand{gap:2px}
+  .header-cta{display:none}
+  main{padding:1rem 1rem 6.4rem}
+  .top-ad{display:none!important}
+  .install-banner{top:56px;padding:10px 12px;gap:10px}
+  .install-banner .ib-sub{font-size:12px}
+  .install-banner .ib-btn{font-size:11px;letter-spacing:.8px}
+  .entity-topbar{align-items:center}
+  .entity-topbar .share{margin-left:0;width:auto}
+  .pg-header{margin-bottom:1.15rem;padding-bottom:.9rem}
+  .pg-title{font-size:24px;letter-spacing:1px}
+  .pg-sub{font-size:12px;line-height:1.45}
+  .start-hero{padding:1.35rem .9rem;border-radius:18px}
+  .start-wordmark{font-size:clamp(28px,12vw,42px);letter-spacing:2px}
+  .start-sub{font-size:10px;letter-spacing:1.8px;line-height:1.5}
+  .start-lead{font-size:14px;line-height:1.65;margin-top:.8rem}
+  .start-proof{margin:.85rem 0 1rem}
+  .start-proof-pill{font-size:10px;padding:.5rem .7rem}
+  .start-hero-actions{flex-direction:column}
+  .start-primary-btn,.start-secondary-btn,.start-ai-submit{width:100%}
+  .start-highlight-grid,.start-snapshot{grid-template-columns:1fr}
+  .start-highlight{padding:.9rem}
+  .start-highlight-title{font-size:22px}
+  .start-ai{padding:1.1rem;border-radius:18px}
+  .start-ai-title{font-size:26px}
+  .start-ai-form{gap:8px}
+  .start-ai-input{flex-basis:100%;min-height:46px}
+  .start-chip-row{gap:6px}
+  .start-chip{font-size:11px;padding:.5rem .7rem}
+  .start-result-score{font-size:24px}
+  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:18px}
+  .start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tcard{padding:1rem .55rem;min-height:124px;justify-content:center}
+  .start-tcard{padding:.95rem .55rem;min-height:118px;justify-content:center}
+  .tcard img{width:48px;height:48px}
+  .start-tcard img{width:46px;height:46px}
+  .tcard .tn{font-size:12px;line-height:1.15}
+  .start-tn{font-size:11px;line-height:1.15}
+  .profile{border-radius:18px}
+  .profile-inner{padding:1.2rem;gap:1rem;align-items:flex-start;text-align:left}
+  .p-img{width:84px;height:84px;padding:10px}
+  .p-photo{width:96px;height:96px}
+  .p-body{width:100%}
+  .p-body h1{font-size:22px;letter-spacing:.8px;line-height:1.02}
+  .p-meta{gap:4px 12px;line-height:1.7;font-size:13px}
+  .pills{gap:8px}
+  .pill{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:.8rem .7rem}
+  .pill .pn{font-size:30px}
+  .pill .pl{font-size:10px;letter-spacing:1.1px}
+  .team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:calc(50% - 4px);min-height:92px}
+  .team-overview-grid{grid-template-columns:1fr!important}
+  .team-minute-grid{display:grid!important;grid-template-columns:1fr!important}
+  .team-minute-grid > .tw{min-width:0!important}
+  .tabs{gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar,.stat-tabs::-webkit-scrollbar{display:none}
+  .tab{padding:11px 14px;border-radius:999px;border:1px solid var(--border);margin-bottom:0;background:var(--dark2);font-size:12px}
+  .tab.active{background:rgba(201,165,75,.12)}
+  .stat-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}
+  .stat-tab{padding:10px 12px;min-height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal}
+  .stats-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats-overview-card{padding:.9rem}
+  .stats-overview-value{font-size:28px}
+  .stats-group-chip{min-height:40px;padding:0 12px}
+  .stats-category-panel{padding:.95rem}
+  .stats-category-title{font-size:23px;line-height:1}
+  .stats-value-meta{font-size:10px}
+  .team-hero{grid-template-columns:1fr}
+  .team-summary-grid,.team-player-highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .team-dual-grid{grid-template-columns:1fr}
+  .team-metric-grid{grid-template-columns:1fr}
+  .team-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .team-match-row{grid-template-columns:1fr;gap:6px}
+  .team-match-row .score{text-align:left;min-width:0}
+  .team-season-switcher{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .team-season-btn{justify-content:center}
+  .player-history-head{align-items:flex-start;flex-direction:column}
+  .player-history-summary{justify-content:flex-start}
+  .player-history-table{min-width:760px}
+  .player-history-team span,.player-history-league{white-space:normal}
+  .player-detail-grid{grid-template-columns:1fr}
+  .player-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .transfer-table{min-width:820px}
+  .transfer-flow{grid-template-columns:minmax(0,1fr)}
+  .transfer-flow-arrow{justify-self:start}
+  .tw{border-radius:18px;overflow:hidden}
+  table{min-width:0;width:100%}
+  th,td{padding:10px 12px;font-size:12px}
+  .match-card{padding:1rem;border-radius:18px}
+  .match-score{min-width:0}
+  .match-score .score{font-size:32px}
+  .match-team{font-size:15px}
+  .matches-grid{gap:12px}
+  .match-meta-row{gap:8px;margin-top:.3rem}
+  .match-meta-pill{font-size:11px;padding:6px 10px}
+  .news-grid,.podcast-grid{grid-template-columns:1fr}
+  .news-card,.podcast-card{padding:1rem 1rem 1.05rem;border-radius:18px}
+  .news-title{font-size:16px;line-height:1.35}
+  .news-summary,.podcast-summary{font-size:13px;line-height:1.55}
+  .pagination{gap:8px;justify-content:flex-start;overflow-x:auto;padding-bottom:2px;flex-wrap:nowrap}
+  .page-btn{flex:0 0 auto;padding:10px 14px;font-size:14px;border-radius:12px}
+  .stats-table{width:100%;table-layout:fixed}
+  .stats-table th:nth-child(1), .stats-table td:nth-child(1){width:46px}
+  .stats-table th:nth-child(3), .stats-table td:nth-child(3){width:68px;text-align:right}
+  .stats-table th:nth-child(2), .stats-table td:nth-child(2){width:auto}
+  .stats-table thead th:nth-child(2){text-align:left}
+  .stats-table tbody td{padding:8px 6px}
+  .stats-table thead th{padding:10px 6px}
+  .stats-player-cell{gap:8px;min-width:0;max-width:100%}
+  .stats-player-photo{width:40px;height:40px}
+  .stats-player-meta{min-width:0;max-width:100%}
+  .stats-player-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+  .stats-player-club{font-size:10px;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stats-player-club span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .stats-player-club img{width:12px;height:12px}
+  .stats-rank{font-size:16px}
+  .stats-rank.medal{font-size:16px}
+  .stats-value{display:block;font-size:22px;line-height:1;text-align:right}
+  .mobile-nav{height:68px;padding:0 .35rem calc(env(safe-area-inset-bottom) + 4px)}
+  .mnav-btn{min-width:50px;padding:.35rem .4rem;font-size:9px}
+  .mnav-btn .icon{font-size:18px}
+}
+
+</style>
+
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <span class="logo" onclick="go('/')">
+      Allsvenskan<em>AI</em>
+    </span>
+    <div class="logo-tagline">Allt om Allsvenskan. Sök, jämför och analysera.</div>
+  </div>
+  <nav class="nav-pills">
+    <button class="np" onclick="go('/')">Start</button>
+    <button class="np" onclick="go('/lag-lista')">Lag</button>
+    <button class="np" onclick="go('/tabell')">Tabell</button>
+    <button class="np" onclick="go('/resultat')">Resultat</button>
+    <button class="np" onclick="go('/overgangar')">Övergångar</button>
+    <button class="np" onclick="go('/statistik')">Statistik</button>
+  </nav>
+  <button class="header-cta" onclick="go('/statistik')">Utforska statistik</button>
+</header>
+
+<!-- AdSense top banner -->
+<div id="topAdWrap" class="top-ad" style="text-align:center;background:var(--dark2);border-bottom:1px solid var(--border);padding:6px;min-height:60px;display:flex;align-items:center;justify-content:center">
+  <ins class="adsbygoogle"
+    style="display:block;width:100%;max-width:728px"
+    data-ad-client="ca-pub-4755802199865904"
+    data-ad-slot="auto"
+    data-ad-format="horizontal"
+    data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div id="installBanner" class="install-banner">
+  <svg width="36" height="36" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="border-radius:8px;flex-shrink:0">
+  <rect width="512" height="512" fill="#080A0E" rx="80"/>
+  <text x="105" y="310" font-family="Arial Black,sans-serif" font-size="190" font-weight="900" fill="#EEF0F4">A</text>
+  <text x="218" y="310" font-family="Arial Black,sans-serif" font-size="190" font-weight="900" fill="#D4AF37">A</text>
+  <text x="338" y="310" font-family="Arial Black,sans-serif" font-size="190" font-weight="900" fill="#D4AF37">I</text>
+</svg>
+  <div class="ib-text">
+    <div class="ib-title">AllsvenskanAI</div>
+    <div class="ib-sub">Installera som app på din telefon</div>
+  </div>
+  <button class="ib-btn" id="installBtn">Installera</button>
+  <button class="ib-close" onclick="document.getElementById('installBanner').style.display='none'">×</button>
+</div>
+<main id="mc"><div class="loading"><div class="spinner"></div>Laddar Allsvenskan…</div></main>
+
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mnav-btn" onclick="go('/')"><span class="icon">🏠</span>Start</button>
+  <button class="mnav-btn" onclick="go('/lag-lista')"><span class="icon">🛡</span>Lag</button>
+  <button class="mnav-btn" onclick="go('/tabell')"><span class="icon">🏆</span>Tabell</button>
+  <button class="mnav-btn" onclick="go('/resultat')"><span class="icon">📅</span>Resultat</button>
+  <button class="mnav-btn" onclick="go('/overgangar')"><span class="icon">🔄</span>Överg.</button>
+  <button class="mnav-btn" onclick="go('/statistik')"><span class="icon">⚽</span>Stats</button>
+</nav>
+
+<script>
+
+// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const LEAGUE = 113;
+let SEASON = 2026; // auto-detects current season
+const AF = '/api/football';
+const C = {};
+
+// Cache
+const CACHE = {};
+
+// Name corrections — API-Football 2026 strips Swedish/special chars
+const NAME_FIX = {
+  'IFK Goteborg': 'IFK Göteborg',
+  'Djurgardens IF': 'Djurgårdens IF',
+  'Hammarby FF': 'Hammarby IF',
+  'Malmo FF': 'Malmö FF',
+  'Vasteras SK FK': 'Västerås SK FK',
+  'Orgryte IS': 'Örgryte IS',
+  'Mjallby AIF': 'Mjällby AIF',
+  'IF Elfsborg': 'IF Elfsborg',
+  'IF Brommapojkarna': 'IF Brommapojkarna',
+  'BK Hacken': 'BK Häcken',
+  'Kalmar FF': 'Kalmar FF',
+  'Halmstad': 'Halmstads BK',
+  'Sirius': 'IK Sirius FK',
+  'Degerfors IF': 'Degerfors IF',
+  'AIK Stockholm': 'AIK',
+  'Gais': 'GAIS',
 };
 
-function stableQueryKey(endpoint, params = {}) {
-  const qs = new URLSearchParams();
-  Object.keys(params).sort().forEach((key) => {
-    const value = params[key];
-    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
-  });
-  const suffix = qs.toString();
-  return suffix ? `${endpoint}?${suffix}` : endpoint;
+function fixName(s) { return NAME_FIX[s] || s; }
+function getTeamDisplayName(teamOrName){
+  const raw = typeof teamOrName === 'string'
+    ? teamOrName
+    : (teamOrName?.name || teamOrName?.team?.name || '');
+  return fixEnc(fixName(String(raw || '').trim())) || 'Lag';
 }
-function canonicalStaticQueryKey(endpointOrKey, params = null) {
-  if (params !== null) return stableQueryKey(endpointOrKey, params);
-  const raw = String(endpointOrKey || '').trim();
-  if (!raw) return '';
-  const [endpoint, query = ''] = raw.split('?');
-  if (!query) return endpoint;
-  return stableQueryKey(endpoint, Object.fromEntries(new URLSearchParams(query).entries()));
+function looksAbbreviatedPlayerName(name=''){
+  const value = String(name || '').trim();
+  return /^[A-ZÅÄÖ]\.\s+/u.test(value);
+}
+function buildPlayerFullName(firstname='', lastname=''){
+  return [firstname, lastname]
+    .map(part => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+function getPlayerDisplayName(...sources){
+  for(const source of sources){
+    if(!source) continue;
+    if(typeof source === 'string'){
+      const plain = source.trim();
+      if(plain) return fixEnc(plain);
+      continue;
+    }
+
+    const fullname = source.fullname || source.full_name || source.displayName || source.display_name || '';
+    if(fullname && String(fullname).trim()) return fixEnc(String(fullname).trim());
+
+    const firstLast = buildPlayerFullName(
+      source.firstname || source.first_name || source.firstName || '',
+      source.lastname || source.last_name || source.lastName || ''
+    );
+    const rawName = String(source.name || source.player_name || source.playerName || '').trim();
+
+    if(firstLast && (!rawName || looksAbbreviatedPlayerName(rawName))) return fixEnc(firstLast);
+    if(rawName && !looksAbbreviatedPlayerName(rawName)) return fixEnc(rawName);
+    if(firstLast) return fixEnc(firstLast);
+    if(rawName) return fixEnc(rawName);
+  }
+  return '—';
+}
+function normalizeCountryKey(value=''){
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+const COUNTRY_META = {
+  SE:{ sv:'Sverige', names:['Sweden','Sverige'] },
+  NO:{ sv:'Norge', names:['Norway','Norge'] },
+  DK:{ sv:'Danmark', names:['Denmark','Danmark'] },
+  FI:{ sv:'Finland', names:['Finland'] },
+  IS:{ sv:'Island', names:['Iceland','Island'] },
+  RS:{ sv:'Serbien', names:['Serbia','Serbien'] },
+  DE:{ sv:'Tyskland', names:['Germany','Tyskland'] },
+  FR:{ sv:'Frankrike', names:['France','Frankrike'] },
+  NL:{ sv:'Nederländerna', names:['Netherlands','Nederland','Nederländerna','Holland'] },
+  GB:{ sv:'Storbritannien', names:['United Kingdom','Great Britain','Storbritannien'] },
+  EN:{ sv:'England', names:['England'] },
+  SC:{ sv:'Skottland', names:['Scotland','Skottland'] },
+  WA:{ sv:'Wales', names:['Wales'] },
+  ES:{ sv:'Spanien', names:['Spain','Spanien'] },
+  IT:{ sv:'Italien', names:['Italy','Italien'] },
+  PT:{ sv:'Portugal', names:['Portugal'] },
+  BR:{ sv:'Brasilien', names:['Brazil','Brasilien'] },
+  AR:{ sv:'Argentina', names:['Argentina'] },
+  US:{ sv:'USA', names:['USA','United States','United States of America'] },
+  NG:{ sv:'Nigeria', names:['Nigeria'] },
+  GH:{ sv:'Ghana', names:['Ghana'] },
+  HR:{ sv:'Kroatien', names:['Croatia','Kroatien'] },
+  XK:{ sv:'Kosovo', names:['Kosovo'] },
+  AL:{ sv:'Albanien', names:['Albania','Albanien'] },
+  IE:{ sv:'Irland', names:['Ireland','Irland'] },
+  SN:{ sv:'Senegal', names:['Senegal'] },
+  MA:{ sv:'Marocko', names:['Morocco','Marocko'] },
+  CM:{ sv:'Kamerun', names:['Cameroon','Kamerun'] },
+  TN:{ sv:'Tunisien', names:['Tunisia','Tunisien'] },
+  ML:{ sv:'Mali', names:['Mali'] },
+  CI:{ sv:'Elfenbenskusten', names:['Ivory Coast','Côte d’Ivoire','Cote dIvoire','Elfenbenskusten'] },
+  PE:{ sv:'Peru', names:['Peru'] },
+  RO:{ sv:'Rumänien', names:['Romania','Rumänien'] },
+  BA:{ sv:'Bosnien och Hercegovina', names:['Bosnia','Bosnia and Herzegovina','Bosnien','Bosnien och Hercegovina'] },
+  SK:{ sv:'Slovakien', names:['Slovakia','Slovakien'] },
+  HU:{ sv:'Ungern', names:['Hungary','Ungern'] },
+  GR:{ sv:'Grekland', names:['Greece','Grekland'] },
+  TR:{ sv:'Turkiet', names:['Turkey','Turkiet'] },
+  UA:{ sv:'Ukraina', names:['Ukraine','Ukraina'] },
+  AT:{ sv:'Österrike', names:['Austria','Österrike'] },
+  CH:{ sv:'Schweiz', names:['Switzerland','Schweiz'] },
+  BE:{ sv:'Belgien', names:['Belgium','Belgien'] },
+  CO:{ sv:'Colombia', names:['Colombia'] },
+  CL:{ sv:'Chile', names:['Chile'] },
+  MX:{ sv:'Mexiko', names:['Mexico','Mexiko'] },
+  JM:{ sv:'Jamaica', names:['Jamaica'] },
+  PL:{ sv:'Polen', names:['Poland','Polen'] },
+};
+const COUNTRY_LOOKUP = Object.entries(COUNTRY_META).reduce((acc, [code, meta]) => {
+  acc[normalizeCountryKey(code)] = code;
+  (meta.names || []).forEach(name => { acc[normalizeCountryKey(name)] = code; });
+  return acc;
+}, {});
+function countryCodeToFlag(code=''){
+  const normalized = String(code || '').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(normalized)) return '';
+  return String.fromCodePoint(...[...normalized].map(char => 127397 + char.charCodeAt(0)));
+}
+function getFlagIconUrl(code=''){
+  const normalized = String(code || '').trim().toLowerCase();
+  if(!/^[a-z]{2}$/.test(normalized)) return '';
+  return `https://flagcdn.com/24x18/${normalized}.png`;
+}
+function svLand(s){
+  const key = normalizeCountryKey(fixEnc(s));
+  const code = COUNTRY_LOOKUP[key];
+  return code ? COUNTRY_META[code]?.sv || fixEnc(s) : fixEnc(s);
+}
+function getNationalityDisplayData(...sources){
+  let code = '';
+  let rawLabel = '';
+  for(const source of sources){
+    if(!source) continue;
+    if(typeof source === 'string'){
+      rawLabel ||= fixEnc(source);
+      const maybeCode = COUNTRY_LOOKUP[normalizeCountryKey(source)] || '';
+      if(maybeCode && !code) code = maybeCode;
+      continue;
+    }
+    const sourceCode = source.nationalityCode || source.nationality_code || source.countryCode || source.country_code || '';
+    const sourceLabel = source.nationality || source.birth?.country || '';
+    rawLabel ||= fixEnc(sourceLabel);
+    if(!code && sourceCode && COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceCode)];
+    if(!code && sourceLabel && COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)]) code = COUNTRY_LOOKUP[normalizeCountryKey(sourceLabel)];
+  }
+  if(!code && rawLabel) code = COUNTRY_LOOKUP[normalizeCountryKey(rawLabel)] || '';
+  const swedishName = code ? (COUNTRY_META[code]?.sv || rawLabel) : (rawLabel ? svLand(rawLabel) : '');
+  const flagCode = code === 'EN' || code === 'SC' || code === 'WA' ? 'GB' : code;
+  return {
+    code: flagCode || '',
+    nameSv: swedishName || 'Okänd'
+  };
+}
+function getNationalityDisplay(...sources){
+  const data = getNationalityDisplayData(...sources);
+  return data?.nameSv || 'Okänd';
+}
+function renderNationalityDisplay(...sources){
+  const data = getNationalityDisplayData(...sources);
+  const nameSv = data?.nameSv || 'Okänd';
+  const iconUrl = data?.code ? getFlagIconUrl(data.code) : '';
+  if(!iconUrl) return esc(nameSv);
+  return `<span style="display:inline-flex;align-items:center;gap:8px;min-width:0">
+    <img src="${iconUrl}" alt="${esc(nameSv)}" loading="lazy" width="18" height="14" style="width:18px;height:14px;object-fit:cover;border-radius:3px;border:1px solid rgba(108,86,44,.12);flex-shrink:0" onerror="this.style.display='none'">
+    <span>${esc(nameSv)}</span>
+  </span>`;
+}
+const PLAYER_DEFAULT_SEASON = 2026;
+const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+const STATIC_DATA_BASE = '/data/static';
+const STATIC_MANIFEST_PATH = `${STATIC_DATA_BASE}/manifest.json`;
+let STATIC_MANIFEST_PROMISE = null;
+const STATIC_RESPONSE_CACHE = {};
+function shouldUseStaticEndpoint(ep, params = {}){
+  if(['fixtures/statistics','fixtures/events','fixtures/lineups'].includes(ep)) return false;
+  if(ep === 'fixtures') {
+    if(params?.id || params?.last || params?.next || params?.live) return false;
+    return !!params?.team;
+  }
+  return true;
 }
 
-function safeSegment(value = '') {
+function stableQueryKey(ep, params = {}){
+  const qs = new URLSearchParams();
+  Object.keys(params || {}).sort().forEach(key => {
+    if(params[key] !== undefined && params[key] !== null && params[key] !== '') {
+      qs.set(key, String(params[key]));
+    }
+  });
+  const suffix = qs.toString();
+  return suffix ? `${ep}?${suffix}` : ep;
+}
+function canonicalStaticQueryKey(epOrKey, params = null){
+  if(params !== null) return stableQueryKey(epOrKey, params);
+  const raw = String(epOrKey || '').trim();
+  if(!raw) return '';
+  const [endpoint, query = ''] = raw.split('?');
+  if(!query) return endpoint;
+  const parsed = Object.fromEntries(new URLSearchParams(query).entries());
+  return stableQueryKey(endpoint, parsed);
+}
+function staticSafeSegment(value = ''){
   return String(value)
     .replace(/[^a-zA-Z0-9_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80) || 'query';
 }
+function toBase64Url(value = ''){
+  try {
+    return btoa(unescape(encodeURIComponent(String(value))))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  } catch(e) {
+    return '';
+  }
+}
+function getDeterministicStaticPath(ep, params = {}){
+  const key = canonicalStaticQueryKey(ep, params);
+  const token = toBase64Url(key);
+  if(!token) return '';
+  return `${STATIC_DATA_BASE}/${staticSafeSegment(ep)}-${token}.json`;
+}
+function normalizeStaticQueryKey(key = ''){
+  return canonicalStaticQueryKey(key);
+}
+async function parseStaticJsonResponse(response, key = 'static'){
+  if(!response?.ok) throw new Error(`Static fetch failed for ${key} (${response?.status || 0})`);
+  const text = await response.text();
+  const trimmed = String(text || '').trim();
+  if(!trimmed) throw new Error(`Static data empty for ${key}`);
+  if(trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
+    throw new Error(`Static data missing for ${key}`);
+  }
+  try {
+    return JSON.parse(trimmed);
+  } catch(e) {
+    throw new Error(`Static JSON invalid for ${key}`);
+  }
+}
+function findStaticManifestRef(manifest, key = ''){
+  const queries = manifest?.queries || {};
+  if(queries[key]) return queries[key];
+  const normalizedTarget = normalizeStaticQueryKey(key);
+  if(!normalizedTarget) return '';
+  for(const [manifestKey, ref] of Object.entries(queries)){
+    if(normalizeStaticQueryKey(manifestKey) === normalizedTarget) return ref;
+  }
+  return '';
+}
+function findStaticManifestNearMatches(manifest, key = '', limit = 6){
+  const queries = manifest?.queries || {};
+  const normalizedTarget = normalizeStaticQueryKey(key);
+  const [targetEndpoint = '', targetQuery = ''] = normalizedTarget.split('?');
+  const targetParams = new URLSearchParams(targetQuery);
+  const targetTeam = targetParams.get('team');
+  const targetSeason = targetParams.get('season');
+  const targetLeague = targetParams.get('league');
+  return Object.keys(queries)
+    .map(manifestKey => {
+      const normalizedKey = normalizeStaticQueryKey(manifestKey);
+      const [endpoint = '', query = ''] = normalizedKey.split('?');
+      const params = new URLSearchParams(query);
+      let score = 0;
+      if(endpoint === targetEndpoint) score += 10;
+      if(targetTeam && params.get('team') === targetTeam) score += 5;
+      if(targetSeason && params.get('season') === targetSeason) score += 4;
+      if(targetLeague && params.get('league') === targetLeague) score += 4;
+      if(normalizedKey === normalizedTarget) score += 100;
+      return { manifestKey, score };
+    })
+    .filter(item => item.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, limit)
+    .map(item => item.manifestKey);
+}
+async function fetchStaticJsonCandidates(key = '', refs = []){
+  const attempts = [];
+  for(const ref of refs){
+    if(!ref) continue;
+    try {
+      const response = await fetch(ref, { cache:'no-store' });
+      const data = await parseStaticJsonResponse(response, key);
+      return { data, ref, attempts };
+    } catch(e) {
+      attempts.push({ ref, error: e.message });
+    }
+  }
+  return { data: null, ref: '', attempts };
+}
+async function getStaticManifest(){
+  if(STATIC_MANIFEST_PROMISE) return STATIC_MANIFEST_PROMISE;
+  STATIC_MANIFEST_PROMISE = fetch(STATIC_MANIFEST_PATH, { cache:'no-store' })
+    .then(async res => {
+      try {
+        const data = await parseStaticJsonResponse(res, 'manifest');
+        return data?.queries ? data : { queries:{} };
+      } catch(e) {
+        console.warn('[static-data] manifest unavailable', e.message);
+        return { queries:{} };
+      }
+    })
+    .catch(() => ({ queries:{} }));
+  return STATIC_MANIFEST_PROMISE;
+}
+async function getStaticApiResponse(ep, params = {}){
+  return null;
+}
+function isAllsvenskanLeague(league = {}, leagueId = LEAGUE){
+  const idMatch = Number(league?.id || 0) === Number(leagueId || 0);
+  const normalizedName = normalizeText(String(league?.name || ''));
+  const nameMatch = normalizedName.includes('allsvenskan') && !normalizedName.includes('dam');
+  return idMatch || nameMatch;
+}
+function isNationalTeamStat(entry = {}){
+  const teamName = String(entry?.team?.name || '').trim();
+  const leagueCountry = String(entry?.league?.country || '').trim();
+  const normalizedTeam = normalizeText(teamName);
+  const normalizedCountry = normalizeText(leagueCountry);
+  if(!normalizedTeam) return false;
+  if(normalizedCountry && (normalizedTeam === normalizedCountry || normalizedTeam.startsWith(`${normalizedCountry} u`))) return true;
+  return /\bu\d{1,2}\b/i.test(teamName) && !!leagueCountry;
+}
+function filterPlayerLeagueRows(rows = [], leagueId = LEAGUE){
+  if(!Array.isArray(rows)) return rows || [];
+  return rows
+    .map(item => ({
+      ...item,
+      statistics: (item?.statistics || []).filter(entry => isAllsvenskanLeague(entry?.league, leagueId))
+    }))
+    .filter(item => (item?.statistics || []).length);
+}
+function aggregatePlayerSeasonStats(rows = [], opts = {}){
+  const leagueId = opts.leagueId ? Number(opts.leagueId) : null;
+  const seasonStats = rows?.[0]?.statistics || [];
+  const comps = seasonStats
+    .filter(Boolean)
+    .filter(entry => !leagueId || Number(entry?.league?.id || 0) === leagueId);
+  if(!comps.length) return null;
+  const sum = getter => comps.reduce((total, entry) => total + toStatNumber(getter(entry)), 0);
+  const minutes = sum(entry => entry.games?.minutes);
+  const appearances = sum(entry => entry.games?.appearences);
+  const starts = sum(entry => entry.games?.lineups);
+  const goals = sum(entry => entry.goals?.total);
+  const assists = sum(entry => entry.goals?.assists);
+  const shots = sum(entry => entry.shots?.total);
+  const shotsOn = sum(entry => entry.shots?.on);
+  const passes = sum(entry => entry.passes?.total);
+  const keyPasses = sum(entry => entry.passes?.key);
+  const tackles = sum(entry => entry.tackles?.total);
+  const interceptions = sum(entry => entry.tackles?.interceptions);
+  const blocks = sum(entry => entry.tackles?.blocks);
+  const dribbles = sum(entry => entry.dribbles?.success);
+  const duelsWon = sum(entry => entry.duels?.won);
+  const duelsTotal = sum(entry => entry.duels?.total);
+  const foulsCommitted = sum(entry => entry.fouls?.committed);
+  const foulsDrawn = sum(entry => entry.fouls?.drawn);
+  const offsides = sum(entry => entry.offsides);
+  const yellow = sum(entry => entry.cards?.yellow);
+  const red = sum(entry => entry.cards?.red);
+  const saves = sum(entry => entry.goals?.saves);
+  const goalsConceded = sum(entry => entry.goals?.conceded);
+  const penaltiesSaved = sum(entry => entry.penalty?.saved);
+  const penaltiesScored = sum(entry => entry.penalty?.scored);
+  const penaltiesMissed = sum(entry => entry.penalty?.missed);
+  const subIns = sum(entry => entry.substitutes?.in);
+  const subOuts = sum(entry => entry.substitutes?.out);
+  const bench = sum(entry => entry.substitutes?.bench);
+  const ratingEntries = comps
+    .map(entry => ({
+      rating: toStatNumber(entry.games?.rating),
+      appearances: toStatNumber(entry.games?.appearences) || 1,
+    }))
+    .filter(entry => entry.rating > 0);
+  const passAccuracyEntries = comps.map(entry => ({
+    accuracy: toStatNumber(entry.passes?.accuracy),
+    passes: toStatNumber(entry.passes?.total),
+  })).filter(entry => entry.accuracy > 0);
+  const ratingWeight = ratingEntries.reduce((total, entry) => total + entry.appearances, 0);
+  const rating = ratingEntries.length
+    ? ratingEntries.reduce((total, entry) => total + (entry.rating * entry.appearances), 0) / (ratingWeight || ratingEntries.length)
+    : 0;
+  const accuratePasses = Math.round(passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0));
+  const passAccuracy = passes > 0 ? pct(accuratePasses, passes) : (passAccuracyEntries[0]?.accuracy || 0);
+  const team = comps[0]?.team || rows?.[0]?.statistics?.[0]?.team || null;
+  const position = comps[0]?.games?.position || '';
+  return {
+    games: {
+      appearences: appearances,
+      minutes,
+      rating: rating || null,
+      position,
+      lineups: starts,
+    },
+    goals: {
+      total: goals,
+      assists,
+      conceded: goalsConceded,
+      saves,
+    },
+    cards: { yellow, red },
+    shots: { total: shots, on: shotsOn },
+    passes: { total: passes, key: keyPasses, accuracy: passAccuracy },
+    tackles: { total: tackles, interceptions, blocks },
+    dribbles: { success: dribbles },
+    duels: { won: duelsWon, total: duelsTotal },
+    fouls: { committed: foulsCommitted, drawn: foulsDrawn },
+    offsides,
+    substitutes: { in: subIns, out: subOuts, bench },
+    penalty: { saved: penaltiesSaved, scored: penaltiesScored, missed: penaltiesMissed },
+    team,
+    derived: {
+      goalContributions: goals + assists,
+      goalsPer90: per90(goals, minutes),
+      assistsPer90: per90(assists, minutes),
+      pointsPer90: per90(goals + assists, minutes),
+      shotsPer90: per90(shots, minutes),
+      keyPassesPer90: per90(keyPasses, minutes),
+      passAccuracy,
+      accuratePasses,
+      passesPer90: per90(passes, minutes),
+      conversionRate: pct(goals, shots),
+      shotsPerGoal: goals > 0 ? shots / goals : 0,
+      shotAccuracy: pct(shotsOn, shots),
+      defActions: tackles + interceptions + blocks,
+      defActionsPer90: per90(tackles + interceptions + blocks, minutes),
+      duelWinRate: pct(duelsWon, duelsTotal),
+      savePercentage: pct(saves, saves + goalsConceded),
+      goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
+      minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
+      subApps: subIns > 0 ? subIns : Math.max(appearances - starts, 0),
+      minutesPerGoal: goals > 0 ? minutes / goals : 0,
+      minutesPerContribution: (goals + assists) > 0 ? minutes / (goals + assists) : 0,
+    }
+  };
+}
+function svStatus(longStatus=''){
+  const map = {
+    'Match Finished':'Slut',
+    'First Half':'Första halvlek',
+    'Second Half':'Andra halvlek',
+    'Halftime':'Halvtid',
+    'Not Started':'Kommande',
+    'Time to be defined':'Tid ej fastställd',
+    'Postponed':'Uppskjuten',
+    'Cancelled':'Inställd',
+    'Abandoned':'Avbruten',
+    'Interrupted':'Avbruten',
+    'Awarded':'Tilldömd',
+    'WalkOver':'Walkover'
+  };
+  return map[longStatus] || longStatus;
+}
+function svOmgang(s=''){
+  return String(s || '')
+    .replace(/Regular Season/gi,'Grundserie')
+    .replace(/Championship Round/gi,'Mästerskapsrunda')
+    .replace(/Relegation Round/gi,'Nedflyttningsrunda')
+    .replace(/Play-offs?/gi,'Slutspel');
+}
+function svDomare(s=''){
+  return String(s || '').replace(/,\s*Sweden$/i, ', Sverige');
+}
+function formatSvDate(input, opts = { day:'2-digit', month:'short' }){
+  if(!input) return '—';
+  try {
+    const date = new Date(input);
+    if(Number.isNaN(date.getTime())) return String(input || '').slice(0, 10) || '—';
+    return date.toLocaleDateString('sv-SE', opts);
+  } catch(e) {
+    return String(input || '').slice(0, 10) || '—';
+  }
+}
+function svDate(input){
+  return formatSvDate(input);
+}
 
-async function fetchApiRaw(endpoint, params = {}) {
-  const search = new URLSearchParams(params);
-  const response = await fetch(`${BASE_URL}/${endpoint}?${search.toString()}`, {
-    headers: { 'x-apisports-key': API_KEY },
+async function af(ep, p={}) {
+  const key = ep + JSON.stringify(p);
+  if(CACHE[key]) return CACHE[key];
+  const q = new URLSearchParams({_endpoint:ep,...p});
+  const r = await fetch(`${AF}?${q}`);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const d = await r.json();
+  if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
+  CACHE[key] = d.response || [];
+  return CACHE[key];
+}
+
+async function afRaw(ep, p={}) {
+  const q = new URLSearchParams({_endpoint:ep,...p});
+  const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const d = await r.json();
+  if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
+  return d;
+}
+
+async function afStatic(ep, p={}){
+  const staticData = await getStaticApiResponse(ep, p);
+  if(!staticData) throw new Error(`Static data missing for ${stableQueryKey(ep, p)}`);
+  return staticData.response || [];
+}
+
+async function afRawStatic(ep, p={}){
+  const staticData = await getStaticApiResponse(ep, p);
+  if(!staticData) throw new Error(`Static data missing for ${stableQueryKey(ep, p)}`);
+  return staticData;
+}
+async function loadStaticJsonByQuery(ep, p = {}){
+  const key = canonicalStaticQueryKey(ep, p);
+  const manifest = await getStaticManifest();
+  const manifestRef = findStaticManifestRef(manifest, key);
+  const directRef = getDeterministicStaticPath(ep, p);
+  const { data, attempts } = await fetchStaticJsonCandidates(key, [manifestRef, directRef]);
+  if(data) return data;
+  console.warn('[static-data] lookup failed', {
+    query: stableQueryKey(ep, p),
+    canonicalQuery: key,
+    manifestRef,
+    directRef,
+    attempts,
+    nearMatches: findStaticManifestNearMatches(manifest, key),
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.message || `HTTP ${response.status} for ${endpoint}`);
-  }
-  if (data?.errors && Object.keys(data.errors).length) {
-    throw new Error(Object.values(data.errors).join(', '));
-  }
-  return data;
+  throw new Error(`Static data missing for ${key}`);
 }
-
-async function writeStaticQuery(endpoint, params = {}) {
-  const key = canonicalStaticQueryKey(endpoint, params);
-  if (manifest.queries[key]) return null;
-  const raw = await fetchApiRaw(endpoint, params);
-  const fileName = `${safeSegment(endpoint)}-${Buffer.from(key).toString('base64url')}.json`;
-  const relPath = `/data/static/${fileName}`;
-  await fs.writeFile(path.join(OUT_DIR, fileName), JSON.stringify(raw), 'utf8');
-  manifest.queries[key] = relPath;
-  console.log('[static]', key);
-  return raw;
-}
-
-async function writePaginatedQuerySet(endpoint, params = {}, onPage = null) {
-  const first = await writeStaticQuery(endpoint, params);
-  if (!first) return;
-  if (typeof onPage === 'function') await onPage(first, params.page || 1);
-  const totalPages = Number(first?.paging?.total || 1);
-  for (let page = 2; page <= totalPages; page += 1) {
-    const raw = await writeStaticQuery(endpoint, { ...params, page });
-    if (raw && typeof onPage === 'function') await onPage(raw, page);
+async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }){
+  try {
+    return await loadStaticJsonByQuery(ep, p);
+  } catch(e) {
+    console.warn('[static-data] optional query missing', {
+      query: stableQueryKey(ep, p),
+      canonicalQuery: canonicalStaticQueryKey(ep, p),
+      error: e.message
+    });
+    return fallback;
   }
 }
 
-const teamIds = new Set();
-const playerIds = new Set();
+async function fetchAllPages(ep, p = {}, opts = {}) {
+  const pageParam = opts.pageParam || 'page';
+  const dedupeKey = opts.dedupeKey || null;
+  const first = await afRaw(ep, p);
+  const firstRows = Array.isArray(first?.response) ? first.response : [];
+  const totalPages = Number(first?.paging?.total || first?.pagination?.total || 1);
+  let rows = [...firstRows];
 
-for (const season of SEASONS) {
-  const standingsRaw = await writeStaticQuery('standings', { league: LEAGUE, season });
-  const rows = standingsRaw?.response?.[0]?.league?.standings?.[0] || [];
-  rows.forEach((row) => {
-    if (row?.team?.id) teamIds.add(row.team.id);
+  if(totalPages > 1) {
+    for(let page = 2; page <= totalPages; page += 1) {
+      try {
+        const next = await afRaw(ep, { ...p, [pageParam]: page });
+        const nextRows = Array.isArray(next?.response) ? next.response : [];
+        rows.push(...nextRows);
+      } catch(e) {
+        console.warn('[pagination] page fetch failed', { endpoint: ep, page, params: p, error: e.message });
+      }
+    }
+  }
+
+  if(!dedupeKey) return rows;
+
+  const seen = new Set();
+  return rows.filter(item => {
+    const key = dedupeKey(item);
+    if(!key) return true;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
-for (const teamId of teamIds) {
-  await writeStaticQuery('teams', { id: teamId }).catch(() => null);
-  await writeStaticQuery('players/squads', { team: teamId }).catch(() => null);
-  await writeStaticQuery('transfers', { team: teamId }).catch(() => null);
+async function fetchAllPagesStatic(ep, p = {}, opts = {}) {
+  const pageParam = opts.pageParam || 'page';
+  const dedupeKey = opts.dedupeKey || null;
+  const first = await afRawStatic(ep, p);
+  const firstRows = Array.isArray(first?.response) ? first.response : [];
+  const totalPages = Number(first?.paging?.total || first?.pagination?.total || 1);
+  let rows = [...firstRows];
 
-  for (const season of SEASONS) {
-    await writeStaticQuery('teams/statistics', { league: LEAGUE, season, team: teamId }).catch(() => null);
-    await writePaginatedQuerySet('fixtures', { league: LEAGUE, season, team: teamId }, null).catch(() => null);
-    await writePaginatedQuerySet('players', { league: LEAGUE, season, team: teamId }, async (raw) => {
-      (raw?.response || []).forEach((entry) => {
-        if (entry?.player?.id) playerIds.add(entry.player.id);
+  if(totalPages > 1) {
+    for(let page = 2; page <= totalPages; page += 1) {
+      const next = await afRawStatic(ep, { ...p, [pageParam]: page });
+      const nextRows = Array.isArray(next?.response) ? next.response : [];
+      rows.push(...nextRows);
+    }
+  }
+
+  if(!dedupeKey) return rows;
+
+  const seen = new Set();
+  return rows.filter(item => {
+    const key = dedupeKey(item);
+    if(!key) return true;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function delay(ms){
+  return new Promise(res => setTimeout(res, ms));
+}
+
+function normalizeText(str){
+  return (str || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function withTimeout(promise, ms = 12000, label = 'Request') {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timeout efter ${Math.round(ms/1000)} sekunder`)), ms);
+  });
+  return Promise.race([
+    Promise.resolve(promise).finally(() => {
+      if (timer) clearTimeout(timer);
+    }),
+    timeout
+  ]);
+}
+
+async function afAll(ep, p={}) {
+  return af(ep, p);
+}
+
+// â”€â”€â”€ ROUTING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function go(path, push=true) {
+  if(push) history.pushState({}, '', path);
+  updateNav(path);
+  // Reset transfers cache only when navigating to a completely different section
+  if(transfersCache && !path.startsWith('/overgangar') && !path.startsWith('/spelare')) transfersCache = null;
+  route(path);
+}
+function updateNav(path) {
+  document.querySelectorAll('.np').forEach(b => {
+    const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
+  });
+  document.querySelectorAll('.mnav-btn').forEach(b => {
+    const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
+  });
+}
+window.addEventListener('popstate', () => route(location.pathname));
+
+
+function updateRouteChrome(path){
+  const installBanner = document.getElementById('installBanner');
+  const topAdWrap = document.getElementById('topAdWrap');
+  const isHome = path === '/' || path === '';
+  if(installBanner){
+    installBanner.classList.toggle('route-hidden', !isHome);
+    if(!isHome) installBanner.style.display = 'none';
+  }
+  if(topAdWrap) topAdWrap.classList.toggle('route-hidden', !isHome && window.innerWidth <= 900);
+}
+
+function route(path) {
+  updateRouteChrome(path);
+  const el = document.getElementById('mc');
+  if(path==='/'||path==='')            { pageStart(el); return; }
+  if(path==='/lag-lista')              { pageTeams(el); return; }
+  if(path==='/tabell')                 { pageStandings(el); return; }
+  if(path==='/resultat')               { pageResults(el); return; }
+  if(path==='/overgangar')             { pageTransfers(el, 1); return; }
+  const trm = path.match(/^\/overgangar\/(\d+)/);
+  if(trm)                              { pageTransfers(el, +trm[1]); return; }
+  if(path==='/statistik')              { pageStats(el); return; }
+  if(path==='/mina-lag')               { pageStart(el); return; }
+  if(path==='/sok')                    { go('/'); return; }
+  const mm = path.match(/^\/match\/(\d+)/);
+  if(mm)                               { pageMatch(el, +mm[1]); return; }
+  const tm = path.match(/^\/lag\/(\d+)/);
+  if(tm)                               { pageTeam(el, +tm[1]); return; }
+  const pm = path.match(/^\/spelare\/(\d+)/);
+  if(pm)                               { pagePlayer(el, +pm[1]); return; }
+  el.innerHTML = `<div class="err">Sidan hittades inte.</div>`;
+}
+
+// â”€â”€â”€ SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let searchTimer;
+function onSearch(v) {
+  clearTimeout(searchTimer);
+  const box = document.getElementById('sr');
+  if(v.trim().length < 3){box.classList.remove('open');return;}
+  searchTimer = setTimeout(()=>runSearch(v.trim()), 350);
+}
+async function runSearch(q) {
+  const box = document.getElementById('sr');
+  box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)"><div class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px"></div>Söker…</div>`;
+  box.classList.add('open');
+  try {
+    const [players, teams] = await Promise.all([
+      af('players', {search:q, season:2025}).catch(()=>af('players', {search:q, season:2024}).catch(()=>[])),
+      af('teams', {search:q}).catch(()=>[])
+    ]);
+    let html = '';
+    if(teams.length) {
+      html += `<div class="sr-label">Lag</div>`;
+      teams.slice(0,3).forEach(t => {
+        html += `<div class="sr-item team-item" onclick="go('/lag/${t.team.id}')">
+          <img src="${t.team.logo||''}" onerror="this.style.opacity='.2'">
+          <div><div class="sr-name">${esc(t.team.name)}</div><div class="sr-sub">Allsvenskan</div></div>
+        </div>`;
       });
-    }).catch(() => null);
+    }
+    if(players.length) {
+      html += `<div class="sr-label">Spelare</div>`;
+      players.slice(0,6).forEach(p => {
+        const s = p.statistics?.[0];
+        html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
+          <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
+          <div><div class="sr-name">${esc(getPlayerDisplayName(p.player))}</div>
+          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
+        </div>`;
+      });
+    }
+    if(!html) html = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)">Inga resultat för "${q}"</div>`;
+    box.innerHTML = html;
+  } catch(e) {
+    box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:#f08080">Fel: ${esc(e.message)}</div>`;
+  }
+}
+function handleSearchKey(e) {
+  if(e.key==='Escape') document.getElementById('sr')?.classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest('.search-wrap')) document.getElementById('sr')?.classList.remove('open');
+});
+
+// â”€â”€â”€ START PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function pageStart(el) {
+  document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
+  try {
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
+    const standings = data[0]?.league?.standings?.[0] || [];
+    const teams = standings.map(t=>t.team);
+    const topThree = standings.slice(0,3);
+
+    let recentFixtures = [];
+    try {
+      recentFixtures = await af('fixtures', {league:LEAGUE, season:SEASON, last:3});
+    } catch(e) {
+      recentFixtures = [];
+    }
+    recentFixtures = [...recentFixtures]
+      .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
+      .slice(0,3);
+
+    const orderedTeams = sortTeamsByOrder(teams);
+
+    const cards = orderedTeams.map(t=>`
+      <div class="start-tcard" onclick="go('/lag/${t.id}')">
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div class="start-tn">${esc(t.name)}</div>
+      </div>`).join('');
+
+    const highlights = [
+      {
+        kicker: 'Snabbt in',
+        title: 'Tabell',
+        copy: 'Se poäng, form och målskillnad för hela ligan.',
+        path: '/tabell'
+      },
+      {
+        kicker: 'Följ nu',
+        title: 'Resultat',
+        copy: 'Kolla senaste matcherna och öppna varje matchrapport.',
+        path: '/resultat'
+      },
+      {
+        kicker: 'Djupdata',
+        title: 'Statistik',
+        copy: 'Jämför spelare och hitta ligans starkaste siffror.',
+        path: '/statistik'
+      }
+    ].map(item => `
+      <div class="start-highlight" onclick="go('${item.path}')">
+        <div class="start-highlight-kicker">${item.kicker}</div>
+        <div class="start-highlight-title">${item.title}</div>
+        <div class="start-highlight-copy">${item.copy}</div>
+      </div>`).join('');
+
+    const topRows = topThree.map(row => {
+      const gd = row.goalsDiff || 0;
+      return `
+      <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
+        <div class="start-rank">${row.rank}</div>
+        <div class="start-team-line">
+          <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div class="start-team-name">${esc(fixName(row.team.name))}</div>
+          <div class="start-team-gd">${gd >= 0 ? '+' : ''}${gd}</div>
+        </div>
+        <div class="start-points">${row.points}p</div>
+      </div>`;
+    }).join('');
+
+    const resultRows = recentFixtures.length
+      ? recentFixtures.map(f => `
+        <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
+          <div class="start-result-top">
+            <div class="start-result-round">${esc(svOmgang(f.league?.round || 'Allsvenskan'))}</div>
+            <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
+          </div>
+          <div class="start-result-teams">
+            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            <div class="start-result-vs">mot</div>
+            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+          </div>
+        </div>`).join('')
+      : `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
+
+    el.innerHTML = `
+      <div class="start-hero">
+        <div class="start-hero-inner">
+          <div class="start-wordmark">Allsvenskan<span>AI</span></div>
+          <div class="start-sub">S&ouml;k Allsvenskan med AI</div>
+          <div class="start-lead">Hitta resultat, statistik och spelardata direkt.</div>
+          <div class="start-proof">
+            <div class="start-proof-pill">16 lag</div>
+            <div class="start-proof-pill">240 matcher</div>
+            <div class="start-proof-pill">Live & statistik</div>
+          </div>
+          <div class="start-hero-actions">
+            <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">B&ouml;rja s&ouml;ka</button>
+            <button class="start-secondary-btn" onclick="go('/tabell')">Se tabellen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="start-highlight-grid">${highlights}</div>
+
+      <div class="start-ai">
+        <div class="start-ai-head">
+          <div>
+            <div class="start-ai-title">Fr&aring;ga AllsvenskanAI</div>
+            <div class="start-ai-copy">Skriv en fr&aring;ga om tabellen eller spelardata. Prova g&auml;rna en av fr&aring;gorna nedan f&ouml;r att komma ig&aring;ng.</div>
+          </div>
+          <div class="start-ai-live">Live-data</div>
+        </div>
+        <form class="start-ai-form" onsubmit="startAskAI(event)">
+          <div class="start-ai-input-wrap">
+            <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off" onfocus="showStartAiSuggestions()" oninput="showStartAiSuggestions(this.value)">
+            <div id="startAiSuggestions" class="start-ai-suggestions" hidden></div>
+          </div>
+          <button class="start-ai-submit" type="submit">Fr&aring;ga AI</button>
+        </form>
+        <div class="start-chip-row">
+          <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?', true)" type="button">Vem leder tabellen just nu?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest m&aring;l?', true)" type="button">Vilka spelare i AIK har flest m&aring;l?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest po&auml;ng?', true)" type="button">Vilket lag har flest po&auml;ng?</button>
+        </div>
+        <div class="start-ai-note">Snabbsvaren nedan bygger p&aring; den live-data som redan finns i sajten.</div>
+        <div id="startAiResult" class="start-ai-result">
+          <div class="start-ai-result-head">
+            <div class="start-ai-result-label">Redo f&ouml;r fr&aring;ga</div>
+            <div class="start-ai-result-query">V&auml;lj en fr&aring;ga eller skriv din egen</div>
+          </div>
+          <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>
+        </div>
+      </div>
+
+      <div class="start-snapshot">
+        <div class="start-mini-card">
+          <div class="start-mini-head">
+            <div>
+              <div class="start-mini-title">Toppen Herr</div>
+              <div class="start-mini-sub">Målskillnad och poäng</div>
+            </div>
+            <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
+          </div>
+          <div class="start-table-list">${topRows}</div>
+        </div>
+        <div class="start-mini-card placeholder">
+          <div class="start-mini-head">
+            <div>
+              <div class="start-mini-title">Toppen Dam</div>
+              <div class="start-mini-sub">Målskillnad och poäng</div>
+            </div>
+          </div>
+          <div class="start-mini-empty">
+            <div>
+              <strong>Kommer snart</strong>
+              <span>Damallsvenskan är på väg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="start-teams-section">
+        <div class="start-section-label">Alla lag i Allsvenskan ${SEASON}</div>
+        <div class="start-tgrid">${cards}</div>
+      </div>
+
+      <div style="margin-bottom:2rem">
+        <div class="start-section-label">Senaste poddar</div>
+        <div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ditt lag.</div>
+        <div id="podcasts-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar…</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:2rem">
+        <div class="start-section-label">Senaste nyheter</div>
+        <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning som borde synas här? Kontakta info@allsvenskanai.se.</div>
+        <div id="news-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter…</div>
+        </div>
+      </div>`;
+    
+    // Load feeds async after page renders
+    initStartAiPlaceholder();
+    loadStartPodcasts();
+    loadStartNews();
+  } catch(e) {
+    el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
   }
 }
 
-for (const playerId of playerIds) {
-  await writeStaticQuery('players/profiles', { player: playerId }).catch(() => null);
-  await writeStaticQuery('transfers', { player: playerId }).catch(() => null);
-  for (const season of SEASONS) {
-    await writeStaticQuery('players', { id: playerId, season }).catch(() => null);
+let startAiPlaceholderTimer = null;
+const START_AI_PLACEHOLDERS = [
+  'Vem leder tabellen?',
+  'AIK senaste matcher',
+  'Flest mål i Allsvenskan?'
+];
+const START_AI_SUGGESTIONS = [
+  'Vem leder tabellen just nu?',
+  'AIK senaste matcher',
+  'Flest mål i Allsvenskan?',
+  'Vilka spelare i AIK har flest mål?',
+  'Vilket lag har flest poäng?'
+];
+let startAiLastQuery = '';
+
+function initStartAiPlaceholder() {
+  const input = document.getElementById('startAiInput');
+  if(startAiPlaceholderTimer) {
+    clearInterval(startAiPlaceholderTimer);
+    startAiPlaceholderTimer = null;
+  }
+  if(!input) return;
+  let idx = 0;
+  const applyPlaceholder = () => {
+    if(document.activeElement === input || (input.value || '').trim()) return;
+    input.placeholder = START_AI_PLACEHOLDERS[idx];
+    idx = (idx + 1) % START_AI_PLACEHOLDERS.length;
+  };
+  applyPlaceholder();
+  startAiPlaceholderTimer = setInterval(applyPlaceholder, 2400);
+}
+
+function showStartAiSuggestions(value = '') {
+  const wrap = document.getElementById('startAiSuggestions');
+  const input = document.getElementById('startAiInput');
+  if(!wrap || !input) return;
+  const q = String(value || input.value || '').trim().toLowerCase();
+  const items = START_AI_SUGGESTIONS.filter(s => !q || s.toLowerCase().includes(q)).slice(0,4);
+  if(!items.length) {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.innerHTML = items.map(s => `<button class="start-ai-suggestion" type="button" onclick="applyStartAiSuggestion(${JSON.stringify(s)})">${esc(s)}</button>`).join('');
+  wrap.hidden = false;
+}
+
+function hideStartAiSuggestions() {
+  const wrap = document.getElementById('startAiSuggestions');
+  if(wrap) wrap.hidden = true;
+}
+
+function applyStartAiSuggestion(text) {
+  const input = document.getElementById('startAiInput');
+  if(!input) return;
+  input.value = text;
+  input.focus();
+  hideStartAiSuggestions();
+}
+
+function startFillPrompt(text, submit = false) {
+  const input = document.getElementById('startAiInput');
+  if(!input) return;
+  input.value = text;
+  input.focus();
+  hideStartAiSuggestions();
+  if(submit) startAskAI();
+}
+
+async function startAskAI(event) {
+  if(event) event.preventDefault();
+  const input = document.getElementById('startAiInput');
+  const result = document.getElementById('startAiResult');
+  if(!input || !result) return;
+  const question = (input.value || '').trim();
+  if(question.length < 3) {
+    result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Redo för fråga</div>
+        <div class="start-ai-result-query">Välj en fr&aring;ga eller skriv din egen</div>
+      </div>
+      <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
+    input.focus();
+    return;
+  }
+  startAiLastQuery = question;
+  hideStartAiSuggestions();
+  result.innerHTML = `
+    <div class="start-ai-result-head">
+      <div class="start-ai-result-label">Söker</div>
+      <div class="start-ai-result-query">${esc(question)}</div>
+    </div>
+    <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Tänker på din fråga...</div>`;
+  try {
+    const quick = await tryDataAnswer(question);
+    if(quick) {
+      result.innerHTML = `
+        <div class="start-ai-result-head">
+          <div class="start-ai-result-label">Senaste fråga</div>
+          <div class="start-ai-result-query">${esc(question)}</div>
+        </div>
+        ${quick}`;
+      return;
+    }
+    result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Senaste fråga</div>
+        <div class="start-ai-result-query">${esc(question)}</div>
+      </div>
+      <div class="start-ai-empty">
+        Testa att fråga om tabellen, mål eller ett specifikt lag.
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `
+      <div class="start-ai-result-head">
+        <div class="start-ai-result-label">Senaste fråga</div>
+        <div class="start-ai-result-query">${esc(question)}</div>
+      </div>
+      <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
   }
 }
 
-await fs.writeFile(path.join(OUT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-console.log(`Static manifest written with ${Object.keys(manifest.queries).length} queries.`);
+document.addEventListener('click', e => {
+  if(!e.target.closest('.start-ai-input-wrap')) hideStartAiSuggestions();
+});
+
+const TEAM_NEWS_KEYS = {
+  'ik sirius fk': 'sirius',
+  'hammarby if': 'hammarby',
+  'aik': 'aik',
+  'vasteras sk fk': 'vasteras',
+
+  'orgryte is': 'orgryte',
+  'malmo ff': 'malmo',
+  'bk hacken': 'hacken',
+  'if brommapojkarna': 'brommapojkarna',
+
+  'ifk goteborg': 'goteborg',
+  'djurgardens if': 'djurgarden',
+  'if elfsborg': 'elfsborg',
+  'gais': 'gais',
+
+  'halmstads bk': 'halmstad',
+  'kalmar ff': 'kalmar',
+  'degerfors if': 'degerfors',
+  'mjallby aif': 'mjallby'
+};
+
+const AI_TEAM_ALIASES = {
+  'mff': 'Malmö FF',
+  'malmö': 'Malmö FF',
+  'malmo': 'Malmö FF',
+  'malmö ff': 'Malmö FF',
+  'aik': 'AIK',
+  'hammarby': 'Hammarby IF',
+  'hammarby if': 'Hammarby IF',
+  'djurgården': 'Djurgårdens IF',
+  'djurgarden': 'Djurgårdens IF',
+  'djurgårdens if': 'Djurgårdens IF',
+  'göteborg': 'IFK Göteborg',
+  'goteborg': 'IFK Göteborg',
+  'ifk göteborg': 'IFK Göteborg',
+  'ifk goteborg': 'IFK Göteborg'
+};
+
+const TEAM_ORDER = [
+  'AIK',
+  'BK Häcken',
+  'Degerfors IF',
+  'Djurgårdens IF',
+  'GAIS',
+  'Halmstads BK',
+  'Hammarby IF',
+  'IF Brommapojkarna',
+  'IF Elfsborg',
+  'IFK Göteborg',
+  'IK Sirius FK',
+  'Kalmar FF',
+  'Malmö FF',
+  'Mjällby AIF',
+  'Västerås SK FK',
+  'Örgryte IS'
+];
+
+const TEAM_ORDER_INDEX = new Map(TEAM_ORDER.map((name, index) => [name, index]));
+
+function normalizeTeamName(name=''){
+  return String(name || '')
+    .toLowerCase()
+    .replace(/å/g, 'a')
+    .replace(/ä/g, 'a')
+    .replace(/ö/g, 'o')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function sortTeamsByOrder(teams = []){
+  return [...teams].sort((a,b) => {
+    const ai = TEAM_ORDER_INDEX.get(fixName(a?.name)) ?? Number.MAX_SAFE_INTEGER;
+    const bi = TEAM_ORDER_INDEX.get(fixName(b?.name)) ?? Number.MAX_SAFE_INTEGER;
+    return ai - bi || fixName(a?.name).localeCompare(fixName(b?.name), 'sv');
+  });
+}
+
+const TEAM_PODCAST_KEYS = { ...TEAM_NEWS_KEYS };
+const PODCAST_EMPTY_MESSAGE = 'Inga poddar registrerade ännu.';
+
+let newsCache = {};
+let newsCacheTime = {};
+let podcastCache = {};
+let podcastCacheTime = {};
+
+function newsKey(teamKey){
+  return (teamKey || 'start').toLowerCase().trim();
+}
+
+async function fetchWithTimeout(url, ms = 5000){
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  try{
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchNewsByTeamKey(teamKey = 'start'){
+  const key = newsKey(teamKey);
+  const cached = newsCache[key];
+  const cachedAt = newsCacheTime[key] || 0;
+
+  if (cached && Date.now() - cachedAt < 30 * 60 * 1000) {
+    return cached;
+  }
+
+  const resp = await fetchWithTimeout(`/api/news?team=${encodeURIComponent(teamKey)}`, 5000);
+  if (!resp.ok) throw new Error('Kunde inte hämta nyheter');
+
+  const data = await resp.json();
+  const news = Array.isArray(data.news) ? data.news.filter(n => n && n.title) : [];
+
+  newsCache[key] = news;
+  newsCacheTime[key] = Date.now();
+
+  return news;
+}
+
+async function loadStartNews(force = false){
+  const el = document.getElementById('news-container');
+  if (!el) return;
+
+  const key = newsKey('start');
+  if (force) {
+    delete newsCache[key];
+    delete newsCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste nyheter…</div>`;
+
+  try {
+    const news = await fetchNewsByTeamKey('start');
+    renderNews(el, news, {
+      teamKey: 'start',
+      teamName: '',
+      title: 'Senaste nyheter'
+    });
+  } catch {
+    renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
+  }
+}
+
+async function loadTeamNews(teamName, id = 'team-news-container', force = false){
+  const el = document.getElementById(id);
+  if (!el || !teamName) return;
+
+  const normalizedTeamName = normalizeTeamName(teamName);
+  const teamKey = TEAM_NEWS_KEYS[normalizedTeamName];
+
+  if (!teamKey) {
+    renderNewsEmpty(el, `Inga nyhetsflöden är kopplade till ${esc(teamName)}.`);
+    return;
+  }
+
+  const key = newsKey(teamKey);
+  if (force) {
+    delete newsCache[key];
+    delete newsCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamName)}…</div>`;
+
+  try {
+    const news = await fetchNewsByTeamKey(teamKey);
+    renderNews(el, news, {
+      teamKey,
+      teamName,
+      title: `Senaste nyheter om ${teamName}`
+    });
+  } catch {
+    renderNewsEmpty(el, 'Kunde inte hämta nyheter just nu.');
+  }
+}
+
+function renderNews(el, news, opts = {}){
+  if (!el) return;
+
+  if (!news || !news.length) {
+    renderNewsEmpty(el, 'Inga nyheter hittades.');
+    return;
+  }
+
+  const cards = news.slice(0, 8).map(n => `
+    <article class="news-card" ${n.url ? `onclick="window.open('${n.url}','_blank')"` : ''}>
+      <div class="news-title">${esc(cleanFeedText(n.title || 'Utan rubrik'))}</div>
+      <div class="news-meta">${esc(newsSourceLabel(n.source || '', n.url || ''))}${n.date ? ` • ${esc(cleanFeedText(n.date))}` : ''}</div>
+      ${cleanFeedText(n.summary || '') && cleanFeedText(n.summary || '') !== cleanFeedText(n.title || '') ? `<div class="news-summary">${esc(cleanFeedText(n.summary || ''))}</div>` : ''}
+      <div class="news-linkline">Läs artikel →</div>
+    </article>
+  `).join('');
+
+  el.innerHTML = `
+    <div class="news-grid">${cards}</div>
+  `;
+}
+
+function renderNewsEmpty(el, message = 'Inga nyheter hittades.'){
+  if (!el) return;
+  el.innerHTML = `
+    <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
+      ${message}
+    </div>
+  `;
+}
+
+
+function podcastKey(teamKey){
+  return (teamKey || 'start').toLowerCase().trim();
+}
+
+async function fetchPodcastsByTeamKey(teamKey = 'start'){
+  const key = podcastKey(teamKey);
+  const cached = podcastCache[key];
+  const cachedAt = podcastCacheTime[key] || 0;
+
+  if (cached && Date.now() - cachedAt < 30 * 60 * 1000) {
+    return cached;
+  }
+
+  const resp = await fetchWithTimeout(`/api/podcasts?team=${encodeURIComponent(teamKey)}`, 5000);
+  if (!resp.ok) throw new Error('Kunde inte hämta poddar');
+
+  const data = await resp.json();
+  const podcasts = Array.isArray(data.podcasts)
+    ? data.podcasts.filter(p => p && (p.title || p.name))
+    : [];
+
+  podcastCache[key] = podcasts;
+  podcastCacheTime[key] = Date.now();
+
+  return podcasts;
+}
+
+async function loadStartPodcasts(force = false){
+  const el = document.getElementById('podcasts-container');
+  if (!el) return;
+
+  const key = podcastKey('start');
+  if (force) {
+    delete podcastCache[key];
+    delete podcastCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar senaste poddar…</div>`;
+
+  try {
+    const podcasts = await fetchPodcastsByTeamKey('start');
+    renderPodcasts(el, podcasts, {
+      teamKey: 'start',
+      teamName: '',
+      title: 'Senaste poddar'
+    });
+  } catch {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+  }
+}
+
+async function loadTeamPodcasts(teamName, id = 'team-podcasts-container', force = false){
+  const el = document.getElementById(id);
+  if (!el || !teamName) return;
+
+  const normalizedTeamName = normalizeTeamName(teamName);
+  const teamKey = TEAM_PODCAST_KEYS[normalizedTeamName];
+
+  if (!teamKey) {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+    return;
+  }
+
+  const key = podcastKey(teamKey);
+  if (force) {
+    delete podcastCache[key];
+    delete podcastCacheTime[key];
+  }
+
+  el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(teamName)}…</div>`;
+
+  try {
+    const podcasts = await fetchPodcastsByTeamKey(teamKey);
+    renderPodcasts(el, podcasts, {
+      teamKey,
+      teamName,
+      title: `Senaste poddar om ${teamName}`
+    });
+  } catch {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+  }
+}
+
+function renderPodcasts(el, podcasts, opts = {}){
+  if (!el) return;
+
+  if (!podcasts || !podcasts.length) {
+    renderPodcastsEmpty(el, PODCAST_EMPTY_MESSAGE);
+    return;
+  }
+
+  const cards = podcasts.slice(0, 8).map(p => {
+    const title = p.title || p.name || 'Utan titel';
+    const link = p.url || p.link || '';
+    const summary = cleanFeedText(p.summary || p.description || '');
+    const source = p.source || p.podcast || 'Podd';
+    const date = p.date || p.published || '';
+    const actionText = p.actionText || 'Lyssna â†’';
+
+    return `
+      <article class="podcast-card" ${link ? `onclick="window.open('${link}','_blank')"` : ''}>
+        <div class="podcast-source">${esc(source)}</div>
+        <div class="podcast-title">${esc(title)}</div>
+        <div class="podcast-summary">${esc(summary)}</div>
+        ${date ? `<div class="podcast-date">${esc(date)}</div>` : ''}
+        <div class="news-linkline">${esc(actionText)}</div>
+      </article>
+    `;
+  }).join('');
+
+  const refreshFn = opts.teamKey && opts.teamKey !== 'start'
+    ? `loadTeamPodcasts(${JSON.stringify(opts.teamName)},'team-podcasts-container',true)`
+    : `loadStartPodcasts(true)`;
+
+  el.innerHTML = `
+    <div class="podcast-grid">${cards}</div>
+    <button class="ai-btn" onclick="${refreshFn}" style="font-size:11px;margin-top:.85rem">🔄 Uppdatera poddar</button>
+  `;
+}
+
+function renderPodcastsEmpty(el, message = PODCAST_EMPTY_MESSAGE){
+  if (!el) return;
+  el.innerHTML = `
+    <div class="empty" style="padding:1rem 0 0;color:var(--muted);text-align:left">
+      ${message}
+    </div>
+  `;
+}
+
+// â”€â”€â”€ TEAMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function pageTeams(el) {
+  document.title = 'Alla lag — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
+  try {
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
+    const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
+    const cards = teams.map(t=>`
+      <div class="start-tcard" onclick="go('/lag/${t.id}')">
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div class="start-tn">${esc(t.name)}</div>
+      </div>`).join('');
+    el.innerHTML = `
+      <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
+      <div class="start-tgrid">${cards}</div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
+  }
+}
+
+// â”€â”€â”€ TEAM PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const TEAM_PAGE_SEASONS = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
+let currentTeamPlayerStatGroup = 'offense';
+let currentTeamPlayerStatCategory = 'goals';
+let currentTeamStatsSeason = SEASON;
+window.__teamPlayerStatsData = { players: [] };
+
+function getTeamPageSeason(explicitSeason = null){
+  const qs = new URLSearchParams(location.search);
+  const season = explicitSeason || Number(qs.get('season')) || SEASON;
+  return TEAM_PAGE_SEASONS.includes(season) ? season : SEASON;
+}
+
+function setTeamSeason(teamId, season){
+  const path = season === SEASON ? `/lag/${teamId}` : `/lag/${teamId}?season=${season}`;
+  history.replaceState({}, '', path);
+  pageTeam(document.getElementById('mc'), teamId, season);
+}
+
+function teamSeasonButton(teamId, season, active, available){
+  const className = `team-season-btn ${active ? 'active' : ''} ${available ? '' : 'muted'}`.trim();
+  return `<button class="${className}" onclick="setTeamSeason(${teamId},${season})">${season}</button>`;
+}
+
+function normalizeTeamFixture(fixture, teamId){
+  const homeId = fixture?.teams?.home?.id;
+  const awayId = fixture?.teams?.away?.id;
+  const isHome = homeId === teamId;
+  const isAway = awayId === teamId;
+  if(!isHome && !isAway) return null;
+  const goalsFor = Number(isHome ? fixture?.goals?.home ?? 0 : fixture?.goals?.away ?? 0);
+  const goalsAgainst = Number(isHome ? fixture?.goals?.away ?? 0 : fixture?.goals?.home ?? 0);
+  const started = fixtureHasStarted(fixture);
+  const short = String(fixture?.fixture?.status?.short || '').toUpperCase();
+  const finished = ['FT','AET','PEN'].includes(short);
+  const opponent = isHome ? fixture?.teams?.away : fixture?.teams?.home;
+  let result = '';
+  if(started){
+    if(goalsFor > goalsAgainst) result = 'W';
+    else if(goalsFor < goalsAgainst) result = 'L';
+    else result = 'D';
+  }
+  return {
+    id: fixture?.fixture?.id,
+    date: fixture?.fixture?.date || '',
+    venueLabel: isHome ? 'Hemma' : 'Borta',
+    opponentName: opponent?.name || '—',
+    opponentLogo: opponent?.logo || '',
+    goalsFor,
+    goalsAgainst,
+    started,
+    finished,
+    result,
+    short,
+  };
+}
+
+function calculateRecentForm(fixtures = [], limit = 5){
+  const recent = [...fixtures]
+    .filter(item => item.started)
+    .sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, limit);
+  const points = recent.reduce((sum, item) => sum + (item.result === 'W' ? 3 : item.result === 'D' ? 1 : 0), 0);
+  const goalsFor = recent.reduce((sum, item) => sum + item.goalsFor, 0);
+  const goalsAgainst = recent.reduce((sum, item) => sum + item.goalsAgainst, 0);
+  const cleanSheets = recent.filter(item => item.goalsAgainst === 0).length;
+  const wins = recent.filter(item => item.result === 'W').length;
+  const draws = recent.filter(item => item.result === 'D').length;
+  const losses = recent.filter(item => item.result === 'L').length;
+  const formTokens = recent.map(item => item.result === 'W' ? 'V' : item.result === 'D' ? 'O' : 'F');
+  return { recent, points, goalsFor, goalsAgainst, cleanSheets, wins, draws, losses, formTokens, formSummary: `${wins}V ${draws}O ${losses}F` };
+}
+
+function buildTeamHistoryRows(historyResponses = [], teamId){
+  return TEAM_PAGE_SEASONS.map((season, index) => {
+    const rows = historyResponses[index]?.response?.[0]?.league?.standings?.[0] || [];
+    const row = rows.find(item => item?.team?.id === teamId);
+    if(!row) return null;
+    const played = row?.all?.played || 0;
+    const goalsFor = row?.all?.goals?.for || 0;
+    const goalsAgainst = row?.all?.goals?.against || 0;
+    const points = row?.points || 0;
+    return {
+      season,
+      rank: row?.rank || '—',
+      points,
+      played,
+      wins: row?.all?.win || 0,
+      draws: row?.all?.draw || 0,
+      losses: row?.all?.lose || 0,
+      goalsFor,
+      goalsAgainst,
+      goalDiff: row?.goalsDiff ?? (goalsFor - goalsAgainst),
+      pointsPerMatch: played ? points / played : 0,
+    };
+  }).filter(Boolean);
+}
+
+function getTeamPlayerLeader(players, categoryId){
+  const category = STAT_CATEGORIES.find(item => item.id === categoryId);
+  if(!category) return null;
+  const qualifies = (value) => {
+    const min = category.minValue ?? 0;
+    if(!Number.isFinite(value)) return false;
+    return category.sort === 'asc' ? value >= min : value >= min;
+  };
+  const baseRows = (players || [])
+    .filter(player => !category.playerFilter || category.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, category) }))
+    .filter(item => Number.isFinite(item.value));
+  const rows = (baseRows.filter(item => qualifies(item.value)).length
+    ? baseRows.filter(item => qualifies(item.value))
+    : baseRows
+  ).sort(getCategorySorter(category));
+  return rows[0] || null;
+}
+
+function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStatGroup, catId = currentTeamPlayerStatCategory){
+  if(!el) return;
+  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
+  const categories = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
+  const activeCategory = categories.find(category => category.id === catId) || categories[0] || STAT_CATEGORIES[0];
+  currentTeamPlayerStatGroup = activeCategory.group;
+  currentTeamPlayerStatCategory = activeCategory.id;
+  const qualifies = (value) => {
+    const min = activeCategory.minValue ?? 0;
+    if(!Number.isFinite(value)) return false;
+    return activeCategory.sort === 'asc' ? value >= min : value >= min;
+  };
+
+  const leaders = [
+    { kicker:'Skytteligaledare', category:'goals' },
+    { kicker:'Assistkung', category:'assists' },
+    { kicker:'Flest minuter', category:'minutes' },
+    { kicker:'Bäst rating', category:'rating' },
+  ].map(item => {
+    const leader = getTeamPlayerLeader(players, item.category);
+    const category = STAT_CATEGORIES.find(cat => cat.id === item.category);
+    if(!leader || !category) return null;
+    return `<div class="team-player-highlight">
+      <div class="kicker">${item.kicker}</div>
+      <div class="name">${esc(leader.player.playerName)}</div>
+      <div class="value">${getCategoryDisplayValue(category, leader.player, leader.value)}</div>
+      <div class="meta">${esc(leader.player.position || leader.player.teamName || 'Spelare')}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const baseRows = (players || [])
+    .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
+    .filter(item => Number.isFinite(item.value));
+  const rows = (baseRows.filter(item => qualifies(item.value)).length
+    ? baseRows.filter(item => qualifies(item.value))
+    : baseRows
+  ).sort(getCategorySorter(activeCategory))
+    .slice(0, activeCategory.limit || 10)
+    .map((item, index) => {
+      const secondary = getCategorySecondary(activeCategory, item.player);
+      return `<tr class="link" onclick="go('/spelare/${item.player.playerId}?team=${item.player.teamId || ''}')">
+        <td style="width:64px"><strong style="color:${index < 3 ? 'var(--gold)' : 'var(--text)'}">${index + 1}</strong></td>
+        <td>
+          <div class="pcell">
+            <img src="${item.player.photo || ''}" onerror="this.style.opacity='.15'" loading="lazy" style="border-radius:50%">
+            <div>
+              <div class="pn">${esc(item.player.playerName)}</div>
+              <div class="ps">${esc(item.player.position || item.player.teamName || 'Spelare')}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="stats-value-wrap">
+            <strong class="${activeCategory.ratingClass ? ratingCls(item.value) : ''}">${getCategoryDisplayValue(activeCategory, item.player, item.value)}</strong>
+            ${secondary ? `<span class="stats-value-meta">${esc(secondary)}</span>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+  const groupTabs = STAT_GROUPS.map(group => {
+    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+    return `<button class="stats-group-chip ${group.id===currentTeamPlayerStatGroup?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${group.id}', null)">${group.label}<small>${count}</small></button>`;
+  }).join('');
+  const categoryTabs = STAT_CATEGORIES
+    .filter(category => category.group === currentTeamPlayerStatGroup)
+    .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${currentTeamPlayerStatGroup}', '${category.id}')">${category.label}</button>`)
+    .join('');
+
+  el.innerHTML = `
+    <div class="team-player-shell">
+      ${leaders ? `<div class="team-player-highlight-grid">${leaders}</div>` : ''}
+      <div class="stats-category-panel">
+        <div class="stats-category-kicker">Spelarstatistik</div>
+        <div class="stats-category-head">
+          <div>
+            <div class="stats-category-title">${activeCategory.title}</div>
+            <div class="stats-category-copy">${activeCategory.description} Filtrerat till det valda lagets spelare.</div>
+          </div>
+          <div class="stats-category-badges">
+            <span class="stats-category-badge">${players.length} spelare</span>
+            <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:1rem">Grupper</div>
+        <div class="stats-group-tabs">${groupTabs}</div>
+        <div class="section-label" style="margin-top:1rem">Kategori</div>
+        <div class="stats-category-tabs">${categoryTabs}</div>
+      </div>
+      <div class="tw"><div><table class="stats-table">
+        <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="3" class="empty">Ingen spelardata tillgänglig för ${currentTeamStatsSeason}</td></tr>`}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+async function pageTeam(el, teamId) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
+  try {
+    const [statsD, squadD, seasonPlayers] = await Promise.all([
+      af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
+      af('players/squads', {team:teamId}),
+      afAll('players', {team:teamId, season:SEASON}).catch(()=>[])
+    ]);
+
+    const stats = Array.isArray(statsD) ? statsD[0] : statsD;
+    const team = stats?.team || {id:teamId, name:'', logo:''};
+    const venue = stats?.venue || {};
+    const squadPlayers = (squadD[0]?.players || []);
+    const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(x => [x.player?.id, x.player || {}]));
+    document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
+
+    const w = stats?.fixtures?.wins?.total||0;
+    const d = stats?.fixtures?.draws?.total||0;
+    const l = stats?.fixtures?.loses?.total||0;
+    const played = stats?.fixtures?.played?.total || (w+d+l);
+    const gf = stats?.goals?.for?.total?.total||0;
+    const ga = stats?.goals?.against?.total?.total||0;
+    const cs = stats?.clean_sheet?.total||0;
+    const failedToScore = stats?.failed_to_score?.total || 0;
+    const form = stats?.fixtures?.form||'';
+    const formDots = form.slice(-10).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
+
+    const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || 0;
+    const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || 0;
+    const homeW = stats?.fixtures?.wins?.home || 0;
+    const awayW = stats?.fixtures?.wins?.away || 0;
+    const homeD = stats?.fixtures?.draws?.home || 0;
+    const awayD = stats?.fixtures?.draws?.away || 0;
+    const homeL = stats?.fixtures?.loses?.home || 0;
+    const awayL = stats?.fixtures?.loses?.away || 0;
+    const formPct = played ? Math.round(((w*3 + d) / (played*3))*100) : 0;
+
+    const scoredMin = Object.entries(stats?.goals?.for?.minute || {})
+      .map(([range, val]) => ({range, total: val?.total || 0}))
+      .filter(x => x.total > 0)
+      .sort((a,b) => b.total-a.total)
+      .slice(0,3);
+    const concededMin = Object.entries(stats?.goals?.against?.minute || {})
+      .map(([range, val]) => ({range, total: val?.total || 0}))
+      .filter(x => x.total > 0)
+      .sort((a,b) => b.total-a.total)
+      .slice(0,3);
+
+    const statCards = [
+      ['Matcher', played],
+      ['Poäng', w*3 + d],
+      ['Målskillnad', (gf-ga>0?'+':'') + (gf-ga)],
+      ['Mål / match', avgFor.toFixed(2)],
+      ['Insläppta / match', avgAgainst.toFixed(2)],
+      ['Hållna nollor', cs],
+      ['Mållösa matcher', failedToScore],
+      ['Poängprocent', formPct + '%']
+    ].map(([label,val]) => `<div class="pill"><div class="pn">${val}</div><div class="pl">${label}</div></div>`).join('');
+
+    const splitRows = `
+      <tr><td>Vinster</td><td class="num">${homeW}</td><td class="num">${awayW}</td><td class="num">${w}</td></tr>
+      <tr><td>Oavgjorda</td><td class="num">${homeD}</td><td class="num">${awayD}</td><td class="num">${d}</td></tr>
+      <tr><td>Förluster</td><td class="num">${homeL}</td><td class="num">${awayL}</td><td class="num">${l}</td></tr>
+      <tr><td>Gjorda mål</td><td class="num">${stats?.goals?.for?.total?.home||0}</td><td class="num">${stats?.goals?.for?.total?.away||0}</td><td class="num">${gf}</td></tr>
+      <tr><td>Insläppta mål</td><td class="num">${stats?.goals?.against?.total?.home||0}</td><td class="num">${stats?.goals?.against?.total?.away||0}</td><td class="num">${ga}</td></tr>
+    `;
+
+    const minuteCard = (title, arr) => `
+      <div class="tw" style="flex:1;min-width:260px">
+        <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div>
+        <div style="padding:1rem 1.1rem">
+          ${arr.length ? arr.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)"><span>${esc(x.range)}</span><strong style="color:var(--gold)">${x.total}</strong></div>`).join('') : `<div class="empty" style="padding:1rem 0">Ingen data</div>`}
+        </div>
+      </div>
+    `;
+
+    const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const sorted = [...squadPlayers].sort((a,b)=>
+      (posOrder[a.position]||5)-(posOrder[b.position]||5));
+
+    let lastPos = '';
+    const playerRows = sorted.map(p => {
+      const info = playerInfoById[p.id] || {};
+      const rawPos = p.position || info.position || '—';
+      const pos = posLabel[rawPos] || rawPos;
+      const nationalityDisplay = renderNationalityDisplay(info, p);
+      let sep = '';
+      if(rawPos!==lastPos && posSection[rawPos]) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
+      return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
+        <td><div class="pcell">
+          <img src="${p.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div><div class="pn">${esc(getPlayerDisplayName(info, p))}</div>
+          <div class="ps">${p.number?'#'+p.number:''}</div></div>
+        </div></td>
+        <td><span class="pos-tag">${esc(pos)}</span></td>
+        <td>${p.age||info.age||'—'} år</td>
+        <td>${nationalityDisplay}</td>
+        <td style="color:var(--muted);font-size:12px">${p.injured?'ðŸš‘ Skadad':''}</td>
+      </tr>`;}).join('');
+
+    el.innerHTML = `
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="back" onclick="go('/')">← Alla lag</button>
+        <button class="share" onclick="copyLink()">Kopiera länk</button>
+      </div>
+      <div class="pg-header"><div class="pg-title">${esc(team.name)}</div></div>
+
+      <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
+        <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
+        <div class="p-body">
+          <div class="p-meta">
+            ${venue.name?`<span>ðŸŸ ${esc(venue.name)}</span>`:''}
+            ${venue.city?`<span>ðŸ“ ${esc(venue.city)}</span>`:''}
+            ${venue.capacity?`<span>ðŸ‘¥ ${(+venue.capacity).toLocaleString('sv-SE')} platser</span>`:''}
+          </div>
+          <div class="pills">
+            <div class="pill"><div class="pn">${w}</div><div class="pl">Vinster</div></div>
+            <div class="pill"><div class="pn">${d}</div><div class="pl">Oavgjorda</div></div>
+            <div class="pill"><div class="pn">${l}</div><div class="pl">Förluster</div></div>
+            <div class="pill"><div class="pn">${gf}</div><div class="pl">Gjorda mål</div></div>
+            <div class="pill"><div class="pn">${ga}</div><div class="pl">Insläppta</div></div>
+            <div class="pill"><div class="pn">${cs}</div><div class="pl">Nollor</div></div>
+          </div>
+          ${form?`<div style="margin-top:.6rem"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Form</div><div class="form-row">${formDots}</div></div>`:''}
+        </div>
+      </div></div>
+
+      <div class="section-label">Säsongsstatistik ${SEASON}</div>
+      <div class="pills team-stat-pills" style="margin-bottom:1rem">${statCards}</div>
+
+      <div class="team-overview-grid" style="display:grid;grid-template-columns:1.25fr .9fr;gap:12px;margin-bottom:1rem">
+        <div class="tw">
+          <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Hemma / borta</div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Statistik</th><th>Hemma</th><th>Borta</th><th>Totalt</th></tr></thead>
+            <tbody>${splitRows}</tbody>
+          </table></div>
+        </div>
+        <div class="tw">
+          <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Säsongsöversikt</div>
+          <div style="padding:1rem 1.1rem;display:grid;gap:.65rem">
+            <div style="display:flex;justify-content:space-between"><span>Poäng</span><strong style="color:var(--gold)">${w*3 + d}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Matcher</span><strong style="color:var(--gold)">${played}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Målskillnad</span><strong style="color:var(--gold)">${(gf-ga>0?'+':'') + (gf-ga)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Poängprocent</span><strong style="color:var(--gold)">${formPct}%</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Mål per match</span><strong style="color:var(--gold)">${avgFor.toFixed(2)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Insläppta per match</span><strong style="color:var(--gold)">${avgAgainst.toFixed(2)}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-minute-grid" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem">
+        ${minuteCard('Farligaste målperioder', scoredMin)}
+        ${minuteCard('Mest insläppta målperioder', concededMin)}
+      </div>
+
+      <div style="margin-bottom:1.2rem">
+        <div class="section-label">Senaste poddar om ${esc(team.name)}</div>
+        <div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ${esc(team.name)}.</div>
+        <div id="team-podcasts-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(team.name)}…</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.2rem">
+        <div class="section-label">Senaste nyheter om ${esc(team.name)}</div>
+        <div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning av ${esc(team.name)}? Kontakta info@allsvenskanai.se.</div>
+        <div id="team-news-container">
+          <div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(team.name)}…</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${teamId})">Övergångar</button>
+      </div>
+
+      <div id="sq">
+        <div class="tw"><div style="overflow-x:auto"><table>
+          <thead><tr>
+            <th>Spelare</th><th>Position</th><th>Ålder</th><th>Nationalitet</th><th></th>
+          </tr></thead>
+          <tbody>${playerRows||'<tr><td colspan="5" class="empty">Inga spelare</td></tr>'}</tbody>
+        </table></div></div>
+      </div>
+
+      <div id="tai" style="display:none">
+        <div class="tw"><div style="padding:1.25rem;color:var(--muted);font-size:13px">Klicka på fliken för att hämta data…</div></div>
+      </div>`;
+
+    loadTeamPodcasts(team.name, 'team-podcasts-container');
+    loadTeamNews(team.name, 'team-news-container');
+  } catch(e) {
+    el.innerHTML = `<button class="back" onclick="go('/')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+async function pageTeam(el, teamId, explicitSeason = null) {
+  const selectedSeason = getTeamPageSeason(explicitSeason);
+  currentTeamStatsSeason = selectedSeason;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
+  try {
+    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
+      afRaw('teams', {id:teamId}),
+      afRaw('standings', {league:LEAGUE, season:selectedSeason}),
+      Promise.all(TEAM_PAGE_SEASONS.map(async season => {
+        return afRaw('standings', {league:LEAGUE, season}).catch(() => ({ response: [] }));
+      })),
+      afRaw('teams/statistics', {league:LEAGUE, season:selectedSeason, team:teamId}).catch(() => ({ response: null })),
+      afRaw('players/squads', {team:teamId}).catch(() => ({ response: [] })),
+      fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+        dedupeKey: item => {
+          const playerId = item?.player?.id || '';
+          const statTeamId = item?.statistics?.[0]?.team?.id || teamId || '';
+          const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
+          return `${playerId}-${statTeamId}-${statSeason}`;
+        }
+      }).catch(e => {
+        console.warn('[team-page] season players missing', { teamId, selectedSeason, error: e.message });
+        return [];
+      }),
+      fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:teamId}, {
+        dedupeKey: item => item?.fixture?.id || ''
+      }).catch(e => {
+        console.warn('[team-page] fixtures missing', { teamId, selectedSeason, error: e.message });
+        return [];
+      })
+    ]);
+
+    const teamInfoD = teamInfoRaw?.response || [];
+    const standingsD = standingsRaw?.response || [];
+    const standingRows = standingsD?.[0]?.league?.standings?.[0] || [];
+    const statsD = statsRaw?.response || null;
+    const squadD = squadRaw?.response || [];
+    const stats = statsD?.league ? statsD : (Array.isArray(statsD) ? statsD[0] : statsD);
+    const selectedStanding = standingRows.find(row => row?.team?.id === teamId) || null;
+    const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || selectedStanding?.team || {};
+    const team = stats?.team || teamInfo || selectedStanding?.team || {id:teamId, name:'Lag', logo:''};
+    const teamDisplayName = getTeamDisplayName(team);
+    const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
+    const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
+      id: item?.player?.id,
+      name: item?.player?.name || '',
+      firstname: item?.player?.firstname || '',
+      lastname: item?.player?.lastname || '',
+      age: item?.player?.age || null,
+      number: item?.statistics?.[0]?.games?.number || null,
+      position: item?.statistics?.[0]?.games?.position || '',
+      photo: item?.player?.photo || '',
+      injured: false,
+    })).filter(player => player?.id);
+    const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
+    await enrichSquadNationalities(squadPlayers, playerInfoById);
+    const historyRows = buildTeamHistoryRows(historyStandings, teamId);
+    const historyMap = new Map(historyRows.map(row => [row.season, row]));
+    const seasonRow = historyMap.get(selectedSeason) || null;
+
+    const w = stats?.fixtures?.wins?.total || seasonRow?.wins || 0;
+    const d = stats?.fixtures?.draws?.total || seasonRow?.draws || 0;
+    const l = stats?.fixtures?.loses?.total || seasonRow?.losses || 0;
+    const played = stats?.fixtures?.played?.total || seasonRow?.played || (w + d + l);
+    const points = seasonRow?.points ?? (w * 3 + d);
+    const gf = stats?.goals?.for?.total?.total || seasonRow?.goalsFor || 0;
+    const ga = stats?.goals?.against?.total?.total || seasonRow?.goalsAgainst || 0;
+    const goalDiff = seasonRow?.goalDiff ?? (gf - ga);
+    const cs = stats?.clean_sheet?.total || 0;
+    const failedToScore = stats?.failed_to_score?.total || 0;
+    const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || (played ? gf / played : 0);
+    const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || (played ? ga / played : 0);
+    const pointsPerMatch = played ? points / played : 0;
+    const pointsPct = played ? Math.round((points / (played * 3)) * 100) : 0;
+    const winPct = played ? Math.round((w / played) * 100) : 0;
+    const selectedRank = seasonRow?.rank || selectedStanding?.rank || '—';
+
+    const homeW = stats?.fixtures?.wins?.home || 0;
+    const awayW = stats?.fixtures?.wins?.away || 0;
+    const homeD = stats?.fixtures?.draws?.home || 0;
+    const awayD = stats?.fixtures?.draws?.away || 0;
+    const homeL = stats?.fixtures?.loses?.home || 0;
+    const awayL = stats?.fixtures?.loses?.away || 0;
+    const homePlayed = stats?.fixtures?.played?.home || 0;
+    const awayPlayed = stats?.fixtures?.played?.away || 0;
+    const homeGF = stats?.goals?.for?.total?.home || 0;
+    const awayGF = stats?.goals?.for?.total?.away || 0;
+    const homeGA = stats?.goals?.against?.total?.home || 0;
+    const awayGA = stats?.goals?.against?.total?.away || 0;
+    const homePoints = homeW * 3 + homeD;
+    const awayPoints = awayW * 3 + awayD;
+    const homeWinPct = homePlayed ? Math.round((homeW / homePlayed) * 100) : 0;
+    const awayWinPct = awayPlayed ? Math.round((awayW / awayPlayed) * 100) : 0;
+
+    const normalizedFixtures = (fixturesSeason || []).map(item => normalizeTeamFixture(item, teamId)).filter(Boolean);
+    const recentFive = calculateRecentForm(normalizedFixtures, 5);
+    const recentTen = calculateRecentForm(normalizedFixtures, 10);
+    const latestPlayed = [...normalizedFixtures].filter(item => item.started).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 5);
+    const upcoming = [...normalizedFixtures].filter(item => !item.started).sort((a,b) => String(a.date || '').localeCompare(String(b.date || ''))).slice(0, 3);
+
+    const scoredMin = Object.entries(stats?.goals?.for?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
+    const concededMin = Object.entries(stats?.goals?.against?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
+
+    const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason);
+    window.__teamPlayerStatsData = { players: teamPlayers };
+
+    const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
+    const seasonButtons = TEAM_PAGE_SEASONS
+      .filter(season => historyMap.has(season) || season === selectedSeason)
+      .map(season => teamSeasonButton(teamId, season, season === selectedSeason, historyMap.has(season)))
+      .join('');
+
+    const summaryCards = [
+      { label:'Poäng', value: points, copy:`${pointsPerMatch.toFixed(2)} per match` },
+      { label:'Målskillnad', value:`${goalDiff > 0 ? '+' : ''}${goalDiff}`, copy:`${gf} gjorda • ${ga} insläppta` },
+      { label:'Form senaste 5', value:`${recentFive.points}p`, copy:`${recentFive.goalsFor}-${recentFive.goalsAgainst} i mål` },
+      { label:'Vinstprocent', value:`${winPct}%`, copy:`${w} segrar på ${played} matcher` },
+    ].map(card => `<div class="team-summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div><div class="copy">${card.copy}</div></div>`).join('');
+
+    const heroStats = [
+      { label:'Placering', value:selectedRank, sub:`Allsvenskan ${selectedSeason}` },
+      { label:'Poängsnitt', value:pointsPerMatch.toFixed(2), sub:`${pointsPct}% av maxpoängen` },
+      { label:'Mål per match', value:avgFor.toFixed(2), sub:`${gf} mål totalt` },
+      { label:'Insläppta / match', value:avgAgainst.toFixed(2), sub:`${ga} mål totalt` },
+    ].map(item => `<div class="team-hero-stat"><div class="label">${item.label}</div><div class="value">${item.value}</div><div class="sub">${item.sub}</div></div>`).join('');
+
+    const homeAwayRows = `
+      <tr><td>Vinster</td><td class="num">${homeW}</td><td class="num">${awayW}</td><td class="num">${w}</td></tr>
+      <tr><td>Oavgjorda</td><td class="num">${homeD}</td><td class="num">${awayD}</td><td class="num">${d}</td></tr>
+      <tr><td>Förluster</td><td class="num">${homeL}</td><td class="num">${awayL}</td><td class="num">${l}</td></tr>
+      <tr><td>Poäng</td><td class="num">${homePoints}</td><td class="num">${awayPoints}</td><td class="num">${points}</td></tr>
+      <tr><td>Vinstprocent</td><td class="num">${homeWinPct}%</td><td class="num">${awayWinPct}%</td><td class="num">${winPct}%</td></tr>
+      <tr><td>Gjorda mål</td><td class="num">${homeGF}</td><td class="num">${awayGF}</td><td class="num">${gf}</td></tr>
+      <tr><td>Insläppta mål</td><td class="num">${homeGA}</td><td class="num">${awayGA}</td><td class="num">${ga}</td></tr>`;
+
+    const resultCards = [
+      { label:'2+ mål framåt', value: normalizedFixtures.filter(item => item.started && item.goalsFor >= 2).length, copy:'Matcher med tydlig offensiv output.' },
+      { label:'2+ mål insläppta', value: normalizedFixtures.filter(item => item.started && item.goalsAgainst >= 2).length, copy:'Matcher där försvaret satts under press.' },
+      { label:'Nollor', value: cs, copy:`${recentFive.cleanSheets} under senaste fem` },
+      { label:'Mållösa matcher', value: failedToScore, copy:'Matcher utan mål för laget.' },
+    ].map(item => `<div class="team-metric-card"><div class="label">${item.label}</div><div class="value">${item.value}</div><div class="sub">${item.copy}</div></div>`).join('');
+
+    const minuteCard = (title, rows) => `<div class="tw" style="min-width:0"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div><div style="padding:1rem 1.1rem">${rows.length ? rows.map(item => `<div class="team-detail-row" style="padding:.42rem 0;border-bottom:1px solid var(--border)"><span>${esc(item.range)}</span><strong>${item.total}</strong></div>`).join('') : `<div class="team-empty-state">Ingen data ännu.</div>`}</div></div>`;
+    const matchRow = (item, isUpcoming = false) => `<div class="team-match-row" onclick="go('/match/${item.id}')"><div class="meta">${esc(item.venueLabel)} • ${esc(formatSvDate(item.date))}</div><div class="teams"><div><strong>${esc(team.name)}</strong> vs ${esc(item.opponentName)}</div><div style="font-size:12px;color:var(--muted)">${isUpcoming ? 'Kommande match' : (item.result === 'W' ? 'Vinst' : item.result === 'D' ? 'Oavgjort' : 'Förlust')}</div></div><div class="score ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Se match' : `${item.goalsFor}-${item.goalsAgainst}`}</div></div>`;
+
+    const historyRowsHtml = historyRows.map(row => `<tr class="${row.season === selectedSeason ? 'season-row' : ''}"><td>${row.season}</td><td class="num">${row.rank}</td><td class="num">${row.points}</td><td class="num">${row.played}</td><td class="num">${row.wins}-${row.draws}-${row.losses}</td><td class="num">${row.goalsFor}-${row.goalsAgainst}</td><td class="num">${row.goalDiff > 0 ? '+' : ''}${row.goalDiff}</td><td class="num">${row.pointsPerMatch.toFixed(2)}</td></tr>`).join('');
+    const bestSeason = [...historyRows].sort((a,b) => b.pointsPerMatch - a.pointsPerMatch || b.points - a.points)[0];
+    const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
+
+    const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[a.position]||5)-(posOrder[b.position]||5));
+    let lastPos = '';
+    const playerRows = sortedSquad.map(player => {
+      const info = playerInfoById[player.id] || {};
+      const rawPos = player.position || info.position || '—';
+      const pos = posLabel[rawPos] || rawPos;
+      const nationalityDisplay = renderNationalityDisplay(info, player);
+      let sep = '';
+      if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
+      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${teamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
+    }).join('');
+
+    document.title = `${teamDisplayName} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
+    el.innerHTML = `
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="back" onclick="go('/lag-lista')">← Alla lag</button>
+        <button class="share" onclick="copyLink()">Kopiera länk</button>
+      </div>
+      <div class="team-shell">
+        <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
+          <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
+          <div class="p-body team-title-block">
+            <div class="team-kicker">Lagöversikt</div>
+            <div class="team-title-line"><div class="pg-title">${esc(teamDisplayName)}</div><div class="team-rank-badge">${selectedRank}</div></div>
+            <div class="pg-sub">En rikare lagöversikt med säsongsstatistik, historik, form och intern spelarstatistik för ${esc(teamDisplayName)}.</div>
+            <div class="team-subline">${venue.name ? `<span class="team-subpill">${esc(venue.name)}</span>` : ''}${venue.city ? `<span class="team-subpill">${esc(venue.city)}</span>` : ''}${venue.capacity ? `<span class="team-subpill">${(+venue.capacity).toLocaleString('sv-SE')} platser</span>` : ''}<span class="team-subpill">${selectedSeason} års säsong</span></div>
+            <div><div class="section-label">Säsonger</div><div class="team-season-switcher">${seasonButtons || teamSeasonButton(teamId, selectedSeason, true, false)}</div></div>
+          </div>
+          <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${stats?.fixtures?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${stats.fixtures.form.slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
+        </div></div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
+          <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
+          <button class="tab" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${teamId})">Övergångar</button>
+        </div>
+
+        <div id="t-overview" class="team-section-stack">
+          <div class="team-summary-grid">${summaryCards}</div>
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagstatistik</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Matcher</span><strong>${played}</strong></div>
+              <div class="team-detail-row"><span>Poäng</span><strong>${points}</strong></div>
+              <div class="team-detail-row"><span>Vinster / kryss / förluster</span><strong>${w} / ${d} / ${l}</strong></div>
+              <div class="team-detail-row"><span>Gjorda mål</span><strong>${gf}</strong></div>
+              <div class="team-detail-row"><span>Insläppta mål</span><strong>${ga}</strong></div>
+              <div class="team-detail-row"><span>Målskillnad</span><strong>${goalDiff > 0 ? '+' : ''}${goalDiff}</strong></div>
+              <div class="team-detail-row"><span>Poängprocent</span><strong>${pointsPct}%</strong></div>
+              <div class="team-detail-row"><span>Vinstprocent</span><strong>${winPct}%</strong></div>
+              <div class="team-detail-row"><span>Mål per match</span><strong>${avgFor.toFixed(2)}</strong></div>
+              <div class="team-detail-row"><span>Insläppta per match</span><strong>${avgAgainst.toFixed(2)}</strong></div>
+              <div class="team-detail-row"><span>Hållna nollor</span><strong>${cs}</strong></div>
+              <div class="team-detail-row"><span>Mållösa matcher</span><strong>${failedToScore}</strong></div>
+            </div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Trend & form</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Poäng senaste 5</span><strong>${recentFive.points}</strong></div>
+              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points}</strong></div>
+              <div class="team-detail-row"><span>Mål senaste 5</span><strong>${recentFive.goalsFor}-${recentFive.goalsAgainst}</strong></div>
+              <div class="team-detail-row"><span>Nollor senaste 5</span><strong>${recentFive.cleanSheets}</strong></div>
+              <div class="team-detail-row"><span>Bästa säsong</span><strong>${bestSeason ? `${bestSeason.season} (${bestSeason.points}p)` : '—'}</strong></div>
+              <div class="team-detail-row"><span>Tuffaste säsong</span><strong>${worstSeason ? `${worstSeason.season} (${worstSeason.points}p)` : '—'}</strong></div>
+              <div class="team-note">Formen bygger på spelade matcher i vald säsong och uppdateras när nya resultat kommer in.</div>
+            </div></div>
+          </div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Hemma vs borta</div><div style="overflow-x:auto"><table><thead><tr><th>Statistik</th><th>Hemma</th><th>Borta</th><th>Totalt</th></tr></thead><tbody>${homeAwayRows}</tbody></table></div></div>
+            <div class="team-metric-grid">${resultCards}</div>
+          </div>
+
+          <div class="team-dual-grid">${minuteCard('Farligaste målperioder', scoredMin)}${minuteCard('Mest insläppta målperioder', concededMin)}</div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Senaste matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${latestPlayed.length ? latestPlayed.map(item => matchRow(item)).join('') : `<div class="team-empty-state">Inga spelade matcher för ${selectedSeason} ännu.</div>`}</div></div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Kommande matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${upcoming.length ? upcoming.map(item => matchRow(item, true)).join('') : `<div class="team-empty-state">Inga kommande matcher i datan just nu.</div>`}</div></div></div>
+          </div>
+
+          <div class="team-dual-grid">
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Historik</div><div style="overflow-x:auto"><table class="team-history-table"><thead><tr><th>Säsong</th><th>#</th><th>Poäng</th><th>M</th><th>V-O-F</th><th>Mål</th><th>GS</th><th>PPM</th></tr></thead><tbody>${historyRowsHtml || `<tr><td colspan="8" class="empty">Ingen historik hittades ännu.</td></tr>`}</tbody></table></div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
+              <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
+              <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? recentTen.formTokens.join(' ') : 'Ingen formdata ännu'}</strong></div>
+              <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
+            </div></div>
+          </div>
+
+          <div style="margin-bottom:1.2rem"><div class="section-label">Senaste poddar om ${esc(teamDisplayName)}</div><div class="feed-note">Inga poddar registrerade ännu. Kontakta info@allsvenskanai.se om du har en podd om ${esc(teamDisplayName)}.</div><div id="team-podcasts-container"><div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar poddar om ${esc(teamDisplayName)}…</div></div></div>
+          <div style="margin-bottom:1.2rem"><div class="section-label">Senaste nyheter om ${esc(teamDisplayName)}</div><div class="feed-note">Har du en lokal nyhetssajt, blogg eller annan bevakning av ${esc(teamDisplayName)}? Kontakta info@allsvenskanai.se.</div><div id="team-news-container"><div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar nyheter om ${esc(teamDisplayName)}…</div></div></div>
+        </div>
+
+        <div id="t-players" style="display:none"><div id="team-player-stats"></div></div>
+        <div id="sq" style="display:none"><div class="tw"><div style="overflow-x:auto"><table><thead><tr><th>Spelare</th><th>Position</th><th>Ålder</th><th>Nationalitet</th><th></th></tr></thead><tbody>${playerRows || '<tr><td colspan="5" class="empty">Inga spelare</td></tr>'}</tbody></table></div></div></div>
+        <div id="tai" style="display:none"><div class="tw"><div style="padding:1.25rem;color:var(--muted);font-size:13px">Klicka på fliken för att hämta data…</div></div></div>
+      </div>`;
+
+    renderTeamPlayerStats(document.getElementById('team-player-stats'), teamPlayers);
+    loadTeamPodcasts(teamDisplayName, 'team-podcasts-container');
+    loadTeamNews(teamDisplayName, 'team-news-container');
+  } catch(e) {
+    el.innerHTML = `<button class="back" onclick="go('/lag-lista')">← Tillbaka</button><div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadTeamAI(tabId, teamId) {
+  const el = document.getElementById(tabId);
+  if(!el || el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar…</div>`;
+  try {
+    const data = await af('transfers', {team: teamId});
+    const all = [];
+    data.forEach(tr => {
+      (tr.transfers||[]).forEach(x => {
+        const year = parseInt((x.date||'').slice(0,4));
+        if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) {
+          const type = x.type || '';
+          const teamIn = x.teams?.in;
+          const teamOut = x.teams?.out;
+          const isInternal = type === 'Raise' || type === 'Loan Return' ||
+            (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
+          if(type === '-' && !teamIn && !teamOut) return;
+          const resolvedTeam = teamIn || teamOut || null;
+          all.push({
+            date: x.date,
+            type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
+            playerName: getPlayerDisplayName(tr.player),
+            playerId: tr.player?.id,
+            teamIn: isInternal ? resolvedTeam : teamIn,
+            teamOut: isInternal ? resolvedTeam : teamOut,
+            isInternal,
+          });
+        }
+      });
+    });
+    all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    await enrichTransferPlayerNames(all);
+
+    if(!all.length) {
+      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+      return;
+    }
+
+    const rows = all.map(tr => {
+      const isIn = !tr.isInternal && tr.teamIn?.id == teamId;
+      const direction = transferDirectionMeta(tr.isInternal ? 'internal' : (isIn ? 'in' : 'out'));
+      const counterparty = tr.isInternal
+        ? `<div class="transfer-meta-note">Intern flytt i klubben</div>`
+        : renderTransferClubChip(isIn ? tr.teamOut : tr.teamIn, 'Motpart saknas');
+      return `<tr>
+        <td>${renderTransferDate(tr.date)}</td>
+        <td><span class="transfer-player-link" onclick="go('/spelare/${tr.playerId}?team=${teamId}')">${esc(tr.playerName||'—')}</span></td>
+        <td><span class="transfer-direction-badge ${direction.cls}">${direction.arrow} ${direction.label}</span></td>
+        <td>${counterparty}</td>
+        <td><div class="transfer-type-stack">${renderTransferTypeBadge(tr.type)}</div></td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table class="transfer-table">
+      <thead><tr><th>Datum</th><th>Spelare</th><th>Riktning</th><th>Motpart</th><th>Typ</th></tr></thead>
+    <tbody>${rows}</tbody>
+    </table></div></div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+// â”€â”€â”€ PLAYER PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function pagePlayer(el, playerId) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelardata…</div>`;
+  try {
+    // Read team context from URL if available (set when clicking from a team page)
+    const urlParams = new URLSearchParams(location.search);
+    const urlTeamId = urlParams.get('team') ? +urlParams.get('team') : null;
+    const urlSeason = urlParams.get('season') ? +urlParams.get('season') : null;
+
+    const [profileD, ...seasonResults] = await Promise.all([
+      af('players/profiles', {player: playerId}),
+      ...PLAYER_HISTORY_SEASONS.map(season => af('players', {id:playerId, season}).catch(()=>[])),
+    ]);
+    const allsvSeasonResults = seasonResults.map(data => filterPlayerLeagueRows(data, LEAGUE));
+
+    const p = profileD[0]?.player;
+    if(!p) throw new Error('Spelare hittades inte');
+    const playerDisplayName = getPlayerDisplayName(p);
+    document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
+
+    const availableAllsvSeasonYears = allsvSeasonResults
+      .map((data, idx) => ((data?.[0]?.statistics || []).length ? PLAYER_HISTORY_SEASONS[idx] : null))
+      .filter(season => season && season >= 2018);
+    const allsvSeasonYears = [...new Set(availableAllsvSeasonYears)].sort((a,b) => b - a);
+    const selectedAllsvSeason = allsvSeasonYears.includes(urlSeason)
+      ? urlSeason
+      : (allsvSeasonYears.includes(PLAYER_DEFAULT_SEASON) ? PLAYER_DEFAULT_SEASON : (allsvSeasonYears[0] || PLAYER_DEFAULT_SEASON));
+    const selectedSeasonIndex = PLAYER_HISTORY_SEASONS.indexOf(selectedAllsvSeason);
+    const selectedAllsvRows = selectedSeasonIndex >= 0 ? allsvSeasonResults[selectedSeasonIndex] : [];
+    const curSeasonYear = selectedAllsvSeason;
+    const curStats = aggregatePlayerSeasonStats(selectedAllsvRows) || {
+      games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
+      goals: { total:0, assists:0, conceded:0, saves:0 },
+      cards: { yellow:0, red:0 },
+      shots: { total:0, on:0 },
+      passes: { total:0, key:0, accuracy:0 },
+      tackles: { total:0, interceptions:0, blocks:0 },
+      dribbles: { success:0 },
+      duels: { won:0, total:0 },
+      fouls: { committed:0, drawn:0 },
+      offsides: 0,
+      substitutes: { in:0, out:0, bench:0 },
+      penalty: { saved:0, scored:0, missed:0 },
+      team: null,
+      derived: {
+        goalContributions:0, goalsPer90:0, assistsPer90:0, pointsPer90:0, shotsPer90:0, keyPassesPer90:0,
+        passAccuracy:0, accuratePasses:0, passesPer90:0, conversionRate:0, shotsPerGoal:0, shotAccuracy:0,
+        defActions:0, defActionsPer90:0, duelWinRate:0, savePercentage:0, goalsConcededPerMatch:0,
+        minutesPerMatch:0, subApps:0, minutesPerGoal:0, minutesPerContribution:0,
+      },
+      flags: { hasAllsvenskanData: false }
+    };
+    const hasCurrentAllsvenskanData = !!aggregatePlayerSeasonStats(selectedAllsvRows);
+
+    // Prefer team from URL (where user came from) over API data
+    let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE) && entry?.league?.season === selectedAllsvSeason)?.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
+    let teamName = getTeamDisplayName(curStats.team) || '—';
+    let teamLogo = curStats.team?.logo || '';
+
+    // If URL teamId differs from stats teamId, fetch correct team info
+    if(urlTeamId && urlTeamId !== curStats.team?.id) {
+      try {
+        const teamD = await af('teams', {id: urlTeamId});
+        if(teamD[0]) { teamName = getTeamDisplayName(teamD[0].team); teamLogo = teamD[0].team.logo; }
+      } catch(e) {}
+    }
+
+    // Current season numbers
+    const curApps    = curStats.games?.appearences||0;
+    const curGoals   = curStats.goals?.total||0;
+    const curAssists = curStats.goals?.assists||0;
+    const curMins    = curStats.games?.minutes||0;
+    const curYellow  = curStats.cards?.yellow||0;
+    const curRed     = curStats.cards?.red||0;
+    const curRating  = curStats.games?.rating ? parseFloat(curStats.games.rating) : null;
+    const curRatingClass = curRating ? (curRating>=7.5?'rg':curRating>=6.5?'ry':'rr') : '';
+    const curStarts  = curStats.games?.lineups||0;
+    const curGoalContrib = curStats.derived?.goalContributions||0;
+    const curShots = curStats.shots?.total||0;
+    const curShotsOn = curStats.shots?.on||0;
+    const curKeyPasses = curStats.passes?.key||0;
+    const curPasses = curStats.passes?.total||0;
+    const curAccuratePasses = curStats.derived?.accuratePasses||0;
+    const curPassAccuracy = curStats.derived?.passAccuracy||0;
+    const curTackles = curStats.tackles?.total||0;
+    const curInterceptions = curStats.tackles?.interceptions||0;
+    const curBlocks = curStats.tackles?.blocks||0;
+    const curDuelsWon = curStats.duels?.won||0;
+    const curDuelsTotal = curStats.duels?.total||0;
+    const curDribbles = curStats.dribbles?.success||0;
+    const curFoulsCommitted = curStats.fouls?.committed||0;
+    const curFoulsDrawn = curStats.fouls?.drawn||0;
+    const curOffsides = curStats.offsides||0;
+    const curSaves = curStats.goals?.saves||0;
+    const curGoalsConceded = curStats.goals?.conceded||0;
+    const curPenaltySaved = curStats.penalty?.saved||0;
+    const curPenaltyScored = curStats.penalty?.scored||0;
+    const curSubApps = curStats.derived?.subApps||0;
+    const curGoalsPer90 = curStats.derived?.goalsPer90||0;
+    const curAssistsPer90 = curStats.derived?.assistsPer90||0;
+    const curPointsPer90 = curStats.derived?.pointsPer90||0;
+    const curShotsPer90 = curStats.derived?.shotsPer90||0;
+    const curPassesPer90 = curStats.derived?.passesPer90||0;
+    const curKeyPassesPer90 = curStats.derived?.keyPassesPer90||0;
+    const curConversion = curStats.derived?.conversionRate||0;
+    const curShotsPerGoal = curStats.derived?.shotsPerGoal||0;
+    const curShotAccuracy = curStats.derived?.shotAccuracy||0;
+    const curDefActions = curStats.derived?.defActions||0;
+    const curDefActionsPer90 = curStats.derived?.defActionsPer90||0;
+    const curDuelWinRate = curStats.derived?.duelWinRate||0;
+    const curSavePct = curStats.derived?.savePercentage||0;
+    const curGoalsConcededPerMatch = curStats.derived?.goalsConcededPerMatch||0;
+    const curMinutesPerMatch = curStats.derived?.minutesPerMatch||0;
+    const curMinutesPerGoal = curStats.derived?.minutesPerGoal||0;
+    const curMinutesPerContribution = curStats.derived?.minutesPerContribution||0;
+
+    // Fetch ALL historical seasons in parallel for career stats
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar karriärstatistik…</div>`;
+
+    // Build career table
+    let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
+    const seasonRows = [];
+    const clubCareerRows = [];
+    allsvSeasonResults.forEach((data, idx) => {
+      const season = PLAYER_HISTORY_SEASONS[idx];
+      if(!data.length) return;
+      data[0].statistics?.forEach(s => {
+        if(!s || !s.league) return; // skip empty stats objects
+        const g  = s.goals?.total||0;
+        const a  = s.goals?.assists||0;
+        const m  = s.games?.appearences||0;
+        const mn = s.games?.minutes||0;
+        const y  = s.cards?.yellow||0;
+        const r  = s.cards?.red||0;
+        const rt = s.games?.rating ? parseFloat(s.games.rating) : null;
+        const rtClass = rt ? (rt>=7.5?'rg':rt>=6.5?'ry':'rr') : '';
+        careerGoals   += g;
+        careerAssists += a;
+        careerApps    += m;
+        careerMins    += mn;
+        careerYellow  += y;
+        careerRed     += r;
+        const isCur = season === curSeasonYear;
+        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: s.team?.logo||'', m, mn, g, a, rt, rtClass, y, r, isCur});
+      });
+    });
+    seasonResults.forEach((data, idx) => {
+      const season = PLAYER_HISTORY_SEASONS[idx];
+      if(!data.length) return;
+      data.forEach(item => {
+        (item.statistics || []).forEach(s => {
+          if(!s || !s.league || !s.team || isNationalTeamStat(s)) return;
+          const g  = s.goals?.total||0;
+          const a  = s.goals?.assists||0;
+          const m  = s.games?.appearences||0;
+          const mn = s.games?.minutes||0;
+          const y  = s.cards?.yellow||0;
+          const r  = s.cards?.red||0;
+          const rt = s.games?.rating ? parseFloat(s.games.rating) : null;
+          const rtClass = rt ? (rt>=7.5?'rg':rt>=6.5?'ry':'rr') : '';
+          clubCareerRows.push({
+            season,
+            league: s.league?.name||'—',
+            team: getTeamDisplayName(s.team) || '—',
+            teamLogo: s.team?.logo||'',
+            m, mn, g, a, rt, rtClass, y, r
+          });
+        });
+      });
+    });
+
+    // Sort by season desc
+    seasonRows.sort((a,b) => b.season - a.season || 0);
+    clubCareerRows.sort((a,b) => b.season - a.season || a.team.localeCompare(b.team, 'sv'));
+    const playerSeasonHref = season => {
+      const q = new URLSearchParams();
+      if(teamId) q.set('team', String(teamId));
+      q.set('season', String(season));
+      return `/spelare/${playerId}?${q.toString()}`;
+    };
+    const seasonSwitcher = allsvSeasonYears.length ? `
+      <div style="margin:.7rem 0 1rem">
+        <div class="section-label" style="margin-bottom:.45rem">Allsvenskan-år</div>
+        <div class="team-season-switcher">
+          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${season === curSeasonYear ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">Allsvenskan ${season}</button>`).join('')}
+        </div>
+      </div>` : '';
+
+    const sTableRows = seasonRows.map(s => `
+      <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
+        <td><strong>${s.season}</strong></td>
+        <td><div class="player-history-team">
+          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
+          <span>${esc(s.team)}</span>
+        </div></td>
+        <td><div class="player-history-league">${esc(s.league)}</div></td>
+        <td class="num">${s.m || '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.mn ? s.mn.toLocaleString('sv-SE') : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.g ? s.g : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.a ? s.a : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num ${s.rtClass} player-history-rating">${s.rt?s.rt.toFixed(1):'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y?s.y:'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r?s.r:'<span class="player-history-empty">—</span>'}</td>
+      </tr>`).join('');
+    const clubCareerTableRows = clubCareerRows.map(s => `
+      <tr>
+        <td><strong>${s.season}</strong></td>
+        <td><div class="player-history-team">
+          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
+          <span>${esc(s.team)}</span>
+        </div></td>
+        <td><div class="player-history-league">${esc(s.league)}</div></td>
+        <td class="num">${s.m || '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.mn ? s.mn.toLocaleString('sv-SE') : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.g ? s.g : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num">${s.a ? s.a : '<span class="player-history-empty">—</span>'}</td>
+        <td class="num ${s.rtClass} player-history-rating">${s.rt?s.rt.toFixed(1):'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y?s.y:'<span class="player-history-empty">—</span>'}</td>
+        <td class="num" style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r?s.r:'<span class="player-history-empty">—</span>'}</td>
+      </tr>`).join('');
+
+    const formatMetric = (value, digits = 0, suffix = '') => {
+      const numeric = Number(value);
+      if(!Number.isFinite(numeric)) return '—';
+      const out = digits > 0 ? numeric.toFixed(digits) : Math.round(numeric).toLocaleString('sv-SE');
+      return `${out}${suffix}`;
+    };
+    const summaryCards = [
+      { label:'Poäng', value: curGoalContrib, copy:'Mål + assist i ligaspel' },
+      { label:'Mål /90', value: formatMetric(curGoalsPer90, 2), copy:`${curGoals} mål totalt` },
+      { label:'Assist /90', value: formatMetric(curAssistsPer90, 2), copy:`${curAssists} assist totalt` },
+      { label:'Poäng /90', value: formatMetric(curPointsPer90, 2), copy:`${curGoalContrib} poäng totalt` }
+    ].map(card => `
+      <div class="player-detail-chip">
+        <div class="label">${card.label}</div>
+        <div class="value">${card.value}</div>
+        <div class="copy">${card.copy}</div>
+      </div>`).join('');
+    const isGoalkeeperProfile = /goalkeeper|målvakt/i.test(String(curStats.games?.position || p.position || ''));
+    const detailSections = [
+      {
+        kicker:'Offensiv',
+        title:`Allsvenskan ${curSeasonYear}`,
+        rows:[
+          ['Mål', curGoals],
+          ['Assist', curAssists],
+          ['Mål + assist', curGoalContrib],
+          ['Skott', curShots],
+          ['Skott på mål', curShotsOn],
+          ['Nyckelpass', curKeyPasses],
+          ['Mål /90', formatMetric(curGoalsPer90, 2)],
+          ['Assist /90', formatMetric(curAssistsPer90, 2)],
+          ['Poäng /90', formatMetric(curPointsPer90, 2)],
+          ['Avslutseffektivitet', formatMetric(curConversion, 1, '%')],
+          ['Skott per mål', curShotsPerGoal ? formatMetric(curShotsPerGoal, 1) : '—'],
+          ['Träffsäkerhet', formatMetric(curShotAccuracy, 1, '%')]
+        ]
+      },
+      {
+        kicker:'Passningsspel',
+        title:'Speluppbyggnad',
+        rows:[
+          ['Passningar', curPasses],
+          ['Lyckade passningar', curAccuratePasses],
+          ['Passningsprocent', formatMetric(curPassAccuracy, 1, '%')],
+          ['Passningar /90', formatMetric(curPassesPer90, 1)],
+          ['Nyckelpass /90', formatMetric(curKeyPassesPer90, 2)],
+          ['Lyckade dribblingar', curDribbles]
+        ]
+      },
+      {
+        kicker:'Defensivt',
+        title:'Dueller & återerövringar',
+        rows:[
+          ['Tacklingar', curTackles],
+          ['Interceptions', curInterceptions],
+          ['Blockar', curBlocks],
+          ['Defensiva aktioner', curDefActions],
+          ['Defensiva aktioner /90', formatMetric(curDefActionsPer90, 2)],
+          ['Dueller vunna', curDuelsWon],
+          ['Dueller totalt', curDuelsTotal],
+          ['Duelvinst%', formatMetric(curDuelWinRate, 1, '%')],
+          ['Fouls orsakade', curFoulsCommitted],
+          ['Framfoulad', curFoulsDrawn],
+          ['Offside', curOffsides],
+          ['Gula / Röda', `${curYellow} / ${curRed}`]
+        ]
+      },
+      {
+        hidden: !isGoalkeeperProfile && !curSaves && !curGoalsConceded && !curPenaltySaved,
+        kicker:'Speltid',
+        title: isGoalkeeperProfile ? 'Belastning & målvaktsfält' : 'Belastning',
+        rows:[
+          ['Matcher', curApps],
+          ['Starter', curStarts],
+          ['Inhopp', curSubApps],
+          ['Minuter', curMins],
+          ['Minuter / match', formatMetric(curMinutesPerMatch, 1)],
+          ['Minuter / mål', curMinutesPerGoal ? formatMetric(curMinutesPerGoal, 1) : '—'],
+          ['Minuter / poäng', curMinutesPerContribution ? formatMetric(curMinutesPerContribution, 1) : '—'],
+          ['Rating', curRating ? curRating.toFixed(2) : '—'],
+          ['Gula / Röda', `${curYellow} / ${curRed}`],
+        ]
+      },
+      {
+        hidden: !isGoalkeeperProfile && !curSaves && !curGoalsConceded && !curPenaltySaved,
+        kicker:'Målvakt',
+        title:'Målvaktsdata',
+        rows:[
+          ['Räddningar', curSaves],
+          ['Räddningsprocent', curSaves ? formatMetric(curSavePct, 1, '%') : '—'],
+          ['Insläppta mål', curGoalsConceded],
+          ['Insläppta / match', curGoalsConceded ? formatMetric(curGoalsConcededPerMatch, 2) : '—'],
+          ['Straffmål', curPenaltyScored],
+          ['Straffräddningar', curPenaltySaved]
+        ]
+      }
+    ].filter(section => !section.hidden);
+    const detailPanels = detailSections.map(section => `
+      <div class="player-detail-panel">
+        <div class="player-detail-panel-head">
+          <div>
+            <div class="player-history-kicker">${section.kicker}</div>
+            <div class="player-history-title" style="font-size:18px">${section.title}</div>
+          </div>
+        </div>
+        <table><tbody>${section.rows.map(([label, value]) => srow(label, value)).join('')}</tbody></table>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+        ${teamId?`<button class="back" onclick="go('/lag/${teamId}')">← ${esc(teamName)}</button>`:`<button class="back" onclick="go('/')">← Hem</button>`}
+        <button class="share" onclick="copyLink()">Kopiera länk</button>
+      </div>
+
+      <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
+        <img class="p-photo" src="${p.photo||''}" onerror="this.src='';this.style.background='var(--dark4)'">
+          <div class="p-body">
+          <h1>${esc(playerDisplayName)}</h1>
+          <div class="p-meta">
+            <span>${renderNationalityDisplay(p)}</span>
+            <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
+            ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
+            ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
+          </div>
+          ${teamId?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer" onclick="go('/lag/${teamId}')">
+            <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
+          </div>`:''}
+          ${seasonSwitcher}
+          <span class="season-label">Allsvenskan ${curSeasonYear}</span>
+          ${!hasCurrentAllsvenskanData ? `<div style="margin:.55rem 0 .2rem;color:var(--muted);font-size:12px">Ingen Allsvenskan-data tillgänglig för ${curSeasonYear} ännu.</div>` : ''}
+          <div class="pills player-current-pills">
+            <div class="pill"><div class="pn">${curApps}</div><div class="pl">Matcher</div></div>
+            <div class="pill"><div class="pn">${curMins}</div><div class="pl">Minuter</div></div>
+            <div class="pill"><div class="pn">${curGoals}</div><div class="pl">Mål</div></div>
+            <div class="pill"><div class="pn">${curAssists}</div><div class="pl">Assist</div></div>
+            <div class="pill"><div class="pn ${curRatingClass}">${curRating?curRating.toFixed(1):'—'}</div><div class="pl">Rating</div></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <span class="season-label">Allsvenskan totalt</span>
+          <div class="pills player-career-pills" style="justify-content:flex-end">
+            <div class="pill"><div class="pn">${careerApps}</div><div class="pl">Matcher</div></div>
+            <div class="pill"><div class="pn">${careerGoals}</div><div class="pl">Mål</div></div>
+            <div class="pill"><div class="pn">${careerAssists}</div><div class="pl">Assist</div></div>
+          </div>
+          <div style="margin-top:.75rem">
+            <button style="background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:6px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;cursor:pointer" onclick="loadMV(this,${JSON.stringify(playerDisplayName)})">
+              Hämta marknadsvärde
+            </button>
+            <div id="mv-${playerId}" style="margin-top:.4rem"></div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this,'p-career')">Allsvenskan-karriär (${seasonRows.length} säsonger)</button>
+        <button class="tab" onclick="switchTab(this,'p-detail')">Allsvenskan ${curSeasonYear}</button>
+        <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,${p.player?.id||playerId},'p-tr')">Övergångar</button>
+        <button class="tab" onclick="switchTab(this,'p-club-career')">Spelarkarriär</button>
+      </div>
+
+      <div id="p-career">
+        <div class="tw">
+          <div class="player-history-wrap">
+            <div class="player-history-head">
+              <div class="player-history-headline">
+                <div class="player-history-kicker">Allsvenskan-karriär</div>
+                <div class="player-history-title">Säsong för säsong</div>
+                <div class="player-history-copy">En kompakt översikt över spelarens Allsvenskan-säsonger, klubbskiften och nyckeltal.</div>
+              </div>
+              <div class="player-history-summary">
+                <span class="player-history-badge"><strong>${seasonRows.length}</strong> säsonger</span>
+                <span class="player-history-badge"><strong>${careerApps}</strong> matcher</span>
+                <span class="player-history-badge"><strong>${careerGoals}</strong> mål</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto"><table class="player-history-table">
+          <thead><tr>
+            <th>Säsong</th><th>Lag</th><th>Liga</th>
+            <th class="num" title="Matcher spelade">Matcher</th><th class="num" title="Minuter spelade">Minuter</th>
+            <th class="num" title="Mål">Mål</th><th class="num" title="Assist">Assist</th><th class="num" title="Betyg / rating">Rating</th>
+            <th class="num" title="Gula kort">Gula</th><th class="num" title="Röda kort">Röda</th>
+          </tr></thead>
+          <tbody>
+            ${sTableRows||'<tr><td colspan="10" class="empty">Ingen Allsvenskan-data tillgänglig</td></tr>'}
+            <tr class="total-row">
+              <td colspan="3" style="color:var(--gold)">Allsvenskan totalt (${seasonRows.length} säsonger)</td>
+              <td class="num">${careerApps}</td>
+              <td class="num">${careerMins.toLocaleString('sv-SE')}</td>
+              <td class="num">${careerGoals}</td>
+              <td class="num">${careerAssists}</td>
+              <td class="num"><span class="player-history-empty">—</span></td>
+              <td class="num" style="color:${careerYellow>10?'var(--gold)':'var(--muted)'}">${careerYellow || '<span class="player-history-empty">—</span>'}</td>
+              <td class="num" style="color:${careerRed>0?'var(--red)':'var(--muted)'}">${careerRed || '<span class="player-history-empty">—</span>'}</td>
+            </tr>
+          </tbody>
+        </table></div></div></div>
+      </div>
+
+      <div id="p-detail" style="display:none">
+        <div class="player-history-copy" style="margin-bottom:.85rem">Alla sektioner nedan bygger enbart på spelarens Allsvenskan-statistik för ${curSeasonYear}.</div>
+        <div class="player-detail-summary">${summaryCards}</div>
+        <div class="player-detail-grid">${detailPanels}</div>
+      </div>
+
+      <div id="p-tr" style="display:none">
+        <div class="tw"><div style="padding:1rem;color:var(--muted);font-size:13px">Klicka på fliken för att ladda…</div></div>
+      </div>
+
+      <div id="p-club-career" style="display:none">
+        <div class="tw">
+          <div class="player-history-wrap">
+            <div class="player-history-head">
+              <div class="player-history-headline">
+                <div class="player-history-kicker">Spelarkarriär</div>
+                <div class="player-history-title">Hela klubbhistoriken</div>
+                <div class="player-history-copy">År för år genom spelarens klubbkarriär, utan landslags- och ungdomslandslagsrader.</div>
+              </div>
+              <div class="player-history-summary">
+                <span class="player-history-badge"><strong>${clubCareerRows.length}</strong> rader</span>
+                <span class="player-history-badge"><strong>${[...new Set(clubCareerRows.map(row => row.team))].length}</strong> klubbar</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto"><table class="player-history-table">
+              <thead><tr>
+                <th>Säsong</th><th>Klubb</th><th>Liga</th>
+                <th class="num" title="Matcher spelade">Matcher</th><th class="num" title="Minuter spelade">Minuter</th>
+                <th class="num" title="Mål">Mål</th><th class="num" title="Assist">Assist</th><th class="num" title="Betyg / rating">Rating</th>
+                <th class="num" title="Gula kort">Gula</th><th class="num" title="Röda kort">Röda</th>
+              </tr></thead>
+              <tbody>${clubCareerTableRows || '<tr><td colspan="10" class="empty">Ingen klubbkarriär-data tillgänglig</td></tr>'}</tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>`;
+
+  } catch(e) {
+    el.innerHTML = `<button class="back" onclick="go('/')">← Hem</button><div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+function srow(label, val, col) {
+  return `<tr><td style="color:var(--muted);padding:7px 12px;width:55%">${label}</td>
+    <td style="padding:7px 12px;font-weight:500${col?';color:'+col:''}">${val}</td></tr>`;
+}
+
+async function loadMV(btn, name) {
+  const id = btn.parentElement.querySelector('[id^="mv-"]').id;
+  const el = document.getElementById(id);
+  btn.disabled = true;
+  btn.textContent = 'Hämtar…';
+  try {
+    const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
+        `Sök på transfermarkt.com och hitta marknadsvärdet för fotbollsspelaren ${name}. Ge: aktuellt marknadsvärde, kontraktets slutdatum och klubb. Max 2 meningar på svenska.`}]})});
+    const d = await resp.json();
+    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+    el.innerHTML = `<div style="font-size:12px;line-height:1.6;background:var(--dark3);border-radius:5px;padding:7px 10px;border:1px solid var(--border)">${mdHtml(text)}</div>`;
+    btn.style.display='none';
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:11px;color:#f08080">Fel: ${esc(e.message)}</div>`;
+    btn.textContent = 'Hämta marknadsvärde';
+    btn.disabled = false;
+  }
+}
+
+async function loadPlayerTransfers(tab, playerId, tabId) {
+  const el = document.getElementById(tabId);
+  if(!el || el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="spinner" style="width:14px;height:14px"></div> Hämtar övergångar…</div></div>`;
+  try {
+    const data = await af('transfers', {player: playerId});
+    if(!data.length) {
+      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+      return;
+    }
+    const transfers = [];
+    data.forEach(tr => (tr.transfers||[]).forEach(x => transfers.push({
+      date: x.date, type: x.type, teamIn: x.teams?.in, teamOut: x.teams?.out,
+    })));
+    transfers.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const rows = transfers.map(tr => {
+      const outClub = renderTransferClubChip(tr.teamOut, 'Klubb saknas');
+      const inClub = renderTransferClubChip(tr.teamIn, 'Klubb saknas');
+      return `<tr>
+        <td>${renderTransferDate(tr.date)}</td>
+        <td>
+          <div class="transfer-flow">
+            ${outClub}
+            <span class="transfer-flow-arrow">→</span>
+            ${inClub}
+          </div>
+          <div class="transfer-meta-note">Från klubb till klubb i spelarens karriär</div>
+        </td>
+        <td><div class="transfer-type-stack">${renderTransferTypeBadge(tr.type)}</div></td>
+      </tr>`;}).join('');
+    el.innerHTML = `<div class="tw"><div style="overflow-x:auto"><table class="transfer-table">
+      <thead><tr><th>Datum</th><th>Övergång</th><th>Typ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+// â”€â”€â”€ STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function pageStandings(el) {
+  document.title = 'Tabell — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
+  try {
+    const data = await af('standings', {league:LEAGUE, season:SEASON});
+    const st = data[0]?.league?.standings?.[0]||[];
+    const rows = st.map(t => {
+      const gd = t.goalsDiff;
+      const form = (t.form||'').slice(-5).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
+      const formLabel = (t.form || '')
+        .slice(-5)
+        .split('')
+        .map(token => token === 'W' ? 'V' : token === 'D' ? 'O' : token === 'L' ? 'F' : token)
+        .join(' ');
+      const topClass = t.rank <= 3 ? ` rank-top rank-top-${t.rank}` : '';
+      return `<tr class="link${topClass}" onclick="go('/lag/${t.team.id}')" title="Öppna ${esc(t.team.name)}" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/lag/${t.team.id}')}" aria-label="Öppna ${esc(t.team.name)}">
+        <td class="standings-rank">${t.rank}</td>
+        <td><div class="standings-team">
+          <img src="${t.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <span class="standings-team-name">${esc(t.team.name)}</span>
+        </div></td>
+        <td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td>
+        <td>${t.all.goals.for}</td><td>${t.all.goals.against}</td>
+        <td style="color:${gd>=0?'var(--green)':'var(--red)'}">${gd>0?'+'+gd:gd}</td>
+        <td class="num standings-points">${t.points}</td>
+        <td><div class="form-row standings-form" title="Senaste fem: ${formLabel || '–'}">${form}</div></td>
+      </tr>`;}).join('');
+    el.innerHTML = `
+      <div class="pg-header"><div class="pg-title">Tabell <em>${SEASON}</em></div></div>
+      <div class="tw"><div class="standings-wrap"><table class="standings-table">
+        <thead><tr><th title="Placering">#</th><th title="Lag">Lag</th><th title="Matcher spelade">MP</th><th title="Vinster">V</th><th title="Oavgjorda">O</th><th title="Förluster">F</th><th title="Gjorda mål">GM</th><th title="Insläppta mål">GI</th><th title="Målskillnad">GS</th><th title="Poäng">P</th><th title="Senaste fem matcher">Form</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="11" class="empty">Ingen data</td></tr>'}</tbody>
+      </table></div></div>`;
+  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+
+// â”€â”€â”€ RESULTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function formatMatchDate(d){
+  return formatSvDate(d, {day:'2-digit',month:'short'});
+}
+function formatMatchDateTime(d){
+  if(!d) return '—';
+  try{
+    const date = new Date(d);
+    if(Number.isNaN(date.getTime())) return String(d || '').slice(0, 16) || '—';
+    return date.toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  }
+  catch(e){return String(d || '').slice(0, 16) || '—';}
+}
+function matchStatusLabel(f){
+  const short = f?.fixture?.status?.short || '';
+  const elapsed = f?.fixture?.status?.elapsed;
+  if(short === 'NS') return 'Kommande';
+  if(['1H','2H','ET','BT','LIVE'].includes(short)) return elapsed ? `${elapsed}' spelas` : 'Spelas';
+  if(short === 'HT') return 'Halvtid';
+  if(['FT','AET','PEN'].includes(short)) return 'Slut';
+  if(['PST','CANC','ABD','INT','AWD','WO'].includes(short)) return svStatus(f?.fixture?.status?.long || 'Avbruten');
+  return svStatus(f?.fixture?.status?.long || short || 'Match');
+}
+function matchStatusClass(f){
+  const short = f?.fixture?.status?.short || '';
+  if(['1H','2H','ET','BT','LIVE','HT'].includes(short)) return 'live';
+  if(short === 'NS') return 'upcoming';
+  return 'finished';
+}
+function matchStatusToneClass(f){
+  const short = f?.fixture?.status?.short || '';
+  if(['1H','2H','ET','BT','LIVE','HT'].includes(short)) return 'live';
+  if(short === 'NS') return 'upcoming';
+  return 'finished';
+}
+function renderDuelStats(stats){
+  const home = stats?.[0]?.statistics || [];
+  const away = stats?.[1]?.statistics || [];
+  if(!home.length && !away.length) return `<div class="tw"><div class="empty">Ingen matchstatistik tillgänglig ännu</div></div>`;
+  const map = {};
+  [...home, ...away].forEach(s => { if(s?.type) map[s.type] = true; });
+  const labels = {
+    'Ball Possession':'Bollinnehav',
+    'Total Shots':'Skott',
+    'Shots on Goal':'Skott på mål',
+    'Shots off Goal':'Skott utanför',
+    'Blocked Shots':'Blockerade skott',
+    'Shots insidebox':'Skott i straffområdet',
+    'Shots outsidebox':'Skott utanför straffområdet',
+    'Fouls':'Frisparkar/Fouls',
+    'Corner Kicks':'Hörnor',
+    'Offsides':'Offside',
+    'Goalkeeper Saves':'Räddningar',
+    'Total passes':'Passningar',
+    'Passes accurate':'Lyckade passningar',
+    'Passes %':'Passningsprocent',
+    'Yellow Cards':'Gula kort',
+    'Red Cards':'Röda kort',
+    'expected_goals':'xG'
+  };
+  const wanted = ['expected_goals','Ball Possession','Total Shots','Shots on Goal','Shots off Goal','Blocked Shots','Shots insidebox','Shots outsidebox','Corner Kicks','Offsides','Goalkeeper Saves','Fouls','Total passes','Passes accurate','Passes %','Yellow Cards','Red Cards']
+    .filter(k => map[k]);
+  const getVal = (arr, type) => arr.find(x => x.type === type)?.value ?? 0;
+  const parseVal = v => {
+    if(v==null || v==='') return 0;
+    if(typeof v === 'string' && v.includes('%')) return parseFloat(v) || 0;
+    return parseFloat(v) || 0;
+  };
+  return `<div class="tw" style="padding:1rem 1.1rem">${wanted.map(type => {
+    const hv = getVal(home, type), av = getVal(away, type);
+    const hn = parseVal(hv), an = parseVal(av), total = Math.max(hn + an, 1);
+    const hp = (hn/total)*100, ap = (an/total)*100;
+    return `<div class="duel-stat">
+      <div class="val" style="text-align:left">${esc(String(hv))}</div>
+      <div>
+        <div class="lab">${esc(labels[type] || type)}</div>
+        <div class="duel-track">
+          <div class="duel-home" style="width:${hp}%"></div>
+          <div class="duel-away" style="width:${ap}%"></div>
+        </div>
+      </div>
+      <div class="val" style="text-align:right">${esc(String(av))}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function renderEventsList(events){
+  if(!events?.length) return `<div class="tw"><div class="empty">Inga matchhändelser ännu</div></div>`;
+  const typeSv = {
+    Goal: 'Mål',
+    Card: 'Kort',
+    subst: 'Byte',
+    Var: 'VAR',
+    'Missed Penalty': 'Missad straff',
+    'Penalty': 'Straff',
+    'Own Goal': 'Självmål'
+  };
+  return `<div class="event-list">${events.map(ev => {
+    const minute = `${ev.time?.elapsed || 0}${ev.time?.extra ? '+'+ev.time.extra : ''}'`;
+    const detail = ev.detail && ev.detail !== ev.type ? ` · ${ev.detail}` : '';
+    return `<div class="event-row">
+      <div class="event-minute">${minute}</div>
+      <div class="event-main">
+        <div class="type">${esc(typeSv[ev.type] || ev.type || 'Händelse')}${esc(detail)}</div>
+        <div class="player">${esc(getPlayerDisplayName(ev.player) || 'Okänd spelare')}${(ev.assist?.name || ev.assist?.firstname || ev.assist?.lastname || ev.assist?.fullname) ? ` <span style="color:var(--muted);font-weight:500">â†’ ${esc(getPlayerDisplayName(ev.assist))}</span>` : ''}</div>
+      </div>
+      <div class="event-team">
+        <img src="${ev.team?.logo||''}" onerror="this.style.opacity='.15'">
+        <span>${esc(fixName(ev.team?.name || '—'))}</span>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function renderLineups(lineups){
+  if(!lineups?.length) return `<div class="tw"><div class="empty">Laguppställningar saknas just nu</div></div>`;
+  return `<div class="lineups-grid">${lineups.map(team => `
+    <div class="lineup-card">
+      <div class="lineup-head">
+        <img src="${team.team?.logo||''}" onerror="this.style.opacity='.15'">
+        <div class="ln">${esc(fixName(team.team?.name || '—'))}</div>
+        <div class="lineup-form">${esc(team.formation || '—')}</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;margin-bottom:.4rem">Startelva</div>
+      ${(team.startXI||[]).map(p => `
+        <div class="lineup-player">
+          <div>
+            <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
+            <div class="pos">${esc(p.player?.pos || '')}</div>
+          </div>
+          <div class="num">#${esc(String(p.player?.number || '—'))}</div>
+        </div>`).join('') || '<div class="empty" style="padding:1rem 0">Ingen startelva</div>'}
+      ${(team.substitutes||[]).length ? `
+        <div style="font-size:11px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;margin:1rem 0 .4rem">Bänk</div>
+        ${(team.substitutes||[]).map(p => `
+          <div class="lineup-player">
+            <div>
+              <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
+              <div class="pos">${esc(p.player?.pos || '')}</div>
+            </div>
+            <div class="num">#${esc(String(p.player?.number || '—'))}</div>
+          </div>`).join('')}
+      ` : ''}
+    </div>`).join('')}</div>`;
+}
+
+let resultsSelectedRound = '';
+
+function getFixtureRoundInfo(f){
+  const raw = String(f?.league?.round || '').trim();
+  const match = raw.match(/(\d+)\s*$/);
+  if(match) return { key: match[1], label: `Omgång ${match[1]}`, number: parseInt(match[1], 10) };
+  return raw ? { key: raw, label: svOmgang(raw), number: Number.POSITIVE_INFINITY } : null;
+}
+
+function getResultsRounds(fixtures){
+  const seen = new Map();
+  (fixtures || []).forEach(f => {
+    const info = getFixtureRoundInfo(f);
+    if(info && !seen.has(info.key)) seen.set(info.key, info);
+  });
+  return [...seen.values()].sort((a,b) => {
+    if(Number.isFinite(a.number) && Number.isFinite(b.number)) return a.number - b.number;
+    if(Number.isFinite(a.number)) return -1;
+    if(Number.isFinite(b.number)) return 1;
+    return a.label.localeCompare(b.label, 'sv');
+  });
+}
+
+function fixtureHasStarted(f){
+  const short = String(f?.fixture?.status?.short || '').toUpperCase();
+  const elapsed = Number(f?.fixture?.status?.elapsed || 0);
+  if(elapsed > 0) return true;
+  return ['1H','HT','2H','ET','BT','P','LIVE','INT','SUSP','FT','AET','PEN','ABD','AWD','WO'].includes(short);
+}
+
+function getDefaultResultsRound(fixtures, rounds){
+  const keyedRounds = new Map((rounds || []).map(r => [r.key, r]));
+  const startedRounds = (fixtures || [])
+    .filter(fixtureHasStarted)
+    .map(f => getFixtureRoundInfo(f))
+    .filter(info => info && keyedRounds.has(info.key))
+    .sort((a,b) => a.number - b.number);
+  return startedRounds[startedRounds.length - 1]?.key || rounds?.[0]?.key || '';
+}
+
+function setResultsRound(roundKey){
+  resultsSelectedRound = roundKey || '';
+  pageResults(document.getElementById('mc'));
+}
+
+async function pageResults(el) {
+  document.title = 'Resultat — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
+  try {
+    const data = await af('fixtures', {league:LEAGUE, season:SEASON});
+    const rounds = getResultsRounds(data);
+    if(rounds.length && !rounds.some(r => r.key === resultsSelectedRound)) {
+      resultsSelectedRound = getDefaultResultsRound(data, rounds);
+    }
+    const activeRound = rounds.find(r => r.key === resultsSelectedRound) || null;
+    const visibleFixtures = activeRound
+      ? data.filter(f => getFixtureRoundInfo(f)?.key === activeRound.key)
+      : data;
+    const cards = [...visibleFixtures].sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0)).map(f => {
+      const hs = f.goals?.home, as_ = f.goals?.away;
+      const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
+      const venue = f.fixture?.venue?.name || 'Arena saknas';
+      const comp = 'Allsvenskan';
+      return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')" role="link" tabindex="0" aria-label="Öppna matchen ${esc(fixName(f.teams?.home?.name || ''))} mot ${esc(fixName(f.teams?.away?.name || ''))}" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/match/${f.fixture?.id}')}">
+        <div class="match-team">
+          <img src="${f.teams?.home?.logo||''}" onerror="this.style.opacity='.15'">
+          <span class="name">${esc(fixName(f.teams?.home?.name || '—'))}</span>
+        </div>
+        <div class="match-score">
+          <div class="score">${score}</div>
+          <div class="time ${matchStatusToneClass(f)}">${esc(matchStatusLabel(f))}</div>
+        </div>
+        <div class="match-team away">
+          <img src="${f.teams?.away?.logo||''}" onerror="this.style.opacity='.15'">
+          <span class="name">${esc(fixName(f.teams?.away?.name || '—'))}</span>
+        </div>
+        <div class="match-meta-row" style="grid-column:1 / -1">
+          <span class="match-meta-pill">${esc(formatMatchDateTime(f.fixture?.date || ''))}</span>
+          <span class="match-meta-pill">${esc(comp)}</span>
+          <span class="match-meta-pill">${esc(venue)}</span>
+        </div>
+      </div>`;
+    }).join('');
+    const roundIndex = rounds.findIndex(r => r.key === activeRound?.key);
+    const toolbar = rounds.length ? `
+      <div class="results-toolbar">
+        <div class="results-round-label">Omgång</div>
+        <div class="results-round-controls">
+          <button class="results-round-btn" onclick="setResultsRound('${esc(rounds[Math.max(0, roundIndex - 1)]?.key || activeRound?.key || '')}')" ${roundIndex <= 0 ? 'disabled' : ''}>← Föregående</button>
+          <select class="results-round-select" onchange="setResultsRound(this.value)" aria-label="Välj omgång">
+            ${rounds.map(r => `<option value="${esc(r.key)}" ${r.key===activeRound?.key?'selected':''}>${esc(r.label)}</option>`).join('')}
+          </select>
+          <div class="results-round-current">${esc(activeRound?.label || 'Alla matcher')}</div>
+          <button class="results-round-btn" onclick="setResultsRound('${esc(rounds[Math.min(rounds.length - 1, roundIndex + 1)]?.key || activeRound?.key || '')}')" ${roundIndex === -1 || roundIndex >= rounds.length - 1 ? 'disabled' : ''}>Nästa →</button>
+        </div>
+      </div>` : '';
+    el.innerHTML = `
+      <div class="pg-header"><div class="pg-title">Resultat</div><span class="pg-sub">Klicka på en match för statistik, händelser och laguppställningar</span></div>
+      ${toolbar}
+      <div class="matches-grid">${cards || '<div class="tw"><div class="empty">Inga matcher</div></div>'}</div>`;
+  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+
+async function pageMatch(el, fixtureId) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matchdata…</div>`;
+  try {
+    const [fixtureRes, statsRes, eventsRes, lineupsRes] = await Promise.all([
+      af('fixtures', {id: fixtureId}),
+      af('fixtures/statistics', {fixture: fixtureId}).catch(() => []),
+      af('fixtures/events', {fixture: fixtureId}).catch(() => []),
+      af('fixtures/lineups', {fixture: fixtureId}).catch(() => [])
+    ]);
+    const f = fixtureRes?.[0];
+    if(!f) throw new Error('Matchen hittades inte');
+
+    document.title = `${fixName(f.teams?.home?.name || 'Hemma')} – ${fixName(f.teams?.away?.name || 'Borta')} | AllsvenskanAI`;
+    const hs = f.goals?.home, as_ = f.goals?.away;
+    const score = hs!==null&&hs!==undefined ? `${hs} – ${as_}` : '–';
+    const venue = f.fixture?.venue?.name || 'Arena saknas';
+    const city = svLand(f.fixture?.venue?.city || '');
+    const round = svOmgang(f.league?.round || 'Allsvenskan');
+    const ref = svDomare(f.fixture?.referee || 'Domare saknas');
+    const status = matchStatusLabel(f);
+    const home = f.teams?.home || {};
+    const away = f.teams?.away || {};
+    const hStats = statsRes?.[0]?.statistics || [];
+    const aStats = statsRes?.[1]?.statistics || [];
+    const statVal = (arr, type) => arr.find(x => x.type === type)?.value ?? '—';
+
+    el.innerHTML = `
+      <button class="back" onclick="go('/resultat')">Tillbaka till resultat</button>
+
+      <div class="match-detail-hero">
+        <div class="match-detail-grid">
+          <div class="match-detail-team">
+            <img src="${home.logo||''}" onerror="this.style.opacity='.15'">
+            <div class="name">${esc(fixName(home.name || '—'))}</div>
+          </div>
+          <div class="match-detail-mid">
+            <div class="score">${score}</div>
+            <div class="status">${esc(status)}</div>
+          </div>
+          <div class="match-detail-team">
+            <img src="${away.logo||''}" onerror="this.style.opacity='.15'">
+            <div class="name">${esc(fixName(away.name || '—'))}</div>
+          </div>
+        </div>
+        <div class="match-detail-meta">
+          <span class="match-meta-pill">${esc(formatMatchDateTime(f.fixture?.date || ''))}</span>
+          <span class="match-meta-pill">${esc(round)}</span>
+          <span class="match-meta-pill">${esc(venue)}${city ? ' · ' + esc(city) : ''}</span>
+          <span class="match-meta-pill">${esc(ref)}</span>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="label">Bollinnehav</div><div class="value">${esc(String(statVal(hStats,'Ball Possession')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Ball Possession')))}</span></div></div>
+        <div class="stat-box"><div class="label">Skott på mål</div><div class="value">${esc(String(statVal(hStats,'Shots on Goal')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Shots on Goal')))}</span></div></div>
+        <div class="stat-box"><div class="label">Hörnor</div><div class="value">${esc(String(statVal(hStats,'Corner Kicks')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Corner Kicks')))}</span></div></div>
+        <div class="stat-box"><div class="label">xG</div><div class="value">${esc(String(statVal(hStats,'expected_goals')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'expected_goals')))}</span></div></div>
+      </div>
+
+      <div class="section-label">Matchstatistik</div>
+      ${renderDuelStats(statsRes)}
+
+      <div class="section-label" style="margin-top:1rem">Matchhändelser</div>
+      ${renderEventsList(eventsRes)}
+
+      <div class="section-label" style="margin-top:1rem">Laguppställningar</div>
+      ${renderLineups(lineupsRes)}
+    `;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
+// â”€â”€â”€ TRANSFERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let transfersCache = null;
+let transfersLoadMeta = null;
+let transfersLeagueTeams = [];
+let playerProfileNameCache = {};
+let playerProfileMetaCache = {};
+let transfersFilters = {
+  team: '',
+  type: '',
+  search: ''
+};
+
+function normalizeTransferType(type=''){
+  const raw = String(type || '').toLowerCase();
+  if(raw.includes('loan')) return 'loan';
+  if(raw.includes('free') || raw.includes('okänd') || raw.includes('unknown') || raw === '-' || !raw) return 'neutral';
+  return 'transfer';
+}
+
+function isPermanentTransfer(type=''){
+  return normalizeTransferType(type) === 'transfer';
+}
+
+function setTransfersFilter(key, value=''){
+  transfersFilters = { ...transfersFilters, [key]: value || '' };
+  pageTransfers(document.getElementById('mc'), 1);
+}
+
+function getAllsvenskanTeams(){
+  return sortTeamsByOrder(transfersLeagueTeams || []).map(team => ({
+    id: team?.id || null,
+    name: fixName(team?.name || '')
+  })).filter(team => team.name);
+}
+
+async function getPlayerProfileDisplayName(playerId){
+  if(!playerId) return '';
+  if(playerProfileNameCache[playerId]) return playerProfileNameCache[playerId];
+
+  const remember = (name='') => {
+    const clean = String(name || '').trim();
+    if(clean && clean !== '—' && !looksAbbreviatedPlayerName(clean)) {
+      playerProfileNameCache[playerId] = clean;
+      return clean;
+    }
+    return '';
+  };
+
+  try {
+    const data = await withTimeout(
+      af('players/profiles', {player: playerId}),
+      12000,
+      `Player profile ${playerId}`
+    );
+    const profilePlayer = data?.[0]?.player || {};
+    const fullName = remember(getPlayerDisplayName(profilePlayer));
+    if(fullName) {
+      return fullName;
+    }
+  } catch(e) {
+    console.warn('[player-name] profile lookup failed', { playerId, error: e.message });
+  }
+
+  const seasonsToTry = [SEASON, 2025, 2024, 2023];
+  for(const season of seasonsToTry){
+    try {
+      const data = await withTimeout(
+        af('players', {id: playerId, season}),
+        12000,
+        `Player season ${playerId} ${season}`
+      );
+      const player = data?.[0]?.player || {};
+      const fullName = remember(getPlayerDisplayName(player));
+      if(fullName) {
+        return fullName;
+      }
+    } catch(e) {
+      console.warn('[player-name] season lookup failed', { playerId, season, error: e.message });
+    }
+  }
+
+  return '';
+}
+
+async function getPlayerProfileMeta(playerId){
+  if(!playerId) return {};
+  if(playerProfileMetaCache[playerId]) return playerProfileMetaCache[playerId];
+  try {
+    const data = await withTimeout(
+      af('players/profiles', {player: playerId}),
+      12000,
+      `Player profile meta ${playerId}`
+    );
+    const player = data?.[0]?.player || {};
+    const meta = {
+      nationality: player.nationality || '',
+      nationalityCode: player.nationalityCode || player.nationality_code || '',
+      birthCountry: player.birth?.country || '',
+      photo: player.photo || '',
+      firstname: player.firstname || '',
+      lastname: player.lastname || '',
+      name: player.name || '',
+    };
+    playerProfileMetaCache[playerId] = meta;
+    if(meta.name && !playerProfileNameCache[playerId] && !looksAbbreviatedPlayerName(meta.name)) {
+      playerProfileNameCache[playerId] = meta.name;
+    }
+    return meta;
+  } catch(e) {
+    return {};
+  }
+}
+
+async function enrichSquadNationalities(players = [], playerInfoById = {}){
+  const needsLookup = (players || []).filter(player => {
+    const info = playerInfoById[player.id] || {};
+    return !(info.nationality || player.nationality || info.birth?.country || player.birth?.country || info.nationalityCode || player.nationalityCode);
+  });
+  if(!needsLookup.length) return playerInfoById;
+  const ids = [...new Set(needsLookup.map(player => player.id).filter(Boolean))];
+  const batchSize = 4;
+  for(let i = 0; i < ids.length; i += batchSize){
+    const batch = ids.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async playerId => ({
+      playerId,
+      meta: await getPlayerProfileMeta(playerId)
+    })));
+    results.forEach(result => {
+      if(!result?.playerId || !result?.meta) return;
+      playerInfoById[result.playerId] = {
+        ...(playerInfoById[result.playerId] || {}),
+        ...result.meta,
+      };
+    });
+    if(i + batchSize < ids.length) await delay(250);
+  }
+  return playerInfoById;
+}
+
+async function enrichTransferPlayerNames(rows = []){
+  const needsLookup = rows.filter(tr => tr?.playerId && looksAbbreviatedPlayerName(tr.playerName || ''));
+  if(!needsLookup.length) return;
+
+  const ids = [...new Set(needsLookup.map(tr => tr.playerId).filter(Boolean))];
+  const batchSize = 4;
+  for(let i = 0; i < ids.length; i += batchSize){
+    const batch = ids.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async playerId => ({
+      playerId,
+      name: await getPlayerProfileDisplayName(playerId)
+    })));
+    results.forEach(result => {
+      if(!result.name) return;
+      rows.forEach(tr => {
+        if(tr.playerId === result.playerId) tr.playerName = result.name;
+      });
+    });
+    if(i + batchSize < ids.length) await delay(350);
+  }
+}
+
+function buildTransferEntries(rows = [], fallbackTeam = null){
+  const all = [];
+  rows.forEach(tr => {
+    (tr.transfers||[]).forEach(x => {
+      const year = parseInt((x.date||'').slice(0,4));
+      const validDate = /^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(x.date||'');
+      if(year >= 2024 && validDate) {
+        const type = x.type || '';
+        const teamIn = x.teams?.in;
+        const teamOut = x.teams?.out;
+        const isInternal = type === 'Raise' || type === 'Loan Return' ||
+          (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
+        const resolvedTeam = teamIn || teamOut || fallbackTeam;
+        if(type === '-' && !teamIn && !teamOut) return;
+        all.push({
+          date: x.date,
+          type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
+          playerName: getPlayerDisplayName(tr.player),
+          playerId: tr.player?.id,
+          teamIn: isInternal ? resolvedTeam : (teamIn || null),
+          teamOut: isInternal ? resolvedTeam : (teamOut || null),
+          isInternal,
+        });
+      }
+    });
+  });
+  return all;
+}
+
+async function fetchTransfersSafe(team){
+  console.info('[transfers] team request start', { teamId: team.id, teamName: team.name });
+  try {
+    const rows = await withTimeout(
+      af('transfers', {team:team.id}),
+      12000,
+      `Transfers ${team.name || team.id}`
+    );
+    console.info('[transfers] team request success', { teamId: team.id, teamName: team.name, rows: rows.length || 0 });
+    return {
+      ok: true,
+      team,
+      transfers: buildTransferEntries(rows, team)
+    };
+  } catch(e) {
+    console.warn('[transfers] team request failure', { teamId: team.id, teamName: team.name, error: e.message });
+    return {
+      ok: false,
+      team,
+      error: e
+    };
+  }
+}
+
+async function loadTransfersCache(el){
+  console.info('[transfers] standings request start', { season: SEASON });
+  const standData = await withTimeout(
+    af('standings', {league:LEAGUE, season:SEASON}),
+    12000,
+    'Standings'
+  );
+  console.info('[transfers] standings request success');
+
+  const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
+  transfersLeagueTeams = [...teams];
+  const batchSize = 3;
+  const batchDelay = 1300;
+  const all = [];
+  let successCount = 0;
+  let failedCount = 0;
+
+  for(let i = 0; i < teams.length; i += batchSize){
+    const batch = teams.slice(i, i + batchSize);
+    if(el) {
+      el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag… ${Math.min(i + batch.length, teams.length)}/${teams.length}</div>`;
+    }
+
+    const results = await Promise.all(batch.map(team => fetchTransfersSafe(team)));
+    results.forEach(result => {
+      if(result.ok) {
+        successCount += 1;
+        all.push(...result.transfers);
+      } else {
+        failedCount += 1;
+      }
+    });
+
+    console.info('[transfers] batch complete', {
+      batchStart: i,
+      batchSize: batch.length,
+      successCount,
+      failedCount
+    });
+
+    if(i + batchSize < teams.length) {
+      await delay(batchDelay);
+    }
+  }
+
+  const seen = new Set();
+  const unique = all.filter(t => {
+    const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  console.info('[transfers] request summary', { successCount, failedCount, totalTeams: teams.length });
+
+  return {
+    transfers: unique,
+    meta: {
+      successCount,
+      failedCount,
+      totalTeams: teams.length,
+      partial: failedCount > 0 && successCount > 0,
+      empty: !unique.length,
+      failed: successCount === 0 && failedCount > 0
+    }
+  };
+}
+
+async function pageTransfers(el, page=1) {
+  document.title = 'Övergångar — AllsvenskanAI';
+  const PER_PAGE = 50;
+
+  if(!transfersCache) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag...</div>`;
+    try {
+      const loaded = await loadTransfersCache(el);
+      transfersCache = loaded.transfers;
+      transfersLoadMeta = loaded.meta;
+    } catch(e) {
+      console.error('[transfers] page load failure', e);
+      transfersCache = [];
+      transfersLoadMeta = {
+        successCount: 0,
+        failedCount: 0,
+        totalTeams: 0,
+        partial: false,
+        empty: true,
+        failed: true
+      };
+      transfersLeagueTeams = [];
+    } finally {
+      if(!Array.isArray(transfersCache)) transfersCache = [];
+      if(!transfersLoadMeta) {
+        transfersLoadMeta = {
+          successCount: 0,
+          failedCount: 0,
+          totalTeams: 0,
+          partial: false,
+          empty: true,
+          failed: false
+        };
+      }
+    }
+  }
+
+  const unique = transfersCache;
+  const filterTeam = transfersFilters.team || '';
+  const filterType = transfersFilters.type || '';
+  const filterSearch = normalizeText(transfersFilters.search || '');
+  const filtered = unique.filter(tr => {
+    if(filterTeam) {
+      const inName = fixName(tr.teamIn?.name || '');
+      const outName = fixName(tr.teamOut?.name || '');
+      if(inName !== filterTeam && outName !== filterTeam) return false;
+    }
+    if(filterType && normalizeTransferType(tr.type) !== filterType) return false;
+    if(filterSearch && !normalizeText(tr.playerName || '').includes(filterSearch)) return false;
+    return true;
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const slice = filtered.slice((safePage-1)*PER_PAGE, safePage*PER_PAGE);
+  await enrichTransferPlayerNames(slice);
+  const teamOptions = getAllsvenskanTeams().map(team => team.name);
+  const filters = `
+    <div class="transfer-filters">
+      <select class="transfer-filter" onchange="setTransfersFilter('team', this.value)" aria-label="Filtrera på lag">
+        <option value="">Alla lag</option>
+        ${teamOptions.map(name => `<option value="${esc(name)}" ${name === filterTeam ? 'selected' : ''}>${esc(name)}</option>`).join('')}
+      </select>
+      <select class="transfer-filter" onchange="setTransfersFilter('type', this.value)" aria-label="Filtrera på övergångstyp">
+        <option value="">Alla typer</option>
+        <option value="transfer" ${filterType === 'transfer' ? 'selected' : ''}>Transfer</option>
+        <option value="loan" ${filterType === 'loan' ? 'selected' : ''}>Lån</option>
+        <option value="neutral" ${filterType === 'neutral' ? 'selected' : ''}>Fri/okänd</option>
+      </select>
+      <input class="transfer-filter search" type="search" value="${esc(transfersFilters.search || '')}" placeholder="Sök spelare" oninput="setTransfersFilter('search', this.value)" aria-label="Sök spelare">
+    </div>`;
+
+  const rows = slice.map(tr => {
+    const fc = feeStyle(tr.type);
+    const playerTarget = tr.playerId ? `/spelare/${tr.playerId}?team=${tr.teamIn?.id||tr.teamOut?.id||''}` : '';
+    return `<tr class="transfer-row ${isPermanentTransfer(tr.type) ? 'is-permanent' : ''}" ${playerTarget ? `onclick="go('${playerTarget}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('${playerTarget}')}" aria-label="Öppna spelaren ${esc(tr.playerName||'')}"` : ''}>
+      <td style="font-size:11px;color:var(--muted);white-space:nowrap">${tr.date||'—'}</td>
+      <td class="transfer-player">${esc(tr.playerName||'—')}</td>
+      <td colspan="3">
+        <div class="transfer-flow">
+          <div class="transfer-club">
+            <img src="${tr.teamOut?.logo||''}" onerror="this.style.opacity='.15'">
+            <span>${esc(tr.teamOut?.name||'?')}</span>
+          </div>
+          <span class="transfer-arrow">→</span>
+          ${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div class="transfer-club">
+            <img src="${tr.teamIn.logo||''}" onerror="this.style.opacity='.15'">
+            <span>${esc(tr.teamIn.name||'?')}</span>
+          </div>` : '<span style="color:var(--muted)">—</span>'}
+        </div>
+      </td>
+      <td><span class="transfer-badge" style="${fc}">${esc(tr.type||'?')}</span></td>
+    </tr>`;
+  }).join('');
+
+  const pageBtns = [];
+  if(safePage > 1) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage-1}')">← Föregående sida</button>`);
+  const s = Math.max(1,safePage-2), e2 = Math.min(totalPages,safePage+2);
+  for(let i=s;i<=e2;i++) pageBtns.push(`<button class="page-btn ${i===safePage?'active':''}" onclick="go('/overgangar/${i}')">${i}</button>`);
+  if(safePage < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage+1}')">Nästa sida →</button>`);
+
+  const noResultsMessage = transfersLoadMeta?.failed && !unique.length
+    ? 'Kunde inte hämta övergångar just nu.'
+    : filtered.length === 0 && unique.length > 0
+      ? 'Inga övergångar matchar filtren.'
+      : 'Inga övergångar';
+
+  const loadNote = transfersLoadMeta?.failed
+    ? `<div class="feed-note">Kunde inte hämta övergångar just nu.</div>`
+    : transfersLoadMeta?.partial
+      ? `<div class="feed-note">Visar tillgängliga övergångar just nu. ${transfersLoadMeta.successCount} lag laddade, ${transfersLoadMeta.failedCount} misslyckades.</div>`
+      : '';
+
+  el.innerHTML = `
+    <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${filtered.length} övergångar · sida ${safePage} av ${totalPages}</span></div>
+    ${loadNote}
+    ${filters}
+    <div class="tw"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Datum</th><th>Spelare</th><th colspan="3">Övergång</th><th>Typ</th></tr></thead>
+      <tbody>${rows||`<tr><td colspan="6" class="empty">${noResultsMessage}</td></tr>`}</tbody>
+    </table></div></div>
+    <div class="pagination">${pageBtns.join('')}</div>
+    <div class="pagination-meta">Visar ${slice.length} av ${filtered.length} övergångar</div>`;
+  window.scrollTo(0,0);
+}
+
+// â”€â”€â”€ STATS / TOPPLISTOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const PLAYER_STATS_INVENTORY = [
+  'games.appearences','games.lineups','games.minutes','games.rating','games.position',
+  'substitutes.in','substitutes.out','substitutes.bench',
+  'goals.total','goals.assists','goals.conceded','goals.saves',
+  'shots.total','shots.on',
+  'passes.total','passes.key','passes.accuracy',
+  'tackles.total','tackles.interceptions','tackles.blocks',
+  'dribbles.success','duels.won','duels.total',
+  'fouls.committed','fouls.drawn',
+  'cards.yellow','cards.red',
+  'penalty.saved','penalty.scored','penalty.missed','penalty.won','penalty.commited',
+  'offsides'
+];
+
+const STAT_GROUPS = [
+  { id:'offense', label:'Offensiv', blurb:'Mål, assist och avslut' },
+  { id:'passing', label:'Passningsspel', blurb:'Tempo, precision och kreativitet' },
+  { id:'defense', label:'Defensiv', blurb:'Brytningar, dueller och aktioner' },
+  { id:'discipline', label:'Disciplin', blurb:'Kort, fouls och kaos' },
+  { id:'goalkeeping', label:'Målvakt', blurb:'Räddningar och insläppta mål' },
+  { id:'playingTime', label:'Speltid', blurb:'Minuter, starter och belastning' },
+  { id:'advanced', label:'Avancerat', blurb:'Per 90, effektivitet och impact' },
+];
+
+const STAT_CATEGORIES = [
+  { id:'goals', label:'Mål', title:'Skytteliga', group:'offense', type:'direct', source:'stats.goals', col:'Mål', description:'Flest mål under vald Allsvensk säsong.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.goalsPer90, 2)} /90` },
+  { id:'assists', label:'Assist', title:'Assistligan', group:'offense', type:'direct', source:'stats.assists', col:'Assist', description:'Spelare med flest målgivande passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.assistsPer90, 2)} /90` },
+  { id:'goalContributions', label:'Mål + assist', title:'Poängligan', group:'offense', type:'derived', compute:p => p.derived.goalContributions, col:'Poäng', description:'Summerar mål och assist till en tydlig impact-ranking.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.pointsPer90, 2)} /90` },
+  { id:'shots', label:'Skott', title:'Flest skott', group:'offense', type:'direct', source:'stats.shots', col:'Skott', description:'Vilka avslutar mest totalt.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.shotsOn || 0)} på mål` },
+  { id:'shotsOn', label:'Skott på mål', title:'Skott på mål', group:'offense', type:'direct', source:'stats.shotsOn', col:'På mål', description:'Ren avslutskvalitet mot mål.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.shotAccuracy, 1)}% träff` },
+  { id:'keyPasses', label:'Nyckelpass', title:'Nyckelpassningar', group:'offense', type:'direct', source:'stats.keyPasses', col:'Nyckelpass', description:'Kreatörer som sätter lagkamrater i läge.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.keyPassesPer90, 2)} /90` },
+  { id:'goalsPer90', label:'Mål /90', title:'Mål per 90', group:'offense', type:'derived', compute:p => p.derived.goalsPer90, col:'Mål /90', description:'Produktivitet justerad för speltid.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.goals || 0)} mål` },
+  { id:'assistsPer90', label:'Assist /90', title:'Assist per 90', group:'offense', type:'derived', compute:p => p.derived.assistsPer90, col:'Assist /90', description:'Hur ofta en spelare skapar mål över 90 minuter.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.assists || 0)} assist` },
+  { id:'pointsPer90', label:'Poäng /90', title:'Poäng per 90', group:'offense', type:'derived', compute:p => p.derived.pointsPer90, col:'Poäng /90', description:'Mål + assist relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.15, secondary:p => `${Math.round(p.derived.goalContributions || 0)} totalt` },
+  { id:'conversionRate', label:'Avslut %', title:'Avslutseffektivitet', group:'offense', type:'derived', compute:p => p.derived.conversionRate, col:'Avslut %', description:'Hur stor andel av skotten som blir mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${formatStatValue(p.derived.shotsPerGoal, 1)} skott/mål`, playerFilter:p => p.stats.shots >= 5 },
+  { id:'shotsPerGoal', label:'Skott / mål', title:'Skott per mål', group:'offense', type:'derived', compute:p => p.derived.shotsPerGoal, col:'Skott/mål', description:'Lägre värde betyder högre effektivitet.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:0.1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 && p.stats.shots >= 5 },
+  { id:'passes', label:'Passningar', title:'Flest passningar', group:'passing', type:'direct', source:'stats.passes', col:'Pass', description:'Spelare som sätter tempot i possession-spelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
+  { id:'accuratePasses', label:'Lyckade pass', title:'Lyckade passningar', group:'passing', type:'derived', compute:p => p.derived.accuratePasses, col:'Lyckade', description:'Beräknas från total passvolym och passningsprocent.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.passes || 0)} totalt` },
+  { id:'passAccuracy', label:'Passnings%', title:'Passningsprocent', group:'passing', type:'derived', compute:p => p.derived.passAccuracy, col:'Pass %', description:'Passningssäkerhet över hela säsongen.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:50, secondary:p => `${Math.round(p.stats.passes || 0)} pass`, playerFilter:p => p.stats.passes >= 100 },
+  { id:'passesPer90', label:'Pass /90', title:'Passningar per 90', group:'passing', type:'derived', compute:p => p.derived.passesPer90, col:'Pass /90', description:'Hur mycket en spelare är involverad per full match.', formatter:v => formatStatValue(v, 1), minValue:5, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
+  { id:'keyPassesPer90', label:'Nyckelpass /90', title:'Nyckelpass per 90', group:'passing', type:'derived', compute:p => p.derived.keyPassesPer90, col:'KP /90', description:'Kreativ output relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.keyPasses || 0)} totalt` },
+  { id:'tackles', label:'Tacklingar', title:'Flest tacklingar', group:'defense', type:'direct', source:'stats.tackles', col:'Tacklingar', description:'Vem som går in i flest dueller på marken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.interceptions || 0)} brytningar` },
+  { id:'interceptions', label:'Interceptions', title:'Flest brytningar', group:'defense', type:'direct', source:'stats.interceptions', col:'Brytningar', description:'Läser spelet och bryter passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.blocks || 0)} blockar` },
+  { id:'blocks', label:'Blockar', title:'Flest blockar', group:'defense', type:'direct', source:'stats.blocks', col:'Blockar', description:'Skott- och passblockeringar över säsongen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.tackles || 0)} tacklingar` },
+  { id:'duelsWon', label:'Vunna dueller', title:'Vunna dueller', group:'defense', type:'direct', source:'stats.duelsWon', col:'Dueller', description:'Total mängd vunna dueller.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.duelWinRate, 1)}% vinst` },
+  { id:'duelWinRate', label:'Duellvinst %', title:'Duellvinstprocent', group:'defense', type:'derived', compute:p => p.derived.duelWinRate, col:'Vinst %', description:'Vem som vinner störst andel av sina dueller.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:40, secondary:p => `${Math.round(p.stats.duelsWon || 0)} vunna`, playerFilter:p => p.stats.duelsTotal >= 20 },
+  { id:'defActionsPer90', label:'Def aktioner /90', title:'Defensiva aktioner per 90', group:'defense', type:'derived', compute:p => p.derived.defActionsPer90, col:'Aktioner /90', description:'Tacklingar, brytningar och blockar per full match.', formatter:v => formatStatValue(v, 2), minValue:0.2, secondary:p => `${Math.round(p.derived.defActions || 0)} totalt` },
+  { id:'yellow', label:'Gula kort', title:'Mest varnade', group:'discipline', type:'direct', source:'stats.yellow', col:'Gula', description:'Spelare som samlat flest gula kort.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.red || 0)} röda` },
+  { id:'red', label:'Röda kort', title:'Mest utvisade', group:'discipline', type:'direct', source:'stats.red', col:'Röda', description:'Röda kort i ligaspelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.yellow || 0)} gula` },
+  { id:'foulsCommitted', label:'Fouls', title:'Mest foulande', group:'discipline', type:'direct', source:'stats.foulsCommitted', col:'Fouls', description:'Vilka som drar på sig flest frisparkar emot.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsDrawn || 0)} foulade` },
+  { id:'foulsDrawn', label:'Foulade', title:'Mest foulade', group:'discipline', type:'direct', source:'stats.foulsDrawn', col:'Foulad', description:'Spelare som oftast drar fouls till sitt lag.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsCommitted || 0)} commits` },
+  { id:'offsides', label:'Offside', title:'Flest offsides', group:'discipline', type:'direct', source:'stats.offsides', col:'Offside', description:'Anfallare som oftast går för tidigt.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.shots || 0)} skott` },
+  { id:'saves', label:'Räddningar', title:'Flest räddningar', group:'goalkeeping', type:'direct', source:'stats.saves', col:'Räddningar', description:'Målvakter med flest räddningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.savePercentage, 1)}% räddnings%`, playerFilter:p => p.flags.goalkeeper },
+  { id:'savePercentage', label:'Räddnings%', title:'Räddningsprocent', group:'goalkeeping', type:'derived', compute:p => p.derived.savePercentage, col:'Räddnings%', description:'Andel räddade avslut av saves + insläppta mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper && (p.stats.saves + p.stats.goalsConceded) > 0 },
+  { id:'goalsConceded', label:'Insläppta', title:'Minst insläppta mål', group:'goalkeeping', type:'direct', source:'stats.goalsConceded', col:'Insläppta', description:'Målvakter med lägst insläppta mål över säsongen.', formatter:v => Math.round(v), sort:'asc', minValue:-1, secondary:p => `${formatStatValue(p.derived.goalsConcededPerMatch, 2)} /match`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances > 0 },
+  { id:'goalsConcededPerMatch', label:'Insläppta / match', title:'Insläppta mål per match', group:'goalkeeping', type:'derived', compute:p => p.derived.goalsConcededPerMatch, col:'GA /match', description:'Insäppta mål justerat för spelade matcher.', formatter:v => formatStatValue(v, 2), sort:'asc', minValue:-1, secondary:p => `${Math.round(p.stats.goalsConceded || 0)} totalt`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances >= 3 },
+  { id:'penaltiesSaved', label:'Straffräddningar', title:'Straffräddningar', group:'goalkeeping', type:'direct', source:'stats.penaltiesSaved', col:'Straffrädd.', description:'Räddade straffar bland målvakter.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper },
+  { id:'minutes', label:'Minuter', title:'Mest spelade minuter', group:'playingTime', type:'direct', source:'stats.minutes', col:'Minuter', description:'Vilka som burit mest belastning.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
+  { id:'appearances', label:'Matcher', title:'Flest matcher', group:'playingTime', type:'direct', source:'stats.appearances', col:'Matcher', description:'Totalt antal framträdanden.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.starts || 0)} starter` },
+  { id:'starts', label:'Starter', title:'Flest starter', group:'playingTime', type:'direct', source:'stats.starts', col:'Starter', description:'Spelare som startat flest matcher.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.derived.subApps || 0)} inhopp` },
+  { id:'subApps', label:'Inhopp', title:'Flest inhopp', group:'playingTime', type:'derived', compute:p => p.derived.subApps, col:'Inhopp', description:'Matcher från bänken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
+  { id:'minutesPerMatch', label:'Min / match', title:'Minuter per match', group:'playingTime', type:'derived', compute:p => p.derived.minutesPerMatch, col:'Min/match', description:'Genomsnittlig speltid per framträdande.', formatter:v => formatStatValue(v, 1), minValue:1, secondary:p => `${Math.round(p.stats.minutes || 0)} min totalt` },
+  { id:'rating', label:'Rating', title:'Bäst rating', group:'advanced', type:'direct', source:'stats.rating', col:'Rating', description:'Viktad snittrating över säsongen.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.minutes || 0)} min`, ratingClass:true, playerFilter:p => p.stats.appearances >= 3 },
+  { id:'shotsPer90', label:'Skott /90', title:'Skott per 90', group:'advanced', type:'derived', compute:p => p.derived.shotsPer90, col:'Skott /90', description:'Volymskyttar justerat för speltid.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.shots || 0)} skott` },
+  { id:'shotAccuracy', label:'Träff%', title:'Träffprocent', group:'advanced', type:'derived', compute:p => p.derived.shotAccuracy, col:'Träff %', description:'Andel skott som träffar mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.shotsOn || 0)} på mål`, playerFilter:p => p.stats.shots >= 5 },
+  { id:'minutesPerGoal', label:'Min / mål', title:'Minuter per mål', group:'advanced', type:'derived', compute:p => p.derived.minutesPerGoal, col:'Min/mål', description:'Hur ofta en spelare gör mål sett till speltid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 },
+  { id:'minutesPerContribution', label:'Min / poäng', title:'Minuter per poäng', group:'advanced', type:'derived', compute:p => p.derived.minutesPerContribution, col:'Min/poäng', description:'Hur ofta mål eller assist kommer över tid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.derived.goalContributions || 0)} poäng`, playerFilter:p => p.derived.goalContributions > 0 },
+];
+
+let statsCache = null;
+let currentStatCategory = 'goals';
+let currentStatGroup = 'offense';
+let statsYear = 2026; // default to current season
+
+function toStatNumber(value){
+  if(value === null || value === undefined || value === '') return 0;
+  const cleaned = String(value).replace('%','').replace(',', '.').trim();
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatStatValue(value, decimals = 1){
+  const num = Number(value || 0);
+  if(!Number.isFinite(num)) return '0';
+  return num.toLocaleString('sv-SE', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function per90(value, minutes){
+  return minutes > 0 ? (value / minutes) * 90 : 0;
+}
+
+function pct(part, total){
+  return total > 0 ? (part / total) * 100 : 0;
+}
+
+function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
+  const byPlayer = new Map();
+
+  rawPlayers.forEach(item => {
+    const player = item?.player || {};
+    const playerId = player?.id;
+    if(!playerId) return;
+
+    const entries = (item.statistics || []).filter(entry => entry?.league?.season === season);
+    const statEntries = entries.length ? entries : (item.statistics || []);
+    if(!statEntries.length) return;
+
+    if(!byPlayer.has(playerId)) {
+      byPlayer.set(playerId, {
+        playerId,
+        playerName: getPlayerDisplayName(player),
+        firstname: player.firstname || '',
+        lastname: player.lastname || '',
+        photo: player.photo || '',
+        teamId: null,
+        teamName: '',
+        teamLogo: '',
+        position: '',
+        dominantMinutes: -1,
+        ratingWeighted: 0,
+        ratingWeight: 0,
+        ratingFallbackTotal: 0,
+        ratingFallbackCount: 0,
+        passAccuracyWeighted: 0,
+        passAccuracyWeight: 0,
+        passAccuracyFallbackTotal: 0,
+        passAccuracyFallbackCount: 0,
+        stats: {
+          appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
+          goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+          tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
+          foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
+          saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
+          penaltiesMissed: 0, penaltiesWon: 0, penaltiesCommitted: 0,
+        }
+      });
+    }
+
+    const acc = byPlayer.get(playerId);
+    acc.playerName = getPlayerDisplayName(player, acc.playerName);
+    acc.firstname = acc.firstname || player.firstname || '';
+    acc.lastname = acc.lastname || player.lastname || '';
+    acc.photo = acc.photo || player.photo || '';
+
+    statEntries.forEach(entry => {
+      const minutes = toStatNumber(entry?.games?.minutes);
+      const appearances = toStatNumber(entry?.games?.appearences);
+      const starts = toStatNumber(entry?.games?.lineups);
+      const passes = toStatNumber(entry?.passes?.total);
+      const rating = toStatNumber(entry?.games?.rating);
+      const passAccuracy = toStatNumber(entry?.passes?.accuracy);
+
+      if(minutes > acc.dominantMinutes){
+        acc.dominantMinutes = minutes;
+        acc.teamId = entry?.team?.id || acc.teamId;
+        acc.teamName = fixName(entry?.team?.name || acc.teamName || '');
+        acc.teamLogo = entry?.team?.logo || acc.teamLogo;
+        acc.position = entry?.games?.position || acc.position;
+      }
+
+      acc.stats.appearances += appearances;
+      acc.stats.starts += starts;
+      acc.stats.subIns += toStatNumber(entry?.substitutes?.in);
+      acc.stats.subOuts += toStatNumber(entry?.substitutes?.out);
+      acc.stats.bench += toStatNumber(entry?.substitutes?.bench);
+      acc.stats.minutes += minutes;
+      acc.stats.goals += toStatNumber(entry?.goals?.total);
+      acc.stats.assists += toStatNumber(entry?.goals?.assists);
+      acc.stats.goalsConceded += toStatNumber(entry?.goals?.conceded);
+      acc.stats.saves += toStatNumber(entry?.goals?.saves);
+      acc.stats.shots += toStatNumber(entry?.shots?.total);
+      acc.stats.shotsOn += toStatNumber(entry?.shots?.on);
+      acc.stats.passes += passes;
+      acc.stats.keyPasses += toStatNumber(entry?.passes?.key);
+      acc.stats.tackles += toStatNumber(entry?.tackles?.total);
+      acc.stats.interceptions += toStatNumber(entry?.tackles?.interceptions);
+      acc.stats.blocks += toStatNumber(entry?.tackles?.blocks);
+      acc.stats.duelsWon += toStatNumber(entry?.duels?.won);
+      acc.stats.duelsTotal += toStatNumber(entry?.duels?.total);
+      acc.stats.foulsCommitted += toStatNumber(entry?.fouls?.committed);
+      acc.stats.foulsDrawn += toStatNumber(entry?.fouls?.drawn);
+      acc.stats.yellow += toStatNumber(entry?.cards?.yellow);
+      acc.stats.red += toStatNumber(entry?.cards?.red);
+      acc.stats.offsides += toStatNumber(entry?.offsides);
+      acc.stats.penaltiesSaved += toStatNumber(entry?.penalty?.saved);
+      acc.stats.penaltiesScored += toStatNumber(entry?.penalty?.scored);
+      acc.stats.penaltiesMissed += toStatNumber(entry?.penalty?.missed);
+      acc.stats.penaltiesWon += toStatNumber(entry?.penalty?.won);
+      acc.stats.penaltiesCommitted += toStatNumber(entry?.penalty?.commited || entry?.penalty?.committed);
+
+      if(rating > 0) {
+        const weight = minutes || appearances || 1;
+        acc.ratingWeighted += rating * weight;
+        acc.ratingWeight += weight;
+        acc.ratingFallbackTotal += rating;
+        acc.ratingFallbackCount += 1;
+      }
+      if(passAccuracy > 0) {
+        if(passes > 0) {
+          acc.passAccuracyWeighted += passAccuracy * passes;
+          acc.passAccuracyWeight += passes;
+        }
+        acc.passAccuracyFallbackTotal += passAccuracy;
+        acc.passAccuracyFallbackCount += 1;
+      }
+    });
+  });
+
+  return [...byPlayer.values()].map(acc => {
+    const appearances = acc.stats.appearances;
+    const minutes = acc.stats.minutes;
+    const goals = acc.stats.goals;
+    const assists = acc.stats.assists;
+    const shots = acc.stats.shots;
+    const passes = acc.stats.passes;
+    const saves = acc.stats.saves;
+    const goalsConceded = acc.stats.goalsConceded;
+    const rating = acc.ratingWeight > 0 ? acc.ratingWeighted / acc.ratingWeight : (acc.ratingFallbackCount > 0 ? acc.ratingFallbackTotal / acc.ratingFallbackCount : 0);
+    const passAccuracy = acc.passAccuracyWeight > 0 ? acc.passAccuracyWeighted / acc.passAccuracyWeight : (acc.passAccuracyFallbackCount > 0 ? acc.passAccuracyFallbackTotal / acc.passAccuracyFallbackCount : 0);
+    const accuratePasses = passes * (passAccuracy / 100);
+    const goalContributions = goals + assists;
+    const defActions = acc.stats.tackles + acc.stats.interceptions + acc.stats.blocks;
+    const subApps = Math.max(acc.stats.subIns || (appearances - acc.stats.starts), 0);
+
+    return {
+      playerId: acc.playerId,
+      playerName: acc.playerName,
+      firstname: acc.firstname,
+      lastname: acc.lastname,
+      teamId: acc.teamId,
+      teamName: acc.teamName,
+      teamLogo: acc.teamLogo,
+      photo: acc.photo,
+      position: acc.position,
+      stats: { ...acc.stats, rating },
+      derived: {
+        goalContributions,
+        goalsPer90: per90(goals, minutes),
+        assistsPer90: per90(assists, minutes),
+        pointsPer90: per90(goalContributions, minutes),
+        shotsPer90: per90(shots, minutes),
+        keyPassesPer90: per90(acc.stats.keyPasses, minutes),
+        conversionRate: pct(goals, shots),
+        shotsPerGoal: goals > 0 ? shots / goals : 0,
+        shotAccuracy: pct(acc.stats.shotsOn, shots),
+        passAccuracy,
+        accuratePasses,
+        passesPer90: per90(passes, minutes),
+        defActions,
+        defActionsPer90: per90(defActions, minutes),
+        duelWinRate: pct(acc.stats.duelsWon, acc.stats.duelsTotal),
+        savePercentage: pct(saves, saves + goalsConceded),
+        goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
+        minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
+        subApps,
+        minutesPerGoal: goals > 0 ? minutes / goals : 0,
+        minutesPerContribution: goalContributions > 0 ? minutes / goalContributions : 0,
+      },
+      flags: {
+        goalkeeper: String(acc.position || '').toLowerCase().includes('goalkeeper') || saves > 0 || goalsConceded > 0,
+      }
+    };
+  });
+}
+
+function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], team = {}, season = SEASON){
+  const normalized = buildNormalizedStatsDataset(rawPlayers, season);
+  const byPlayer = new Map(normalized.map(player => [player.playerId, {
+    ...player,
+    teamId: player.teamId || team.id || null,
+    teamName: player.teamName || fixName(team.name || ''),
+    teamLogo: player.teamLogo || team.logo || '',
+  }]));
+
+  (squadPlayers || []).forEach(squadPlayer => {
+    const playerId = squadPlayer?.id;
+    if(!playerId) return;
+    const existing = byPlayer.get(playerId);
+    if(existing){
+      existing.playerName = getPlayerDisplayName(squadPlayer, existing.playerName);
+      existing.firstname = existing.firstname || squadPlayer.firstname || '';
+      existing.lastname = existing.lastname || squadPlayer.lastname || '';
+      existing.photo = existing.photo || squadPlayer.photo || '';
+      existing.position = existing.position || squadPlayer.position || '';
+      existing.teamId = existing.teamId || team.id || null;
+      existing.teamName = existing.teamName || fixName(team.name || '');
+      existing.teamLogo = existing.teamLogo || team.logo || '';
+      return;
+    }
+
+    byPlayer.set(playerId, {
+      playerId,
+      playerName: getPlayerDisplayName(squadPlayer),
+      firstname: squadPlayer.firstname || '',
+      lastname: squadPlayer.lastname || '',
+      teamId: team.id || null,
+      teamName: fixName(team.name || ''),
+      teamLogo: team.logo || '',
+      photo: squadPlayer.photo || '',
+      position: squadPlayer.position || '',
+      stats: {
+        appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
+        goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+        tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
+        foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
+        saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
+        penaltiesMissed: 0, penaltiesWon: 0, penaltiesCommitted: 0, rating: 0,
+      },
+      derived: {
+        goalContributions: 0, goalsPer90: 0, assistsPer90: 0, pointsPer90: 0,
+        shotsPer90: 0, keyPassesPer90: 0, conversionRate: 0, shotsPerGoal: 0,
+        shotAccuracy: 0, passAccuracy: 0, accuratePasses: 0, passesPer90: 0,
+        defActions: 0, defActionsPer90: 0, duelWinRate: 0, savePercentage: 0,
+        goalsConcededPerMatch: 0, minutesPerMatch: 0, subApps: 0,
+        minutesPerGoal: 0, minutesPerContribution: 0,
+      },
+      flags: {
+        goalkeeper: String(squadPlayer.position || '').toLowerCase().includes('goalkeeper'),
+      }
+    });
+  });
+
+  return [...byPlayer.values()].sort((a,b) => {
+    const minutesDiff = (b.stats?.minutes || 0) - (a.stats?.minutes || 0);
+    if(minutesDiff) return minutesDiff;
+    return String(a.playerName || '').localeCompare(String(b.playerName || ''), 'sv');
+  });
+}
+
+function getCategoryValue(player, category){
+  if(category.type === 'derived' && typeof category.compute === 'function') return category.compute(player);
+  return getNestedVal(player, category.source || '') || 0;
+}
+
+function getCategorySorter(category){
+  if(category.sort === 'asc') return (a,b) => a.value - b.value || b.player.stats.minutes - a.player.stats.minutes;
+  return (a,b) => b.value - a.value || b.player.stats.minutes - a.player.stats.minutes;
+}
+
+function getCategoryDisplayValue(category, player, value){
+  return typeof category.formatter === 'function' ? category.formatter(value, player) : Math.round(value);
+}
+
+function getCategorySecondary(category, player){
+  return typeof category.secondary === 'function' ? category.secondary(player) : '';
+}
+
+function setStatsGroup(groupId){
+  renderStats(document.getElementById('mc'), null, groupId);
+}
+
+async function pageStats(el, year=null, force=false) {
+  if(year) statsYear = year;
+  document.title = `Statistik ${statsYear} — AllsvenskanAI`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
+  try {
+    if(force) statsCache = null;
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
+
+    // Get teams from standings for that year
+    const standData = await af('standings', {league:LEAGUE, season:statsYear});
+    const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+
+    if(!teams.length) throw new Error(`Inga lag hittades för säsong ${statsYear}. API-Football kanske saknar denna säsong.`);
+
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik för ${teams.length} lag…</div>`;
+
+    // Fetch every paginated players page per team so older seasons include the full player pool.
+    const allPlayers = [];
+    const chunks = [];
+    for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
+    for(const chunk of chunks) {
+      await Promise.all(chunk.map(async t => {
+        const arr = await fetchAllPages('players', {league:LEAGUE, season:statsYear, team:t.id}, {
+          dedupeKey: item => {
+            const playerId = item?.player?.id || '';
+            const statTeamId = item?.statistics?.[0]?.team?.id || t.id || '';
+            const statSeason = item?.statistics?.[0]?.league?.season || statsYear || '';
+            return `${playerId}-${statTeamId}-${statSeason}`;
+          }
+        }).catch(e => {
+          console.warn('[stats] team players fetch failed', { teamId: t.id, teamName: t.name, season: statsYear, error: e.message });
+          return [];
+        });
+        allPlayers.push(...arr);
+      }));
+    }
+
+    const players = buildNormalizedStatsDataset(allPlayers, statsYear);
+    statsCache = {
+      year: statsYear,
+      players,
+      meta: {
+        playerCount: players.length,
+        teamCount: teams.length,
+        categoryCount: STAT_CATEGORIES.length,
+        fieldCount: PLAYER_STATS_INVENTORY.length,
+      }
+    };
+    renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
+  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
+  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
+  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
+  const categoriesInGroup = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
+  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || STAT_CATEGORIES[0];
+
+  currentStatGroup = activeCategory.group;
+  currentStatCategory = activeCategory.id;
+
+  const sorted = (cache.players || [])
+    .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
+    .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
+    .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
+    .sort(getCategorySorter(activeCategory))
+    .slice(0, activeCategory.limit || 10);
+
+  const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
+  const yearBtns = years.map(y =>
+    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y},true)">${y}</button>`
+  ).join('');
+  const groupTabs = STAT_GROUPS.map(group => {
+    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+    return `<button class="stats-group-chip ${group.id===currentStatGroup?'active':''}" onclick="setStatsGroup('${group.id}')">${group.label}<small>${count}</small></button>`;
+  }).join('');
+  const categoryTabs = STAT_CATEGORIES
+    .filter(category => category.group === currentStatGroup)
+    .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderStats(document.getElementById('mc'),'${category.id}','${currentStatGroup}')">${category.label}</button>`)
+    .join('');
+
+  const rows = sorted.map((item, index) => {
+    const medal = index===0?'&#x1F947;':index===1?'&#x1F948;':index===2?'&#x1F949;':'';
+    const ratingClass = activeCategory.ratingClass ? (item.player.stats.rating>=7.5?'rg':item.player.stats.rating>=6.5?'ry':'rr') : '';
+    const statClass = `stats-value ${ratingClass}`.trim();
+    const displayValue = getCategoryDisplayValue(activeCategory, item.player, item.value);
+    const secondary = getCategorySecondary(activeCategory, item.player);
+    return `<tr class="link" onclick="go('/spelare/${item.player.playerId}')">
+      <td><span class="stats-rank ${medal?'medal':''}">${medal||index+1}</span></td>
+      <td>
+        <div class="stats-player-cell">
+          <img class="stats-player-photo" src="${item.player.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div class="stats-player-meta">
+            <div class="stats-player-name">${esc(item.player.playerName)}</div>
+            <div class="stats-player-club" onclick="event.stopPropagation();go('/lag/${item.player.teamId||''}')">
+              <img src="${item.player.teamLogo||''}" onerror="this.style.opacity='.15'">
+              <span>${esc(item.player.teamName||'—')}</span>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td><div class="stats-value-wrap"><span class="${statClass}">${displayValue}</span>${secondary ? `<span class="stats-value-meta">${esc(secondary)}</span>` : ''}</div></td>
+    </tr>`;
+  }).join('');
+
+  const groupMeta = STAT_GROUPS.find(group => group.id === currentStatGroup) || STAT_GROUPS[0];
+  el.innerHTML = `
+    <div class="stats-shell">
+      <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="pg-title">Statistik <em>${statsYear}</em></div>
+          <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
+        </div>
+        <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
+      </div>
+      <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
+      <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
+      <div class="stats-category-panel">
+        <div class="stats-category-kicker">${groupMeta.label}</div>
+        <div class="stats-category-head">
+          <div>
+            <div class="stats-category-title">${activeCategory.title}</div>
+            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}.</div>
+          </div>
+          <div class="stats-category-badges">
+            <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
+            <span class="stats-category-badge">${activeCategory.col}</span>
+            <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:1rem">Kategori</div>
+        <div class="stats-category-tabs">${categoryTabs}</div>
+      </div>
+      <div class="tw"><div><table class="stats-table">
+        <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="3" class="empty">Ingen data</td></tr>'}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+// â”€â”€â”€ AI SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// Stat mappings for quick data lookup
+const STAT_KEYS = {
+  'mål':'goals.total','goal':'goals.total','scorer':'goals.total',
+  'assist':'goals.assists','assists':'goals.assists',
+  'passning':'passes.total','passningar':'passes.total','passes':'passes.total',
+  'skott':'shots.total','shots':'shots.total',
+  'tackling':'tackles.total','tacklingar':'tackles.total',
+  'minut':'games.minutes','minuter':'games.minutes',
+  'match':'games.appearences','matcher':'games.appearences','spelade':'games.appearences',
+  'rating':'games.rating',
+  'gult':'cards.yellow','gula':'cards.yellow','gula kort':'cards.yellow',
+  'rött':'cards.red','röda':'cards.red','röda kort':'cards.red',
+  'interception':'tackles.interceptions','interceptions':'tackles.interceptions',
+  'dribbling':'dribbles.success','dribblingar':'dribbles.success',
+};
+
+function getNestedVal(obj, path) {
+  return path.split('.').reduce((o,k) => o?.[k], obj) || 0;
+}
+
+function renderQuickListAnswer(title, subtitle, itemsHtml){
+  return `
+    <div style="margin-bottom:.65rem">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--text)">${title}</div>
+      ${subtitle ? `<div style="font-size:12px;color:var(--muted);margin-top:.2rem">${subtitle}</div>` : ''}
+    </div>
+    <div style="display:grid;gap:8px">${itemsHtml}</div>`;
+}
+
+function normalizeQuestion(question='') {
+  return String(question || '')
+    .toLowerCase()
+    .replace(/([?!.,:;])\1+/g, '$1')
+    .replace(/[?!.,:;]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const AI_INTENT_PATTERNS = {
+  top_scorers: ['flest mål', 'gjort flest mål', 'skytteliga', 'skytteligan', 'mål'],
+  latest_matches: ['senaste matcher', 'senaste resultat', 'matcher', 'resultat'],
+  standings: ['tabellen', 'ställning', 'stallning'],
+  table_leader: ['leder tabellen', 'vem leder', 'toppar tabellen'],
+  most_points: ['flest poäng', 'mest poäng'],
+  goal_difference: ['målskillnad', 'malskillnad'],
+  form: ['bäst form', 'best form', 'form'],
+};
+
+function detectIntent(question) {
+  const q = normalizeQuestion(question);
+  const hasTeamOnlyQuery = Object.keys(AI_TEAM_ALIASES).some(alias => q === normalizeQuestion(alias));
+  if (AI_INTENT_PATTERNS.goal_difference.some(token => q.includes(token))) return 'goal_difference';
+  if (AI_INTENT_PATTERNS.form.some(token => q.includes(token))) return 'form';
+  if (AI_INTENT_PATTERNS.most_points.some(token => q.includes(token))) return 'most_points';
+  if (AI_INTENT_PATTERNS.table_leader.some(token => q.includes(token))) return 'table_leader';
+  if (AI_INTENT_PATTERNS.standings.some(token => q.includes(token))) return 'standings';
+  if (AI_INTENT_PATTERNS.latest_matches.some(token => q.includes(token)) || hasTeamOnlyQuery) return 'latest_matches';
+  if (AI_INTENT_PATTERNS.top_scorers.some(token => q.includes(token))) return 'top_scorers';
+  return 'unknown';
+}
+
+function detectTeam(question, teams = []) {
+  const q = normalizeQuestion(question);
+  const byName = [...teams].sort((a,b) => fixName(b.name || '').length - fixName(a.name || '').length);
+  for (const team of byName) {
+    const canonical = normalizeQuestion(fixName(team.name || ''));
+    if (canonical && q.includes(canonical)) return team;
+  }
+  const aliases = Object.entries(AI_TEAM_ALIASES).sort((a,b) => b[0].length - a[0].length);
+  for (const [alias, canonical] of aliases) {
+    if (q.includes(normalizeQuestion(alias))) {
+      return teams.find(team => fixName(team.name) === canonical) || null;
+    }
+  }
+  return null;
+}
+
+function detectPlayer() {
+  return null;
+}
+
+function detectCompetition(question) {
+  return normalizeQuestion(question).includes('allsvenskan') ? 'Allsvenskan' : null;
+}
+
+function detectTimeScope(question) {
+  const q = normalizeQuestion(question);
+  if (['någonsin', 'genom tiderna', 'historiskt', 'all time'].some(token => q.includes(normalizeQuestion(token)))) return 'all_time';
+  return 'season';
+}
+
+function detectTimeReference(question) {
+  const q = normalizeQuestion(question);
+  if (q.includes('senaste') || q.includes('just nu')) return 'recent';
+  if (detectTimeScope(q) === 'all_time') return 'historical';
+  return null;
+}
+
+function detectEntities(question, teams = []) {
+  return {
+    team: detectTeam(question, teams),
+    player: detectPlayer(question),
+    competition: detectCompetition(question),
+    scope: detectTimeScope(question),
+    timeReference: detectTimeReference(question),
+  };
+}
+
+function validateResult(intent, entities, result) {
+  const typeMap = {
+    top_scorers: 'scorers',
+    latest_matches: 'matches',
+    standings: 'teams',
+    table_leader: 'teams',
+    most_points: 'teams',
+    goal_difference: 'teams',
+    form: 'teams',
+  };
+  let ok = !!(result && result.type === typeMap[intent] && Array.isArray(result.rows) && result.rows.length);
+  if (ok && entities?.team && ['top_scorers', 'latest_matches'].includes(intent)) {
+    ok = result.teamName === fixName(entities.team.name);
+  }
+  if (ok && entities?.scope === 'all_time') {
+    ok = result.scope === 'all_time';
+  }
+  console.debug('[AI validate]', { intent, team: entities?.team?.name || null, scope: entities?.scope || null, expected: typeMap[intent], actual: result?.type, ok });
+  return ok;
+}
+
+function renderRowsAnswer(result) {
+  if (!result) return null;
+  if (result.type === 'notice') {
+    return renderQuickListAnswer(
+      result.title,
+      result.subtitle,
+      `<div class="start-ai-empty">${esc(result.rows?.[0]?.label || 'Historisk statistik finns inte tillgänglig ännu.')}</div>`
+    );
+  }
+  if (result.type === 'matches') {
+    return renderQuickListAnswer(
+      result.title,
+      result.subtitle,
+      result.rows.map(row => `
+        <div class="start-result-row" onclick="go('/match/${row.id}')">
+          <div class="start-result-top">
+            <div class="start-result-round">${esc(row.meta)}</div>
+            <div class="start-result-score">${row.score}</div>
+          </div>
+          <div class="start-result-teams">
+            <div class="start-result-side">${esc(row.home)}</div>
+            <div class="start-result-vs">mot</div>
+            <div class="start-result-side away">${esc(row.away)}</div>
+          </div>
+        </div>`).join('')
+    );
+  }
+
+  return renderQuickListAnswer(
+    result.title,
+    result.subtitle,
+    result.rows.map(row => `
+      <div class="start-table-row" ${row.href ? `onclick="go('${row.href}')"` : ''}>
+        <div class="start-rank">${row.rank}</div>
+        <img src="${row.image || ''}" style="width:24px;height:24px;object-fit:${result.type === 'scorers' ? 'cover' : 'contain'};${result.type === 'scorers' ? 'border-radius:50%;' : ''}" onerror="this.style.opacity='.15'">
+        <div class="start-team-name">${esc(row.label)}</div>
+        <div class="start-team-gd">${esc(row.meta || '')}</div>
+        <div class="start-points">${row.value}</div>
+      </div>`).join('')
+  );
+}
+
+async function getTopScorers({ team, scope }) {
+  if (scope === 'all_time') {
+    return {
+      type: 'notice',
+      title: team ? `Flest mål någonsin i ${fixName(team.name)}` : 'Flest mål genom tiderna',
+      subtitle: '',
+      rows: [{ label: 'Historisk statistik finns inte tillgänglig ännu.' }],
+      scope: 'all_time',
+      teamName: team ? fixName(team.name) : null,
+    };
+  }
+  if (team) {
+    const players = await afAll('players', { league: LEAGUE, season: SEASON, team: team.id });
+    const rows = players
+      .map(p => ({
+        id: p.player?.id,
+        label: getPlayerDisplayName(p.player),
+        image: p.player?.photo || '',
+        value: getNestedVal(p.statistics?.[0] || {}, 'goals.total'),
+      }))
+      .filter(p => p.value > 0)
+      .sort((a,b) => b.value - a.value)
+      .slice(0,5)
+      .map((p, index) => ({
+        rank: index + 1,
+        image: p.image,
+        label: p.label,
+        meta: fixName(team.name),
+        value: p.value,
+        href: `/spelare/${p.id}?team=${team.id}`,
+      }));
+    return { type: 'scorers', title: `Flest mål i ${fixName(team.name)}`, subtitle: 'Spelare i laget sorterade efter mål', rows, scope: 'season', teamName: fixName(team.name) };
+  }
+
+  const scorers = await af('players/topscorers', { league: LEAGUE, season: SEASON }).catch(() => []);
+  const rows = scorers.slice(0,5).map((p, index) => ({
+    rank: index + 1,
+    image: p.player?.photo || p.statistics?.[0]?.team?.logo || '',
+    label: getPlayerDisplayName(p.player),
+    meta: fixName(p.statistics?.[0]?.team?.name || ''),
+    value: p.statistics?.[0]?.goals?.total || 0,
+    href: `/spelare/${p.player?.id || ''}`,
+  }));
+  return { type: 'scorers', title: 'Flest mål i Allsvenskan', subtitle: 'Skytteligan just nu', rows, scope: 'season', teamName: null };
+}
+
+async function getLatestMatches({ team }) {
+  const fixtures = await af('fixtures', team ? { team: team.id, season: SEASON, last: 3 } : { league: LEAGUE, season: SEASON, last: 3 }).catch(() => []);
+  const rows = fixtures.map(f => ({
+    id: f.fixture?.id,
+    meta: matchStatusLabel(f),
+    score: `${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}`,
+    home: fixName(f.teams?.home?.name || '—'),
+    away: fixName(f.teams?.away?.name || '—'),
+  }));
+  return {
+    type: 'matches',
+    title: team ? `${fixName(team.name)} senaste matcher` : 'Senaste matcher',
+    subtitle: team ? 'Tre senaste resultaten' : 'Senaste resultaten i Allsvenskan',
+    rows,
+    scope: 'season',
+    teamName: team ? fixName(team.name) : null,
+  };
+}
+
+function getStandingsAnswer({ standings, title = 'Toppen i tabellen', subtitle = '', limit = 5, sorter = null }) {
+  const rows = [...standings];
+  if (sorter) rows.sort(sorter);
+  return {
+    type: 'teams',
+    title,
+    subtitle,
+    rows: rows.slice(0, limit).map((row, index) => ({
+      rank: row.rank || index + 1,
+      image: row.team?.logo || '',
+      label: fixName(row.team?.name || '—'),
+      meta: `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`,
+      value: `${row.points || 0}p`,
+      href: `/lag/${row.team?.id}`,
+    })),
+    scope: 'season',
+    teamName: null,
+  };
+}
+
+function getTeamStandingRow(team, standings, title, subtitle, valueKey = 'points', metaBuilder = row => `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`, valueBuilder = row => `${row.points || 0}p`) {
+  const row = standings.find(item => item.team?.id === team?.id);
+  if (!row) return null;
+  return {
+    type: 'teams',
+    title,
+    subtitle,
+    rows: [{
+      rank: row.rank || 1,
+      image: row.team?.logo || '',
+      label: fixName(row.team?.name || '—'),
+      meta: metaBuilder(row),
+      value: valueBuilder(row),
+      href: `/lag/${row.team?.id}`,
+    }],
+    scope: 'season',
+    teamName: fixName(team.name),
+  };
+}
+
+async function routeQuestion({ intent, team, player, scope, rawQuestion, normalizedQuestion, standings, competition, timeReference }) {
+  let selectedHandler = 'fallback';
+  let result = null;
+
+  if (scope === 'all_time') {
+    selectedHandler = 'historicalUnavailable';
+    result = {
+      type: 'notice',
+      title: team ? `${fixName(team.name)} historiskt` : 'Historisk statistik',
+      subtitle: '',
+      rows: [{ label: 'Historisk statistik finns inte tillgänglig ännu.' }],
+      scope: 'all_time',
+      teamName: team ? fixName(team.name) : null,
+    };
+    console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference, selectedHandler, validation: true });
+    return { selectedHandler, result };
+  }
+
+  switch (intent) {
+    case 'top_scorers':
+      selectedHandler = 'getTopScorers';
+      result = await getTopScorers({ team, standings, scope });
+      break;
+    case 'latest_matches':
+      selectedHandler = 'getLatestMatches';
+      result = await getLatestMatches({ team });
+      break;
+    case 'standings':
+      selectedHandler = 'getStandings';
+      result = getStandingsAnswer({ standings, title: 'Toppen i tabellen', subtitle: 'Aktuell ställning i Allsvenskan', limit: 5 });
+      break;
+    case 'table_leader':
+      selectedHandler = 'getTableLeader';
+      result = team
+        ? getTeamStandingRow(team, standings, `Läge för ${fixName(team.name)}`, 'Placering i tabellen')
+        : getStandingsAnswer({ standings, title: 'Leder tabellen', subtitle: 'Aktuellt topplag i Allsvenskan', limit: 1 });
+      break;
+    case 'most_points':
+      selectedHandler = 'getMostPoints';
+      result = team
+        ? getTeamStandingRow(team, standings, `Poäng för ${fixName(team.name)}`, 'Aktuell poängskörd')
+        : getStandingsAnswer({ standings, title: 'Flest poäng', subtitle: 'Lag med flest poäng just nu', limit: 1 });
+      break;
+    case 'goal_difference':
+      selectedHandler = 'getGoalDifference';
+      result = team
+        ? getTeamStandingRow(team, standings, `Målskillnad för ${fixName(team.name)}`, 'Nuvarande målskillnad', 'goalsDiff', row => `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`, row => `${row.points || 0}p`)
+        : getStandingsAnswer({
+            standings,
+            title: 'Bäst målskillnad',
+            subtitle: 'Lag med starkast målskillnad just nu',
+            limit: 5,
+            sorter: (a,b) => (b.goalsDiff || 0) - (a.goalsDiff || 0),
+          });
+      break;
+    case 'form':
+      selectedHandler = 'getForm';
+      result = team
+        ? getTeamStandingRow(team, standings, `Form för ${fixName(team.name)}`, 'Senaste formen', 'form', row => row.form || '–', row => `${row.points || 0}p`)
+        : {
+            type: 'teams',
+            title: 'Bäst form just nu',
+            subtitle: 'Senaste fem matcherna',
+            rows: [...standings]
+              .sort((a,b) => ((b.form||'').replace(/D/g,'1').replace(/W/g,'3').replace(/L/g,'0').split('').reduce((s,x)=>s + (+x||0),0)) - ((a.form||'').replace(/D/g,'1').replace(/W/g,'3').replace(/L/g,'0').split('').reduce((s,x)=>s + (+x||0),0)))
+              .slice(0,5)
+              .map((row, index) => ({
+                rank: index + 1,
+                image: row.team?.logo || '',
+                label: fixName(row.team?.name || '—'),
+                meta: row.form || '–',
+                value: `${row.points || 0}p`,
+                href: `/lag/${row.team?.id}`,
+              })),
+          };
+      break;
+    default:
+      result = null;
+  }
+
+  console.debug('[AI route]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference, selectedHandler, validation: validateResult(intent, { team, scope }, result) });
+  return { selectedHandler, result };
+}
+
+async function tryDataAnswer(question) {
+  const rawQuestion = String(question || '').trim();
+  const normalizedQuestion = normalizeQuestion(rawQuestion);
+  const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
+    af('standings', {league:LEAGUE, season:2025}));
+  const standings = standData[0]?.league?.standings?.[0] || [];
+  const teams = standings.map(t=>t.team) || [];
+
+  const intent = detectIntent(normalizedQuestion);
+  const entities = detectEntities(normalizedQuestion, teams);
+  const { team, player, competition, scope, timeReference } = entities;
+
+  console.debug('[AI question]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, player, scope, competition, timeReference });
+
+  const { result } = await routeQuestion({ intent, team, player, scope, rawQuestion, normalizedQuestion, standings, competition, timeReference });
+
+  if (result?.type === 'notice') {
+    return renderRowsAnswer(result);
+  }
+
+  if (validateResult(intent, entities, result)) {
+    return renderRowsAnswer(result);
+  }
+
+  console.error('[AI route mismatch]', { rawQuestion, normalizedQuestion, intent, team: team?.name || null, scope, result });
+  return renderQuickListAnswer(
+    'Prova en snabb fråga',
+    '',
+    `
+      <div class="start-ai-empty">Testa att fråga om tabellen, mål eller ett specifikt lag.</div>
+      <div class="start-chip-row" style="margin-top:.2rem">
+        <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen?', true)" type="button">Vem leder tabellen?</button>
+        <button class="start-chip" onclick="startFillPrompt('Flest mål i Allsvenskan?', true)" type="button">Flest mål i Allsvenskan?</button>
+        <button class="start-chip" onclick="startFillPrompt('AIK senaste matcher', true)" type="button">AIK senaste matcher</button>
+      </div>`
+  );
+}
+
+const AI_ROUTING_TESTS = [
+  { question: 'Flest mål?', intent: 'top_scorers', team: null, scope: 'season' },
+  { question: 'Vem har gjort flest mål i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF', scope: 'season' },
+  { question: 'Flest mål i AIK', intent: 'top_scorers', team: 'AIK', scope: 'season' },
+  { question: 'AIK senaste matcher', intent: 'latest_matches', team: 'AIK', scope: 'season' },
+  { question: 'Malmö senaste matcher', intent: 'latest_matches', team: 'Malmö FF', scope: 'season' },
+  { question: 'Vem leder tabellen?', intent: 'table_leader', team: null, scope: 'season' },
+  { question: 'Vilket lag har flest poäng?', intent: 'most_points', team: null, scope: 'season' },
+  { question: 'Bäst målskillnad?', intent: 'goal_difference', team: null, scope: 'season' },
+  { question: 'Bäst form just nu?', intent: 'form', team: null, scope: 'season' },
+  { question: 'Skytteligan', intent: 'top_scorers', team: null, scope: 'season' },
+  { question: 'Flest mål någonsin i Malmö FF?', intent: 'top_scorers', team: 'Malmö FF', scope: 'all_time' },
+  { question: 'Vem har gjort flest mål genom tiderna i AIK?', intent: 'top_scorers', team: 'AIK', scope: 'all_time' },
+];
+
+function runAiRoutingTests() {
+  const teams = Object.values(AI_TEAM_ALIASES)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .map(name => ({ name }));
+  AI_ROUTING_TESTS.forEach(test => {
+    const normalized = normalizeQuestion(test.question);
+    const intent = detectIntent(normalized);
+    const entities = detectEntities(normalized, teams);
+    console.debug('[AI test]', {
+      question: test.question,
+      normalized,
+      detectedIntent: intent,
+      expectedIntent: test.intent,
+      detectedTeam: entities.team?.name || null,
+      expectedTeam: test.team,
+      detectedScope: entities.scope,
+      expectedScope: test.scope,
+      ok: intent === test.intent && (entities.team?.name || null) === test.team && entities.scope === test.scope,
+    });
+  });
+}
+
+runAiRoutingTests();
+
+// â”€â”€â”€ REMOVED: FAVORITES / NOTIFICATIONS / TEAM FOLLOWING â”€â”€â”€
+(function cleanupRemovedFeatures(){
+  try {
+    const oldToken = localStorage.getItem('aai_notif_token');
+    if(oldToken) {
+      fetch('/api/subscribe', {
+        method:'DELETE',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({token: oldToken})
+      }).catch(()=>{});
+    }
+    localStorage.removeItem('aai_notif_token');
+    localStorage.removeItem('aai_favorites');
+    if('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(regs => regs.forEach(r => {
+          try {
+            if((r.active && r.active.scriptURL && r.active.scriptURL.includes('/sw.js')) ||
+               (r.installing && r.installing.scriptURL && r.installing.scriptURL.includes('/sw.js')) ||
+               (r.waiting && r.waiting.scriptURL && r.waiting.scriptURL.includes('/sw.js'))) {
+              r.unregister();
+            }
+          } catch(e) {}
+        }))
+        .catch(()=>{});
+    }
+  } catch(e) {}
+})();
+
+// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function switchTab(btn,id){
+  btn.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const all=['t-overview','t-players','sq','tai','p-career','p-detail','p-tr','p-club-career'];
+  all.forEach(x=>{const e=document.getElementById(x);if(e)e.style.display=x===id?'':'none';});
+}
+function copyLink(){navigator.clipboard.writeText(location.href).then(()=>{const b=(window.event && (window.event.currentTarget||window.event.target)); if(!b) return; const o=b.textContent; b.textContent='Kopierad'; setTimeout(()=>b.textContent=o,1600);});}
+function fixEnc(s) {
+  if(!s) return '';
+  try {
+    return decodeURIComponent(escape(s));
+  } catch(e) {
+    return s
+      .replace(/ÃƒÂ¶/g,'ö').replace(/ÃƒÂ¤/g,'ä').replace(/ÃƒÂ¥/g,'å')
+      .replace(/Ãƒ–/g,'Ö').replace(/Ãƒâ€ž/g,'Ä').replace(/Ãƒ…/g,'Å')
+      .replace(/ÄÂ/g,'Ä').replace(/ÄÂ‡/g,'Ä‡').replace(/ÅÂ¡/g,'Å¡')
+      .replace(/ÅÂ¾/g,'Å¾').replace(/ÄÂ‘/g,'Ä‘');
+  }
+}
+function cleanFeedText(s){
+  return fixEnc(String(s||''))
+    .replace(/&nbsp;|&#160;/gi,' ')
+    .replace(/&amp;/gi,'&')
+    .replace(/&#39;|&apos;/gi,"'")
+    .replace(/&quot;/gi,'"')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function newsSourceLabel(source='', url=''){
+  const cleaned = cleanFeedText(source).replace(/^google$/i, '').trim();
+  if(cleaned) return cleaned;
+  try{
+    const host = new URL(url, location.origin).hostname.replace(/^www\./,'');
+    const map = {
+      'aftonbladet.se': 'Aftonbladet',
+      'expressen.se': 'Expressen',
+      'svt.se': 'SVT',
+      'fotbollskanalen.se': 'Fotbollskanalen',
+      'sverigesradio.se': 'Sveriges Radio'
+    };
+    return map[host] || host.split('.')[0].replace(/^\w/, c => c.toUpperCase());
+  } catch(e){
+    return 'Nyheter';
+  }
+}
+function esc(s){
+  return fixEnc(fixName(String(s||'')))
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function calcAge(d){const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
+function formatVal(v){if(!v)return'—';const n=+v;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n;}
+function feeStyle(t){
+  const s=(t||'').toLowerCase();
+  if(s.includes('loan')) return 'background:rgba(61,126,191,.14);color:#7EB3E8;border-color:rgba(61,126,191,.24)';
+  if(s==='free'||s.includes('free')||s.includes('okänd')||s.includes('unknown')||s==='-') return 'background:rgba(108,86,44,.08);color:var(--muted);border-color:rgba(108,86,44,.14)';
+  return 'background:rgba(212,175,55,.14);color:var(--gold);border-color:rgba(212,175,55,.22)';
+}
+function transferDirectionMeta(kind=''){
+  if(kind === 'in') return { cls:'in', label:'In', arrow:'↓' };
+  if(kind === 'out') return { cls:'out', label:'Ut', arrow:'↑' };
+  return { cls:'internal', label:'Upp', arrow:'↗' };
+}
+function renderTransferClubChip(team, fallback='Okänd klubb'){
+  const name = getTeamDisplayName(team) || fallback;
+  return `<div class="transfer-club-chip">
+    <img src="${team?.logo || ''}" onerror="this.style.opacity='.18'">
+    <span>${esc(name)}</span>
+  </div>`;
+}
+function renderTransferTypeBadge(type=''){
+  return `<span class="transfer-type-badge" style="${feeStyle(type)}">${esc(type || 'Okänd')}</span>`;
+}
+function renderTransferDate(date=''){
+  return `<div class="transfer-date">
+    <strong>${esc(formatSvDate(date, { day:'2-digit', month:'short' }))}</strong>
+    <span>${esc(date || 'Datum saknas')}</span>
+  </div>`;
+}
+function flag(n){
+  const key = normalizeCountryKey(fixEnc(n));
+  const code = COUNTRY_LOOKUP[key] || '';
+  if(!code) return '🌍';
+  return countryCodeToFlag(code === 'EN' || code === 'SC' || code === 'WA' ? 'GB' : code) || '🌍';
+}
+function mdHtml(txt){
+  const lines=txt.split('\n');let out='',inT=false;
+  for(const line of lines){
+    if(/^\|/.test(line)&&/\|$/.test(line.trim())){
+      if(!inT){out+='<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;margin:8px 0">';inT=true;}
+      if(/^[\|\s:-]+$/.test(line.replace(/\|/g,'')))continue;
+      const cs=line.split('|').filter((_,i,a)=>i>0&&i<a.length-1);
+      out+='<tr>'+cs.map(c=>`<td style="padding:5px 10px;border:1px solid var(--border);font-size:12px">${inl(c.trim())}</td>`).join('')+'</tr>';
+    }else{
+      if(inT){out+='</table></div>';inT=false;}
+      if(/^### /.test(line))out+=`<strong style="font-size:13px;color:var(--gold);display:block;margin:6px 0 2px">${inl(line.slice(4))}</strong>`;
+      else if(/^## /.test(line))out+=`<strong style="font-size:14px;color:var(--gold);display:block;margin:8px 0 3px">${inl(line.slice(3))}</strong>`;
+      else if(/^# /.test(line))out+=`<strong style="font-size:15px;color:var(--gold);display:block;margin:10px 0 4px">${inl(line.slice(2))}</strong>`;
+      else if(/^[-*] /.test(line))out+=`<div style="display:flex;gap:5px;margin:2px 0"><span style="color:var(--gold);flex-shrink:0">â€¢</span>${inl(line.slice(2))}</div>`;
+      else if(line.trim()==='')out+='<br>';
+      else out+=inl(line)+'<br>';
+    }
+  }
+  if(inT)out+='</table></div>';
+  return out;
+}
+function inl(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
+
+async function boot() {
+  // Verify season via standings data instead of teams, so the app keeps the
+  // intended current season when static 2026 data already exists.
+  try {
+    const test = await af('standings', {league:LEAGUE, season:SEASON});
+    const rows = test?.[0]?.league?.standings?.[0] || [];
+    if(!rows.length) {
+      SEASON = 2025;
+    }
+  } catch(e) {
+    SEASON = 2025;
+  }
+  route(location.pathname);
+}
+boot();
+
+</script>
+<script>
+// Show banner only on start page
+if((location.pathname==='/' || location.pathname==='') && !window.navigator.standalone) {
+  document.getElementById('installBanner').style.display = 'flex';
+}
+
+// PWA Install Banner
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if(location.pathname==='/' || location.pathname==='') {
+    document.getElementById('installBanner').style.display = 'flex';
+  }
+});
+
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if(deferredPrompt) {
+    // Native install prompt available (Chrome Android)
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('installBanner').style.display = 'none';
+  } else {
+    // Show modal with instructions
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+    showInstallModal(isIOS);
+  }
+});
+
+function showInstallModal(isIOS) {
+  const existing = document.getElementById('installModal');
+  if(existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'installModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:1rem';
+  
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const steps = isIOS
+    ? ['Öppna i <strong>Safari</strong> (inte Chrome)', 'Tryck på dela-knappen <strong>â–¡â†‘</strong> längst ner', 'Välj <strong>"Lägg till på hemskärmen"</strong>', 'Tryck <strong>Lägg till</strong>']
+    : ['Öppna i <strong>Chrome</strong>', 'Tryck på menyn <strong>â‹®</strong> uppe till höger', 'Välj <strong>"Lägg till på startskärmen"</strong> eller <strong>"Installera app"</strong>', 'Tryck <strong>Installera</strong>'];
+  
+  modal.innerHTML = `<div style="background:#161921;border:1px solid rgba(212,175,55,.3);border-radius:12px;padding:1.5rem;max-width:380px;width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem">
+      <svg width="40" height="40" viewBox="0 0 512 512"><rect width="512" height="512" fill="#080A0E" rx="60"/>
+        <text x="105" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#EEF0F4">A</text>
+        <text x="218" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#D4AF37">A</text>
+        <text x="338" y="310" font-family="Arial Black" font-size="190" font-weight="900" fill="#D4AF37">I</text>
+      </svg>
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px;color:#EEF0F4">Installera AllsvenskanAI</div>
+        <div style="font-size:12px;color:#5A6480">Som en riktig app på din telefon</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">
+      ${steps.map((s,i)=>`<div style="display:flex;align-items:center;gap:10px">
+        <div style="width:24px;height:24px;border-radius:50%;background:#D4AF37;color:#080A0E;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+        <div style="font-size:13px;color:#B0B8C8">${s}</div>
+      </div>`).join('')}
+    </div>
+    <button onclick="document.getElementById('installModal').remove()" style="width:100%;background:#D4AF37;color:#080A0E;border:none;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;padding:12px;cursor:pointer">FÖRSTÅTT</button>
+  </div>`;
+  
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+// Show banner on iOS too (no beforeinstallprompt on Safari)
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone;
+if(isIOS && !isStandalone && (location.pathname==='/' || location.pathname==='')) {
+  setTimeout(() => {
+    document.getElementById('installBanner').style.display = 'flex';
+  }, 2000);
+}
+
+updateRouteChrome(location.pathname);
+
+  </script>
+</body>
+</html>
