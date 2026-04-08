@@ -6150,10 +6150,12 @@ function mdHtml(txt){
 function inl(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
 
 async function boot() {
-  // Try current year first, fall back to previous if no team data
+  // Verify season via standings data instead of teams, so the app keeps the
+  // intended current season when static 2026 data already exists.
   try {
-    const test = await af('teams', {league:LEAGUE, season:SEASON});
-    if(!test || test.length === 0) {
+    const test = await af('standings', {league:LEAGUE, season:SEASON});
+    const rows = test?.[0]?.league?.standings?.[0] || [];
+    if(!rows.length) {
       SEASON = 2025;
     }
   } catch(e) {
