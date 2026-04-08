@@ -1422,6 +1422,42 @@ const NAME_FIX = {
 };
 
 function fixName(s) { return NAME_FIX[s] || s; }
+function looksAbbreviatedPlayerName(name=''){
+  const value = String(name || '').trim();
+  return /^[A-ZÅÄÖ]\.\s+/u.test(value);
+}
+function buildPlayerFullName(firstname='', lastname=''){
+  return [firstname, lastname]
+    .map(part => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+function getPlayerDisplayName(...sources){
+  for(const source of sources){
+    if(!source) continue;
+    if(typeof source === 'string'){
+      const plain = source.trim();
+      if(plain) return fixEnc(plain);
+      continue;
+    }
+
+    const fullname = source.fullname || source.full_name || source.displayName || source.display_name || '';
+    if(fullname && String(fullname).trim()) return fixEnc(String(fullname).trim());
+
+    const firstLast = buildPlayerFullName(
+      source.firstname || source.first_name || source.firstName || '',
+      source.lastname || source.last_name || source.lastName || ''
+    );
+    const rawName = String(source.name || source.player_name || source.playerName || '').trim();
+
+    if(firstLast && (!rawName || looksAbbreviatedPlayerName(rawName))) return fixEnc(firstLast);
+    if(rawName && !looksAbbreviatedPlayerName(rawName)) return fixEnc(rawName);
+    if(firstLast) return fixEnc(firstLast);
+    if(rawName) return fixEnc(rawName);
+  }
+  return '—';
+}
 function svLand(s){
   const map = {
     'Sweden':'Sverige','Norway':'Norge','Denmark':'Danmark','Finland':'Finland',
@@ -1586,7 +1622,7 @@ async function runSearch(q) {
         const s = p.statistics?.[0];
         html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
           <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
-          <div><div class="sr-name">${esc(p.player.name)}</div>
+          <div><div class="sr-name">${esc(getPlayerDisplayName(p.player))}</div>
           <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
         </div>`;
       });
@@ -2377,7 +2413,7 @@ async function pageTeam(el, teamId) {
       return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
         <td><div class="pcell">
           <img src="${p.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
-          <div><div class="pn">${esc(p.name||info.name||'')}</div>
+          <div><div class="pn">${esc(getPlayerDisplayName(info, p))}</div>
           <div class="ps">${p.number?'#'+p.number:''}</div></div>
         </div></td>
         <td><span class="pos-tag">${esc(pos)}</span></td>
@@ -2505,7 +2541,7 @@ async function loadTeamAI(name, tabId, teamId) {
           all.push({
             date: x.date,
             type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
-            playerName: tr.player?.name,
+            playerName: getPlayerDisplayName(tr.player),
             playerId: tr.player?.id,
             teamIn: isInternal ? resolvedTeam : teamIn,
             teamOut: isInternal ? resolvedTeam : teamOut,
@@ -2568,7 +2604,8 @@ async function pagePlayer(el, playerId) {
 
     const p = profileD[0]?.player;
     if(!p) throw new Error('Spelare hittades inte');
-    document.title = `${p.name} — statistik, karriär & övergångar | AllsvenskanAI`;
+    const playerDisplayName = getPlayerDisplayName(p);
+    document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
 
     // Find best available current stats (most recent season with data)
     // Always show SEASON (2026) stats — use whatever data exists, default to zeros
@@ -2700,7 +2737,7 @@ async function pagePlayer(el, playerId) {
       <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
         <img class="p-photo" src="${p.photo||''}" onerror="this.src='';this.style.background='var(--dark4)'">
         <div class="p-body">
-          <h1>${esc(p.name)}</h1>
+          <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
             <span>${flag(p.nationality)} ${esc(p.nationality||'—')}</span>
             <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
@@ -2728,7 +2765,7 @@ async function pagePlayer(el, playerId) {
             <div class="pill"><div class="pn">${careerAssists}</div><div class="pl">Assist</div></div>
           </div>
           <div style="margin-top:.75rem">
-            <button style="background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:6px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;cursor:pointer" onclick="loadMV(this,'${esc(p.name)}')">
+            <button style="background:rgba(232,197,71,.1);border:1px solid var(--border-hi);border-radius:6px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 12px;cursor:pointer" onclick="loadMV(this,${JSON.stringify(playerDisplayName)})">
               ðŸ’° Hämta marknadsvärde
             </button>
             <div id="mv-${playerId}" style="margin-top:.4rem"></div>
@@ -2994,7 +3031,7 @@ function renderEventsList(events){
       <div class="event-minute">${minute}</div>
       <div class="event-main">
         <div class="type">${esc(typeSv[ev.type] || ev.type || 'Händelse')}${esc(detail)}</div>
-        <div class="player">${esc(ev.player?.name || 'Okänd spelare')}${ev.assist?.name ? ` <span style="color:var(--muted);font-weight:500">â†’ ${esc(ev.assist.name)}</span>` : ''}</div>
+        <div class="player">${esc(getPlayerDisplayName(ev.player) || 'Okänd spelare')}${(ev.assist?.name || ev.assist?.firstname || ev.assist?.lastname || ev.assist?.fullname) ? ` <span style="color:var(--muted);font-weight:500">â†’ ${esc(getPlayerDisplayName(ev.assist))}</span>` : ''}</div>
       </div>
       <div class="event-team">
         <img src="${ev.team?.logo||''}" onerror="this.style.opacity='.15'">
@@ -3016,7 +3053,7 @@ function renderLineups(lineups){
       ${(team.startXI||[]).map(p => `
         <div class="lineup-player">
           <div>
-            <div class="nm">${esc(p.player?.name || '—')}</div>
+            <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
             <div class="pos">${esc(p.player?.pos || '')}</div>
           </div>
           <div class="num">#${esc(String(p.player?.number || '—'))}</div>
@@ -3026,7 +3063,7 @@ function renderLineups(lineups){
         ${(team.substitutes||[]).map(p => `
           <div class="lineup-player">
             <div>
-              <div class="nm">${esc(p.player?.name || '—')}</div>
+              <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
               <div class="pos">${esc(p.player?.pos || '')}</div>
             </div>
             <div class="num">#${esc(String(p.player?.number || '—'))}</div>
@@ -3253,7 +3290,7 @@ function buildTransferEntries(rows = [], fallbackTeam = null){
         all.push({
           date: x.date,
           type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
-          playerName: tr.player?.name,
+          playerName: getPlayerDisplayName(tr.player),
           playerId: tr.player?.id,
           teamIn: isInternal ? resolvedTeam : (teamIn || null),
           teamOut: isInternal ? resolvedTeam : (teamOut || null),
@@ -3561,7 +3598,7 @@ function renderStats(el, catId) {
         <div class="stats-player-cell">
           <img class="stats-player-photo" src="${x.p.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
           <div class="stats-player-meta">
-            <div class="stats-player-name">${esc(x.p.name)}</div>
+            <div class="stats-player-name">${esc(getPlayerDisplayName(x.p))}</div>
             <div class="stats-player-club" onclick="event.stopPropagation();go('/lag/${x.s.team?.id}')">
               <img src="${x.s.team?.logo||''}" onerror="this.style.opacity='.15'">
               <span>${clubName}</span>
@@ -3784,7 +3821,7 @@ async function getTopScorers({ team, scope }) {
     const rows = players
       .map(p => ({
         id: p.player?.id,
-        label: p.player?.name || '—',
+        label: getPlayerDisplayName(p.player),
         image: p.player?.photo || '',
         value: getNestedVal(p.statistics?.[0] || {}, 'goals.total'),
       }))
@@ -3806,7 +3843,7 @@ async function getTopScorers({ team, scope }) {
   const rows = scorers.slice(0,5).map((p, index) => ({
     rank: index + 1,
     image: p.player?.photo || p.statistics?.[0]?.team?.logo || '',
-    label: p.player?.name || '—',
+    label: getPlayerDisplayName(p.player),
     meta: fixName(p.statistics?.[0]?.team?.name || ''),
     value: p.statistics?.[0]?.goals?.total || 0,
     href: `/spelare/${p.player?.id || ''}`,
