@@ -1446,6 +1446,32 @@ main{max-width:1360px}
 .player-history-table td:nth-child(2){width:180px}
 .player-history-table td:nth-child(3){width:170px}
 .player-history-table td:nth-child(n+4){text-align:center}
+.player-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.player-detail-panel{
+  background:var(--dark2);border:1px solid var(--border);border-radius:18px;
+  overflow:hidden;box-shadow:0 12px 28px rgba(76,56,24,.05);
+}
+.player-detail-panel-head{
+  padding:1rem 1.05rem;border-bottom:1px solid var(--border);
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;
+}
+.player-detail-panel table{min-width:0}
+.player-detail-panel tbody td:first-child{color:var(--muted);width:58%}
+.player-detail-panel tbody td:last-child{font-weight:600;text-align:right}
+.player-detail-summary{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem;
+}
+.player-detail-chip{
+  background:rgba(255,253,248,.74);border:1px solid var(--border);border-radius:14px;
+  padding:.85rem .9rem;display:grid;gap:4px;
+}
+.player-detail-chip .label{
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;
+}
+.player-detail-chip .value{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1;font-weight:900;color:var(--gold);
+}
+.player-detail-chip .copy{font-size:12px;color:var(--muted)}
 
 @media (min-width: 901px){
   .tgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px}
@@ -1537,6 +1563,8 @@ main{max-width:1360px}
   .player-history-summary{justify-content:flex-start}
   .player-history-table{min-width:760px}
   .player-history-team span,.player-history-league{white-space:normal}
+  .player-detail-grid{grid-template-columns:1fr}
+  .player-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tw{border-radius:18px;overflow:hidden}
   table{min-width:0;width:100%}
   th,td{padding:10px 12px;font-size:12px}
@@ -1820,6 +1848,100 @@ function renderNationalityDisplay(...sources){
     <img src="${iconUrl}" alt="${esc(nameSv)}" loading="lazy" width="18" height="14" style="width:18px;height:14px;object-fit:cover;border-radius:3px;border:1px solid rgba(108,86,44,.12);flex-shrink:0" onerror="this.style.display='none'">
     <span>${esc(nameSv)}</span>
   </span>`;
+}
+const PLAYER_DEFAULT_SEASON = 2026;
+const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+function aggregatePlayerSeasonStats(rows = []){
+  const comps = (rows?.[0]?.statistics || []).filter(Boolean);
+  if(!comps.length) return null;
+  const sum = getter => comps.reduce((total, entry) => total + toStatNumber(getter(entry)), 0);
+  const minutes = sum(entry => entry.games?.minutes);
+  const appearances = sum(entry => entry.games?.appearences);
+  const starts = sum(entry => entry.games?.lineups);
+  const goals = sum(entry => entry.goals?.total);
+  const assists = sum(entry => entry.goals?.assists);
+  const shots = sum(entry => entry.shots?.total);
+  const shotsOn = sum(entry => entry.shots?.on);
+  const passes = sum(entry => entry.passes?.total);
+  const keyPasses = sum(entry => entry.passes?.key);
+  const tackles = sum(entry => entry.tackles?.total);
+  const interceptions = sum(entry => entry.tackles?.interceptions);
+  const blocks = sum(entry => entry.tackles?.blocks);
+  const dribbles = sum(entry => entry.dribbles?.success);
+  const duelsWon = sum(entry => entry.duels?.won);
+  const duelsTotal = sum(entry => entry.duels?.total);
+  const foulsCommitted = sum(entry => entry.fouls?.committed);
+  const foulsDrawn = sum(entry => entry.fouls?.drawn);
+  const offsides = sum(entry => entry.offsides);
+  const yellow = sum(entry => entry.cards?.yellow);
+  const red = sum(entry => entry.cards?.red);
+  const saves = sum(entry => entry.goals?.saves);
+  const goalsConceded = sum(entry => entry.goals?.conceded);
+  const penaltiesSaved = sum(entry => entry.penalty?.saved);
+  const penaltiesScored = sum(entry => entry.penalty?.scored);
+  const penaltiesMissed = sum(entry => entry.penalty?.missed);
+  const subIns = sum(entry => entry.substitutes?.in);
+  const subOuts = sum(entry => entry.substitutes?.out);
+  const bench = sum(entry => entry.substitutes?.bench);
+  const ratingEntries = comps.map(entry => toStatNumber(entry.games?.rating)).filter(value => value > 0);
+  const passAccuracyEntries = comps.map(entry => ({
+    accuracy: toStatNumber(entry.passes?.accuracy),
+    passes: toStatNumber(entry.passes?.total),
+  })).filter(entry => entry.accuracy > 0);
+  const rating = ratingEntries.length ? ratingEntries.reduce((total, value) => total + value, 0) / ratingEntries.length : 0;
+  const accuratePasses = passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0);
+  const passAccuracy = passes > 0 ? pct(accuratePasses, passes) : (passAccuracyEntries[0]?.accuracy || 0);
+  const team = comps[0]?.team || rows?.[0]?.statistics?.[0]?.team || null;
+  const position = comps[0]?.games?.position || '';
+  return {
+    games: {
+      appearences: appearances,
+      minutes,
+      rating: rating || null,
+      position,
+      lineups: starts,
+    },
+    goals: {
+      total: goals,
+      assists,
+      conceded: goalsConceded,
+      saves,
+    },
+    cards: { yellow, red },
+    shots: { total: shots, on: shotsOn },
+    passes: { total: passes, key: keyPasses, accuracy: passAccuracy },
+    tackles: { total: tackles, interceptions, blocks },
+    dribbles: { success: dribbles },
+    duels: { won: duelsWon, total: duelsTotal },
+    fouls: { committed: foulsCommitted, drawn: foulsDrawn },
+    offsides,
+    substitutes: { in: subIns, out: subOuts, bench },
+    penalty: { saved: penaltiesSaved, scored: penaltiesScored, missed: penaltiesMissed },
+    team,
+    derived: {
+      goalContributions: goals + assists,
+      goalsPer90: per90(goals, minutes),
+      assistsPer90: per90(assists, minutes),
+      pointsPer90: per90(goals + assists, minutes),
+      shotsPer90: per90(shots, minutes),
+      keyPassesPer90: per90(keyPasses, minutes),
+      passAccuracy,
+      accuratePasses,
+      passesPer90: per90(passes, minutes),
+      conversionRate: pct(goals, shots),
+      shotsPerGoal: goals > 0 ? shots / goals : 0,
+      shotAccuracy: pct(shotsOn, shots),
+      defActions: tackles + interceptions + blocks,
+      defActionsPer90: per90(tackles + interceptions + blocks, minutes),
+      duelWinRate: pct(duelsWon, duelsTotal),
+      savePercentage: pct(saves, saves + goalsConceded),
+      goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
+      minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
+      subApps: Math.max(subIns || (appearances - starts), 0),
+      minutesPerGoal: goals > 0 ? minutes / goals : 0,
+      minutesPerContribution: (goals + assists) > 0 ? minutes / (goals + assists) : 0,
+    }
+  };
 }
 function svStatus(longStatus=''){
   const map = {
@@ -3450,12 +3572,9 @@ async function pagePlayer(el, playerId) {
     const urlParams = new URLSearchParams(location.search);
     const urlTeamId = urlParams.get('team') ? +urlParams.get('team') : null;
 
-    // Fetch player profile (no season needed) + recent seasons in parallel
     const [profileD, ...seasonResults] = await Promise.all([
       af('players/profiles', {player: playerId}),
-      af('players', {id:playerId, season:2026}),
-      af('players', {id:playerId, season:2025}),
-      af('players', {id:playerId, season:2024}),
+      ...PLAYER_HISTORY_SEASONS.map(season => af('players', {id:playerId, season}).catch(()=>[])),
     ]);
 
     const p = profileD[0]?.player;
@@ -3463,52 +3582,39 @@ async function pagePlayer(el, playerId) {
     const playerDisplayName = getPlayerDisplayName(p);
     document.title = `${playerDisplayName} — statistik, karriär & övergångar | AllsvenskanAI`;
 
-    // Find best available current stats (most recent season with data)
-    // Always show SEASON (2026) stats — use whatever data exists, default to zeros
-    // This ensures we show current season even if player hasn't played Allsvenskan yet
-    const curSeasonYear = SEASON;
-    // Aggregate all stats from current season (may include cup, league etc)
-    const cur2026Data = seasonResults[0]; // first result = 2026
-    let curStats = {};
-    if(cur2026Data.length && cur2026Data[0]?.statistics?.length) {
-      // Sum up all competitions in 2026
-      const allComps = cur2026Data[0].statistics;
-      curStats = {
-        games: {
-          appearences: allComps.reduce((s,x)=>s+(x.games?.appearences||0),0),
-          minutes: allComps.reduce((s,x)=>s+(x.games?.minutes||0),0),
-          rating: allComps.find(x=>x.games?.rating)?.games?.rating || null,
-          position: allComps[0]?.games?.position || '',
-          lineups: allComps.reduce((s,x)=>s+(x.games?.lineups||0),0),
-        },
-        goals: {
-          total: allComps.reduce((s,x)=>s+(x.goals?.total||0),0),
-          assists: allComps.reduce((s,x)=>s+(x.goals?.assists||0),0),
-        },
-        cards: {
-          yellow: allComps.reduce((s,x)=>s+(x.cards?.yellow||0),0),
-          red: allComps.reduce((s,x)=>s+(x.cards?.red||0),0),
-        },
-        shots: { total: allComps.reduce((s,x)=>s+(x.shots?.total||0),0), on: allComps.reduce((s,x)=>s+(x.shots?.on||0),0) },
-        passes: { total: allComps.reduce((s,x)=>s+(x.passes?.total||0),0), accuracy: allComps[0]?.passes?.accuracy||0 },
-        tackles: { total: allComps.reduce((s,x)=>s+(x.tackles?.total||0),0), interceptions: allComps.reduce((s,x)=>s+(x.tackles?.interceptions||0),0) },
-        dribbles: { success: allComps.reduce((s,x)=>s+(x.dribbles?.success||0),0) },
-        duels: { won: allComps.reduce((s,x)=>s+(x.duels?.won||0),0) },
-        team: allComps[0]?.team,
-      };
-    }
-    // If truly no 2026 data at all, curStats stays {} and everything shows 0
+    const curSeasonYear = PLAYER_DEFAULT_SEASON;
+    const curStats = aggregatePlayerSeasonStats(seasonResults[0]) || {
+      games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
+      goals: { total:0, assists:0, conceded:0, saves:0 },
+      cards: { yellow:0, red:0 },
+      shots: { total:0, on:0 },
+      passes: { total:0, key:0, accuracy:0 },
+      tackles: { total:0, interceptions:0, blocks:0 },
+      dribbles: { success:0 },
+      duels: { won:0, total:0 },
+      fouls: { committed:0, drawn:0 },
+      offsides: 0,
+      substitutes: { in:0, out:0, bench:0 },
+      penalty: { saved:0, scored:0, missed:0 },
+      team: null,
+      derived: {
+        goalContributions:0, goalsPer90:0, assistsPer90:0, pointsPer90:0, shotsPer90:0, keyPassesPer90:0,
+        passAccuracy:0, accuratePasses:0, passesPer90:0, conversionRate:0, shotsPerGoal:0, shotAccuracy:0,
+        defActions:0, defActionsPer90:0, duelWinRate:0, savePercentage:0, goalsConcededPerMatch:0,
+        minutesPerMatch:0, subApps:0, minutesPerGoal:0, minutesPerContribution:0,
+      }
+    };
 
     // Prefer team from URL (where user came from) over API data
     let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
-    let teamName = curStats.team?.name || '—';
+    let teamName = getTeamDisplayName(curStats.team) || '—';
     let teamLogo = curStats.team?.logo || '';
 
     // If URL teamId differs from stats teamId, fetch correct team info
     if(urlTeamId && urlTeamId !== curStats.team?.id) {
       try {
         const teamD = await af('teams', {id: urlTeamId});
-        if(teamD[0]) { teamName = teamD[0].team.name; teamLogo = teamD[0].team.logo; }
+        if(teamD[0]) { teamName = getTeamDisplayName(teamD[0].team); teamLogo = teamD[0].team.logo; }
       } catch(e) {}
     }
 
@@ -3521,27 +3627,54 @@ async function pagePlayer(el, playerId) {
     const curRed     = curStats.cards?.red||0;
     const curRating  = curStats.games?.rating ? parseFloat(curStats.games.rating) : null;
     const curRatingClass = curRating ? (curRating>=7.5?'rg':curRating>=6.5?'ry':'rr') : '';
+    const curStarts  = curStats.games?.lineups||0;
+    const curGoalContrib = curStats.derived?.goalContributions||0;
+    const curShots = curStats.shots?.total||0;
+    const curShotsOn = curStats.shots?.on||0;
+    const curKeyPasses = curStats.passes?.key||0;
+    const curPasses = curStats.passes?.total||0;
+    const curAccuratePasses = curStats.derived?.accuratePasses||0;
+    const curPassAccuracy = curStats.derived?.passAccuracy||0;
+    const curTackles = curStats.tackles?.total||0;
+    const curInterceptions = curStats.tackles?.interceptions||0;
+    const curBlocks = curStats.tackles?.blocks||0;
+    const curDuelsWon = curStats.duels?.won||0;
+    const curDuelsTotal = curStats.duels?.total||0;
+    const curDribbles = curStats.dribbles?.success||0;
+    const curFoulsCommitted = curStats.fouls?.committed||0;
+    const curFoulsDrawn = curStats.fouls?.drawn||0;
+    const curOffsides = curStats.offsides||0;
+    const curSaves = curStats.goals?.saves||0;
+    const curGoalsConceded = curStats.goals?.conceded||0;
+    const curPenaltySaved = curStats.penalty?.saved||0;
+    const curPenaltyScored = curStats.penalty?.scored||0;
+    const curSubApps = curStats.derived?.subApps||0;
+    const curGoalsPer90 = curStats.derived?.goalsPer90||0;
+    const curAssistsPer90 = curStats.derived?.assistsPer90||0;
+    const curPointsPer90 = curStats.derived?.pointsPer90||0;
+    const curShotsPer90 = curStats.derived?.shotsPer90||0;
+    const curPassesPer90 = curStats.derived?.passesPer90||0;
+    const curKeyPassesPer90 = curStats.derived?.keyPassesPer90||0;
+    const curConversion = curStats.derived?.conversionRate||0;
+    const curShotsPerGoal = curStats.derived?.shotsPerGoal||0;
+    const curShotAccuracy = curStats.derived?.shotAccuracy||0;
+    const curDefActions = curStats.derived?.defActions||0;
+    const curDefActionsPer90 = curStats.derived?.defActionsPer90||0;
+    const curDuelWinRate = curStats.derived?.duelWinRate||0;
+    const curSavePct = curStats.derived?.savePercentage||0;
+    const curGoalsConcededPerMatch = curStats.derived?.goalsConcededPerMatch||0;
+    const curMinutesPerMatch = curStats.derived?.minutesPerMatch||0;
+    const curMinutesPerGoal = curStats.derived?.minutesPerGoal||0;
+    const curMinutesPerContribution = curStats.derived?.minutesPerContribution||0;
 
     // Fetch ALL historical seasons in parallel for career stats
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar karriärstatistik…</div>`;
 
-    const seasons = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016];
-    // Reuse already-fetched 2026/2025/2024, fetch rest in parallel
-    const remainingSeasons = [2023,2022,2021,2020,2019,2018,2017,2016];
-    const remainingData = await Promise.all(
-      remainingSeasons.map(s => af('players', {id:playerId, season:s}).catch(()=>[]))
-    );
-    // Combine: seasonResults = [2026, 2025, 2024], remainingData = [2023..2016]
-    const allSeasonData = [...seasonResults, ...remainingData];
-
     // Build career table
     let careerGoals=0, careerAssists=0, careerApps=0, careerMins=0, careerYellow=0, careerRed=0;
     const seasonRows = [];
-
-    // allSeasonData order: [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016]
-    const allSeasonsList = [2026, 2025, 2024, ...remainingSeasons];
-    allSeasonData.forEach((data, idx) => {
-      const season = allSeasonsList[idx];
+    seasonResults.forEach((data, idx) => {
+      const season = PLAYER_HISTORY_SEASONS[idx];
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
         if(!s || !s.league) return; // skip empty stats objects
@@ -3559,8 +3692,8 @@ async function pagePlayer(el, playerId) {
         careerMins    += mn;
         careerYellow  += y;
         careerRed     += r;
-        const isCur = season === SEASON;
-        seasonRows.push({season, league: s.league?.name||'—', team: s.team?.name||'—', teamLogo: s.team?.logo||'', m, mn, g, a, rt, rtClass, y, r, isCur});
+        const isCur = season === curSeasonYear;
+        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: s.team?.logo||'', m, mn, g, a, rt, rtClass, y, r, isCur});
       });
     });
 
@@ -3583,6 +3716,104 @@ async function pagePlayer(el, playerId) {
         <td class="num" style="color:${s.y>4?'var(--gold)':'var(--muted)'}">${s.y?s.y:'<span class="player-history-empty">—</span>'}</td>
         <td class="num" style="color:${s.r>0?'var(--red)':'var(--muted)'}">${s.r?s.r:'<span class="player-history-empty">—</span>'}</td>
       </tr>`).join('');
+
+    const formatMetric = (value, digits = 0, suffix = '') => {
+      const numeric = Number(value);
+      if(!Number.isFinite(numeric)) return '—';
+      const out = digits > 0 ? numeric.toFixed(digits) : Math.round(numeric).toLocaleString('sv-SE');
+      return `${out}${suffix}`;
+    };
+    const summaryCards = [
+      { label:'Poäng', value: curGoalContrib, copy:'Mål + assist i ligaspel' },
+      { label:'Mål /90', value: formatMetric(curGoalsPer90, 2), copy:`${curGoals} mål totalt` },
+      { label:'Assist /90', value: formatMetric(curAssistsPer90, 2), copy:`${curAssists} assist totalt` },
+      { label:'Poäng /90', value: formatMetric(curPointsPer90, 2), copy:`${curGoalContrib} poäng totalt` }
+    ].map(card => `
+      <div class="player-detail-chip">
+        <div class="label">${card.label}</div>
+        <div class="value">${card.value}</div>
+        <div class="copy">${card.copy}</div>
+      </div>`).join('');
+    const detailSections = [
+      {
+        kicker:'Offensiv',
+        title:`Säsongen ${curSeasonYear}`,
+        rows:[
+          ['Mål', curGoals],
+          ['Assist', curAssists],
+          ['Mål + assist', curGoalContrib],
+          ['Skott', curShots],
+          ['Skott på mål', curShotsOn],
+          ['Nyckelpass', curKeyPasses],
+          ['Mål /90', formatMetric(curGoalsPer90, 2)],
+          ['Assist /90', formatMetric(curAssistsPer90, 2)],
+          ['Poäng /90', formatMetric(curPointsPer90, 2)],
+          ['Avslutseffektivitet', formatMetric(curConversion, 1, '%')],
+          ['Skott per mål', curShotsPerGoal ? formatMetric(curShotsPerGoal, 1) : '—'],
+          ['Träffsäkerhet', formatMetric(curShotAccuracy, 1, '%')]
+        ]
+      },
+      {
+        kicker:'Passningsspel',
+        title:'Speluppbyggnad',
+        rows:[
+          ['Passningar', curPasses],
+          ['Lyckade passningar', curAccuratePasses],
+          ['Passningsprocent', formatMetric(curPassAccuracy, 1, '%')],
+          ['Passningar /90', formatMetric(curPassesPer90, 1)],
+          ['Nyckelpass /90', formatMetric(curKeyPassesPer90, 2)],
+          ['Lyckade dribblingar', curDribbles]
+        ]
+      },
+      {
+        kicker:'Defensivt',
+        title:'Dueller & återerövringar',
+        rows:[
+          ['Tacklingar', curTackles],
+          ['Interceptions', curInterceptions],
+          ['Blockar', curBlocks],
+          ['Defensiva aktioner', curDefActions],
+          ['Defensiva aktioner /90', formatMetric(curDefActionsPer90, 2)],
+          ['Dueller vunna', curDuelsWon],
+          ['Dueller totalt', curDuelsTotal],
+          ['Duelvinst%', formatMetric(curDuelWinRate, 1, '%')],
+          ['Fouls orsakade', curFoulsCommitted],
+          ['Framfoulad', curFoulsDrawn],
+          ['Offside', curOffsides],
+          ['Gula / Röda', `${curYellow} / ${curRed}`]
+        ]
+      },
+      {
+        kicker:'Speltid',
+        title:'Belastning & målvaktsfält',
+        rows:[
+          ['Matcher', curApps],
+          ['Starter', curStarts],
+          ['Inhopp', curSubApps],
+          ['Minuter', curMins],
+          ['Minuter / match', formatMetric(curMinutesPerMatch, 1)],
+          ['Minuter / mål', curMinutesPerGoal ? formatMetric(curMinutesPerGoal, 1) : '—'],
+          ['Minuter / poäng', curMinutesPerContribution ? formatMetric(curMinutesPerContribution, 1) : '—'],
+          ['Rating', curRating ? curRating.toFixed(2) : '—'],
+          ['Räddningar', curSaves],
+          ['Räddningsprocent', curSaves ? formatMetric(curSavePct, 1, '%') : '—'],
+          ['Insläppta mål', curGoalsConceded],
+          ['Insläppta / match', curGoalsConceded ? formatMetric(curGoalsConcededPerMatch, 2) : '—'],
+          ['Straffmål', curPenaltyScored],
+          ['Straffräddningar', curPenaltySaved]
+        ]
+      }
+    ];
+    const detailPanels = detailSections.map(section => `
+      <div class="player-detail-panel">
+        <div class="player-detail-panel-head">
+          <div>
+            <div class="player-history-kicker">${section.kicker}</div>
+            <div class="player-history-title" style="font-size:18px">${section.title}</div>
+          </div>
+        </div>
+        <table><tbody>${section.rows.map(([label, value]) => srow(label, value)).join('')}</tbody></table>
+      </div>`).join('');
 
     el.innerHTML = `
       <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
@@ -3631,7 +3862,7 @@ async function pagePlayer(el, playerId) {
 
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'p-career')">Karriärstatistik (${seasonRows.length} säsonger)</button>
-        <button class="tab" onclick="switchTab(this,'p-detail')">Detaljerad ${SEASON}</button>
+        <button class="tab" onclick="switchTab(this,'p-detail')">Detaljerad ${curSeasonYear}</button>
         <button class="tab" onclick="switchTab(this,'p-tr');loadPlayerTransfers(this,${p.player?.id||playerId},'p-tr')">Övergångar</button>
       </div>
 
@@ -3674,23 +3905,8 @@ async function pagePlayer(el, playerId) {
       </div>
 
       <div id="p-detail" style="display:none">
-        <div class="tw"><table><tbody>
-          ${srow('Matcher', curApps)}
-          ${srow('Starter', curStats.games?.lineups||0)}
-          ${srow('Minuter spelade', curMins)}
-          ${srow('Mål', curGoals)}
-          ${srow('Assist', curAssists)}
-          ${srow('Skott totalt', curStats.shots?.total||0)}
-          ${srow('Skott på mål', curStats.shots?.on||0)}
-          ${srow('Passningar', curStats.passes?.total||0)}
-          ${srow('Passningsprecision', (curStats.passes?.accuracy||0)+'%')}
-          ${srow('Tacklingar', curStats.tackles?.total||0)}
-          ${srow('Interceptions', curStats.tackles?.interceptions||0)}
-          ${srow('Lyckade dribblingar', curStats.dribbles?.success||0)}
-          ${srow('Dueller vunna', curStats.duels?.won||0)}
-          ${srow('Gula kort', curYellow, curYellow>4?'var(--gold)':'')}
-          ${srow('Röda kort', curRed, curRed>0?'var(--red)':'')}
-        </tbody></table></div>
+        <div class="player-detail-summary">${summaryCards}</div>
+        <div class="player-detail-grid">${detailPanels}</div>
       </div>
 
       <div id="p-tr" style="display:none">
@@ -3711,7 +3927,7 @@ async function loadMV(btn, name) {
   const id = btn.parentElement.querySelector('[id^="mv-"]').id;
   const el = document.getElementById(id);
   btn.disabled = true;
-  btn.textContent = 'â³ Hämtar…';
+  btn.textContent = 'Hämtar…';
   try {
     const resp = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({system: AISYS, messages:[{role:'user', content:
