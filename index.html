@@ -3275,7 +3275,7 @@ async function pageTeam(el, teamId) {
 
       <div class="tabs">
         <button class="tab active" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
-        <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('${esc(team.name)}','tai',${teamId})">Övergångar</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${teamId})">Övergångar</button>
       </div>
 
       <div id="sq">
@@ -3462,7 +3462,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
           <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
           <button class="tab" onclick="switchTab(this,'sq')">Spelartrupp (${squadPlayers.length})</button>
-          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI(${JSON.stringify(team.name)},'tai',${teamId})">Övergångar</button>
+          <button class="tab" onclick="switchTab(this,'tai');loadTeamAI('tai',${teamId})">Övergångar</button>
         </div>
 
         <div id="t-overview" class="team-section-stack">
@@ -3532,7 +3532,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   }
 }
 
-async function loadTeamAI(name, tabId, teamId) {
+async function loadTeamAI(tabId, teamId) {
   const el = document.getElementById(tabId);
   if(!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
