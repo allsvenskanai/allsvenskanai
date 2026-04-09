@@ -1423,9 +1423,9 @@ main > *{animation:fadeUp .3s ease both}
   font-size:56px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
 }
 .lb-export-slot-pos{
-  position:absolute;left:50%;top:-20px;transform:translateX(-50%);min-width:54px;height:36px;padding:0 14px;border-radius:999px;
+  position:absolute;left:50%;top:-20px;transform:translateX(-50%);min-width:92px;height:36px;padding:0 14px;border-radius:999px;
   background:linear-gradient(180deg,#101714,#0B110F);border:1px solid rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 14px rgba(0,0,0,.18);z-index:3;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:none;color:#F8F2E8;box-shadow:0 8px 14px rgba(0,0,0,.18);z-index:3;white-space:nowrap;
 }
 .lb-export-slot-meta{
   width:100%;max-width:170px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:4px;
@@ -1488,10 +1488,10 @@ main > *{animation:fadeUp .3s ease both}
   font-size:40px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
 }
 .lb-slot-pos{
-  position:absolute;left:50%;top:-17px;transform:translateX(-50%);min-width:44px;height:28px;padding:0 10px;border-radius:999px;
+  position:absolute;left:50%;top:-17px;transform:translateX(-50%);min-width:74px;height:28px;padding:0 10px;border-radius:999px;
   background:linear-gradient(180deg,#121B17,#0D1411);border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;
-  box-shadow:0 8px 16px rgba(0,0,0,.24);z-index:3;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:none;color:#F8F2E8;
+  box-shadow:0 8px 16px rgba(0,0,0,.24);z-index:3;white-space:nowrap;
 }
 .lb-slot-meta{
   width:100%;max-width:140px;padding:8px 8px 7px;border-radius:16px;
@@ -1635,7 +1635,7 @@ main > *{animation:fadeUp .3s ease both}
   .lb-pitch svg{inset:.7rem;width:calc(100% - 1.4rem);height:calc(100% - 1.4rem)}
   .lb-slot{width:104px;min-height:132px}
   .lb-slot-core{width:62px;height:62px}
-  .lb-slot-pos{min-width:36px;height:24px;top:-14px;font-size:10px}
+  .lb-slot-pos{min-width:58px;height:24px;top:-14px;font-size:8px}
   .lb-slot-name{font-size:11px}
   .lb-slot-club{padding:2px 6px}
   .lb-slot-club img{width:14px;height:14px}
@@ -2838,31 +2838,43 @@ const POSITION_BROAD_LABEL_MAP = {
 const POSITION_SECTION_LABEL_MAP = {
   'gk':'Målvakter',
   'goalkeeper':'Målvakter',
+  'mv':'Målvakter',
+  'keeper':'Målvakter',
+  'rb':'Försvarare',
+  'hb':'Försvarare',
+  'right back':'Försvarare',
+  'lb':'Försvarare',
+  'vb':'Försvarare',
+  'left back':'Försvarare',
+  'cb':'Försvarare',
+  'mb':'Försvarare',
+  'centre back':'Försvarare',
+  'center back':'Försvarare',
   'defender':'Försvarare',
-  'cb':'Mittbackar',
-  'mb':'Mittbackar',
-  'rb':'Backar',
-  'lb':'Backar',
-  'hb':'Backar',
-  'vb':'Backar',
-  'rwb':'Wingbacks',
-  'lwb':'Wingbacks',
-  'wb':'Wingbacks',
+  'rwb':'Försvarare',
+  'lwb':'Försvarare',
+  'wb':'Försvarare',
   'midfielder':'Mittfältare',
-  'cm':'Centrala mittfältare',
-  'cam':'Offensiva mittfältare',
-  'am':'Offensiva mittfältare',
-  'cdm':'Defensiva mittfältare',
-  'dm':'Defensiva mittfältare',
-  'rm':'Yttermittfältare',
-  'lm':'Yttermittfältare',
-  'hm':'Yttermittfältare',
-  'vm':'Yttermittfältare',
+  'cm':'Mittfältare',
+  'cam':'Mittfältare',
+  'am':'Mittfältare',
+  'cdm':'Mittfältare',
+  'dm':'Mittfältare',
+  'rm':'Mittfältare',
+  'lm':'Mittfältare',
+  'hm':'Mittfältare',
+  'vm':'Mittfältare',
+  'ram':'Mittfältare',
+  'lam':'Mittfältare',
+  'rw':'Anfallare',
+  'lw':'Anfallare',
+  'hy':'Anfallare',
+  'vy':'Anfallare',
   'attacker':'Anfallare',
   'forward':'Anfallare',
   'st':'Anfallare',
   'anf':'Anfallare',
-  'cf':'Forwards',
+  'cf':'Anfallare',
   'ss':'Anfallare'
 };
 
@@ -2877,15 +2889,19 @@ function normalizePositionCompactKey(value=''){
   return normalizePositionKey(value).replace(/\s+/g, ' ');
 }
 
-function formatPositionLabel(value=''){
+function getMainPositionCategory(value=''){
   const raw = String(value || '').trim();
   if(!raw) return '';
   const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
   if(parts.length > 1) {
-    return parts.map(part => formatPositionLabel(part)).filter(Boolean).join(' / ');
+    return parts.map(part => getMainPositionCategory(part)).filter(Boolean).join(' / ');
   }
   const normalized = normalizePositionCompactKey(raw);
   return POSITION_BROAD_LABEL_MAP[normalized] || fixEnc(fixName(raw));
+}
+
+function formatPositionLabel(value=''){
+  return getMainPositionCategory(value);
 }
 
 function resolveDetailedPosition(source, fallback=''){
@@ -2921,7 +2937,7 @@ function resolveDetailedPosition(source, fallback=''){
   pushCandidate(fallback);
 
   for(const candidate of candidates){
-    const broad = formatPositionLabel(candidate);
+    const broad = getMainPositionCategory(candidate);
     if(broad) return broad;
   }
   return '';
@@ -3000,7 +3016,7 @@ function formatPositionSectionLabel(value=''){
   const raw = String(value || '').trim();
   if(!raw) return '';
   const normalized = normalizePositionKey(raw);
-  return POSITION_SECTION_LABEL_MAP[normalized] || formatPositionLabel(raw);
+  return POSITION_SECTION_LABEL_MAP[normalized] || getMainPositionCategory(raw);
 }
 
 function withTimeout(promise, ms = 12000, label = 'Request') {
@@ -3353,7 +3369,7 @@ function lineupBuilderExportName(name=''){
 
 function lineupBuilderRoleLabel(slot){
   if(!slot) return '';
-  return resolveDetailedPosition({ role: slot.role, positionCode: slot.label }, slot.label) || slot.role || slot.label || '';
+  return getMainPositionCategory(slot.role || slot.label || '') || slot.role || slot.label || '';
 }
 
 function lineupBuilderNormalizePosition(value=''){
@@ -3631,18 +3647,19 @@ function renderLineupBuilderPitch(){
     </svg>
     ${lineupBuilderSlots().map(slot => {
       const player = lineupBuilderState.slots?.[slot.id] || null;
-      const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
+      const mainCategory = lineupBuilderRoleLabel(slot);
+      const label = player ? `${player.name} (${mainCategory})` : `Välj spelare för ${mainCategory}`;
       const coords = lineupBuilderRenderCoords(slot);
       if(!player) {
         return `
           <button class="lb-slot empty" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
             <span class="lb-slot-core">
               <span class="lb-slot-fallback">+</span>
-              <span class="lb-slot-pos">${esc(slot.label)}</span>
+              <span class="lb-slot-pos">${esc(mainCategory)}</span>
             </span>
             <span class="lb-slot-meta">
               <span class="lb-slot-placeholder">Välj spelare</span>
-              <span class="lb-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
+              <span class="lb-slot-hint">${esc(mainCategory)}</span>
             </span>
           </button>
         `;
@@ -3652,7 +3669,7 @@ function renderLineupBuilderPitch(){
           <span class="lb-slot-core">
             ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
             <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
-            <span class="lb-slot-pos">${esc(slot.label)}</span>
+            <span class="lb-slot-pos">${esc(mainCategory)}</span>
           </span>
           <span class="lb-slot-meta">
             <span class="lb-slot-name">${esc(player.name)}</span>
@@ -3703,17 +3720,18 @@ function renderLineupBuilderExportStage(){
           </svg>
           ${lineupBuilderSlots().map(slot => {
             const player = lineupBuilderState.slots?.[slot.id] || null;
+            const mainCategory = lineupBuilderRoleLabel(slot);
             const coords = lineupBuilderRenderCoords(slot);
             if(!player) {
               return `
                 <div class="lb-export-slot empty" style="left:${coords.x}%;top:${coords.y}%;">
                   <span class="lb-export-slot-core">
                     <span class="lb-export-slot-fallback">+</span>
-                    <span class="lb-export-slot-pos">${esc(slot.label)}</span>
+                    <span class="lb-export-slot-pos">${esc(mainCategory)}</span>
                   </span>
                   <span class="lb-export-slot-meta">
                     <span class="lb-export-slot-placeholder">Välj spelare</span>
-                    <span class="lb-export-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
+                    <span class="lb-export-slot-hint">${esc(mainCategory)}</span>
                   </span>
                 </div>
               `;
@@ -3723,7 +3741,7 @@ function renderLineupBuilderExportStage(){
                 <span class="lb-export-slot-core">
                   ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
                   <span class="lb-export-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
-                  <span class="lb-export-slot-pos">${esc(slot.label)}</span>
+                  <span class="lb-export-slot-pos">${esc(mainCategory)}</span>
                 </span>
                 <span class="lb-export-slot-meta">
                   <span class="lb-export-slot-name">${esc(lineupBuilderExportName(player.name))}</span>
