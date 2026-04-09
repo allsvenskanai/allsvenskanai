@@ -3043,7 +3043,7 @@ const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v2';
 const LINEUP_BUILDER_ALL_TEAMS = 'all';
 const LINEUP_BUILDER_MIN_GLOBAL_SEARCH = 2;
 const LINEUP_BUILDER_SAFE_AREA = { left: 12, right: 88, top: 8, bottom: 92 };
-const LINEUP_BUILDER_EXPORT_SAFE_AREA = { left: 9, right: 91, top: 10, bottom: 93 };
+const LINEUP_BUILDER_EXPORT_SAFE_AREA = { left: 9, right: 91, top: 8, bottom: 98 };
 const LINEUP_BUILDER_ROW_X = {
   1: [50],
   2: [38, 62],
@@ -3096,8 +3096,8 @@ const LINEUP_BUILDER_ROW_Y = {
   5: [0, 18, 38, 60, 84]
 };
 const LINEUP_BUILDER_EXPORT_ROW_Y = {
-  4: [2, 34, 64, 92],
-  5: [4, 24, 45, 66, 93]
+  4: [4, 30, 68, 92],
+  5: [5, 24, 46, 69, 92]
 };
 const FORMATION_GRID_ROLE_CODES = {
   '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
@@ -3311,15 +3311,15 @@ function lineupBuilderRenderCoords(slot, mode = 'builder'){
   if(!slot) return { x: 50, y: 50, guideY: 42 };
   const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
   const coords = lineupBuilderFormationCoords(mode)[slot.id] || { x: 50, y: 50 };
-  const blockWidth = mode === 'export' ? 18 : 16;
-  const blockHeight = mode === 'export' ? 20 : 18;
+  const blockWidth = mode === 'export' ? 14 : 16;
+  const blockHeight = mode === 'export' ? 8 : 18;
   const minX = safeArea.left + (blockWidth / 2);
   const maxX = safeArea.right - (blockWidth / 2);
   const minTop = safeArea.top;
   const maxTop = safeArea.bottom - blockHeight;
   const x = Math.max(minX, Math.min(maxX, coords.x));
   const exportYOffset = mode === 'export'
-    ? (slot?.group === 'gk' ? 6 : slot?.group === 'mid' ? -2 : 0)
+    ? (slot?.group === 'gk' ? 0 : slot?.group === 'mid' ? -1 : 0)
     : 0;
   const top = Math.max(minTop, Math.min(maxTop, coords.y + exportYOffset));
   return { x, y: top };
@@ -3711,6 +3711,7 @@ function renderLineupBuilderPitch(){
 function renderLineupBuilderExportStage(){
   const host = document.getElementById('lineupBuilderExportStage');
   if(!host) return null;
+  console.log('export positions', lineupBuilderFormationCoords('export'));
   host.innerHTML = `
     <div id="lineupBuilderExportCanvas" class="lb-export-frame">
       <div class="lb-export-top">
