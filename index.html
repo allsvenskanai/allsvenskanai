@@ -2921,16 +2921,19 @@ function resolveDetailedPosition(source, fallback=''){
     pushCandidate(source.pos);
     pushCandidate(source.role);
     pushCandidate(source.slotRole);
-    pushCandidate(source.position);
     pushCandidate(source.detailedPosition);
     pushCandidate(source.primaryPosition);
     pushCandidate(source.secondaryPosition);
+    pushCandidate(source.position);
     pushCandidate(source.player?.pos);
     pushCandidate(source.player?.positionCode);
+    pushCandidate(source.player?.detailedPosition);
     pushCandidate(source.player?.position);
     pushCandidate(source.games?.positionCode);
+    pushCandidate(source.games?.detailedPosition);
     pushCandidate(source.games?.position);
     pushCandidate(source.statistics?.[0]?.games?.positionCode);
+    pushCandidate(source.statistics?.[0]?.games?.detailedPosition);
     pushCandidate(source.statistics?.[0]?.games?.position);
   }
   pushCandidate(fallback);
@@ -2942,6 +2945,68 @@ function resolveDetailedPosition(source, fallback=''){
     if(!broadFallback) broadFallback = formatPositionLabel(candidate);
   }
   return broadFallback;
+}
+
+const teamDetailedPositionCache = {};
+
+function resolveDetailedRoleFromFormationGrid(formation='', grid='', fallback=''){
+  const rows = FORMATION_GRID_ROLE_CODES[String(formation || '').trim()];
+  const match = String(grid || '').trim().match(/^(\d+):(\d+)$/);
+  if(rows && match) {
+    const rowIndex = Number(match[1]) - 1;
+    const colIndex = Number(match[2]) - 1;
+    const roleCode = rows?.[rowIndex]?.[colIndex] || '';
+    if(roleCode) return resolveDetailedPosition({ positionCode: roleCode }, fallback);
+  }
+  return resolveDetailedPosition({ positionCode: fallback, pos: fallback, position: fallback }, fallback);
+}
+
+async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
+  const cacheKey = `${season}:${teamId}`;
+  if(teamDetailedPositionCache[cacheKey]) return teamDetailedPositionCache[cacheKey];
+
+  const fixtureIds = [...new Set((fixtures || [])
+    .filter(item => {
+      const started = !['NS', 'TBD', 'PST', 'CANC', 'ABD', 'AWD'].includes(String(item?.fixture?.status?.short || '').toUpperCase());
+      const involvesTeam = Number(item?.teams?.home?.id || 0) === Number(teamId) || Number(item?.teams?.away?.id || 0) === Number(teamId);
+      return started && involvesTeam;
+    })
+    .map(item => Number(item?.fixture?.id || 0))
+    .filter(Boolean))];
+
+  const promise = (async () => {
+    const counts = {};
+    const lineupResponses = await Promise.all(fixtureIds.map(async fixtureId => {
+      try {
+        const raw = await afRaw('fixtures/lineups', { fixture: fixtureId });
+        return raw?.response || [];
+      } catch {
+        return [];
+      }
+    }));
+
+    lineupResponses.forEach(lineups => {
+      const lineup = (lineups || []).find(item => Number(item?.team?.id || 0) === Number(teamId));
+      if(!lineup) return;
+      const formation = lineup?.formation || '';
+      (lineup?.startXI || []).forEach(entry => {
+        const playerId = Number(entry?.player?.id || 0);
+        if(!playerId) return;
+        const label = resolveDetailedRoleFromFormationGrid(formation, entry?.player?.grid, entry?.player?.pos || entry?.player?.position || '');
+        if(!label) return;
+        counts[playerId] ||= {};
+        counts[playerId][label] = (counts[playerId][label] || 0) + 1;
+      });
+    });
+
+    return Object.fromEntries(Object.entries(counts).map(([playerId, labels]) => {
+      const best = Object.entries(labels).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'sv'))[0]?.[0] || '';
+      return [playerId, best];
+    }));
+  })();
+
+  teamDetailedPositionCache[cacheKey] = promise;
+  return promise;
 }
 
 function formatPositionSectionLabel(value=''){
@@ -3015,6 +3080,13 @@ const LINEUP_BUILDER_FORMATION_ROWS = {
 const LINEUP_BUILDER_ROW_Y = {
   4: [0, 28, 56, 84],
   5: [0, 18, 38, 60, 84]
+};
+const FORMATION_GRID_ROLE_CODES = {
+  '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
+  '4-3-3': [['mv'], ['vb','mb','mb','hb'], ['cm','cm','cm'], ['vy','cf','hy']],
+  '3-5-2': [['mv'], ['mb','mb','mb'], ['lwb','cm','cm','cm','rwb'], ['anf','anf']],
+  '4-2-3-1': [['mv'], ['vb','mb','mb','hb'], ['cdm','cdm'], ['vm','cam','hm'], ['anf']],
+  '5-3-2': [['mv'], ['lwb','mb','mb','mb','rwb'], ['cm','cm','cm'], ['anf','anf']]
 };
 const LINEUP_BUILDER_FORMATIONS = {
   '4-4-2': [
@@ -5574,11 +5646,23 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       lastname: item?.player?.lastname || '',
       age: item?.player?.age || null,
       number: item?.statistics?.[0]?.games?.number || null,
+      positionCode: item?.player?.pos || item?.statistics?.[0]?.games?.positionCode || '',
       position: item?.statistics?.[0]?.games?.position || '',
       photo: item?.player?.photo || '',
       injured: false,
     })).filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
+    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
+    squadPlayers.forEach(player => {
+      const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
+      if(detailedPosition) player.detailedPosition = detailedPosition;
+    });
+    Object.keys(playerInfoById).forEach(playerId => {
+      const detailedPosition = detailedPositionsByPlayerId[String(playerId)] || '';
+      if(detailedPosition && playerInfoById[playerId]) {
+        playerInfoById[playerId].detailedPosition = detailedPosition;
+      }
+    });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
