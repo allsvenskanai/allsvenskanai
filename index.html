@@ -3324,10 +3324,6 @@ function renderLineupBuilderPage(root){
             <button class="lb-button ghost" type="button" onclick="lineupBuilderResetTitles()">Återställ rubrik</button>
             <button class="lb-button warn" type="button" onclick="lineupBuilderClear()">Rensa elvan</button>
           </div>
-
-          <div id="lineupBuilderSummary" class="lb-summary-grid"></div>
-          <div class="lb-side-note">${lineupBuilderState.teamsLoading ? 'Laddar lag för vald liga...' : lineupBuilderState.teamsError ? esc(lineupBuilderState.teamsError) : 'Tips: välj först liga, filtrera sedan på lag om du vill hålla spelarpoolen liten. I Alla lag-läget startar bred sökning först när du skriver minst två tecken.'}</div>
-          <div id="lineupBuilderStatus" class="lb-status" data-tone="${esc(lineupBuilderState.statusTone || 'idle')}">${esc(lineupBuilderState.status || '')}</div>
         </section>
 
         <section class="lb-capture">
