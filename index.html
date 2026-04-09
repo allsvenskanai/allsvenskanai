@@ -2835,6 +2835,15 @@ const POSITION_LABEL_MAP = {
   'second striker':'Släpande anfallare'
 };
 
+const POSITION_BROAD_LABEL_MAP = {
+  'goalkeeper':'Målvakt',
+  'keeper':'Målvakt',
+  'defender':'Försvarare',
+  'midfielder':'Mittfältare',
+  'attacker':'Anfallare',
+  'forward':'Anfallare'
+};
+
 const POSITION_SECTION_LABEL_MAP = {
   'gk':'Målvakter',
   'goalkeeper':'Målvakter',
@@ -2873,15 +2882,66 @@ function normalizePositionKey(value=''){
     .trim();
 }
 
-function formatPositionLabel(value=''){
-  const raw = String(value || '').trim();
+function normalizePositionCompactKey(value=''){
+  return normalizePositionKey(value).replace(/\s+/g, ' ');
+}
+
+function formatDetailedPosition(code=''){
+  const raw = String(code || '').trim();
   if(!raw) return '';
   const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
   if(parts.length > 1) {
-    return parts.map(part => formatPositionLabel(part)).filter(Boolean).join(' / ');
+    return parts.map(part => formatDetailedPosition(part)).filter(Boolean).join(' / ');
   }
-  const normalized = normalizePositionKey(raw);
-  return POSITION_LABEL_MAP[normalized] || fixEnc(fixName(raw));
+  const normalized = normalizePositionCompactKey(raw);
+  return POSITION_LABEL_MAP[normalized] || '';
+}
+
+function formatPositionLabel(value=''){
+  const detailed = formatDetailedPosition(value);
+  if(detailed) return detailed;
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const normalized = normalizePositionCompactKey(raw);
+  return POSITION_BROAD_LABEL_MAP[normalized] || fixEnc(fixName(raw));
+}
+
+function resolveDetailedPosition(source, fallback=''){
+  const candidates = [];
+  const pushCandidate = value => {
+    if(value === null || value === undefined) return;
+    const stringValue = String(value).trim();
+    if(stringValue) candidates.push(stringValue);
+  };
+
+  if(typeof source === 'string') {
+    pushCandidate(source);
+  } else if(source && typeof source === 'object') {
+    pushCandidate(source.positionCode);
+    pushCandidate(source.pos);
+    pushCandidate(source.role);
+    pushCandidate(source.slotRole);
+    pushCandidate(source.position);
+    pushCandidate(source.detailedPosition);
+    pushCandidate(source.primaryPosition);
+    pushCandidate(source.secondaryPosition);
+    pushCandidate(source.player?.pos);
+    pushCandidate(source.player?.positionCode);
+    pushCandidate(source.player?.position);
+    pushCandidate(source.games?.positionCode);
+    pushCandidate(source.games?.position);
+    pushCandidate(source.statistics?.[0]?.games?.positionCode);
+    pushCandidate(source.statistics?.[0]?.games?.position);
+  }
+  pushCandidate(fallback);
+
+  let broadFallback = '';
+  for(const candidate of candidates){
+    const detailed = formatDetailedPosition(candidate);
+    if(detailed) return detailed;
+    if(!broadFallback) broadFallback = formatPositionLabel(candidate);
+  }
+  return broadFallback;
 }
 
 function formatPositionSectionLabel(value=''){
@@ -3234,7 +3294,7 @@ function lineupBuilderExportName(name=''){
 
 function lineupBuilderRoleLabel(slot){
   if(!slot) return '';
-  return formatPositionLabel(slot.role) || formatPositionLabel(slot.label) || slot.role || slot.label || '';
+  return resolveDetailedPosition({ role: slot.role, positionCode: slot.label }, slot.label) || slot.role || slot.label || '';
 }
 
 function lineupBuilderNormalizePosition(value=''){
@@ -3296,6 +3356,8 @@ function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
   const team = teamStat.team || fallbackTeam || {};
   const games = teamStat.games || {};
   const name = getPlayerDisplayName(player, item);
+  const positionCode = player.pos || item.pos || games.positionCode || teamStat.positionCode || '';
+  const position = games.position || player.position || fallbackTeam.position || '';
   return {
     id: player.id || 0,
     name,
@@ -3306,7 +3368,9 @@ function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
     teamId: team.id || fallbackTeam.id || 0,
     teamName: fixName(team.name || fallbackTeam.name || ''),
     teamLogo: team.logo || fallbackTeam.logo || '',
-    position: games.position || player.position || fallbackTeam.position || '',
+    positionCode,
+    position,
+    detailedPosition: resolveDetailedPosition({ positionCode, position, games, player, statistics }),
     searchBlob: ''
   };
 }
@@ -3680,7 +3744,7 @@ function renderLineupBuilderModal(){
               </span>
             </span>
             <span class="lb-result-tags">
-              ${entry.player.position ? `<span class="lb-tag">${esc(formatPositionLabel(entry.player.position))}</span>` : ''}
+              ${resolveDetailedPosition(entry.player) ? `<span class="lb-tag">${esc(resolveDetailedPosition(entry.player))}</span>` : ''}
               <span class="lb-tag ${entry.fit === 'ideal' ? 'fit' : entry.fit === 'soft' ? 'soft' : ''}">${entry.fit === 'ideal' ? 'Bra match' : entry.fit === 'soft' ? 'Flexibel' : 'Fri roll'}</span>
             </span>
           </button>
@@ -5177,7 +5241,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
       <div class="kicker">${item.kicker}</div>
       <div class="name">${esc(leader.player.playerName)}</div>
       <div class="value">${getCategoryDisplayValue(category, leader.player, leader.value)}</div>
-      <div class="meta">${esc(formatPositionLabel(leader.player.position) || leader.player.teamName || 'Spelare')}</div>
+      <div class="meta">${esc(resolveDetailedPosition(leader.player) || leader.player.teamName || 'Spelare')}</div>
     </div>`;
   }).filter(Boolean).join('');
 
@@ -5199,7 +5263,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
             <img src="${item.player.photo || ''}" onerror="this.style.opacity='.15'" loading="lazy" style="border-radius:50%">
             <div>
               <div class="pn">${esc(item.player.playerName)}</div>
-              <div class="ps">${esc(formatPositionLabel(item.player.position) || item.player.teamName || 'Spelare')}</div>
+              <div class="ps">${esc(resolveDetailedPosition(item.player) || item.player.teamName || 'Spelare')}</div>
             </div>
           </div>
         </td>
@@ -5332,7 +5396,7 @@ async function pageTeam(el, teamId) {
     const playerRows = sorted.map(p => {
       const info = playerInfoById[p.id] || {};
       const rawPos = p.position || info.position || '—';
-      const pos = formatPositionLabel(rawPos) || rawPos;
+      const pos = resolveDetailedPosition({ ...p, ...info }, rawPos) || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, p);
       let sep = '';
       if(rawPos!==lastPos) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
@@ -5615,7 +5679,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const playerRows = sortedSquad.map(player => {
       const info = playerInfoById[player.id] || {};
       const rawPos = player.position || info.position || '—';
-      const pos = formatPositionLabel(rawPos) || rawPos;
+      const pos = resolveDetailedPosition({ ...player, ...info }, rawPos) || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, player);
       let sep = '';
       if(rawPos !== lastPos) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
@@ -6119,7 +6183,7 @@ async function pagePlayer(el, playerId) {
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
             <span>${renderNationalityDisplay(p)}</span>
-            <span>⚽ ${esc(formatPositionLabel(curStats.games?.position||p.position||'—') || '—')}</span>
+            <span>⚽ ${esc(resolveDetailedPosition({ games: curStats.games, position: p.position }, '—') || '—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
             ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
@@ -6469,7 +6533,7 @@ function renderLineups(lineups){
         <div class="lineup-player">
           <div>
             <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
-            <div class="pos">${esc(p.player?.pos || '')}</div>
+            <div class="pos">${esc(resolveDetailedPosition(p.player, p.player?.pos || '') || '')}</div>
           </div>
           <div class="num">#${esc(String(p.player?.number || '—'))}</div>
         </div>`).join('') || '<div class="empty" style="padding:1rem 0">Ingen startelva</div>'}
