@@ -1362,7 +1362,7 @@ main > *{animation:fadeUp .3s ease both}
     radial-gradient(circle at 50% 20%, rgba(255,255,255,.04), transparent 22%),
     radial-gradient(circle at bottom right, rgba(255,255,255,.04), transparent 18%),
     linear-gradient(180deg,#081712 0%,#0A2018 38%,#071611 100%);
-  display:grid;grid-template-rows:auto auto 1fr auto;gap:28px;
+  display:grid;grid-template-rows:auto auto auto auto;gap:24px;
 }
 .lb-export-frame::before{
   content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
@@ -1379,11 +1379,11 @@ main > *{animation:fadeUp .3s ease both}
   font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:3.2px;text-transform:uppercase;color:#E3C777;
 }
 .lb-export-title{
-  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:62px;font-weight:900;line-height:.94;letter-spacing:1.2px;text-transform:uppercase;color:#FAF4E8;
-  max-width:720px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;line-height:.95;letter-spacing:1px;text-transform:uppercase;color:#FAF4E8;
+  max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .lb-export-subtitle{
-  margin-top:10px;font-size:18px;font-weight:600;letter-spacing:1.2px;text-transform:none;color:rgba(250,244,232,.72)
+  margin-top:9px;font-size:17px;font-weight:600;letter-spacing:.8px;text-transform:none;color:rgba(250,244,232,.72)
 }
 .lb-export-brand{
   display:grid;justify-items:end;gap:4px;text-align:right;color:#FAF4E8;align-self:start;
@@ -1407,7 +1407,7 @@ main > *{animation:fadeUp .3s ease both}
 .lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
 .lb-export-slot{
   position:absolute;transform:translateX(-50%);width:180px;min-height:186px;background:none;border:none;color:#F8F2E8;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;text-align:center;
 }
 .lb-export-slot-core{
   width:116px;height:116px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
@@ -1428,18 +1428,18 @@ main > *{animation:fadeUp .3s ease both}
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 14px rgba(0,0,0,.18);z-index:3;
 }
 .lb-export-slot-meta{
-  width:100%;max-width:170px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:4px;
+  width:100%;max-width:170px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:5px;
 }
 .lb-export-slot-name{
-  width:100%;max-width:164px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 10px rgba(0,0,0,.28);letter-spacing:.15px;text-transform:none;
+  width:100%;max-width:164px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 10px rgba(0,0,0,.24);letter-spacing:.12px;text-transform:none;
 }
 .lb-export-slot-club{
-  display:inline-flex;align-items:center;gap:6px;max-width:132px;padding:3px 8px;border-radius:999px;
-  background:rgba(5,22,17,.18);border:1px solid rgba(255,255,255,.08);font-size:10px;letter-spacing:.35px;text-transform:none;box-shadow:none;
+  display:inline-flex;align-items:center;gap:6px;max-width:136px;padding:4px 9px;border-radius:999px;
+  background:rgba(5,22,17,.16);border:1px solid rgba(255,255,255,.07);font-size:10px;letter-spacing:.28px;text-transform:none;box-shadow:none;
 }
 .lb-export-slot-club img{width:14px;height:14px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.lb-export-slot-club span{display:block;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:rgba(248,242,232,.88)}
 .lb-export-slot-placeholder{
   display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
   font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
@@ -1452,21 +1452,31 @@ main > *{animation:fadeUp .3s ease both}
   position:absolute;right:54px;bottom:88px;font-family:'Barlow Condensed',sans-serif;font-size:92px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
   color:rgba(255,255,255,.038);pointer-events:none;line-height:.85;
 }
+.lb-export-brandline{
+  position:relative;z-index:2;display:grid;justify-items:center;gap:6px;margin-top:-2px;
+}
+.lb-export-brandline strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;letter-spacing:1.4px;line-height:.95;color:#F7F1E6;
+  text-transform:none;text-shadow:0 10px 26px rgba(0,0,0,.18);
+}
+.lb-export-brandline span{
+  font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(247,241,230,.52);
+}
 .lb-export-footer{
-  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
-  padding:10px 2px 0;border-top:1px solid rgba(255,255,255,.08)
+  display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
+  padding:14px 2px 0;border-top:1px solid rgba(255,255,255,.08)
 }
 .lb-export-footer strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2.2px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.9)
 }
 .lb-export-footer-meta{
-  display:grid;justify-items:end;gap:4px;text-align:right
+  display:grid;justify-items:end;gap:6px;text-align:right
 }
 .lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#FAF4E8
 }
 .lb-export-footer-meta small{
-  font-size:11px;letter-spacing:.9px;text-transform:none;color:rgba(248,242,232,.56)
+  font-size:12px;letter-spacing:.7px;text-transform:none;color:rgba(248,242,232,.58)
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -3749,6 +3759,10 @@ function renderLineupBuilderExportStage(){
             `;
           }).join('')}
         </div>
+      </div>
+      <div class="lb-export-brandline">
+        <strong>AllsvenskanAI.se</strong>
+        <span>Data-driven fotbollsgrafik</span>
       </div>
       <div class="lb-export-footer">
         <div><strong>AllsvenskanAI</strong></div>
