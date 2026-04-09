@@ -2904,34 +2904,112 @@ function normalizePositionCompactKey(value=''){
   return normalizePositionKey(value).replace(/\s+/g, ' ');
 }
 
+function getPositionCandidateValues(source){
+  if(typeof source === 'string') return [String(source || '').trim()].filter(Boolean);
+  if(!source || typeof source !== 'object') return [];
+
+  const candidates = [];
+  const seen = new Set();
+  const pushCandidate = value => {
+    if(value === null || value === undefined) return;
+    const stringValue = String(value).trim();
+    if(!stringValue) return;
+    const dedupeKey = stringValue.toLowerCase();
+    if(seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+    candidates.push(stringValue);
+  };
+
+  const statisticsEntries = Array.isArray(source.statistics) ? source.statistics : [];
+  const playerStatisticsEntries = Array.isArray(source.player?.statistics) ? source.player.statistics : [];
+
+  pushCandidate(statisticsEntries?.[0]?.games?.position);
+  statisticsEntries.forEach(stat => {
+    pushCandidate(stat?.games?.position);
+    pushCandidate(stat?.games?.positionCode);
+    pushCandidate(stat?.games?.detailedPosition);
+    pushCandidate(stat?.position);
+    pushCandidate(stat?.player?.position);
+  });
+
+  playerStatisticsEntries.forEach(stat => {
+    pushCandidate(stat?.games?.position);
+    pushCandidate(stat?.games?.positionCode);
+    pushCandidate(stat?.games?.detailedPosition);
+    pushCandidate(stat?.position);
+  });
+
+  pushCandidate(source.position);
+  pushCandidate(source.pos);
+  pushCandidate(source.games?.position);
+  pushCandidate(source.games?.positionCode);
+  pushCandidate(source.games?.detailedPosition);
+  pushCandidate(source.positionCode);
+  pushCandidate(source.detailedPosition);
+  pushCandidate(source.primaryPosition);
+  pushCandidate(source.secondaryPosition);
+  pushCandidate(source.role);
+  pushCandidate(source.slotRole);
+
+  pushCandidate(source.player?.position);
+  pushCandidate(source.player?.pos);
+  pushCandidate(source.player?.games?.position);
+  pushCandidate(source.player?.games?.positionCode);
+  pushCandidate(source.player?.games?.detailedPosition);
+  pushCandidate(source.player?.positionCode);
+  pushCandidate(source.player?.detailedPosition);
+  pushCandidate(source.player?.primaryPosition);
+  pushCandidate(source.player?.secondaryPosition);
+  pushCandidate(source.player?.role);
+
+  return candidates;
+}
+
 function extractRawPositionValue(source){
-  if(typeof source === 'string') return String(source || '').trim();
-  if(!source || typeof source !== 'object') return '';
-  return String(
-    source.statistics?.[0]?.games?.position ||
-    source.player?.statistics?.[0]?.games?.position ||
-    source.games?.position ||
-    source.position ||
-    source.player?.position ||
-    source.pos ||
-    source.player?.pos ||
-    ''
-  ).trim();
+  return getPositionCandidateValues(source)[0] || '';
+}
+
+function debugUnknownPosition(source, resolvedRaw=''){
+  if(!source || typeof source !== 'object') return;
+  const playerName = source.name || source.player?.name || [source.firstname || source.player?.firstname || '', source.lastname || source.player?.lastname || ''].filter(Boolean).join(' ') || 'Okänd spelare';
+  const checkedFields = {
+    statistics0GamesPosition: source.statistics?.[0]?.games?.position || '',
+    statisticsAnyGamesPositions: (Array.isArray(source.statistics) ? source.statistics.map(stat => stat?.games?.position).filter(Boolean) : []),
+    playerStatisticsAnyGamesPositions: (Array.isArray(source.player?.statistics) ? source.player.statistics.map(stat => stat?.games?.position).filter(Boolean) : []),
+    position: source.position || '',
+    pos: source.pos || '',
+    gamesPosition: source.games?.position || '',
+    playerPosition: source.player?.position || '',
+    playerPos: source.player?.pos || '',
+  };
+  console.debug('[position-resolver] unresolved player position', {
+    playerName,
+    checkedFields,
+    candidateValues: getPositionCandidateValues(source),
+    finalResolvedRaw: resolvedRaw || '',
+    finalMappedCategory: 'Okänd',
+  });
 }
 
 function getMainPositionCategory(value=''){
-  const raw = extractRawPositionValue(value);
-  if(!raw) return 'Okänd';
-  const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
-  if(parts.length > 1) {
-    for(const part of parts) {
-      const resolved = getMainPositionCategory(part);
-      if(resolved && resolved !== 'Okänd') return resolved;
-    }
+  const candidateValues = getPositionCandidateValues(value);
+  if(!candidateValues.length) {
+    debugUnknownPosition(value, '');
     return 'Okänd';
   }
-  const normalized = normalizePositionCompactKey(raw);
-  return POSITION_BROAD_LABEL_MAP[normalized] || 'Okänd';
+
+  for(const candidate of candidateValues) {
+    const parts = candidate.split(/\s*[,/|]\s*/).filter(Boolean);
+    for(const part of (parts.length ? parts : [candidate])) {
+      const normalized = normalizePositionCompactKey(part);
+      const mapped = POSITION_BROAD_LABEL_MAP[normalized];
+      if(mapped) return mapped;
+    }
+  }
+
+  const resolvedRaw = candidateValues[0] || '';
+  debugUnknownPosition(value, resolvedRaw);
+  return 'Okänd';
 }
 
 function formatPositionLabel(value=''){
@@ -2939,36 +3017,7 @@ function formatPositionLabel(value=''){
 }
 
 function resolveDetailedPosition(source, fallback=''){
-  const candidates = [];
-  const pushCandidate = value => {
-    if(value === null || value === undefined) return;
-    const stringValue = String(value).trim();
-    if(stringValue) candidates.push(stringValue);
-  };
-
-  if(typeof source === 'string') {
-    pushCandidate(source);
-  } else if(source && typeof source === 'object') {
-    pushCandidate(source.positionCode);
-    pushCandidate(source.pos);
-    pushCandidate(source.role);
-    pushCandidate(source.slotRole);
-    pushCandidate(source.detailedPosition);
-    pushCandidate(source.primaryPosition);
-    pushCandidate(source.secondaryPosition);
-    pushCandidate(source.position);
-    pushCandidate(source.player?.pos);
-    pushCandidate(source.player?.positionCode);
-    pushCandidate(source.player?.detailedPosition);
-    pushCandidate(source.player?.position);
-    pushCandidate(source.games?.positionCode);
-    pushCandidate(source.games?.detailedPosition);
-    pushCandidate(source.games?.position);
-    pushCandidate(source.statistics?.[0]?.games?.positionCode);
-    pushCandidate(source.statistics?.[0]?.games?.detailedPosition);
-    pushCandidate(source.statistics?.[0]?.games?.position);
-  }
-  pushCandidate(fallback);
+  const candidates = [...getPositionCandidateValues(source), ...getPositionCandidateValues(fallback)];
 
   for(const candidate of candidates){
     const broad = getMainPositionCategory(candidate);
