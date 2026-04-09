@@ -1220,6 +1220,274 @@ main > *{animation:fadeUp .3s ease both}
   padding:1rem 0 0;color:var(--muted);font-size:12px;line-height:1.6;
 }
 
+/* LINEUP BUILDER */
+.lb-shell{display:grid;gap:1.2rem}
+.lb-grid{display:grid;grid-template-columns:minmax(320px,.95fr) minmax(0,1.4fr);gap:1rem;align-items:start}
+.lb-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.16)),var(--dark2);
+  border:1px solid var(--border);border-radius:22px;padding:1.15rem 1.15rem 1.2rem;
+  box-shadow:0 18px 36px rgba(66,48,18,.08);position:relative;overflow:hidden;
+}
+.lb-card::before{
+  content:'';position:absolute;inset:0;background:linear-gradient(140deg,rgba(201,165,75,.10),transparent 52%);
+  opacity:.85;pointer-events:none;
+}
+.lb-card>*{position:relative;z-index:1}
+.lb-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
+.lb-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.8px;
+  text-transform:uppercase;color:var(--gold);
+}
+.lb-headline{
+  margin-top:.32rem;font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;
+  letter-spacing:1.5px;text-transform:uppercase;line-height:.95;color:var(--text);
+}
+.lb-copy{margin-top:.45rem;max-width:720px;font-size:14px;line-height:1.6;color:var(--text2)}
+.lb-pills{display:flex;gap:.5rem;flex-wrap:wrap}
+.lb-pill{
+  display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 .9rem;border-radius:999px;
+  background:rgba(255,255,255,.68);border:1px solid rgba(108,86,44,.1);font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text2);
+}
+.lb-controls{display:grid;gap:1rem}
+.lb-controls-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.lb-field{display:grid;gap:.45rem}
+.lb-field.full{grid-column:1 / -1}
+.lb-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--muted);
+}
+.lb-input,.lb-select{
+  width:100%;min-height:48px;padding:0 .95rem;border-radius:14px;border:1px solid var(--border);
+  background:rgba(255,253,248,.95);color:var(--text);outline:none;
+  font-family:'Barlow',sans-serif;font-size:14px;transition:border-color .18s,box-shadow .18s,background .18s;
+}
+.lb-input:focus,.lb-select:focus{
+  border-color:rgba(201,165,75,.45);box-shadow:0 0 0 3px rgba(201,165,75,.12);background:#fff;
+}
+.lb-toolbar{display:flex;gap:.7rem;flex-wrap:wrap}
+.lb-button{
+  min-height:44px;padding:0 1rem;border-radius:14px;border:1px solid var(--border);cursor:pointer;
+  background:rgba(255,255,255,.72);color:var(--text);
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  transition:transform .18s,box-shadow .18s,border-color .18s,background .18s,opacity .18s;
+}
+.lb-button:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(66,48,18,.08);border-color:var(--border-hi)}
+.lb-button.primary{
+  background:linear-gradient(135deg,rgba(201,165,75,.95),rgba(230,201,119,.95));border-color:rgba(201,165,75,.4);color:#2B2113;
+}
+.lb-button.ghost{background:rgba(255,255,255,.38)}
+.lb-button.warn{color:#7B3C3C;border-color:rgba(182,81,81,.22);background:rgba(182,81,81,.08)}
+.lb-button:disabled{opacity:.6;cursor:wait;transform:none;box-shadow:none}
+.lb-side-note{font-size:12px;line-height:1.6;color:var(--muted)}
+.lb-status{
+  min-height:24px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.45rem;
+}
+.lb-status[data-tone="success"]{color:var(--green)}
+.lb-status[data-tone="error"]{color:var(--red)}
+.lb-status[data-tone="loading"]{color:var(--text2)}
+.lb-capture{
+  background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.18)),var(--dark2);
+  border:1px solid var(--border);border-radius:24px;padding:1rem;
+}
+.lb-capture-shell{
+  position:relative;overflow:hidden;border-radius:24px;padding:1.25rem;
+  background:
+    radial-gradient(circle at top left, rgba(201,165,75,.22), transparent 36%),
+    linear-gradient(160deg,#103C2E 0%,#0B3025 34%,#09251D 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 16px 40px rgba(9,37,29,.2);
+}
+.lb-capture-shell::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:22px 22px;opacity:.25;pointer-events:none;
+}
+.lb-capture-head{
+  position:relative;z-index:1;display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;
+}
+.lb-capture-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;
+  line-height:.95;color:#F8F2E8;text-wrap:balance;
+}
+.lb-capture-subtitle{
+  margin-top:.35rem;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:rgba(248,242,232,.78)
+}
+.lb-brand{
+  display:grid;justify-items:end;gap:4px;text-align:right;font-family:'Barlow Condensed',sans-serif;color:#F8F2E8;
+}
+.lb-brand strong{font-size:17px;letter-spacing:2px;text-transform:uppercase}
+.lb-brand span{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(248,242,232,.64)}
+.lb-pitch{
+  position:relative;z-index:1;margin-top:1rem;min-height:760px;border-radius:26px;padding:1rem;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),
+    linear-gradient(180deg,#1D7C47 0%,#17663B 100%);
+  border:2px solid rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.lb-pitch::before,
+.lb-pitch::after{
+  content:'';position:absolute;left:50%;transform:translateX(-50%);pointer-events:none
+}
+.lb-pitch::before{top:1rem;bottom:1rem;width:2px;background:rgba(255,255,255,.6)}
+.lb-pitch::after{
+  top:50%;width:22%;aspect-ratio:1;border:2px solid rgba(255,255,255,.58);border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+.lb-pitch-lines{
+  position:absolute;inset:1rem;border:2px solid rgba(255,255,255,.62);border-radius:20px;pointer-events:none;
+}
+.lb-pitch-box,.lb-pitch-goal{position:absolute;left:50%;transform:translateX(-50%);border:2px solid rgba(255,255,255,.58);pointer-events:none}
+.lb-pitch-box.top{top:1rem;width:34%;height:15%;border-top:none;border-radius:0 0 18px 18px}
+.lb-pitch-box.bottom{bottom:1rem;width:34%;height:15%;border-bottom:none;border-radius:18px 18px 0 0}
+.lb-pitch-goal.top{top:.25rem;width:16%;height:5%;border-top:none;border-radius:0 0 12px 12px}
+.lb-pitch-goal.bottom{bottom:.25rem;width:16%;height:5%;border-bottom:none;border-radius:12px 12px 0 0}
+.lb-slot{
+  position:absolute;transform:translate(-50%,-50%);width:120px;background:none;border:none;cursor:pointer;color:#F8F2E8;
+  display:grid;justify-items:center;gap:.35rem;text-align:center;
+}
+.lb-slot-core{
+  width:78px;height:78px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:hidden;
+  background:rgba(5,22,17,.38);border:2px solid rgba(255,255,255,.24);box-shadow:0 14px 28px rgba(0,0,0,.18);
+  transition:transform .18s,border-color .18s,box-shadow .18s,background .18s;
+}
+.lb-slot:hover .lb-slot-core{transform:translateY(-2px);border-color:rgba(230,201,119,.78);box-shadow:0 18px 30px rgba(0,0,0,.24)}
+.lb-slot.empty .lb-slot-core{background:rgba(4,17,13,.2);border-style:dashed}
+.lb-slot-photo{width:100%;height:100%;object-fit:cover}
+.lb-slot-fallback{
+  width:100%;height:100%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;
+  font-size:28px;font-weight:900;letter-spacing:1px;color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.9),rgba(230,201,119,.75));text-transform:uppercase;
+}
+.lb-slot-pos{
+  position:absolute;right:-3px;bottom:-3px;min-width:28px;height:28px;padding:0 8px;border-radius:999px;
+  background:#0E1512;border:1px solid rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F8F2E8;
+}
+.lb-slot-name{
+  width:100%;font-size:13px;font-weight:700;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 10px rgba(0,0,0,.28);
+}
+.lb-slot-club{
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 8px;border-radius:999px;
+  background:rgba(4,17,13,.34);border:1px solid rgba(255,255,255,.12);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
+}
+.lb-slot-club img{width:16px;height:16px;object-fit:contain;flex-shrink:0}
+.lb-slot-club span{display:block;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-slot-placeholder{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+.lb-slot-hint{font-size:11px;color:rgba(248,242,232,.72)}
+.lb-footer-note{
+  position:relative;z-index:1;margin-top:1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  font-size:12px;color:rgba(248,242,232,.76)
+}
+.lb-footer-note strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#F8F2E8;
+}
+.lb-modal{
+  position:fixed;inset:0;z-index:320;background:rgba(15,14,11,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:none;align-items:flex-end;justify-content:center;padding:1rem;
+}
+.lb-modal.open{display:flex}
+.lb-modal-panel{
+  width:min(860px,100%);max-height:min(88vh,900px);overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr);
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,253,248,.96));border:1px solid rgba(108,86,44,.12);
+  border-radius:24px;box-shadow:0 28px 70px rgba(36,28,18,.22);
+}
+.lb-modal-head{
+  display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;padding:1rem 1rem .8rem;border-bottom:1px solid var(--border)
+}
+.lb-modal-title{
+  margin-top:.25rem;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--text)
+}
+.lb-modal-copy{font-size:13px;line-height:1.5;color:var(--text2)}
+.lb-close{
+  width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.85);cursor:pointer;
+  font-size:24px;line-height:1;color:var(--text2)
+}
+.lb-modal-tools{display:grid;gap:.75rem;padding:1rem;border-bottom:1px solid var(--border)}
+.lb-search{
+  min-height:52px;padding:0 1rem;border-radius:16px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none;font-size:15px
+}
+.lb-search:focus{border-color:rgba(201,165,75,.45);box-shadow:0 0 0 3px rgba(201,165,75,.12)}
+.lb-guidance{display:flex;gap:.5rem;flex-wrap:wrap}
+.lb-guidance-pill{
+  display:inline-flex;align-items:center;min-height:28px;padding:0 .75rem;border-radius:999px;background:rgba(201,165,75,.12);
+  border:1px solid rgba(201,165,75,.18);font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2)
+}
+.lb-results{overflow:auto;padding:.9rem 1rem 1rem;display:grid;gap:.75rem}
+.lb-result{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.85rem;align-items:center;padding:.8rem .85rem;
+  border-radius:18px;border:1px solid var(--border);background:rgba(255,255,255,.72);cursor:pointer;text-align:left;
+  transition:transform .18s,border-color .18s,box-shadow .18s,background .18s;
+}
+.lb-result:hover{transform:translateY(-1px);border-color:var(--border-hi);box-shadow:0 12px 24px rgba(66,48,18,.08);background:#fff}
+.lb-result-media{
+  width:56px;height:56px;border-radius:50%;overflow:hidden;background:var(--dark3);display:grid;place-items:center;flex-shrink:0
+}
+.lb-result-media img{width:100%;height:100%;object-fit:cover}
+.lb-result-media span{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;letter-spacing:1px;color:var(--text)
+}
+.lb-result-body{min-width:0;display:grid;gap:4px}
+.lb-result-name{
+  font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.lb-result-meta{
+  display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:var(--text2)
+}
+.lb-result-meta img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.lb-result-meta span{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-result-tags{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.lb-tag{
+  display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 .65rem;border-radius:999px;
+  border:1px solid rgba(108,86,44,.12);background:rgba(255,255,255,.86);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)
+}
+.lb-tag.fit{color:var(--green);border-color:rgba(47,143,103,.2);background:rgba(47,143,103,.08)}
+.lb-tag.soft{color:#87611D;border-color:rgba(201,165,75,.24);background:rgba(201,165,75,.1)}
+.lb-empty{padding:1.25rem .25rem;color:var(--muted);font-size:13px;line-height:1.6}
+.lb-empty strong{color:var(--text)}
+.lb-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.lb-summary-card{
+  background:rgba(255,255,255,.52);border:1px solid var(--border);border-radius:16px;padding:.9rem 1rem
+}
+.lb-summary-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)
+}
+.lb-summary-value{
+  margin-top:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;color:var(--text)
+}
+.lb-summary-copy{margin-top:.28rem;font-size:12px;line-height:1.5;color:var(--text2)}
+@media (max-width: 1080px){
+  .lb-grid{grid-template-columns:1fr}
+  .lb-pitch{min-height:700px}
+}
+@media (max-width: 768px){
+  .lb-card,.lb-capture{padding:.95rem}
+  .lb-headline{font-size:30px}
+  .lb-copy{font-size:13px}
+  .lb-controls-grid,.lb-summary-grid{grid-template-columns:1fr}
+  .lb-toolbar{display:grid;grid-template-columns:1fr 1fr}
+  .lb-button.primary,.lb-button.ghost,.lb-button.warn{width:100%}
+  .lb-capture-shell{padding:.95rem}
+  .lb-capture-title{font-size:30px}
+  .lb-capture-subtitle{font-size:12px}
+  .lb-brand{justify-items:start;text-align:left}
+  .lb-pitch{min-height:620px;padding:.7rem}
+  .lb-pitch-lines{inset:.7rem}
+  .lb-pitch::before{top:.7rem;bottom:.7rem}
+  .lb-slot{width:92px}
+  .lb-slot-core{width:60px;height:60px}
+  .lb-slot-pos{min-width:24px;height:24px;font-size:10px}
+  .lb-slot-name{font-size:11px}
+  .lb-slot-club{padding:2px 6px}
+  .lb-slot-club img{width:14px;height:14px}
+  .lb-slot-club span{max-width:58px}
+  .lb-slot-placeholder{font-size:12px}
+  .lb-slot-hint{font-size:10px}
+  .lb-modal{padding:.5rem}
+  .lb-modal-panel{max-height:min(92vh,900px);border-radius:20px}
+  .lb-result{grid-template-columns:auto minmax(0,1fr);align-items:flex-start}
+  .lb-result-tags{grid-column:2;justify-content:flex-start}
+}
+
 /* MOBILE */
 @media(max-width:768px){
   header{padding:.5rem 1rem;min-height:52px}
@@ -1673,6 +1941,7 @@ main{max-width:1360px}
     <button class="np" onclick="go('/tabell')">Tabell</button>
     <button class="np" onclick="go('/resultat')">Resultat</button>
     <button class="np" onclick="go('/overgangar')">Övergångar</button>
+    <button class="np" onclick="go('/lineup-builder')">Startelva</button>
     <button class="np" onclick="go('/statistik')">Statistik</button>
   </nav>
   <button class="header-cta" onclick="go('/statistik')">Utforska statistik</button>
@@ -1710,6 +1979,7 @@ main{max-width:1360px}
   <button class="mnav-btn" onclick="go('/tabell')"><span class="icon">🏆</span>Tabell</button>
   <button class="mnav-btn" onclick="go('/resultat')"><span class="icon">📅</span>Resultat</button>
   <button class="mnav-btn" onclick="go('/overgangar')"><span class="icon">🔄</span>Överg.</button>
+  <button class="mnav-btn" onclick="go('/lineup-builder')"><span class="icon">XI</span>Elva</button>
   <button class="mnav-btn" onclick="go('/statistik')"><span class="icon">⚽</span>Stats</button>
 </nav>
 
@@ -2362,6 +2632,723 @@ async function afAll(ep, p={}) {
   return af(ep, p);
 }
 
+const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v1';
+const LINEUP_BUILDER_FORMATIONS = {
+  '4-4-2': [
+    { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
+    { id:'rb', label:'HB', role:'rb', group:'def', x:84, y:76 },
+    { id:'rcb', label:'MB', role:'cb', group:'def', x:61, y:78 },
+    { id:'lcb', label:'MB', role:'cb', group:'def', x:39, y:78 },
+    { id:'lb', label:'VB', role:'lb', group:'def', x:16, y:76 },
+    { id:'rm', label:'HM', role:'rm', group:'mid', x:82, y:56 },
+    { id:'rcm', label:'CM', role:'cm', group:'mid', x:60, y:58 },
+    { id:'lcm', label:'CM', role:'cm', group:'mid', x:40, y:58 },
+    { id:'lm', label:'VM', role:'lm', group:'mid', x:18, y:56 },
+    { id:'rst', label:'ANF', role:'st', group:'att', x:58, y:27 },
+    { id:'lst', label:'ANF', role:'st', group:'att', x:42, y:27 }
+  ],
+  '4-3-3': [
+    { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
+    { id:'rb', label:'HB', role:'rb', group:'def', x:84, y:76 },
+    { id:'rcb', label:'MB', role:'cb', group:'def', x:61, y:78 },
+    { id:'lcb', label:'MB', role:'cb', group:'def', x:39, y:78 },
+    { id:'lb', label:'VB', role:'lb', group:'def', x:16, y:76 },
+    { id:'rcm', label:'CM', role:'cm', group:'mid', x:66, y:54 },
+    { id:'cm', label:'CM', role:'cm', group:'mid', x:50, y:49 },
+    { id:'lcm', label:'CM', role:'cm', group:'mid', x:34, y:54 },
+    { id:'rw', label:'YF', role:'rw', group:'att', x:80, y:26 },
+    { id:'st', label:'ANF', role:'st', group:'att', x:50, y:19 },
+    { id:'lw', label:'YF', role:'lw', group:'att', x:20, y:26 }
+  ],
+  '3-5-2': [
+    { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
+    { id:'rcb', label:'MB', role:'cb', group:'def', x:68, y:77 },
+    { id:'cb', label:'MB', role:'cb', group:'def', x:50, y:80 },
+    { id:'lcb', label:'MB', role:'cb', group:'def', x:32, y:77 },
+    { id:'rwb', label:'WB', role:'rwb', group:'mid', x:86, y:56 },
+    { id:'rcm', label:'CM', role:'cm', group:'mid', x:62, y:56 },
+    { id:'cm', label:'CM', role:'cm', group:'mid', x:50, y:50 },
+    { id:'lcm', label:'CM', role:'cm', group:'mid', x:38, y:56 },
+    { id:'lwb', label:'WB', role:'lwb', group:'mid', x:14, y:56 },
+    { id:'rst', label:'ANF', role:'st', group:'att', x:58, y:26 },
+    { id:'lst', label:'ANF', role:'st', group:'att', x:42, y:26 }
+  ],
+  '4-2-3-1': [
+    { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
+    { id:'rb', label:'HB', role:'rb', group:'def', x:84, y:76 },
+    { id:'rcb', label:'MB', role:'cb', group:'def', x:61, y:78 },
+    { id:'lcb', label:'MB', role:'cb', group:'def', x:39, y:78 },
+    { id:'lb', label:'VB', role:'lb', group:'def', x:16, y:76 },
+    { id:'rdm', label:'DM', role:'dm', group:'mid', x:60, y:60 },
+    { id:'ldm', label:'DM', role:'dm', group:'mid', x:40, y:60 },
+    { id:'ram', label:'HM', role:'ram', group:'mid', x:79, y:40 },
+    { id:'cam', label:'10', role:'cam', group:'mid', x:50, y:34 },
+    { id:'lam', label:'VM', role:'lam', group:'mid', x:21, y:40 },
+    { id:'st', label:'ANF', role:'st', group:'att', x:50, y:18 }
+  ],
+  '5-3-2': [
+    { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
+    { id:'rwb', label:'WB', role:'rwb', group:'def', x:86, y:68 },
+    { id:'rcb', label:'MB', role:'cb', group:'def', x:68, y:77 },
+    { id:'cb', label:'MB', role:'cb', group:'def', x:50, y:80 },
+    { id:'lcb', label:'MB', role:'cb', group:'def', x:32, y:77 },
+    { id:'lwb', label:'WB', role:'lwb', group:'def', x:14, y:68 },
+    { id:'rcm', label:'CM', role:'cm', group:'mid', x:63, y:51 },
+    { id:'cm', label:'CM', role:'cm', group:'mid', x:50, y:44 },
+    { id:'lcm', label:'CM', role:'cm', group:'mid', x:37, y:51 },
+    { id:'rst', label:'ANF', role:'st', group:'att', x:58, y:24 },
+    { id:'lst', label:'ANF', role:'st', group:'att', x:42, y:24 }
+  ]
+};
+let lineupBuilderRoot = null;
+let lineupBuilderCatalog = null;
+let lineupBuilderCatalogPromise = null;
+let lineupBuilderSearchTimer = null;
+let lineupBuilderExportPromise = null;
+let lineupBuilderStatusTimer = null;
+const lineupBuilderState = {
+  formation: '4-3-3',
+  title: 'Omgångens elva',
+  subtitle: `Allsvenskan ${SEASON}`,
+  slots: {},
+  modalOpen: false,
+  activeSlotId: '',
+  searchQuery: '',
+  searchResults: [],
+  searchLoading: false,
+  searchError: '',
+  catalogSeason: null,
+  exportBusy: false,
+  status: '',
+  statusTone: 'idle'
+};
+
+function createLineupBuilderPersistedState(){
+  return {
+    formation: lineupBuilderState.formation,
+    title: lineupBuilderState.title,
+    subtitle: lineupBuilderState.subtitle,
+    slots: lineupBuilderState.slots
+  };
+}
+
+function loadLineupBuilderState(){
+  try {
+    const raw = localStorage.getItem(LINEUP_BUILDER_STORAGE_KEY);
+    if(!raw) return;
+    const parsed = JSON.parse(raw);
+    if(parsed && LINEUP_BUILDER_FORMATIONS[parsed.formation]) lineupBuilderState.formation = parsed.formation;
+    if(parsed && typeof parsed.title === 'string') lineupBuilderState.title = parsed.title;
+    if(parsed && typeof parsed.subtitle === 'string') lineupBuilderState.subtitle = parsed.subtitle;
+    if(parsed && parsed.slots && typeof parsed.slots === 'object') lineupBuilderState.slots = parsed.slots;
+  } catch(e) {
+    console.warn('[lineup-builder] restore failed', e.message);
+  }
+}
+
+function saveLineupBuilderState(){
+  try {
+    localStorage.setItem(LINEUP_BUILDER_STORAGE_KEY, JSON.stringify(createLineupBuilderPersistedState()));
+  } catch(e) {
+    console.warn('[lineup-builder] persist failed', e.message);
+  }
+}
+
+loadLineupBuilderState();
+
+function isLineupBuilderRoute(path=''){
+  return path === '/lineup-builder' || path === '/startelva';
+}
+
+function lineupBuilderSlots(){
+  return LINEUP_BUILDER_FORMATIONS[lineupBuilderState.formation] || LINEUP_BUILDER_FORMATIONS['4-3-3'];
+}
+
+function lineupBuilderSlotById(slotId=''){
+  return lineupBuilderSlots().find(slot => slot.id === slotId) || null;
+}
+
+function lineupBuilderSelectedCount(){
+  return lineupBuilderSlots().filter(slot => !!lineupBuilderState.slots?.[slot.id]?.id).length;
+}
+
+function lineupBuilderDefaultSubtitle(){
+  return `Allsvenskan ${lineupBuilderState.catalogSeason || SEASON}`;
+}
+
+function lineupBuilderSetStatus(message = '', tone = 'idle'){
+  lineupBuilderState.status = message;
+  lineupBuilderState.statusTone = tone;
+  const el = document.getElementById('lineupBuilderStatus');
+  if(el){
+    el.textContent = message;
+    el.dataset.tone = tone;
+  }
+  if(lineupBuilderStatusTimer) clearTimeout(lineupBuilderStatusTimer);
+  if(message && tone !== 'loading') {
+    lineupBuilderStatusTimer = setTimeout(() => {
+      lineupBuilderState.status = '';
+      lineupBuilderState.statusTone = 'idle';
+      const current = document.getElementById('lineupBuilderStatus');
+      if(current){
+        current.textContent = '';
+        current.dataset.tone = 'idle';
+      }
+    }, 3800);
+  }
+}
+
+function lineupBuilderSyncInputs(){
+  const titleInput = document.getElementById('lineupBuilderTitleInput');
+  const subtitleInput = document.getElementById('lineupBuilderSubtitleInput');
+  const formationSelect = document.getElementById('lineupBuilderFormation');
+  if(titleInput) titleInput.value = lineupBuilderState.title;
+  if(subtitleInput) subtitleInput.value = lineupBuilderState.subtitle;
+  if(formationSelect) formationSelect.value = lineupBuilderState.formation;
+}
+
+function lineupBuilderGetInitials(name=''){
+  return String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0))
+    .join('')
+    .toUpperCase() || 'AA';
+}
+
+function lineupBuilderNormalizePosition(value=''){
+  return normalizeText(value).replace(/[^a-z\s/-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function lineupBuilderPlayerGroup(position=''){
+  const normalized = lineupBuilderNormalizePosition(position);
+  if(!normalized) return 'any';
+  if(/goalkeeper|keeper|\bgk\b|malvakt/.test(normalized)) return 'gk';
+  if(/defender|centre back|center back|fullback|back|wing back|\bcb\b|\brb\b|\blb\b|\bwb\b/.test(normalized)) return 'def';
+  if(/midfielder|midfield|winger|\bdm\b|\bcm\b|\bam\b|\brm\b|\blm\b|\b10\b/.test(normalized)) return 'mid';
+  if(/forward|striker|attacker|\bst\b|\bcf\b|\brw\b|\blw\b/.test(normalized)) return 'att';
+  return 'any';
+}
+
+function lineupBuilderFitForSlot(slot, player){
+  const group = lineupBuilderPlayerGroup(player?.position || '');
+  if(slot?.group === 'gk') return group === 'gk' ? 'ideal' : 'off';
+  if(group === slot?.group) return 'ideal';
+  if(group === 'any') return 'soft';
+  if((slot?.group === 'mid' && group === 'att') || (slot?.group === 'att' && group === 'mid')) return 'soft';
+  if((slot?.group === 'def' && group === 'mid') || (slot?.group === 'mid' && group === 'def')) return 'soft';
+  return 'off';
+}
+
+function lineupBuilderSearchBlob(player){
+  return normalizeText([
+    player.name,
+    player.teamName,
+    player.position,
+    player.firstname,
+    player.lastname
+  ].filter(Boolean).join(' '));
+}
+
+function lineupBuilderNormalizePlayerRow(item = {}){
+  const player = item.player || {};
+  const statistics = Array.isArray(item.statistics) ? item.statistics : [];
+  const leagueStat = statistics.find(stat => Number(stat?.league?.id || 0) === LEAGUE) || statistics[0] || {};
+  const team = leagueStat.team || {};
+  const games = leagueStat.games || {};
+  const name = getPlayerDisplayName(player, item);
+  return {
+    id: player.id || 0,
+    name,
+    firstname: player.firstname || '',
+    lastname: player.lastname || '',
+    age: player.age || '',
+    photo: player.photo || '',
+    teamId: team.id || 0,
+    teamName: fixName(team.name || ''),
+    teamLogo: team.logo || '',
+    position: games.position || player.position || '',
+    searchBlob: ''
+  };
+}
+
+async function buildLineupBuilderCatalogForSeason(season){
+  const rows = await fetchAllPages('players', { league:LEAGUE, season }, {
+    dedupeKey: item => item?.player?.id || ''
+  });
+  return rows
+    .map(lineupBuilderNormalizePlayerRow)
+    .filter(player => player.id && player.name && player.name !== '—')
+    .map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
+}
+
+async function ensureLineupBuilderCatalog(){
+  if(lineupBuilderCatalog?.length) return lineupBuilderCatalog;
+  if(lineupBuilderCatalogPromise) return lineupBuilderCatalogPromise;
+  lineupBuilderCatalogPromise = (async () => {
+    const seasons = [...new Set([SEASON, SEASON - 1, 2025, 2024].filter(year => Number(year) > 0))];
+    for(const season of seasons){
+      try {
+        const catalog = await buildLineupBuilderCatalogForSeason(season);
+        if(catalog.length){
+          lineupBuilderCatalog = catalog;
+          lineupBuilderState.catalogSeason = season;
+          if(!lineupBuilderState.subtitle || normalizeText(lineupBuilderState.subtitle).startsWith('allsvenskan ')) {
+            lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
+          }
+          saveLineupBuilderState();
+          return catalog;
+        }
+      } catch(e) {
+        console.warn('[lineup-builder] catalog fetch failed', { season, error: e.message });
+      }
+    }
+    throw new Error('Kunde inte läsa in spelarkatalogen för Allsvenskan.');
+  })();
+  return lineupBuilderCatalogPromise;
+}
+
+function lineupBuilderRankPlayer(player, slot, normalizedQuery){
+  const fit = lineupBuilderFitForSlot(slot, player);
+  let score = 0;
+  if(fit === 'ideal') score += 40;
+  if(fit === 'soft') score += 18;
+  if(normalizedQuery){
+    if(player.searchBlob.startsWith(normalizedQuery)) score += 40;
+    if(player.searchBlob.includes(normalizedQuery)) score += 24;
+    if(normalizeText(player.name).startsWith(normalizedQuery)) score += 30;
+    if(normalizeText(player.teamName).includes(normalizedQuery)) score += 8;
+  } else if(fit === 'off') {
+    score -= 12;
+  }
+  return score;
+}
+
+function lineupBuilderSearchPlayers(query=''){
+  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
+  const normalizedQuery = normalizeText(query).replace(/\s+/g, ' ').trim();
+  if(!lineupBuilderCatalog?.length || !slot) return [];
+  let rows = lineupBuilderCatalog;
+  if(normalizedQuery) {
+    rows = rows.filter(player => player.searchBlob.includes(normalizedQuery));
+  }
+  return rows
+    .map(player => ({
+      player,
+      fit: lineupBuilderFitForSlot(slot, player),
+      score: lineupBuilderRankPlayer(player, slot, normalizedQuery)
+    }))
+    .sort((a, b) => b.score - a.score || a.player.name.localeCompare(b.player.name, 'sv'))
+    .slice(0, normalizedQuery ? 24 : 18);
+}
+
+function renderLineupBuilderSummary(){
+  const host = document.getElementById('lineupBuilderSummary');
+  if(!host) return;
+  const count = lineupBuilderSelectedCount();
+  const remaining = Math.max(0, 11 - count);
+  host.innerHTML = `
+    <div class="lb-summary-card">
+      <div class="lb-summary-label">Valda spelare</div>
+      <div class="lb-summary-value">${count}/11</div>
+      <div class="lb-summary-copy">${remaining ? `${remaining} positioner kvar att fylla.` : 'Startelvan är komplett.'}</div>
+    </div>
+    <div class="lb-summary-card">
+      <div class="lb-summary-label">Formation</div>
+      <div class="lb-summary-value">${esc(lineupBuilderState.formation)}</div>
+      <div class="lb-summary-copy">Byt struktur när som helst utan att lämna sidan.</div>
+    </div>
+    <div class="lb-summary-card">
+      <div class="lb-summary-label">Redo för export</div>
+      <div class="lb-summary-value">${count >= 9 ? 'Ja' : 'Snart'}</div>
+      <div class="lb-summary-copy">PNG-exporten inkluderar titel, plan, spelare och AllsvenskanAI-branding.</div>
+    </div>
+  `;
+}
+
+function renderLineupBuilderPitch(){
+  const pitch = document.getElementById('lineupBuilderPitch');
+  const title = document.getElementById('lineupBuilderCaptureTitle');
+  const subtitle = document.getElementById('lineupBuilderCaptureSubtitle');
+  const footer = document.getElementById('lineupBuilderFooterMeta');
+  if(title) title.textContent = lineupBuilderState.title || 'Omgångens elva';
+  if(subtitle) subtitle.textContent = lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle();
+  if(footer) footer.textContent = `${lineupBuilderState.formation} • ${lineupBuilderSelectedCount()} av 11 valda`;
+  if(!pitch) return;
+
+  pitch.innerHTML = `
+    <div class="lb-pitch-lines"></div>
+    <div class="lb-pitch-box top"></div>
+    <div class="lb-pitch-box bottom"></div>
+    <div class="lb-pitch-goal top"></div>
+    <div class="lb-pitch-goal bottom"></div>
+    ${lineupBuilderSlots().map(slot => {
+      const player = lineupBuilderState.slots?.[slot.id] || null;
+      const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
+      if(!player) {
+        return `
+          <button class="lb-slot empty" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+            <span class="lb-slot-core">
+              <span class="lb-slot-fallback">${esc(slot.label)}</span>
+              <span class="lb-slot-pos">${esc(slot.label)}</span>
+            </span>
+            <span class="lb-slot-placeholder">Lägg till</span>
+            <span class="lb-slot-hint">${esc(slot.role.toUpperCase())}</span>
+          </button>
+        `;
+      }
+      return `
+        <button class="lb-slot" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+          <span class="lb-slot-core">
+            ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+            <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
+            <span class="lb-slot-pos">${esc(slot.label)}</span>
+          </span>
+          <span class="lb-slot-name">${esc(player.name)}</span>
+          <span class="lb-slot-club">
+            ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+            <span>${esc(player.teamName || 'Klubblös')}</span>
+          </span>
+        </button>
+      `;
+    }).join('')}
+  `;
+}
+
+function renderLineupBuilderModal(){
+  const modal = document.getElementById('lineupBuilderModal');
+  if(!modal) return;
+  if(!lineupBuilderState.modalOpen) {
+    modal.classList.remove('open');
+    modal.innerHTML = '';
+    return;
+  }
+  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
+  const currentPlayer = slot ? lineupBuilderState.slots?.[slot.id] : null;
+  const results = lineupBuilderState.searchResults || [];
+  modal.classList.add('open');
+  modal.innerHTML = `
+    <div class="lb-modal-panel" onclick="event.stopPropagation()">
+      <div class="lb-modal-head">
+        <div>
+          <div class="lb-kicker">Lineup Builder</div>
+          <div class="lb-modal-title">${esc(slot ? `Välj spelare för ${slot.label}` : 'Välj spelare')}</div>
+          <div class="lb-modal-copy">Sök över hela Allsvenskan. Positionerna guidar bara mjukt, så du kan fortfarande bygga din egen tolkning av elvan.</div>
+        </div>
+        <button class="lb-close" type="button" onclick="lineupBuilderCloseModal()" aria-label="Stäng">×</button>
+      </div>
+      <div class="lb-modal-tools">
+        <input id="lineupBuilderSearchInput" class="lb-search" type="search" value="${esc(lineupBuilderState.searchQuery)}" placeholder="Sök spelare, klubb eller position" autocomplete="off" oninput="lineupBuilderHandleSearchInput(this.value)">
+        <div class="lb-guidance">
+          <span class="lb-guidance-pill">Formation ${esc(lineupBuilderState.formation)}</span>
+          <span class="lb-guidance-pill">Slot ${esc(slot?.label || '')}</span>
+          ${currentPlayer ? `<span class="lb-guidance-pill">Nuvarande: ${esc(currentPlayer.name)}</span>` : ''}
+          ${slot?.group === 'gk' ? '<span class="lb-guidance-pill">Målvakter prioriteras högst</span>' : '<span class="lb-guidance-pill">Liknande roller rankas högre</span>'}
+        </div>
+        <div class="lb-toolbar">
+          ${currentPlayer ? `<button class="lb-button warn" type="button" onclick="lineupBuilderRemovePlayer('${slot.id}')">Ta bort spelare</button>` : ''}
+          <button class="lb-button ghost" type="button" onclick="lineupBuilderCloseModal()">Klar</button>
+        </div>
+      </div>
+      <div class="lb-results">
+        ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelartrupp...</strong><br>Vi laddar in Allsvenskans spelare en gång och återanvänder sedan datan lokalt för snabb sökning.</div>` : ''}
+        ${!lineupBuilderState.searchLoading && lineupBuilderState.searchError ? `<div class="lb-empty"><strong>Kunde inte läsa in spelare.</strong><br>${esc(lineupBuilderState.searchError)}</div>` : ''}
+        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>Inga träffar ännu.</strong><br>Testa ett spelarnamn, en klubb eller lämna sökfältet tomt för att få förslag.</div>` : ''}
+        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError ? results.map(entry => `
+          <button class="lb-result" type="button" onclick="lineupBuilderAssignPlayer('${slot?.id || ''}', ${entry.player.id})">
+            <span class="lb-result-media">
+              ${entry.player.photo ? `<img src="${entry.player.photo}" alt="${esc(entry.player.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+              <span style="${entry.player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(entry.player.name))}</span>
+            </span>
+            <span class="lb-result-body">
+              <span class="lb-result-name">${esc(entry.player.name)}</span>
+              <span class="lb-result-meta">
+                ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                <span>${esc(entry.player.teamName || 'Allsvenskan')}</span>
+              </span>
+            </span>
+            <span class="lb-result-tags">
+              ${entry.player.position ? `<span class="lb-tag">${esc(entry.player.position)}</span>` : ''}
+              <span class="lb-tag ${entry.fit === 'ideal' ? 'fit' : entry.fit === 'soft' ? 'soft' : ''}">${entry.fit === 'ideal' ? 'Bra match' : entry.fit === 'soft' ? 'Flexibel' : 'Fri roll'}</span>
+            </span>
+          </button>
+        `).join('') : ''}
+      </div>
+    </div>
+  `;
+  const input = document.getElementById('lineupBuilderSearchInput');
+  if(input) setTimeout(() => input.focus(), 20);
+}
+
+function renderLineupBuilderPage(root){
+  lineupBuilderRoot = root;
+  document.title = 'AllsvenskanAI — Lineup Builder';
+  root.innerHTML = `
+    <section class="lb-shell">
+      <div class="pg-header">
+        <div class="pg-title">Lineup <em>Builder</em></div>
+        <div class="pg-sub">Bygg din startelva, mixa klubbar och exportera en färdig social-bild.</div>
+      </div>
+
+      <div class="lb-card">
+        <div class="lb-hero">
+          <div>
+            <div class="lb-kicker">Ny funktion</div>
+            <div class="lb-headline">Skapa Allsvenskans snyggaste elvor</div>
+            <div class="lb-copy">Sätt ihop veckans elva, månadens elva eller din personliga favorit-XI med spelare från hela ligan. Allt sparas lokalt i webbläsaren så du kan fortsätta där du slutade.</div>
+          </div>
+          <div class="lb-pills">
+            <span class="lb-pill">11 startplatser</span>
+            <span class="lb-pill">5 formationer</span>
+            <span class="lb-pill">PNG-export</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lb-grid">
+        <aside class="lb-card lb-controls">
+          <div class="lb-controls-grid">
+            <label class="lb-field">
+              <span class="lb-label">Formation</span>
+              <select id="lineupBuilderFormation" class="lb-select" onchange="lineupBuilderChangeFormation(this.value)">
+                ${Object.keys(LINEUP_BUILDER_FORMATIONS).map(key => `<option value="${key}" ${key === lineupBuilderState.formation ? 'selected' : ''}>${key}</option>`).join('')}
+              </select>
+            </label>
+            <label class="lb-field">
+              <span class="lb-label">Smeknamn</span>
+              <input id="lineupBuilderSubtitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.subtitle)}" placeholder="Allsvenskan 2026" oninput="lineupBuilderUpdateField('subtitle', this.value)">
+            </label>
+            <label class="lb-field full">
+              <span class="lb-label">Titel</span>
+              <input id="lineupBuilderTitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.title)}" placeholder="Omgångens elva" oninput="lineupBuilderUpdateField('title', this.value)">
+            </label>
+          </div>
+
+          <div class="lb-toolbar">
+            <button class="lb-button primary" id="lineupBuilderDownloadBtn" type="button" onclick="lineupBuilderDownloadImage()">Ladda ner PNG</button>
+            <button class="lb-button ghost" type="button" onclick="lineupBuilderResetTitles()">Återställ rubrik</button>
+            <button class="lb-button warn" type="button" onclick="lineupBuilderClear()">Rensa elvan</button>
+          </div>
+
+          <div id="lineupBuilderSummary" class="lb-summary-grid"></div>
+          <div class="lb-side-note">Tips: klicka på en position för att välja eller byta spelare. Målvakter, mittfältare och anfallare rankas smart i sökningen, men du kan fortfarande välja vem du vill.</div>
+          <div id="lineupBuilderStatus" class="lb-status" data-tone="${esc(lineupBuilderState.statusTone || 'idle')}">${esc(lineupBuilderState.status || '')}</div>
+        </aside>
+
+        <section class="lb-capture">
+          <div id="lineupBuilderCapture" class="lb-capture-shell">
+            <div class="lb-capture-head">
+              <div>
+                <div class="lb-kicker">AllsvenskanAI.se</div>
+                <div id="lineupBuilderCaptureTitle" class="lb-capture-title"></div>
+                <div id="lineupBuilderCaptureSubtitle" class="lb-capture-subtitle"></div>
+              </div>
+              <div class="lb-brand">
+                <strong>AllsvenskanAI</strong>
+                <span>Lineup Builder</span>
+              </div>
+            </div>
+            <div id="lineupBuilderPitch" class="lb-pitch"></div>
+            <div class="lb-footer-note">
+              <div><strong>AllsvenskanAI</strong><br>Skapad med Lineup Builder</div>
+              <div id="lineupBuilderFooterMeta"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+    <div id="lineupBuilderModal" class="lb-modal" onclick="lineupBuilderCloseModal()"></div>
+  `;
+  lineupBuilderSyncInputs();
+  renderLineupBuilderSummary();
+  renderLineupBuilderPitch();
+  renderLineupBuilderModal();
+}
+
+function pageLineupBuilder(el){
+  renderLineupBuilderPage(el);
+}
+
+function lineupBuilderRefreshSearch(){
+  try {
+    lineupBuilderState.searchResults = lineupBuilderSearchPlayers(lineupBuilderState.searchQuery);
+    lineupBuilderState.searchError = '';
+  } catch(e) {
+    lineupBuilderState.searchResults = [];
+    lineupBuilderState.searchError = e.message || 'Sökningen gick inte att köra.';
+  }
+  renderLineupBuilderModal();
+}
+
+function lineupBuilderUpdateField(field, value){
+  lineupBuilderState[field] = value;
+  saveLineupBuilderState();
+  renderLineupBuilderPitch();
+}
+
+function lineupBuilderChangeFormation(value){
+  if(!LINEUP_BUILDER_FORMATIONS[value]) return;
+  const previousSlots = { ...(lineupBuilderState.slots || {}) };
+  lineupBuilderState.formation = value;
+  lineupBuilderState.slots = lineupBuilderSlots().reduce((acc, slot) => {
+    if(previousSlots[slot.id]) acc[slot.id] = previousSlots[slot.id];
+    return acc;
+  }, {});
+  saveLineupBuilderState();
+  renderLineupBuilderSummary();
+  renderLineupBuilderPitch();
+  if(lineupBuilderState.modalOpen) lineupBuilderRefreshSearch();
+}
+
+async function lineupBuilderOpenSlot(slotId){
+  lineupBuilderState.activeSlotId = slotId;
+  lineupBuilderState.modalOpen = true;
+  lineupBuilderState.searchQuery = '';
+  lineupBuilderState.searchLoading = true;
+  lineupBuilderState.searchError = '';
+  lineupBuilderState.searchResults = [];
+  renderLineupBuilderModal();
+  try {
+    await ensureLineupBuilderCatalog();
+    lineupBuilderState.searchLoading = false;
+    lineupBuilderRefreshSearch();
+  } catch(e) {
+    lineupBuilderState.searchLoading = false;
+    lineupBuilderState.searchError = e.message || 'Kunde inte läsa in spelarkatalogen.';
+    renderLineupBuilderModal();
+  }
+}
+
+function lineupBuilderCloseModal(){
+  lineupBuilderState.modalOpen = false;
+  lineupBuilderState.activeSlotId = '';
+  lineupBuilderState.searchQuery = '';
+  lineupBuilderState.searchResults = [];
+  lineupBuilderState.searchError = '';
+  renderLineupBuilderModal();
+}
+
+function lineupBuilderHandleSearchInput(value){
+  lineupBuilderState.searchQuery = value;
+  if(lineupBuilderSearchTimer) clearTimeout(lineupBuilderSearchTimer);
+  lineupBuilderSearchTimer = setTimeout(() => {
+    lineupBuilderRefreshSearch();
+  }, 180);
+}
+
+function lineupBuilderAssignPlayer(slotId, playerId){
+  const player = (lineupBuilderCatalog || []).find(item => Number(item.id) === Number(playerId));
+  if(!player) return;
+  lineupBuilderState.slots[slotId] = {
+    id: player.id,
+    name: player.name,
+    photo: player.photo,
+    teamName: player.teamName,
+    teamLogo: player.teamLogo,
+    position: player.position
+  };
+  saveLineupBuilderState();
+  renderLineupBuilderSummary();
+  renderLineupBuilderPitch();
+  lineupBuilderCloseModal();
+  lineupBuilderSetStatus(`${player.name} lades till i elvan.`, 'success');
+}
+
+function lineupBuilderRemovePlayer(slotId){
+  if(!lineupBuilderState.slots?.[slotId]) return;
+  delete lineupBuilderState.slots[slotId];
+  saveLineupBuilderState();
+  renderLineupBuilderSummary();
+  renderLineupBuilderPitch();
+  lineupBuilderRefreshSearch();
+  lineupBuilderSetStatus('Spelaren togs bort från elvan.', 'success');
+}
+
+function lineupBuilderClear(){
+  lineupBuilderState.slots = {};
+  saveLineupBuilderState();
+  renderLineupBuilderSummary();
+  renderLineupBuilderPitch();
+  if(lineupBuilderState.modalOpen) lineupBuilderRefreshSearch();
+  lineupBuilderSetStatus('Elvan är rensad.', 'success');
+}
+
+function lineupBuilderResetTitles(){
+  lineupBuilderState.title = 'Omgångens elva';
+  lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
+  saveLineupBuilderState();
+  lineupBuilderSyncInputs();
+  renderLineupBuilderPitch();
+  lineupBuilderSetStatus('Rubrikerna återställdes.', 'success');
+}
+
+function ensureLineupBuilderExportLib(){
+  if(window.htmlToImage) return Promise.resolve(window.htmlToImage);
+  if(lineupBuilderExportPromise) return lineupBuilderExportPromise;
+  lineupBuilderExportPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js';
+    script.async = true;
+    script.onload = () => window.htmlToImage ? resolve(window.htmlToImage) : reject(new Error('html-to-image kunde inte starta.'));
+    script.onerror = () => reject(new Error('Kunde inte ladda exportbiblioteket.'));
+    document.head.appendChild(script);
+  });
+  return lineupBuilderExportPromise;
+}
+
+function lineupBuilderSlug(value=''){
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 48) || 'lineup';
+}
+
+async function lineupBuilderDownloadImage(){
+  const button = document.getElementById('lineupBuilderDownloadBtn');
+  const target = document.getElementById('lineupBuilderCapture');
+  if(!button || !target) return;
+  lineupBuilderState.exportBusy = true;
+  button.disabled = true;
+  button.textContent = 'Exporterar...';
+  lineupBuilderSetStatus('Skapar PNG i hög upplösning...', 'loading');
+  try {
+    const htmlToImage = await ensureLineupBuilderExportLib();
+    if(document.fonts?.ready) {
+      try { await document.fonts.ready; } catch(e) {}
+    }
+    const width = Math.max(target.offsetWidth, 900);
+    const dataUrl = await htmlToImage.toPng(target, {
+      cacheBust: true,
+      pixelRatio: 3,
+      backgroundColor: '#0B3025',
+      canvasWidth: width * 3,
+      style: { margin: '0' }
+    });
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `${lineupBuilderSlug(lineupBuilderState.title || 'allsvenskanai-lineup')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    lineupBuilderSetStatus('PNG-filen är klar att delas.', 'success');
+  } catch(e) {
+    lineupBuilderSetStatus(e.message || 'Exporten misslyckades.', 'error');
+  } finally {
+    lineupBuilderState.exportBusy = false;
+    button.disabled = false;
+    button.textContent = 'Ladda ner PNG';
+  }
+}
+
+if(!window.__lineupBuilderEscapeBound){
+  document.addEventListener('keydown', event => {
+    if(event.key === 'Escape' && lineupBuilderState.modalOpen) lineupBuilderCloseModal();
+  });
+  window.__lineupBuilderEscapeBound = true;
+}
+
 // â”€â”€â”€ ROUTING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function go(path, push=true) {
   if(push) history.pushState({}, '', path);
@@ -2373,11 +3360,11 @@ function go(path, push=true) {
 function updateNav(path) {
   document.querySelectorAll('.np').forEach(b => {
     const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-    b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
+    b.classList.toggle('active', p===path || (path==='/'&&p==='/') || (isLineupBuilderRoute(path) && p === '/lineup-builder'));
   });
   document.querySelectorAll('.mnav-btn').forEach(b => {
     const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-    b.classList.toggle('active', p===path||(path==='/'&&p==='/'));
+    b.classList.toggle('active', p===path || (path==='/'&&p==='/') || (isLineupBuilderRoute(path) && p === '/lineup-builder'));
   });
 }
 window.addEventListener('popstate', () => route(location.pathname));
@@ -2398,6 +3385,7 @@ function route(path) {
   updateRouteChrome(path);
   const el = document.getElementById('mc');
   if(path==='/'||path==='')            { pageStart(el); return; }
+  if(isLineupBuilderRoute(path))       { pageLineupBuilder(el); return; }
   if(path==='/lag-lista')              { pageTeams(el); return; }
   if(path==='/tabell')                 { pageStandings(el); return; }
   if(path==='/resultat')               { pageResults(el); return; }
@@ -2421,6 +3409,7 @@ let searchTimer;
 function onSearch(v) {
   clearTimeout(searchTimer);
   const box = document.getElementById('sr');
+  if(!box) return;
   if(v.trim().length < 3){box.classList.remove('open');return;}
   searchTimer = setTimeout(()=>runSearch(v.trim()), 350);
 }
@@ -2516,6 +3505,12 @@ async function pageStart(el) {
         title: 'Statistik',
         copy: 'Jämför spelare och hitta ligans starkaste siffror.',
         path: '/statistik'
+      },
+      {
+        kicker: 'Skapa nu',
+        title: 'Startelva',
+        copy: 'Bygg din bästa XI och ladda ner en snygg bild direkt.',
+        path: '/lineup-builder'
       }
     ].map(item => `
       <div class="start-highlight" onclick="go('${item.path}')">
