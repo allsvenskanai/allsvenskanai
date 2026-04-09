@@ -5405,10 +5405,37 @@ async function pageTeam(el, teamId) {
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
-    const squadPlayers = (squadD[0]?.players || []);
+    const squadPlayersById = new Map();
+    (squadD[0]?.players || []).forEach(player => {
+      if(!player?.id) return;
+      squadPlayersById.set(player.id, {
+        ...player,
+        injured: !!player?.injured,
+      });
+    });
+    (seasonPlayers || []).forEach(item => {
+      const playerId = item?.player?.id;
+      if(!playerId) return;
+      const stats = Array.isArray(item?.statistics) ? item.statistics : [];
+      const statWithPosition = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
+      const existing = squadPlayersById.get(playerId) || {};
+      squadPlayersById.set(playerId, {
+        id: playerId,
+        name: item?.player?.name || existing.name || '',
+        firstname: item?.player?.firstname || existing.firstname || '',
+        lastname: item?.player?.lastname || existing.lastname || '',
+        age: item?.player?.age || existing.age || null,
+        number: existing.number || statWithPosition?.games?.number || null,
+        positionCode: item?.player?.pos || statWithPosition?.games?.positionCode || existing.positionCode || '',
+        position: statWithPosition?.games?.position || existing.position || item?.player?.position || '',
+        photo: item?.player?.photo || existing.photo || '',
+        injured: !!existing.injured,
+      });
+    });
+    const squadPlayers = [...squadPlayersById.values()].filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(item => {
       const stats = item?.statistics || [];
-      const primaryStats = stats[0] || {};
+      const primaryStats = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
       return [item.player?.id, {
         ...(item.player || {}),
         statistics: stats,
@@ -5656,21 +5683,37 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       resolvedTeamId: team?.id || null,
       resolvedTeamName: teamDisplayName,
     });
-    const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
-      id: item?.player?.id,
-      name: item?.player?.name || '',
-      firstname: item?.player?.firstname || '',
-      lastname: item?.player?.lastname || '',
-      age: item?.player?.age || null,
-      number: item?.statistics?.[0]?.games?.number || null,
-      positionCode: item?.player?.pos || item?.statistics?.[0]?.games?.positionCode || '',
-      position: item?.statistics?.[0]?.games?.position || '',
-      photo: item?.player?.photo || '',
-      injured: false,
-    })).filter(player => player?.id);
+    const squadPlayersById = new Map();
+    (squadD?.[0]?.players || []).forEach(player => {
+      if(!player?.id) return;
+      squadPlayersById.set(player.id, {
+        ...player,
+        injured: !!player?.injured,
+      });
+    });
+    (seasonPlayers || []).forEach(item => {
+      const playerId = item?.player?.id;
+      if(!playerId) return;
+      const stats = Array.isArray(item?.statistics) ? item.statistics : [];
+      const statWithPosition = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
+      const existing = squadPlayersById.get(playerId) || {};
+      squadPlayersById.set(playerId, {
+        id: playerId,
+        name: item?.player?.name || existing.name || '',
+        firstname: item?.player?.firstname || existing.firstname || '',
+        lastname: item?.player?.lastname || existing.lastname || '',
+        age: item?.player?.age || existing.age || null,
+        number: existing.number || statWithPosition?.games?.number || null,
+        positionCode: item?.player?.pos || statWithPosition?.games?.positionCode || existing.positionCode || '',
+        position: statWithPosition?.games?.position || existing.position || item?.player?.position || '',
+        photo: item?.player?.photo || existing.photo || '',
+        injured: !!existing.injured,
+      });
+    });
+    const squadPlayers = [...squadPlayersById.values()].filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => {
       const stats = item?.statistics || [];
-      const primaryStats = stats[0] || {};
+      const primaryStats = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
       return [item.player?.id, {
         ...(item.player || {}),
         statistics: stats,
@@ -5678,21 +5721,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
         position: primaryStats.games?.position || item?.player?.position || '',
       }];
     }));
-    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
-    squadPlayers.forEach(player => {
-      const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(detailedPosition) {
-        player.detailedPosition = detailedPosition;
-        player.position = detailedPosition;
-      }
-    });
-    Object.keys(playerInfoById).forEach(playerId => {
-      const detailedPosition = detailedPositionsByPlayerId[String(playerId)] || '';
-      if(detailedPosition && playerInfoById[playerId]) {
-        playerInfoById[playerId].detailedPosition = detailedPosition;
-        playerInfoById[playerId].position = detailedPosition;
-      }
-    });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
