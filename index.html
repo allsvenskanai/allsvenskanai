@@ -3104,6 +3104,15 @@ function lineupBuilderGetInitials(name=''){
     .toUpperCase() || 'AA';
 }
 
+function lineupBuilderExportName(name=''){
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return '';
+  if(parts.length === 1) return parts[0];
+  const firstInitial = `${parts[0].charAt(0)}.`;
+  const surname = parts.slice(1).join(' ');
+  return `${firstInitial} ${surname}`.trim();
+}
+
 function lineupBuilderNormalizePosition(value=''){
   return normalizeText(value).replace(/[^a-z\s/-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -3470,7 +3479,7 @@ function renderLineupBuilderExportStage(){
                   <span class="lb-export-slot-pos">${esc(slot.label)}</span>
                 </span>
                 <span class="lb-export-slot-meta">
-                  <span class="lb-export-slot-name">${esc(player.name)}</span>
+                  <span class="lb-export-slot-name">${esc(lineupBuilderExportName(player.name))}</span>
                   <span class="lb-export-slot-club">
                     ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
                     <span>${esc(player.teamName || 'Klubblös')}</span>
