@@ -1349,6 +1349,97 @@ main > *{animation:fadeUp .3s ease both}
 .lb-pitch-mark{fill:none;stroke:rgba(255,255,255,.7);stroke-width:2}
 .lb-pitch-mark.soft{stroke:rgba(255,255,255,.58)}
 .lb-pitch-spot{fill:rgba(255,255,255,.82)}
+.lb-export-stage{
+  position:fixed;left:-20000px;top:0;width:1080px;height:1920px;opacity:0;pointer-events:none;overflow:hidden;
+}
+.lb-export-frame{
+  width:1080px;height:1920px;padding:64px 64px 54px;overflow:hidden;position:relative;
+  background:
+    radial-gradient(circle at top left, rgba(201,165,75,.18), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(255,255,255,.05), transparent 18%),
+    linear-gradient(180deg,#0D241C 0%,#0A2018 100%);
+  display:grid;grid-template-rows:auto auto 1fr auto;gap:28px;
+}
+.lb-export-frame::before{
+  content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
+}
+.lb-export-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;position:relative;z-index:2}
+.lb-export-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#E3C777;
+}
+.lb-export-title{
+  margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-size:96px;font-weight:900;line-height:.88;letter-spacing:2px;text-transform:uppercase;color:#FAF4E8;
+  max-width:760px;
+}
+.lb-export-subtitle{
+  margin-top:14px;font-size:28px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.78)
+}
+.lb-export-brand{display:grid;justify-items:end;gap:8px;text-align:right;color:#FAF4E8}
+.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:4px;text-transform:uppercase}
+.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(250,244,232,.6)}
+.lb-export-pitch-wrap{
+  position:relative;display:grid;align-items:center;justify-items:center;
+}
+.lb-export-pitch{
+  position:relative;width:100%;max-width:860px;height:1320px;border-radius:44px;padding:26px;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 28%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8.2%, rgba(0,0,0,.02) 8.2% 16.4%),
+    linear-gradient(180deg,#248654 0%,#1B6F44 42%,#155736 100%);
+  border:3px solid rgba(255,255,255,.2);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 22px 40px rgba(255,255,255,.03);
+}
+.lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
+.lb-export-slot-guide{
+  position:absolute;transform:translate(-50%,-50%);pointer-events:none;
+  min-width:124px;padding:8px 14px;border-radius:999px;background:rgba(4,17,13,.22);border:1px solid rgba(255,255,255,.12);
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(248,242,232,.7);text-align:center;
+}
+.lb-export-slot{
+  position:absolute;transform:translate(-50%,-50%);width:184px;background:none;border:none;color:#F8F2E8;display:grid;justify-items:center;gap:8px;text-align:center;
+}
+.lb-export-slot-core{
+  width:116px;height:116px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(10,27,21,.48),rgba(5,22,17,.38));border:3px solid rgba(255,255,255,.24);box-shadow:0 18px 36px rgba(0,0,0,.24);
+}
+.lb-export-slot.empty .lb-export-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.22),rgba(4,17,13,.16));border-style:dashed}
+.lb-export-slot-photo{width:100%;height:100%;object-fit:cover}
+.lb-export-slot-fallback{
+  width:100%;height:100%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;letter-spacing:1px;
+  color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.92),rgba(230,201,119,.78));text-transform:uppercase;
+}
+.lb-export-slot-pos{
+  position:absolute;right:-6px;bottom:-6px;min-width:42px;height:42px;padding:0 12px;border-radius:999px;
+  background:linear-gradient(180deg,#121B17,#0D1411);border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 16px rgba(0,0,0,.24);
+}
+.lb-export-slot-name{
+  width:100%;max-width:170px;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;line-height:.96;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 10px rgba(0,0,0,.28);letter-spacing:.4px;text-transform:uppercase;
+}
+.lb-export-slot-club{
+  display:inline-flex;align-items:center;gap:8px;max-width:156px;padding:6px 12px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(4,17,13,.54),rgba(4,17,13,.36));border:1px solid rgba(255,255,255,.14);font-size:13px;letter-spacing:.7px;text-transform:uppercase;box-shadow:0 8px 18px rgba(0,0,0,.18);
+}
+.lb-export-slot-club img{width:20px;height:20px;object-fit:contain;flex-shrink:0}
+.lb-export-slot-club span{display:block;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.lb-export-slot-placeholder{
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;color:#F8F2E8
+}
+.lb-export-slot-hint{
+  display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(4,17,13,.22);border:1px solid rgba(255,255,255,.1);
+  font-size:14px;color:rgba(248,242,232,.76);letter-spacing:1.2px;text-transform:uppercase
+}
+.lb-export-watermark{
+  position:absolute;right:54px;bottom:44px;font-family:'Barlow Condensed',sans-serif;font-size:120px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.045);pointer-events:none;line-height:.85;
+}
+.lb-export-footer{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:18px
+}
+.lb-export-footer strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#FAF4E8
+}
 .lb-slot-guide{
   position:absolute;transform:translate(-50%,-50%);pointer-events:none;
   min-width:78px;padding:5px 10px;border-radius:999px;
@@ -3197,6 +3288,84 @@ function renderLineupBuilderPitch(){
   `;
 }
 
+function renderLineupBuilderExportStage(){
+  const host = document.getElementById('lineupBuilderExportStage');
+  if(!host) return null;
+  host.innerHTML = `
+    <div id="lineupBuilderExportCanvas" class="lb-export-frame">
+      <div class="lb-export-top">
+        <div>
+          <div class="lb-export-kicker">AllsvenskanAI</div>
+          <div class="lb-export-title">${esc(lineupBuilderState.title || 'Omgångens elva')}</div>
+          <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
+        </div>
+        <div class="lb-export-brand">
+          <strong>AllsvenskanAI</strong>
+          <span>Omgångens elva</span>
+        </div>
+      </div>
+      <div class="lb-export-pitch-wrap">
+        <div class="lb-export-pitch">
+          <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
+            <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
+            <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
+            <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
+            <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
+            <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
+            <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
+            <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
+            <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
+            <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
+            <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
+            <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
+            <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
+            <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
+            <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
+          </svg>
+          ${lineupBuilderSlots().map(slot => {
+            const player = lineupBuilderState.slots?.[slot.id] || null;
+            const guideY = Math.max(8, slot.y - 8);
+            if(!player) {
+              return `
+                <div class="lb-export-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)} • ${esc(slot.role.toUpperCase())}</div>
+                <div class="lb-export-slot empty" style="left:${slot.x}%;top:${slot.y}%;">
+                  <span class="lb-export-slot-core">
+                    <span class="lb-export-slot-fallback">${esc(slot.label)}</span>
+                    <span class="lb-export-slot-pos">${esc(slot.label)}</span>
+                  </span>
+                  <span class="lb-export-slot-placeholder">Lägg till</span>
+                  <span class="lb-export-slot-hint">${esc(slot.role.toUpperCase())}</span>
+                </div>
+              `;
+            }
+            return `
+              <div class="lb-export-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)} • ${esc(slot.role.toUpperCase())}</div>
+              <div class="lb-export-slot" style="left:${slot.x}%;top:${slot.y}%;">
+                <span class="lb-export-slot-core">
+                  ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
+                  <span class="lb-export-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
+                  <span class="lb-export-slot-pos">${esc(slot.label)}</span>
+                </span>
+                <span class="lb-export-slot-name">${esc(player.name)}</span>
+                <span class="lb-export-slot-club">
+                  ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
+                  <span>${esc(player.teamName || 'Klubblös')}</span>
+                </span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div class="lb-export-footer">
+        <div><strong>AllsvenskanAI</strong></div>
+        <div>${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)}</div>
+      </div>
+      <div class="lb-export-watermark">AllsvenskanAI</div>
+    </div>
+  `;
+  return document.getElementById('lineupBuilderExportCanvas');
+}
+
 function renderLineupBuilderModal(){
   const modal = document.getElementById('lineupBuilderModal');
   if(!modal) return;
@@ -3349,6 +3518,7 @@ function renderLineupBuilderPage(root){
       </div>
     </section>
     <div id="lineupBuilderModal" class="lb-modal" onclick="lineupBuilderCloseModal()"></div>
+    <div id="lineupBuilderExportStage" class="lb-export-stage" aria-hidden="true"></div>
   `;
   lineupBuilderSyncInputs();
   renderLineupBuilderSummary();
@@ -3601,6 +3771,33 @@ function lineupBuilderDelay(ms = 0){
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const lineupBuilderExportImageCache = {};
+
+function lineupBuilderBlobToDataUrl(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function lineupBuilderFetchImageDataUrl(src=''){
+  const original = String(src || '').trim();
+  if(!original) return '';
+  if(original.startsWith('data:')) return original;
+  if(lineupBuilderExportImageCache[original]) return lineupBuilderExportImageCache[original];
+  const proxied = `/api/image-proxy?url=${encodeURIComponent(original)}`;
+  const promise = fetch(proxied, { cache:'force-cache' })
+    .then(response => {
+      if(!response.ok) throw new Error(`image-proxy ${response.status}`);
+      return response.blob();
+    })
+    .then(blob => lineupBuilderBlobToDataUrl(blob));
+  lineupBuilderExportImageCache[original] = promise;
+  return promise;
+}
+
 function lineupBuilderWaitForImage(img){
   return new Promise(resolve => {
     if(!img) {
@@ -3634,6 +3831,24 @@ async function lineupBuilderPrepareExport(target){
   await lineupBuilderDelay(80);
 }
 
+async function lineupBuilderInlineExportImages(target){
+  const images = [...target.querySelectorAll('img')];
+  await Promise.all(images.map(async img => {
+    const src = img.getAttribute('src') || '';
+    if(!src || src.startsWith('data:')) return;
+    try {
+      const dataUrl = await lineupBuilderFetchImageDataUrl(src);
+      if(!dataUrl) throw new Error('empty image data');
+      img.setAttribute('src', dataUrl);
+      await lineupBuilderWaitForImage(img);
+    } catch(error) {
+      console.error('[lineup-builder] export image inline failed', { src, error: error.message });
+      img.remove();
+    }
+  }));
+  await lineupBuilderDelay(80);
+}
+
 async function lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight){
   return htmlToImage.toPng(target, {
     cacheBust: true,
@@ -3656,23 +3871,27 @@ async function lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHe
 
 async function lineupBuilderDownloadImage(){
   const button = document.getElementById('lineupBuilderDownloadBtn');
-  const target = document.getElementById('lineupBuilderCapture');
-  if(!button || !target) return;
+  if(!button) return;
   lineupBuilderState.exportBusy = true;
   button.disabled = true;
   button.textContent = 'Exporterar...';
-  lineupBuilderSetStatus('Skapar PNG i hög upplösning...', 'loading');
+  lineupBuilderSetStatus('Skapar TikTok-PNG i hög upplösning...', 'loading');
   try {
     const htmlToImage = await ensureLineupBuilderExportLib();
-    const exportWidth = 980;
-    const exportHeight = Math.max(1320, Math.round(exportWidth * 1.42));
+    const exportWidth = 1080;
+    const exportHeight = 1920;
+    const target = renderLineupBuilderExportStage();
+    if(!target) throw new Error('Exportyta saknas.');
     await lineupBuilderPrepareExport(target);
+    await lineupBuilderInlineExportImages(target);
     let dataUrl = '';
     try {
       dataUrl = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
     } catch(firstError) {
+      console.error('[lineup-builder] export first attempt failed', firstError);
       await lineupBuilderDelay(180);
       await lineupBuilderPrepareExport(target);
+      await lineupBuilderInlineExportImages(target);
       dataUrl = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
     }
     const link = document.createElement('a');
@@ -3683,7 +3902,8 @@ async function lineupBuilderDownloadImage(){
     link.remove();
     lineupBuilderSetStatus('PNG-filen är klar att delas.', 'success');
   } catch(e) {
-    lineupBuilderSetStatus(e.message || 'Exporten misslyckades.', 'error');
+    console.error('[lineup-builder] export failed', e);
+    lineupBuilderSetStatus('PNG skapades inte. Kontrollera konsolen för fel.', 'error');
   } finally {
     lineupBuilderState.exportBusy = false;
     button.disabled = false;
