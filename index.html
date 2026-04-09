@@ -1391,11 +1391,6 @@ main > *{animation:fadeUp .3s ease both}
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 22px 40px rgba(255,255,255,.03);
 }
 .lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
-.lb-export-slot-guide{
-  position:absolute;transform:translate(-50%,-50%);pointer-events:none;
-  min-width:88px;padding:6px 12px;border-radius:999px;background:rgba(7,28,20,.22);border:1px solid rgba(255,255,255,.1);
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:rgba(248,242,232,.58);text-align:center;backdrop-filter:blur(6px);
-}
 .lb-export-slot{
   position:absolute;transform:translate(-50%,-50%);width:198px;background:none;border:none;color:#F8F2E8;display:grid;justify-items:center;gap:10px;text-align:center;
 }
@@ -1413,9 +1408,9 @@ main > *{animation:fadeUp .3s ease both}
   font-size:56px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
 }
 .lb-export-slot-pos{
-  position:absolute;right:-6px;bottom:-6px;min-width:42px;height:42px;padding:0 12px;border-radius:999px;
+  position:absolute;left:50%;top:-14px;transform:translateX(-50%);min-width:54px;height:36px;padding:0 14px;border-radius:999px;
   background:linear-gradient(180deg,#121B17,#0D1411);border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 16px rgba(0,0,0,.24);
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 10px 18px rgba(0,0,0,.24);z-index:3;
 }
 .lb-export-slot-meta{
   min-width:150px;max-width:188px;padding:12px 12px 10px;border-radius:22px;
@@ -1450,13 +1445,6 @@ main > *{animation:fadeUp .3s ease both}
 .lb-export-footer strong{
   font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#FAF4E8
 }
-.lb-slot-guide{
-  position:absolute;transform:translate(-50%,-50%);pointer-events:none;
-  min-width:62px;padding:4px 10px;border-radius:999px;
-  background:rgba(4,17,13,.2);border:1px solid rgba(255,255,255,.1);
-  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
-  color:rgba(248,242,232,.52);text-align:center;backdrop-filter:blur(4px);
-}
 .lb-slot{
   position:absolute;transform:translate(-50%,-50%);width:142px;background:none;border:none;cursor:pointer;color:#F8F2E8;
   display:grid;justify-items:center;gap:.5rem;text-align:center;
@@ -1477,10 +1465,10 @@ main > *{animation:fadeUp .3s ease both}
   font-size:40px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
 }
 .lb-slot-pos{
-  position:absolute;right:-4px;bottom:-4px;min-width:32px;height:32px;padding:0 9px;border-radius:999px;
+  position:absolute;left:50%;top:-12px;transform:translateX(-50%);min-width:44px;height:28px;padding:0 10px;border-radius:999px;
   background:linear-gradient(180deg,#121B17,#0D1411);border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;
   font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;
-  box-shadow:0 8px 16px rgba(0,0,0,.24);
+  box-shadow:0 8px 16px rgba(0,0,0,.24);z-index:3;
 }
 .lb-slot-meta{
   min-width:106px;max-width:140px;padding:8px 8px 7px;border-radius:16px;
@@ -1620,10 +1608,9 @@ main > *{animation:fadeUp .3s ease both}
   .lb-brand{justify-items:start;text-align:left}
   .lb-pitch{min-height:660px;padding:.7rem}
   .lb-pitch svg{inset:.7rem;width:calc(100% - 1.4rem);height:calc(100% - 1.4rem)}
-  .lb-slot-guide{min-width:64px;padding:4px 8px;font-size:9px}
   .lb-slot{width:96px}
   .lb-slot-core{width:62px;height:62px}
-  .lb-slot-pos{min-width:24px;height:24px;font-size:10px}
+  .lb-slot-pos{min-width:36px;height:24px;top:-10px;font-size:10px}
   .lb-slot-name{font-size:11px}
   .lb-slot-club{padding:2px 6px}
   .lb-slot-club img{width:14px;height:14px}
@@ -3279,7 +3266,6 @@ function renderLineupBuilderPitch(){
       const guideY = Math.max(8, slot.y - 8);
       if(!player) {
         return `
-          <div class="lb-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)}</div>
           <button class="lb-slot empty" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
             <span class="lb-slot-core">
               <span class="lb-slot-fallback">+</span>
@@ -3293,7 +3279,6 @@ function renderLineupBuilderPitch(){
         `;
       }
       return `
-        <div class="lb-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)}</div>
         <button class="lb-slot" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
           <span class="lb-slot-core">
             ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
@@ -3352,7 +3337,6 @@ function renderLineupBuilderExportStage(){
             const guideY = Math.max(8, slot.y - 8);
             if(!player) {
               return `
-                <div class="lb-export-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)}</div>
                 <div class="lb-export-slot empty" style="left:${slot.x}%;top:${slot.y}%;">
                   <span class="lb-export-slot-core">
                     <span class="lb-export-slot-fallback">+</span>
@@ -3366,7 +3350,6 @@ function renderLineupBuilderExportStage(){
               `;
             }
             return `
-              <div class="lb-export-slot-guide" style="left:${slot.x}%;top:${guideY}%;">${esc(slot.label)}</div>
               <div class="lb-export-slot" style="left:${slot.x}%;top:${slot.y}%;">
                 <span class="lb-export-slot-core">
                   ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
