@@ -1356,48 +1356,60 @@ main > *{animation:fadeUp .3s ease both}
 .lb-export-frame{
   width:1080px;height:1920px;padding:64px 64px 54px;overflow:hidden;position:relative;
   background:
-    radial-gradient(circle at top left, rgba(201,165,75,.18), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(255,255,255,.05), transparent 18%),
-    linear-gradient(180deg,#0D241C 0%,#0A2018 100%);
+    radial-gradient(circle at top left, rgba(201,165,75,.16), transparent 22%),
+    radial-gradient(circle at 50% 20%, rgba(255,255,255,.04), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(255,255,255,.04), transparent 18%),
+    linear-gradient(180deg,#081712 0%,#0A2018 38%,#071611 100%);
   display:grid;grid-template-rows:auto auto 1fr auto;gap:28px;
 }
 .lb-export-frame::before{
   content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
 }
-.lb-export-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;position:relative;z-index:2}
+.lb-export-frame::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 58%, transparent 34%, rgba(0,0,0,.24) 100%);
+}
+.lb-export-top{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:24px;position:relative;z-index:2;
+  padding-bottom:10px;
+}
 .lb-export-kicker{
-  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#E3C777;
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#E3C777;
 }
 .lb-export-title{
-  margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-size:96px;font-weight:900;line-height:.88;letter-spacing:2px;text-transform:uppercase;color:#FAF4E8;
-  max-width:760px;
+  margin-top:10px;font-family:'Barlow Condensed',sans-serif;font-size:76px;font-weight:900;line-height:.94;letter-spacing:1.6px;text-transform:uppercase;color:#FAF4E8;
+  max-width:620px;text-wrap:balance;word-break:break-word;
 }
 .lb-export-subtitle{
-  margin-top:14px;font-size:28px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.78)
+  margin-top:14px;font-size:22px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:rgba(250,244,232,.72)
 }
-.lb-export-brand{display:grid;justify-items:end;gap:8px;text-align:right;color:#FAF4E8}
-.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:4px;text-transform:uppercase}
-.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(250,244,232,.6)}
+.lb-export-brand{
+  display:grid;justify-items:end;gap:6px;text-align:right;color:#FAF4E8;align-self:start;
+  padding:14px 16px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:3px;text-transform:uppercase}
+.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.58)}
 .lb-export-pitch-wrap{
   position:relative;display:grid;align-items:center;justify-items:center;
 }
 .lb-export-pitch{
   position:relative;width:100%;max-width:920px;height:1320px;border-radius:44px;padding:26px;overflow:hidden;
   background:
-    radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 28%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8.2%, rgba(0,0,0,.02) 8.2% 16.4%),
-    linear-gradient(180deg,#248654 0%,#1B6F44 42%,#155736 100%);
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.06), transparent 26%),
+    linear-gradient(180deg, rgba(255,255,255,.04), transparent 18%, rgba(0,0,0,.08) 100%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 8%, rgba(0,0,0,.02) 8% 16%),
+    linear-gradient(180deg,#248654 0%,#1C7445 42%,#134A2F 100%);
   border:3px solid rgba(255,255,255,.2);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 22px 40px rgba(255,255,255,.03);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 22px 40px rgba(255,255,255,.03), 0 34px 80px rgba(0,0,0,.18);
 }
 .lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
 .lb-export-slot{
-  position:absolute;transform:translateX(-50%);width:210px;min-height:228px;background:none;border:none;color:#F8F2E8;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;text-align:center;
+  position:absolute;transform:translateX(-50%);width:194px;min-height:202px;background:none;border:none;color:#F8F2E8;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;text-align:center;
 }
 .lb-export-slot-core{
   width:116px;height:116px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
-  background:linear-gradient(180deg,rgba(10,27,21,.4),rgba(5,22,17,.28));border:3px solid rgba(255,255,255,.24);box-shadow:0 18px 36px rgba(0,0,0,.24), 0 0 0 10px rgba(255,255,255,.04);
+  background:linear-gradient(180deg,rgba(10,27,21,.24),rgba(5,22,17,.12));border:3px solid rgba(255,255,255,.22);box-shadow:0 18px 36px rgba(0,0,0,.18), 0 0 0 8px rgba(255,255,255,.03);
 }
 .lb-export-slot.empty .lb-export-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.18),rgba(4,17,13,.1));border-style:dashed;border-color:rgba(255,255,255,.18)}
 .lb-export-slot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
@@ -1414,37 +1426,45 @@ main > *{animation:fadeUp .3s ease both}
   font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 10px 18px rgba(0,0,0,.24);z-index:3;
 }
 .lb-export-slot-meta{
-  width:100%;max-width:188px;padding:12px 12px 10px;border-radius:22px;
-  background:linear-gradient(180deg,rgba(4,17,13,.42),rgba(4,17,13,.22));border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 16px 30px rgba(0,0,0,.14);display:grid;justify-items:center;gap:8px;backdrop-filter:blur(8px);
+  width:100%;max-width:182px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:6px;
 }
 .lb-export-slot-name{
-  width:100%;max-width:184px;font-family:'Barlow Condensed',sans-serif;font-size:29px;font-weight:800;line-height:.94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 10px rgba(0,0,0,.28);letter-spacing:.4px;text-transform:uppercase;
+  width:100%;max-width:172px;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;line-height:.98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 3px 14px rgba(0,0,0,.34);letter-spacing:.3px;text-transform:uppercase;
 }
 .lb-export-slot-club{
-  display:inline-flex;align-items:center;gap:8px;max-width:162px;padding:7px 13px;border-radius:999px;
-  background:linear-gradient(180deg,rgba(4,17,13,.62),rgba(4,17,13,.4));border:1px solid rgba(255,255,255,.15);font-size:13px;letter-spacing:.7px;text-transform:uppercase;box-shadow:0 8px 18px rgba(0,0,0,.18);
+  display:inline-flex;align-items:center;gap:7px;max-width:144px;padding:5px 10px;border-radius:999px;
+  background:rgba(5,22,17,.34);border:1px solid rgba(255,255,255,.12);font-size:11px;letter-spacing:.65px;text-transform:uppercase;box-shadow:0 8px 18px rgba(0,0,0,.14);
 }
-.lb-export-slot-club img{width:20px;height:20px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.lb-export-slot-club img{width:16px;height:16px;object-fit:contain;flex-shrink:0}
+.lb-export-slot-club span{display:block;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .lb-export-slot-placeholder{
-  display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 18px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;color:#F8F2E8
+  display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
 }
 .lb-export-slot-hint{
-  display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,.08);
-  font-size:12px;color:rgba(248,242,232,.62);letter-spacing:1px;text-transform:uppercase
+  display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:0 8px;border-radius:999px;background:transparent;border:none;
+  font-size:11px;color:rgba(248,242,232,.56);letter-spacing:.9px;text-transform:uppercase
 }
 .lb-export-watermark{
-  position:absolute;right:54px;bottom:44px;font-family:'Barlow Condensed',sans-serif;font-size:120px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.045);pointer-events:none;line-height:.85;
+  position:absolute;right:54px;bottom:92px;font-family:'Barlow Condensed',sans-serif;font-size:104px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.038);pointer-events:none;line-height:.85;
 }
 .lb-export-footer{
-  display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:18px
+  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
+  padding-top:12px;border-top:1px solid rgba(255,255,255,.08)
 }
 .lb-export-footer strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:2.8px;text-transform:uppercase;color:#FAF4E8
+}
+.lb-export-footer-meta{
+  display:grid;justify-items:end;gap:4px;text-align:right
+}
+.lb-export-footer-meta span{
+  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FAF4E8
+}
+.lb-export-footer-meta small{
+  font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(248,242,232,.56)
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -3399,12 +3419,12 @@ function renderLineupBuilderExportStage(){
       <div class="lb-export-top">
         <div>
           <div class="lb-export-kicker">AllsvenskanAI</div>
-          <div class="lb-export-title">${esc(lineupBuilderState.title || 'Omgångens elva')}</div>
+          <div class="lb-export-title">${esc((lineupBuilderState.title || 'Omgångens elva').toUpperCase())}</div>
           <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
         </div>
         <div class="lb-export-brand">
-          <strong>AllsvenskanAI</strong>
-          <span>Omgångens elva</span>
+          <strong>Startelva</strong>
+          <span>Social Graphic</span>
         </div>
       </div>
       <div class="lb-export-pitch-wrap">
@@ -3463,7 +3483,10 @@ function renderLineupBuilderExportStage(){
       </div>
       <div class="lb-export-footer">
         <div><strong>AllsvenskanAI</strong></div>
-        <div>${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)}</div>
+        <div class="lb-export-footer-meta">
+          <span>${esc(lineupBuilderState.formation)}</span>
+          <small>${esc(lineupBuilderCurrentLeagueConfig().label)} • ${esc(lineupBuilderLeagueSeason())}</small>
+        </div>
       </div>
       <div class="lb-export-watermark">AllsvenskanAI</div>
     </div>
