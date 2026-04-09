@@ -2775,73 +2775,64 @@ function normalizeText(str){
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-const POSITION_LABEL_MAP = {
+const POSITION_BROAD_LABEL_MAP = {
   'gk':'Målvakt',
   'mv':'Målvakt',
   'goalkeeper':'Målvakt',
   'keeper':'Målvakt',
-  'rb':'Högerback',
-  'hb':'Högerback',
-  'right back':'Högerback',
-  'lb':'Vänsterback',
-  'vb':'Vänsterback',
-  'left back':'Vänsterback',
-  'cb':'Mittback',
-  'mb':'Mittback',
-  'centre back':'Mittback',
-  'center back':'Mittback',
+  'rb':'Försvarare',
+  'hb':'Försvarare',
+  'right back':'Försvarare',
+  'lb':'Försvarare',
+  'vb':'Försvarare',
+  'left back':'Försvarare',
+  'cb':'Försvarare',
+  'mb':'Försvarare',
+  'centre back':'Försvarare',
+  'center back':'Försvarare',
   'defender':'Försvarare',
-  'rwb':'Höger wingback',
-  'right wing back':'Höger wingback',
-  'lwb':'Vänster wingback',
-  'left wing back':'Vänster wingback',
-  'wb':'Wingback',
-  'cdm':'Defensiv mittfältare',
-  'dm':'Defensiv mittfältare',
-  'defensive midfielder':'Defensiv mittfältare',
-  'cm':'Central mittfältare',
-  'central midfielder':'Central mittfältare',
+  'rwb':'Försvarare',
+  'right wing back':'Försvarare',
+  'lwb':'Försvarare',
+  'left wing back':'Försvarare',
+  'wb':'Försvarare',
+  'cdm':'Mittfältare',
+  'dm':'Mittfältare',
+  'defensive midfielder':'Mittfältare',
+  'cm':'Mittfältare',
+  'central midfielder':'Mittfältare',
   'midfielder':'Mittfältare',
-  'cam':'Offensiv mittfältare',
-  'am':'Offensiv mittfältare',
-  '10':'Offensiv mittfältare',
-  'attacking midfielder':'Offensiv mittfältare',
-  'rm':'Högermittfältare',
-  'hm':'Högermittfältare',
-  'ram':'Högermittfältare',
-  'right midfielder':'Högermittfältare',
-  'lm':'Vänstermittfältare',
-  'vm':'Vänstermittfältare',
-  'lam':'Vänstermittfältare',
-  'left midfielder':'Vänstermittfältare',
-  'rw':'Högerytter',
-  'hy':'Högerytter',
-  'right wing':'Högerytter',
-  'right winger':'Högerytter',
-  'lw':'Vänsterytter',
-  'vy':'Vänsterytter',
-  'left wing':'Vänsterytter',
-  'left winger':'Vänsterytter',
-  'winger':'Ytter',
+  'cam':'Mittfältare',
+  'am':'Mittfältare',
+  '10':'Mittfältare',
+  'attacking midfielder':'Mittfältare',
+  'rm':'Mittfältare',
+  'hm':'Mittfältare',
+  'ram':'Mittfältare',
+  'right midfielder':'Mittfältare',
+  'lm':'Mittfältare',
+  'vm':'Mittfältare',
+  'lam':'Mittfältare',
+  'left midfielder':'Mittfältare',
+  'rw':'Mittfältare',
+  'hy':'Mittfältare',
+  'right wing':'Mittfältare',
+  'right winger':'Mittfältare',
+  'lw':'Mittfältare',
+  'vy':'Mittfältare',
+  'left wing':'Mittfältare',
+  'left winger':'Mittfältare',
+  'winger':'Mittfältare',
   'st':'Anfallare',
   'anf':'Anfallare',
   'attacker':'Anfallare',
   'forward':'Anfallare',
   'striker':'Anfallare',
-  'cf':'Centerforward',
-  'center forward':'Centerforward',
-  'centre forward':'Centerforward',
-  'ss':'Släpande anfallare',
-  'second striker':'Släpande anfallare'
-};
-
-const POSITION_BROAD_LABEL_MAP = {
-  'goalkeeper':'Målvakt',
-  'keeper':'Målvakt',
-  'defender':'Försvarare',
-  'midfielder':'Mittfältare',
-  'attacker':'Anfallare',
-  'forward':'Anfallare'
+  'cf':'Anfallare',
+  'center forward':'Anfallare',
+  'centre forward':'Anfallare',
+  'ss':'Anfallare',
+  'second striker':'Anfallare'
 };
 
 const POSITION_SECTION_LABEL_MAP = {
@@ -2886,22 +2877,13 @@ function normalizePositionCompactKey(value=''){
   return normalizePositionKey(value).replace(/\s+/g, ' ');
 }
 
-function formatDetailedPosition(code=''){
-  const raw = String(code || '').trim();
+function formatPositionLabel(value=''){
+  const raw = String(value || '').trim();
   if(!raw) return '';
   const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
   if(parts.length > 1) {
-    return parts.map(part => formatDetailedPosition(part)).filter(Boolean).join(' / ');
+    return parts.map(part => formatPositionLabel(part)).filter(Boolean).join(' / ');
   }
-  const normalized = normalizePositionCompactKey(raw);
-  return POSITION_LABEL_MAP[normalized] || '';
-}
-
-function formatPositionLabel(value=''){
-  const detailed = formatDetailedPosition(value);
-  if(detailed) return detailed;
-  const raw = String(value || '').trim();
-  if(!raw) return '';
   const normalized = normalizePositionCompactKey(raw);
   return POSITION_BROAD_LABEL_MAP[normalized] || fixEnc(fixName(raw));
 }
@@ -2938,13 +2920,11 @@ function resolveDetailedPosition(source, fallback=''){
   }
   pushCandidate(fallback);
 
-  let broadFallback = '';
   for(const candidate of candidates){
-    const detailed = formatDetailedPosition(candidate);
-    if(detailed) return detailed;
-    if(!broadFallback) broadFallback = formatPositionLabel(candidate);
+    const broad = formatPositionLabel(candidate);
+    if(broad) return broad;
   }
-  return broadFallback;
+  return '';
 }
 
 const teamDetailedPositionCache = {};
