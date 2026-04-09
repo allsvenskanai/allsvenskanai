@@ -2934,6 +2934,31 @@ function lineupBuilderSlots(){
   return LINEUP_BUILDER_FORMATIONS[lineupBuilderState.formation] || LINEUP_BUILDER_FORMATIONS['4-3-3'];
 }
 
+function lineupBuilderRenderCoords(slot){
+  if(!slot) return { x: 50, y: 50, guideY: 42 };
+  let x = Number(slot.x || 50);
+  let y = Number(slot.y || 50);
+
+  if(slot.group === 'att') y -= 2;
+  if(slot.group === 'mid') {
+    if(['am', 'cam'].includes(slot.role)) y -= 1;
+    else if(['dm', 'cdm'].includes(slot.role)) y += 1.5;
+    else y -= 1;
+  }
+  if(slot.group === 'def') y += 4;
+  if(slot.group === 'gk') y += 5;
+
+  if(['lb', 'rb', 'lwb', 'rwb', 'lm', 'rm', 'lw', 'rw'].includes(slot.role)) {
+    if(x < 50) x -= 1.8;
+    if(x > 50) x += 1.8;
+  }
+
+  x = Math.max(12, Math.min(88, x));
+  y = Math.max(16, Math.min(94, y));
+  const guideY = Math.max(8, y - 9);
+  return { x, y, guideY };
+}
+
 function lineupBuilderSlotById(slotId=''){
   return lineupBuilderSlots().find(slot => slot.id === slotId) || null;
 }
@@ -3264,10 +3289,10 @@ function renderLineupBuilderPitch(){
     ${lineupBuilderSlots().map(slot => {
       const player = lineupBuilderState.slots?.[slot.id] || null;
       const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
-      const guideY = Math.max(8, slot.y - 8);
+      const coords = lineupBuilderRenderCoords(slot);
       if(!player) {
         return `
-          <button class="lb-slot empty" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+          <button class="lb-slot empty" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
             <span class="lb-slot-core">
               <span class="lb-slot-fallback">+</span>
               <span class="lb-slot-pos">${esc(slot.label)}</span>
@@ -3280,7 +3305,7 @@ function renderLineupBuilderPitch(){
         `;
       }
       return `
-        <button class="lb-slot" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+        <button class="lb-slot" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
           <span class="lb-slot-core">
             ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
             <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
@@ -3335,10 +3360,10 @@ function renderLineupBuilderExportStage(){
           </svg>
           ${lineupBuilderSlots().map(slot => {
             const player = lineupBuilderState.slots?.[slot.id] || null;
-            const guideY = Math.max(8, slot.y - 8);
+            const coords = lineupBuilderRenderCoords(slot);
             if(!player) {
               return `
-                <div class="lb-export-slot empty" style="left:${slot.x}%;top:${slot.y}%;">
+                <div class="lb-export-slot empty" style="left:${coords.x}%;top:${coords.y}%;">
                   <span class="lb-export-slot-core">
                     <span class="lb-export-slot-fallback">+</span>
                     <span class="lb-export-slot-pos">${esc(slot.label)}</span>
@@ -3351,7 +3376,7 @@ function renderLineupBuilderExportStage(){
               `;
             }
             return `
-              <div class="lb-export-slot" style="left:${slot.x}%;top:${slot.y}%;">
+              <div class="lb-export-slot" style="left:${coords.x}%;top:${coords.y}%;">
                 <span class="lb-export-slot-core">
                   ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
                   <span class="lb-export-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
