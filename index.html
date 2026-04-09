@@ -2904,23 +2904,38 @@ function normalizePositionCompactKey(value=''){
   return normalizePositionKey(value).replace(/\s+/g, ' ');
 }
 
+function extractRawPositionValue(source){
+  if(typeof source === 'string') return String(source || '').trim();
+  if(!source || typeof source !== 'object') return '';
+  return String(
+    source.statistics?.[0]?.games?.position ||
+    source.player?.statistics?.[0]?.games?.position ||
+    source.games?.position ||
+    source.position ||
+    source.player?.position ||
+    source.pos ||
+    source.player?.pos ||
+    ''
+  ).trim();
+}
+
 function getMainPositionCategory(value=''){
-  const raw = String(value || '').trim();
-  if(!raw) return '';
+  const raw = extractRawPositionValue(value);
+  if(!raw) return 'Okänd';
   const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
   if(parts.length > 1) {
     for(const part of parts) {
       const resolved = getMainPositionCategory(part);
-      if(resolved) return resolved;
+      if(resolved && resolved !== 'Okänd') return resolved;
     }
-    return '';
+    return 'Okänd';
   }
   const normalized = normalizePositionCompactKey(raw);
-  return POSITION_BROAD_LABEL_MAP[normalized] || '';
+  return POSITION_BROAD_LABEL_MAP[normalized] || 'Okänd';
 }
 
 function formatPositionLabel(value=''){
-  return getMainPositionCategory(value);
+  return getMainPositionCategory(value) || 'Okänd';
 }
 
 function resolveDetailedPosition(source, fallback=''){
@@ -2957,9 +2972,9 @@ function resolveDetailedPosition(source, fallback=''){
 
   for(const candidate of candidates){
     const broad = getMainPositionCategory(candidate);
-    if(broad) return broad;
+    if(broad && broad !== 'Okänd') return broad;
   }
-  return '';
+  return 'Okänd';
 }
 
 const teamDetailedPositionCache = {};
@@ -3033,9 +3048,9 @@ async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
 
 function formatPositionSectionLabel(value=''){
   const raw = String(value || '').trim();
-  if(!raw) return '';
+  if(!raw) return 'Okänd';
   const normalized = normalizePositionKey(raw);
-  return POSITION_SECTION_LABEL_MAP[normalized] || getMainPositionCategory(raw) || '';
+  return POSITION_SECTION_LABEL_MAP[normalized] || getMainPositionCategory(raw);
 }
 
 function withTimeout(promise, ms = 12000, label = 'Request') {
@@ -5421,7 +5436,16 @@ async function pageTeam(el, teamId) {
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
     const squadPlayers = (squadD[0]?.players || []);
-    const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(x => [x.player?.id, x.player || {}]));
+    const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(item => {
+      const stats = item?.statistics || [];
+      const primaryStats = stats[0] || {};
+      return [item.player?.id, {
+        ...(item.player || {}),
+        statistics: stats,
+        games: primaryStats.games || {},
+        position: primaryStats.games?.position || item?.player?.position || '',
+      }];
+    }));
     document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
@@ -5486,13 +5510,12 @@ async function pageTeam(el, teamId) {
 
     const posOrder = { 'Målvakt':1, 'Försvarare':2, 'Mittfältare':3, 'Anfallare':4 };
     const sorted = [...squadPlayers].sort((a,b)=>
-      (posOrder[getMainPositionCategory(a.position)]||5)-(posOrder[getMainPositionCategory(b.position)]||5));
+      (posOrder[getMainPositionCategory(playerInfoById[a.id] || a)]||5)-(posOrder[getMainPositionCategory(playerInfoById[b.id] || b)]||5));
 
     let lastPos = '';
     const playerRows = sorted.map(p => {
       const info = playerInfoById[p.id] || {};
-      const rawPos = p.position || info.position || '';
-      const pos = getMainPositionCategory(resolveDetailedPosition({ ...p, ...info }, rawPos) || rawPos);
+      const pos = getMainPositionCategory(info && Object.keys(info).length ? info : p);
       const nationalityDisplay = renderNationalityDisplay(info, p);
       let sep = '';
       if(pos && pos !== lastPos) { lastPos=pos; sep=`<tr class="pos-sep"><td colspan="5">${esc(pos)}</td></tr>`; }
@@ -5502,7 +5525,7 @@ async function pageTeam(el, teamId) {
           <div><div class="pn">${esc(getPlayerDisplayName(info, p))}</div>
           <div class="ps">${p.number?'#'+p.number:''}</div></div>
         </div></td>
-        <td><span class="pos-tag">${esc(pos || '')}</span></td>
+        <td><span class="pos-tag">${esc(pos || 'Okänd')}</span></td>
         <td>${p.age||info.age||'—'} år</td>
         <td>${nationalityDisplay}</td>
         <td style="color:var(--muted);font-size:12px">${p.injured?'ðŸš‘ Skadad':''}</td>
@@ -5675,7 +5698,17 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       photo: item?.player?.photo || '',
       injured: false,
     })).filter(player => player?.id);
-    const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
+    const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => {
+      const stats = item?.statistics || [];
+      const primaryStats = stats[0] || {};
+      return [item.player?.id, {
+        ...(item.player || {}),
+        statistics: stats,
+        games: primaryStats.games || {},
+        position: primaryStats.games?.position || item?.player?.position || '',
+      }];
+    }));
+    if(squadPlayers[0]) console.debug('[team-page] sample player position', squadPlayers[0], playerInfoById[squadPlayers[0].id] || {});
     const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
     squadPlayers.forEach(player => {
       const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
@@ -5786,16 +5819,15 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
 
     const posOrder = { 'Målvakt':1, 'Försvarare':2, 'Mittfältare':3, 'Anfallare':4 };
-    const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[getMainPositionCategory(a.position)]||5)-(posOrder[getMainPositionCategory(b.position)]||5));
+    const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[getMainPositionCategory(playerInfoById[a.id] || a)]||5)-(posOrder[getMainPositionCategory(playerInfoById[b.id] || b)]||5));
     let lastPos = '';
     const playerRows = sortedSquad.map(player => {
       const info = playerInfoById[player.id] || {};
-      const rawPos = player.position || info.position || '';
-      const pos = getMainPositionCategory(resolveDetailedPosition({ ...player, ...info }, rawPos) || rawPos);
+      const pos = getMainPositionCategory(info && Object.keys(info).length ? info : player);
       const nationalityDisplay = renderNationalityDisplay(info, player);
       let sep = '';
       if(pos && pos !== lastPos) { lastPos = pos; sep = `<tr class="pos-sep"><td colspan="5">${esc(pos)}</td></tr>`; }
-      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos || '')}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
+      return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos || 'Okänd')}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
     document.title = `${teamDisplayName} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
