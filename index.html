@@ -2971,19 +2971,22 @@ async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
       const involvesTeam = Number(item?.teams?.home?.id || 0) === Number(teamId) || Number(item?.teams?.away?.id || 0) === Number(teamId);
       return started && involvesTeam;
     })
+    .sort((a, b) => String(b?.fixture?.date || '').localeCompare(String(a?.fixture?.date || '')))
+    .slice(0, 12)
     .map(item => Number(item?.fixture?.id || 0))
     .filter(Boolean))];
 
   const promise = (async () => {
     const counts = {};
-    const lineupResponses = await Promise.all(fixtureIds.map(async fixtureId => {
+    const lineupResponses = [];
+    for(const fixtureId of fixtureIds){
       try {
         const raw = await afRaw('fixtures/lineups', { fixture: fixtureId });
-        return raw?.response || [];
+        lineupResponses.push(raw?.response || []);
       } catch {
-        return [];
+        lineupResponses.push([]);
       }
-    }));
+    }
 
     lineupResponses.forEach(lineups => {
       const lineup = (lineups || []).find(item => Number(item?.team?.id || 0) === Number(teamId));
@@ -5655,12 +5658,16 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
     squadPlayers.forEach(player => {
       const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(detailedPosition) player.detailedPosition = detailedPosition;
+      if(detailedPosition) {
+        player.detailedPosition = detailedPosition;
+        player.position = detailedPosition;
+      }
     });
     Object.keys(playerInfoById).forEach(playerId => {
       const detailedPosition = detailedPositionsByPlayerId[String(playerId)] || '';
       if(detailedPosition && playerInfoById[playerId]) {
         playerInfoById[playerId].detailedPosition = detailedPosition;
+        playerInfoById[playerId].position = detailedPosition;
       }
     });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
