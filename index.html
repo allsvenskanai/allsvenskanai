@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -2632,7 +2632,9 @@ async function afAll(ep, p={}) {
   return af(ep, p);
 }
 
-const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v1';
+const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v2';
+const LINEUP_BUILDER_ALL_TEAMS = 'all';
+const LINEUP_BUILDER_MIN_GLOBAL_SEARCH = 2;
 const LINEUP_BUILDER_FORMATIONS = {
   '4-4-2': [
     { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
@@ -2701,15 +2703,32 @@ const LINEUP_BUILDER_FORMATIONS = {
   ]
 };
 let lineupBuilderRoot = null;
-let lineupBuilderCatalog = null;
-let lineupBuilderCatalogPromise = null;
 let lineupBuilderSearchTimer = null;
 let lineupBuilderExportPromise = null;
 let lineupBuilderStatusTimer = null;
+let lineupBuilderTeamsRequestId = 0;
+let lineupBuilderSearchRequestId = 0;
+const LINEUP_BUILDER_LEAGUES = [
+  { key:'allsvenskan-men', label:'Allsvenskan Herr', search:'Allsvenskan', country:'Sweden', season:SEASON, teamOrder:true },
+  { key:'superettan', label:'Superettan', search:'Superettan', country:'Sweden', season:SEASON, teamOrder:false },
+  { key:'damallsvenskan', label:'Damallsvenskan', search:'Damallsvenskan', country:'Sweden', season:SEASON, teamOrder:false }
+];
+const LINEUP_BUILDER_LEAGUE_MAP = Object.fromEntries(LINEUP_BUILDER_LEAGUES.map(league => [league.key, league]));
+const lineupBuilderCache = {
+  leagueMeta: {},
+  teamsByLeague: {},
+  squadByLeagueTeam: {},
+  broadSearchByLeagueQuery: {}
+};
 const lineupBuilderState = {
   formation: '4-3-3',
   title: 'Omgångens elva',
-  subtitle: `Allsvenskan ${SEASON}`,
+  subtitle: '',
+  selectedLeagueKey: LINEUP_BUILDER_LEAGUES[0].key,
+  selectedTeamId: LINEUP_BUILDER_ALL_TEAMS,
+  availableTeams: [],
+  teamsLoading: false,
+  teamsError: '',
   slots: {},
   modalOpen: false,
   activeSlotId: '',
@@ -2717,7 +2736,8 @@ const lineupBuilderState = {
   searchResults: [],
   searchLoading: false,
   searchError: '',
-  catalogSeason: null,
+  searchHint: '',
+  searchScope: '',
   exportBusy: false,
   status: '',
   statusTone: 'idle'
@@ -2728,22 +2748,38 @@ function createLineupBuilderPersistedState(){
     formation: lineupBuilderState.formation,
     title: lineupBuilderState.title,
     subtitle: lineupBuilderState.subtitle,
+    selectedLeagueKey: lineupBuilderState.selectedLeagueKey,
+    selectedTeamId: lineupBuilderState.selectedTeamId,
     slots: lineupBuilderState.slots
   };
+}
+
+function lineupBuilderCurrentLeagueConfig(){
+  return LINEUP_BUILDER_LEAGUE_MAP[lineupBuilderState.selectedLeagueKey] || LINEUP_BUILDER_LEAGUES[0];
+}
+
+function lineupBuilderLeagueSeason(leagueConfig = lineupBuilderCurrentLeagueConfig()){
+  return Number(leagueConfig?.season || SEASON || 2026);
 }
 
 function loadLineupBuilderState(){
   try {
     const raw = localStorage.getItem(LINEUP_BUILDER_STORAGE_KEY);
-    if(!raw) return;
+    if(!raw) {
+      lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
+      return;
+    }
     const parsed = JSON.parse(raw);
     if(parsed && LINEUP_BUILDER_FORMATIONS[parsed.formation]) lineupBuilderState.formation = parsed.formation;
     if(parsed && typeof parsed.title === 'string') lineupBuilderState.title = parsed.title;
     if(parsed && typeof parsed.subtitle === 'string') lineupBuilderState.subtitle = parsed.subtitle;
+    if(parsed && LINEUP_BUILDER_LEAGUE_MAP[parsed.selectedLeagueKey]) lineupBuilderState.selectedLeagueKey = parsed.selectedLeagueKey;
+    if(parsed && (typeof parsed.selectedTeamId === 'string' || typeof parsed.selectedTeamId === 'number')) lineupBuilderState.selectedTeamId = String(parsed.selectedTeamId);
     if(parsed && parsed.slots && typeof parsed.slots === 'object') lineupBuilderState.slots = parsed.slots;
   } catch(e) {
     console.warn('[lineup-builder] restore failed', e.message);
   }
+  if(!lineupBuilderState.subtitle) lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
 }
 
 function saveLineupBuilderState(){
@@ -2773,7 +2809,8 @@ function lineupBuilderSelectedCount(){
 }
 
 function lineupBuilderDefaultSubtitle(){
-  return `Allsvenskan ${lineupBuilderState.catalogSeason || SEASON}`;
+  const league = lineupBuilderCurrentLeagueConfig();
+  return `${league.label} ${lineupBuilderLeagueSeason(league)}`;
 }
 
 function lineupBuilderSetStatus(message = '', tone = 'idle'){
@@ -2802,9 +2839,13 @@ function lineupBuilderSyncInputs(){
   const titleInput = document.getElementById('lineupBuilderTitleInput');
   const subtitleInput = document.getElementById('lineupBuilderSubtitleInput');
   const formationSelect = document.getElementById('lineupBuilderFormation');
+  const leagueSelect = document.getElementById('lineupBuilderLeague');
+  const teamSelect = document.getElementById('lineupBuilderTeam');
   if(titleInput) titleInput.value = lineupBuilderState.title;
   if(subtitleInput) subtitleInput.value = lineupBuilderState.subtitle;
   if(formationSelect) formationSelect.value = lineupBuilderState.formation;
+  if(leagueSelect) leagueSelect.value = lineupBuilderState.selectedLeagueKey;
+  if(teamSelect) teamSelect.value = String(lineupBuilderState.selectedTeamId);
 }
 
 function lineupBuilderGetInitials(name=''){
@@ -2851,12 +2892,30 @@ function lineupBuilderSearchBlob(player){
   ].filter(Boolean).join(' '));
 }
 
-function lineupBuilderNormalizePlayerRow(item = {}){
-  const player = item.player || {};
+function lineupBuilderSortTeams(teams = [], leagueKey = lineupBuilderState.selectedLeagueKey){
+  const leagueConfig = LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || LINEUP_BUILDER_LEAGUES[0];
+  if(leagueConfig.teamOrder) return sortTeamsByOrder(teams);
+  return [...teams].sort((a,b) => fixName(a?.name || '').localeCompare(fixName(b?.name || ''), 'sv'));
+}
+
+function lineupBuilderTeamOptionLabel(teamId){
+  if(String(teamId) === LINEUP_BUILDER_ALL_TEAMS) return 'Alla lag';
+  const team = (lineupBuilderState.availableTeams || []).find(item => String(item.id) === String(teamId));
+  return team ? fixName(team.name || '') : 'Lag';
+}
+
+function lineupBuilderSubtitleLooksDefault(){
+  const normalized = normalizeText(lineupBuilderState.subtitle || '');
+  if(!normalized) return true;
+  return LINEUP_BUILDER_LEAGUES.some(league => normalized === normalizeText(`${league.label} ${lineupBuilderLeagueSeason(league)}`));
+}
+
+function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
+  const player = item.player || item;
   const statistics = Array.isArray(item.statistics) ? item.statistics : [];
-  const leagueStat = statistics.find(stat => Number(stat?.league?.id || 0) === LEAGUE) || statistics[0] || {};
-  const team = leagueStat.team || {};
-  const games = leagueStat.games || {};
+  const teamStat = statistics.find(stat => Number(stat?.team?.id || 0) === Number(fallbackTeam?.id || 0)) || statistics[0] || {};
+  const team = teamStat.team || fallbackTeam || {};
+  const games = teamStat.games || {};
   const name = getPlayerDisplayName(player, item);
   return {
     id: player.id || 0,
@@ -2865,48 +2924,109 @@ function lineupBuilderNormalizePlayerRow(item = {}){
     lastname: player.lastname || '',
     age: player.age || '',
     photo: player.photo || '',
-    teamId: team.id || 0,
-    teamName: fixName(team.name || ''),
-    teamLogo: team.logo || '',
-    position: games.position || player.position || '',
+    teamId: team.id || fallbackTeam.id || 0,
+    teamName: fixName(team.name || fallbackTeam.name || ''),
+    teamLogo: team.logo || fallbackTeam.logo || '',
+    position: games.position || player.position || fallbackTeam.position || '',
     searchBlob: ''
   };
 }
 
-async function buildLineupBuilderCatalogForSeason(season){
-  const rows = await fetchAllPages('players', { league:LEAGUE, season }, {
-    dedupeKey: item => item?.player?.id || ''
-  });
-  return rows
-    .map(lineupBuilderNormalizePlayerRow)
-    .filter(player => player.id && player.name && player.name !== '—')
-    .map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
+async function resolveLineupBuilderLeagueMeta(leagueKey = lineupBuilderState.selectedLeagueKey){
+  if(lineupBuilderCache.leagueMeta[leagueKey]) return lineupBuilderCache.leagueMeta[leagueKey];
+  const leagueConfig = LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || LINEUP_BUILDER_LEAGUES[0];
+  const season = lineupBuilderLeagueSeason(leagueConfig);
+  const rows = await af('leagues', { search: leagueConfig.search, country: leagueConfig.country, season }).catch(() => []);
+  const normalizedTarget = normalizeText(leagueConfig.search);
+  const match = (rows || []).find(item => normalizeText(item?.league?.name || '') === normalizedTarget)
+    || (rows || []).find(item => normalizeText(item?.league?.name || '').includes(normalizedTarget))
+    || null;
+  if(!match?.league?.id) throw new Error(`Ligainfo saknas för ${leagueConfig.label}.`);
+  const meta = {
+    key: leagueConfig.key,
+    id: Number(match.league.id),
+    name: fixName(match.league.name || leagueConfig.label),
+    season
+  };
+  lineupBuilderCache.leagueMeta[leagueKey] = meta;
+  return meta;
 }
 
-async function ensureLineupBuilderCatalog(){
-  if(lineupBuilderCatalog?.length) return lineupBuilderCatalog;
-  if(lineupBuilderCatalogPromise) return lineupBuilderCatalogPromise;
-  lineupBuilderCatalogPromise = (async () => {
-    const seasons = [...new Set([SEASON, SEASON - 1, 2025, 2024].filter(year => Number(year) > 0))];
-    for(const season of seasons){
-      try {
-        const catalog = await buildLineupBuilderCatalogForSeason(season);
-        if(catalog.length){
-          lineupBuilderCatalog = catalog;
-          lineupBuilderState.catalogSeason = season;
-          if(!lineupBuilderState.subtitle || normalizeText(lineupBuilderState.subtitle).startsWith('allsvenskan ')) {
-            lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
-          }
-          saveLineupBuilderState();
-          return catalog;
-        }
-      } catch(e) {
-        console.warn('[lineup-builder] catalog fetch failed', { season, error: e.message });
-      }
-    }
-    throw new Error('Kunde inte läsa in spelarkatalogen för Allsvenskan.');
-  })();
-  return lineupBuilderCatalogPromise;
+async function ensureLineupBuilderTeams(leagueKey = lineupBuilderState.selectedLeagueKey){
+  if(lineupBuilderCache.teamsByLeague[leagueKey]?.length) return lineupBuilderCache.teamsByLeague[leagueKey];
+  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
+  let rows = [];
+  try {
+    const teamsRaw = await af('teams', { league: meta.id, season: meta.season });
+    rows = (teamsRaw || []).map(item => item?.team || item).filter(team => team?.id);
+  } catch(e) {
+    rows = [];
+  }
+  if(!rows.length) {
+    const standingsRaw = await af('standings', { league: meta.id, season: meta.season }).catch(() => []);
+    rows = (standingsRaw?.[0]?.league?.standings?.[0] || []).map(item => item.team).filter(team => team?.id);
+  }
+  const teams = lineupBuilderSortTeams(rows.map(team => ({
+    id: Number(team.id),
+    name: fixName(team.name || ''),
+    logo: team.logo || ''
+  })), leagueKey);
+  lineupBuilderCache.teamsByLeague[leagueKey] = teams;
+  return teams;
+}
+
+async function ensureLineupBuilderTeamSquad(leagueKey = lineupBuilderState.selectedLeagueKey, teamId = lineupBuilderState.selectedTeamId){
+  const key = `${leagueKey}:${teamId}`;
+  if(lineupBuilderCache.squadByLeagueTeam[key]) return lineupBuilderCache.squadByLeagueTeam[key];
+  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
+  const team = (lineupBuilderCache.teamsByLeague[leagueKey] || []).find(item => String(item.id) === String(teamId)) || {};
+  let rows = [];
+  try {
+    rows = await fetchAllPages('players', { league:meta.id, season:meta.season, team:teamId }, {
+      dedupeKey: item => item?.player?.id || ''
+    });
+  } catch(e) {
+    rows = [];
+  }
+  let squad = rows
+    .map(item => lineupBuilderNormalizePlayerRow(item, team))
+    .filter(player => player.id && player.name && player.name !== '—');
+
+  if(!squad.length) {
+    const squadRaw = await af('players/squads', { team:teamId }).catch(() => []);
+    const list = squadRaw?.[0]?.players || [];
+    squad = list.map(item => lineupBuilderNormalizePlayerRow({
+      player: {
+        id: item.id,
+        name: item.name,
+        firstname: item.firstname,
+        lastname: item.lastname,
+        age: item.age,
+        photo: item.photo,
+        position: item.position
+      },
+      statistics: []
+    }, team)).filter(player => player.id && player.name && player.name !== '—');
+  }
+
+  const normalized = squad.map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
+  lineupBuilderCache.squadByLeagueTeam[key] = normalized;
+  return normalized;
+}
+
+async function searchLineupBuilderLeaguePlayers(leagueKey = lineupBuilderState.selectedLeagueKey, query = ''){
+  const normalizedQuery = normalizeText(query).replace(/\s+/g, ' ').trim();
+  if(normalizedQuery.length < LINEUP_BUILDER_MIN_GLOBAL_SEARCH) return [];
+  const cacheKey = `${leagueKey}:${normalizedQuery}`;
+  if(lineupBuilderCache.broadSearchByLeagueQuery[cacheKey]) return lineupBuilderCache.broadSearchByLeagueQuery[cacheKey];
+  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
+  const rows = await af('players', { league: meta.id, season: meta.season, search: query.trim() }).catch(() => []);
+  const normalized = (rows || [])
+    .map(item => lineupBuilderNormalizePlayerRow(item))
+    .filter(player => player.id && player.name && player.name !== '—')
+    .map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
+  lineupBuilderCache.broadSearchByLeagueQuery[cacheKey] = normalized;
+  return normalized;
 }
 
 function lineupBuilderRankPlayer(player, slot, normalizedQuery){
@@ -2925,14 +3045,8 @@ function lineupBuilderRankPlayer(player, slot, normalizedQuery){
   return score;
 }
 
-function lineupBuilderSearchPlayers(query=''){
-  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
+function lineupBuilderSortSearchResults(rows = [], slot, query = '', limit = 24){
   const normalizedQuery = normalizeText(query).replace(/\s+/g, ' ').trim();
-  if(!lineupBuilderCatalog?.length || !slot) return [];
-  let rows = lineupBuilderCatalog;
-  if(normalizedQuery) {
-    rows = rows.filter(player => player.searchBlob.includes(normalizedQuery));
-  }
   return rows
     .map(player => ({
       player,
@@ -2940,7 +3054,35 @@ function lineupBuilderSearchPlayers(query=''){
       score: lineupBuilderRankPlayer(player, slot, normalizedQuery)
     }))
     .sort((a, b) => b.score - a.score || a.player.name.localeCompare(b.player.name, 'sv'))
-    .slice(0, normalizedQuery ? 24 : 18);
+    .slice(0, limit);
+}
+
+async function lineupBuilderBootstrapLeagueTeams(){
+  const requestId = ++lineupBuilderTeamsRequestId;
+  lineupBuilderState.teamsLoading = true;
+  lineupBuilderState.teamsError = '';
+  renderLineupBuilderPage(lineupBuilderRoot);
+  try {
+    const teams = await ensureLineupBuilderTeams(lineupBuilderState.selectedLeagueKey);
+    if(requestId !== lineupBuilderTeamsRequestId) return;
+    lineupBuilderState.availableTeams = teams;
+    if(String(lineupBuilderState.selectedTeamId) !== LINEUP_BUILDER_ALL_TEAMS && !teams.find(team => String(team.id) === String(lineupBuilderState.selectedTeamId))) {
+      lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
+    }
+    lineupBuilderState.teamsLoading = false;
+    lineupBuilderState.teamsError = '';
+    saveLineupBuilderState();
+    renderLineupBuilderPage(lineupBuilderRoot);
+    if(lineupBuilderState.selectedTeamId !== LINEUP_BUILDER_ALL_TEAMS) {
+      ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId).catch(() => {});
+    }
+  } catch(e) {
+    if(requestId !== lineupBuilderTeamsRequestId) return;
+    lineupBuilderState.availableTeams = [];
+    lineupBuilderState.teamsLoading = false;
+    lineupBuilderState.teamsError = e.message || 'Kunde inte läsa in lag.';
+    renderLineupBuilderPage(lineupBuilderRoot);
+  }
 }
 
 function renderLineupBuilderSummary(){
@@ -2955,9 +3097,9 @@ function renderLineupBuilderSummary(){
       <div class="lb-summary-copy">${remaining ? `${remaining} positioner kvar att fylla.` : 'Startelvan är komplett.'}</div>
     </div>
     <div class="lb-summary-card">
-      <div class="lb-summary-label">Formation</div>
-      <div class="lb-summary-value">${esc(lineupBuilderState.formation)}</div>
-      <div class="lb-summary-copy">Byt struktur när som helst utan att lämna sidan.</div>
+      <div class="lb-summary-label">Källa</div>
+      <div class="lb-summary-value">${esc(lineupBuilderCurrentLeagueConfig().label)}</div>
+      <div class="lb-summary-copy">${esc(lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId))}</div>
     </div>
     <div class="lb-summary-card">
       <div class="lb-summary-label">Redo för export</div>
@@ -2974,7 +3116,7 @@ function renderLineupBuilderPitch(){
   const footer = document.getElementById('lineupBuilderFooterMeta');
   if(title) title.textContent = lineupBuilderState.title || 'Omgångens elva';
   if(subtitle) subtitle.textContent = lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle();
-  if(footer) footer.textContent = `${lineupBuilderState.formation} • ${lineupBuilderSelectedCount()} av 11 valda`;
+  if(footer) footer.textContent = `${lineupBuilderState.formation} • ${lineupBuilderCurrentLeagueConfig().label} • ${lineupBuilderSelectedCount()} av 11 valda`;
   if(!pitch) return;
 
   pitch.innerHTML = `
@@ -3034,17 +3176,17 @@ function renderLineupBuilderModal(){
         <div>
           <div class="lb-kicker">Lineup Builder</div>
           <div class="lb-modal-title">${esc(slot ? `Välj spelare för ${slot.label}` : 'Välj spelare')}</div>
-          <div class="lb-modal-copy">Sök över hela Allsvenskan. Positionerna guidar bara mjukt, så du kan fortfarande bygga din egen tolkning av elvan.</div>
+          <div class="lb-modal-copy">Välj liga först, filtrera gärna på lag och sök sedan smart. Specifikt lag laddar bara den truppen. Alla lag söker brett först när du verkligen skriver.</div>
         </div>
         <button class="lb-close" type="button" onclick="lineupBuilderCloseModal()" aria-label="Stäng">×</button>
       </div>
       <div class="lb-modal-tools">
         <input id="lineupBuilderSearchInput" class="lb-search" type="search" value="${esc(lineupBuilderState.searchQuery)}" placeholder="Sök spelare, klubb eller position" autocomplete="off" oninput="lineupBuilderHandleSearchInput(this.value)">
         <div class="lb-guidance">
+          <span class="lb-guidance-pill">${esc(lineupBuilderCurrentLeagueConfig().label)}</span>
+          <span class="lb-guidance-pill">${esc(lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId))}</span>
           <span class="lb-guidance-pill">Formation ${esc(lineupBuilderState.formation)}</span>
-          <span class="lb-guidance-pill">Slot ${esc(slot?.label || '')}</span>
           ${currentPlayer ? `<span class="lb-guidance-pill">Nuvarande: ${esc(currentPlayer.name)}</span>` : ''}
-          ${slot?.group === 'gk' ? '<span class="lb-guidance-pill">Målvakter prioriteras högst</span>' : '<span class="lb-guidance-pill">Liknande roller rankas högre</span>'}
         </div>
         <div class="lb-toolbar">
           ${currentPlayer ? `<button class="lb-button warn" type="button" onclick="lineupBuilderRemovePlayer('${slot.id}')">Ta bort spelare</button>` : ''}
@@ -3052,9 +3194,9 @@ function renderLineupBuilderModal(){
         </div>
       </div>
       <div class="lb-results">
-        ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelartrupp...</strong><br>Vi laddar in Allsvenskans spelare en gång och återanvänder sedan datan lokalt för snabb sökning.</div>` : ''}
+        ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelare...</strong><br>${esc(lineupBuilderState.searchHint || 'Vi laddar bara den data som behövs för det val du gjort.')}</div>` : ''}
         ${!lineupBuilderState.searchLoading && lineupBuilderState.searchError ? `<div class="lb-empty"><strong>Kunde inte läsa in spelare.</strong><br>${esc(lineupBuilderState.searchError)}</div>` : ''}
-        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>Inga träffar ännu.</strong><br>Testa ett spelarnamn, en klubb eller lämna sökfältet tomt för att få förslag.</div>` : ''}
+        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>${esc(lineupBuilderState.searchScope || 'Inga träffar ännu.')}</strong><br>${esc(lineupBuilderState.searchHint || 'Testa ett spelarnamn eller välj ett specifikt lag för snabbare listning.')}</div>` : ''}
         ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError ? results.map(entry => `
           <button class="lb-result" type="button" onclick="lineupBuilderAssignPlayer('${slot?.id || ''}', ${entry.player.id})">
             <span class="lb-result-media">
@@ -3065,7 +3207,7 @@ function renderLineupBuilderModal(){
               <span class="lb-result-name">${esc(entry.player.name)}</span>
               <span class="lb-result-meta">
                 ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" onerror="this.style.display='none'">` : ''}
-                <span>${esc(entry.player.teamName || 'Allsvenskan')}</span>
+                <span>${esc(entry.player.teamName || lineupBuilderCurrentLeagueConfig().label)}</span>
               </span>
             </span>
             <span class="lb-result-tags">
@@ -3096,11 +3238,11 @@ function renderLineupBuilderPage(root){
           <div>
             <div class="lb-kicker">Ny funktion</div>
             <div class="lb-headline">Skapa Allsvenskans snyggaste elvor</div>
-            <div class="lb-copy">Sätt ihop veckans elva, månadens elva eller din personliga favorit-XI med spelare från hela ligan. Allt sparas lokalt i webbläsaren så du kan fortsätta där du slutade.</div>
+            <div class="lb-copy">Bygg veckans elva, månadens elva eller en personlig favorit-XI. Ligor och lag laddas stegvis så spelarsökningen håller sig snabb och resurssnål på en live-sajt.</div>
           </div>
           <div class="lb-pills">
-            <span class="lb-pill">11 startplatser</span>
-            <span class="lb-pill">5 formationer</span>
+            <span class="lb-pill">Liga först</span>
+            <span class="lb-pill">Lag därefter</span>
             <span class="lb-pill">PNG-export</span>
           </div>
         </div>
@@ -3110,14 +3252,27 @@ function renderLineupBuilderPage(root){
         <aside class="lb-card lb-controls">
           <div class="lb-controls-grid">
             <label class="lb-field">
+              <span class="lb-label">Liga</span>
+              <select id="lineupBuilderLeague" class="lb-select" onchange="lineupBuilderChangeLeague(this.value)">
+                ${LINEUP_BUILDER_LEAGUES.map(league => `<option value="${league.key}" ${league.key === lineupBuilderState.selectedLeagueKey ? 'selected' : ''}>${esc(league.label)}</option>`).join('')}
+              </select>
+            </label>
+            <label class="lb-field">
+              <span class="lb-label">Lag</span>
+              <select id="lineupBuilderTeam" class="lb-select" onchange="lineupBuilderChangeTeam(this.value)" ${lineupBuilderState.teamsLoading ? 'disabled' : ''}>
+                <option value="${LINEUP_BUILDER_ALL_TEAMS}">Alla lag</option>
+                ${(lineupBuilderState.availableTeams || []).map(team => `<option value="${team.id}" ${String(team.id) === String(lineupBuilderState.selectedTeamId) ? 'selected' : ''}>${esc(team.name)}</option>`).join('')}
+              </select>
+            </label>
+            <label class="lb-field">
               <span class="lb-label">Formation</span>
               <select id="lineupBuilderFormation" class="lb-select" onchange="lineupBuilderChangeFormation(this.value)">
                 ${Object.keys(LINEUP_BUILDER_FORMATIONS).map(key => `<option value="${key}" ${key === lineupBuilderState.formation ? 'selected' : ''}>${key}</option>`).join('')}
               </select>
             </label>
             <label class="lb-field">
-              <span class="lb-label">Smeknamn</span>
-              <input id="lineupBuilderSubtitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.subtitle)}" placeholder="Allsvenskan 2026" oninput="lineupBuilderUpdateField('subtitle', this.value)">
+              <span class="lb-label">Underrubrik</span>
+              <input id="lineupBuilderSubtitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.subtitle)}" placeholder="${esc(lineupBuilderDefaultSubtitle())}" oninput="lineupBuilderUpdateField('subtitle', this.value)">
             </label>
             <label class="lb-field full">
               <span class="lb-label">Titel</span>
@@ -3132,7 +3287,7 @@ function renderLineupBuilderPage(root){
           </div>
 
           <div id="lineupBuilderSummary" class="lb-summary-grid"></div>
-          <div class="lb-side-note">Tips: klicka på en position för att välja eller byta spelare. Målvakter, mittfältare och anfallare rankas smart i sökningen, men du kan fortfarande välja vem du vill.</div>
+          <div class="lb-side-note">${lineupBuilderState.teamsLoading ? 'Laddar lag för vald liga...' : lineupBuilderState.teamsError ? esc(lineupBuilderState.teamsError) : 'Tips: välj först liga, filtrera sedan på lag om du vill hålla spelarpoolen liten. I Alla lag-läget startar bred sökning först när du skriver minst två tecken.'}</div>
           <div id="lineupBuilderStatus" class="lb-status" data-tone="${esc(lineupBuilderState.statusTone || 'idle')}">${esc(lineupBuilderState.status || '')}</div>
         </aside>
 
@@ -3168,17 +3323,61 @@ function renderLineupBuilderPage(root){
 
 function pageLineupBuilder(el){
   renderLineupBuilderPage(el);
+  lineupBuilderBootstrapLeagueTeams();
 }
 
-function lineupBuilderRefreshSearch(){
+async function lineupBuilderRefreshSearch(){
+  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
+  if(!slot) return;
+  const requestId = ++lineupBuilderSearchRequestId;
+  const query = lineupBuilderState.searchQuery.trim();
+  const isAllTeams = String(lineupBuilderState.selectedTeamId) === LINEUP_BUILDER_ALL_TEAMS;
+  lineupBuilderState.searchLoading = false;
+  lineupBuilderState.searchError = '';
+  lineupBuilderState.searchResults = [];
+  lineupBuilderState.searchHint = '';
+  lineupBuilderState.searchScope = '';
+
   try {
-    lineupBuilderState.searchResults = lineupBuilderSearchPlayers(lineupBuilderState.searchQuery);
-    lineupBuilderState.searchError = '';
+    if(isAllTeams) {
+      if(query.length < LINEUP_BUILDER_MIN_GLOBAL_SEARCH) {
+        lineupBuilderState.searchScope = 'Alla lag';
+        lineupBuilderState.searchHint = `Skriv minst ${LINEUP_BUILDER_MIN_GLOBAL_SEARCH} tecken för att starta ligasökningen utan att belasta API:t i onödan.`;
+        renderLineupBuilderModal();
+        return;
+      }
+      lineupBuilderState.searchLoading = true;
+      lineupBuilderState.searchScope = 'Ligabred sökning';
+      lineupBuilderState.searchHint = `Söker i ${lineupBuilderCurrentLeagueConfig().label} först nu när du faktiskt skrivit en sökfråga.`;
+      renderLineupBuilderModal();
+      const players = await searchLineupBuilderLeaguePlayers(lineupBuilderState.selectedLeagueKey, query);
+      if(requestId !== lineupBuilderSearchRequestId) return;
+      lineupBuilderState.searchResults = lineupBuilderSortSearchResults(players, slot, query, 24);
+      lineupBuilderState.searchLoading = false;
+      lineupBuilderState.searchScope = lineupBuilderState.searchResults.length ? 'Resultat från hela ligan' : 'Inga spelare matchade';
+      lineupBuilderState.searchHint = lineupBuilderState.searchResults.length ? 'Resultaten är cacheade per liga och sökfras för att undvika upprepade API-anrop.' : 'Testa fler bokstäver, en klubb eller ett annat namn.';
+      renderLineupBuilderModal();
+      return;
+    }
+
+    lineupBuilderState.searchLoading = true;
+    lineupBuilderState.searchScope = 'Lagtrupp';
+    lineupBuilderState.searchHint = `Laddar bara spelare för ${lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId)}.`;
+    renderLineupBuilderModal();
+    const squad = await ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId);
+    if(requestId !== lineupBuilderSearchRequestId) return;
+    const filtered = query ? squad.filter(player => player.searchBlob.includes(normalizeText(query))) : squad;
+    lineupBuilderState.searchResults = lineupBuilderSortSearchResults(filtered, slot, query, 24);
+    lineupBuilderState.searchLoading = false;
+    lineupBuilderState.searchScope = lineupBuilderState.searchResults.length ? `${lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId)}s trupp` : 'Inga spelare matchade';
+    lineupBuilderState.searchHint = lineupBuilderState.searchResults.length ? 'Lagets trupp återanvänds från cache när du öppnar samma lag igen.' : 'Testa ett annat namn eller byt till Alla lag för bredare sökning.';
+    renderLineupBuilderModal();
   } catch(e) {
-    lineupBuilderState.searchResults = [];
+    if(requestId !== lineupBuilderSearchRequestId) return;
+    lineupBuilderState.searchLoading = false;
     lineupBuilderState.searchError = e.message || 'Sökningen gick inte att köra.';
+    renderLineupBuilderModal();
   }
-  renderLineupBuilderModal();
 }
 
 function lineupBuilderUpdateField(field, value){
@@ -3201,23 +3400,48 @@ function lineupBuilderChangeFormation(value){
   if(lineupBuilderState.modalOpen) lineupBuilderRefreshSearch();
 }
 
+async function lineupBuilderChangeLeague(leagueKey){
+  if(!LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || leagueKey === lineupBuilderState.selectedLeagueKey) return;
+  const shouldUpdateSubtitle = lineupBuilderSubtitleLooksDefault();
+  lineupBuilderState.selectedLeagueKey = leagueKey;
+  lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
+  lineupBuilderState.availableTeams = [];
+  lineupBuilderState.searchResults = [];
+  lineupBuilderState.searchQuery = '';
+  lineupBuilderState.searchError = '';
+  lineupBuilderState.searchHint = '';
+  lineupBuilderState.searchScope = '';
+  if(shouldUpdateSubtitle) lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
+  saveLineupBuilderState();
+  renderLineupBuilderPage(lineupBuilderRoot);
+  await lineupBuilderBootstrapLeagueTeams();
+}
+
+async function lineupBuilderChangeTeam(teamId){
+  lineupBuilderState.selectedTeamId = String(teamId || LINEUP_BUILDER_ALL_TEAMS);
+  lineupBuilderState.searchResults = [];
+  lineupBuilderState.searchQuery = '';
+  lineupBuilderState.searchError = '';
+  lineupBuilderState.searchHint = '';
+  lineupBuilderState.searchScope = '';
+  saveLineupBuilderState();
+  renderLineupBuilderPage(lineupBuilderRoot);
+  if(lineupBuilderState.selectedTeamId !== LINEUP_BUILDER_ALL_TEAMS) {
+    ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId).catch(() => {});
+  }
+  if(lineupBuilderState.modalOpen) await lineupBuilderRefreshSearch();
+}
+
 async function lineupBuilderOpenSlot(slotId){
   lineupBuilderState.activeSlotId = slotId;
   lineupBuilderState.modalOpen = true;
   lineupBuilderState.searchQuery = '';
-  lineupBuilderState.searchLoading = true;
   lineupBuilderState.searchError = '';
   lineupBuilderState.searchResults = [];
+  lineupBuilderState.searchHint = '';
+  lineupBuilderState.searchScope = '';
   renderLineupBuilderModal();
-  try {
-    await ensureLineupBuilderCatalog();
-    lineupBuilderState.searchLoading = false;
-    lineupBuilderRefreshSearch();
-  } catch(e) {
-    lineupBuilderState.searchLoading = false;
-    lineupBuilderState.searchError = e.message || 'Kunde inte läsa in spelarkatalogen.';
-    renderLineupBuilderModal();
-  }
+  await lineupBuilderRefreshSearch();
 }
 
 function lineupBuilderCloseModal(){
@@ -3226,6 +3450,8 @@ function lineupBuilderCloseModal(){
   lineupBuilderState.searchQuery = '';
   lineupBuilderState.searchResults = [];
   lineupBuilderState.searchError = '';
+  lineupBuilderState.searchHint = '';
+  lineupBuilderState.searchScope = '';
   renderLineupBuilderModal();
 }
 
@@ -3234,11 +3460,24 @@ function lineupBuilderHandleSearchInput(value){
   if(lineupBuilderSearchTimer) clearTimeout(lineupBuilderSearchTimer);
   lineupBuilderSearchTimer = setTimeout(() => {
     lineupBuilderRefreshSearch();
-  }, 180);
+  }, 260);
+}
+
+function lineupBuilderFindPlayerInCaches(playerId){
+  const targetId = Number(playerId);
+  for(const bucket of Object.values(lineupBuilderCache.squadByLeagueTeam || {})){
+    const match = (bucket || []).find(player => Number(player.id) === targetId);
+    if(match) return match;
+  }
+  for(const bucket of Object.values(lineupBuilderCache.broadSearchByLeagueQuery || {})){
+    const match = (bucket || []).find(player => Number(player.id) === targetId);
+    if(match) return match;
+  }
+  return null;
 }
 
 function lineupBuilderAssignPlayer(slotId, playerId){
-  const player = (lineupBuilderCatalog || []).find(item => Number(item.id) === Number(playerId));
+  const player = lineupBuilderFindPlayerInCaches(playerId);
   if(!player) return;
   lineupBuilderState.slots[slotId] = {
     id: player.id,
