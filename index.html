@@ -285,8 +285,10 @@ tr.season-row td{border-left:2px solid var(--gold)}
 }
 .pos-tag{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  background:var(--dark4);border-radius:2px;padding:3px 8px;color:var(--muted);
+  display:inline-flex;align-items:center;justify-content:center;max-width:100%;
+  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:none;
+  background:var(--dark4);border-radius:999px;padding:4px 10px;color:var(--muted);line-height:1.2;
+  white-space:normal;text-align:center;
 }
 .pcell{display:flex;align-items:center;gap:10px}
 .pcell img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--dark4);flex-shrink:0}
@@ -1582,7 +1584,8 @@ main > *{animation:fadeUp .3s ease both}
 .lb-result-tags{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
 .lb-tag{
   display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 .65rem;border-radius:999px;
-  border:1px solid rgba(108,86,44,.12);background:rgba(255,255,255,.86);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)
+  border:1px solid rgba(108,86,44,.12);background:rgba(255,255,255,.86);font-size:10px;font-weight:800;letter-spacing:.35px;text-transform:none;color:var(--muted);
+  text-align:center;white-space:normal;line-height:1.2
 }
 .lb-tag.fit{color:var(--green);border-color:rgba(47,143,103,.2);background:rgba(47,143,103,.08)}
 .lb-tag.soft{color:#87611D;border-color:rgba(201,165,75,.24);background:rgba(201,165,75,.1)}
@@ -2772,6 +2775,122 @@ function normalizeText(str){
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+const POSITION_LABEL_MAP = {
+  'gk':'Målvakt',
+  'mv':'Målvakt',
+  'goalkeeper':'Målvakt',
+  'keeper':'Målvakt',
+  'rb':'Högerback',
+  'hb':'Högerback',
+  'right back':'Högerback',
+  'lb':'Vänsterback',
+  'vb':'Vänsterback',
+  'left back':'Vänsterback',
+  'cb':'Mittback',
+  'mb':'Mittback',
+  'centre back':'Mittback',
+  'center back':'Mittback',
+  'defender':'Försvarare',
+  'rwb':'Höger wingback',
+  'right wing back':'Höger wingback',
+  'lwb':'Vänster wingback',
+  'left wing back':'Vänster wingback',
+  'wb':'Wingback',
+  'cdm':'Defensiv mittfältare',
+  'dm':'Defensiv mittfältare',
+  'defensive midfielder':'Defensiv mittfältare',
+  'cm':'Central mittfältare',
+  'central midfielder':'Central mittfältare',
+  'midfielder':'Mittfältare',
+  'cam':'Offensiv mittfältare',
+  'am':'Offensiv mittfältare',
+  '10':'Offensiv mittfältare',
+  'attacking midfielder':'Offensiv mittfältare',
+  'rm':'Högermittfältare',
+  'hm':'Högermittfältare',
+  'ram':'Högermittfältare',
+  'right midfielder':'Högermittfältare',
+  'lm':'Vänstermittfältare',
+  'vm':'Vänstermittfältare',
+  'lam':'Vänstermittfältare',
+  'left midfielder':'Vänstermittfältare',
+  'rw':'Högerytter',
+  'hy':'Högerytter',
+  'right wing':'Högerytter',
+  'right winger':'Högerytter',
+  'lw':'Vänsterytter',
+  'vy':'Vänsterytter',
+  'left wing':'Vänsterytter',
+  'left winger':'Vänsterytter',
+  'winger':'Ytter',
+  'st':'Anfallare',
+  'anf':'Anfallare',
+  'attacker':'Anfallare',
+  'forward':'Anfallare',
+  'striker':'Anfallare',
+  'cf':'Centerforward',
+  'center forward':'Centerforward',
+  'centre forward':'Centerforward',
+  'ss':'Släpande anfallare',
+  'second striker':'Släpande anfallare'
+};
+
+const POSITION_SECTION_LABEL_MAP = {
+  'gk':'Målvakter',
+  'goalkeeper':'Målvakter',
+  'defender':'Försvarare',
+  'cb':'Mittbackar',
+  'mb':'Mittbackar',
+  'rb':'Backar',
+  'lb':'Backar',
+  'hb':'Backar',
+  'vb':'Backar',
+  'rwb':'Wingbacks',
+  'lwb':'Wingbacks',
+  'wb':'Wingbacks',
+  'midfielder':'Mittfältare',
+  'cm':'Centrala mittfältare',
+  'cam':'Offensiva mittfältare',
+  'am':'Offensiva mittfältare',
+  'cdm':'Defensiva mittfältare',
+  'dm':'Defensiva mittfältare',
+  'rm':'Yttermittfältare',
+  'lm':'Yttermittfältare',
+  'hm':'Yttermittfältare',
+  'vm':'Yttermittfältare',
+  'attacker':'Anfallare',
+  'forward':'Anfallare',
+  'st':'Anfallare',
+  'anf':'Anfallare',
+  'cf':'Forwards',
+  'ss':'Anfallare'
+};
+
+function normalizePositionKey(value=''){
+  return normalizeText(String(value || ''))
+    .replace(/[._-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatPositionLabel(value=''){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
+  if(parts.length > 1) {
+    return parts.map(part => formatPositionLabel(part)).filter(Boolean).join(' / ');
+  }
+  const normalized = normalizePositionKey(raw);
+  return POSITION_LABEL_MAP[normalized] || fixEnc(fixName(raw));
+}
+
+function formatPositionSectionLabel(value=''){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const normalized = normalizePositionKey(raw);
+  return POSITION_SECTION_LABEL_MAP[normalized] || formatPositionLabel(raw);
+}
+
 function withTimeout(promise, ms = 12000, label = 'Request') {
   let timer = null;
   const timeout = new Promise((_, reject) => {
@@ -3113,6 +3232,11 @@ function lineupBuilderExportName(name=''){
   return `${firstInitial} ${surname}`.trim();
 }
 
+function lineupBuilderRoleLabel(slot){
+  if(!slot) return '';
+  return formatPositionLabel(slot.role) || formatPositionLabel(slot.label) || slot.role || slot.label || '';
+}
+
 function lineupBuilderNormalizePosition(value=''){
   return normalizeText(value).replace(/[^a-z\s/-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -3395,7 +3519,7 @@ function renderLineupBuilderPitch(){
             </span>
             <span class="lb-slot-meta">
               <span class="lb-slot-placeholder">Välj spelare</span>
-              <span class="lb-slot-hint">${esc(slot.role.toUpperCase())}</span>
+              <span class="lb-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
             </span>
           </button>
         `;
@@ -3466,7 +3590,7 @@ function renderLineupBuilderExportStage(){
                   </span>
                   <span class="lb-export-slot-meta">
                     <span class="lb-export-slot-placeholder">Välj spelare</span>
-                    <span class="lb-export-slot-hint">${esc(slot.role.toUpperCase())}</span>
+                    <span class="lb-export-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
                   </span>
                 </div>
               `;
@@ -3556,7 +3680,7 @@ function renderLineupBuilderModal(){
               </span>
             </span>
             <span class="lb-result-tags">
-              ${entry.player.position ? `<span class="lb-tag">${esc(entry.player.position)}</span>` : ''}
+              ${entry.player.position ? `<span class="lb-tag">${esc(formatPositionLabel(entry.player.position))}</span>` : ''}
               <span class="lb-tag ${entry.fit === 'ideal' ? 'fit' : entry.fit === 'soft' ? 'soft' : ''}">${entry.fit === 'ideal' ? 'Bra match' : entry.fit === 'soft' ? 'Flexibel' : 'Fri roll'}</span>
             </span>
           </button>
@@ -5053,7 +5177,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
       <div class="kicker">${item.kicker}</div>
       <div class="name">${esc(leader.player.playerName)}</div>
       <div class="value">${getCategoryDisplayValue(category, leader.player, leader.value)}</div>
-      <div class="meta">${esc(leader.player.position || leader.player.teamName || 'Spelare')}</div>
+      <div class="meta">${esc(formatPositionLabel(leader.player.position) || leader.player.teamName || 'Spelare')}</div>
     </div>`;
   }).filter(Boolean).join('');
 
@@ -5075,7 +5199,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
             <img src="${item.player.photo || ''}" onerror="this.style.opacity='.15'" loading="lazy" style="border-radius:50%">
             <div>
               <div class="pn">${esc(item.player.playerName)}</div>
-              <div class="ps">${esc(item.player.position || item.player.teamName || 'Spelare')}</div>
+              <div class="ps">${esc(formatPositionLabel(item.player.position) || item.player.teamName || 'Spelare')}</div>
             </div>
           </div>
         </td>
@@ -5201,8 +5325,6 @@ async function pageTeam(el, teamId) {
     `;
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
-    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
-    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sorted = [...squadPlayers].sort((a,b)=>
       (posOrder[a.position]||5)-(posOrder[b.position]||5));
 
@@ -5210,10 +5332,10 @@ async function pageTeam(el, teamId) {
     const playerRows = sorted.map(p => {
       const info = playerInfoById[p.id] || {};
       const rawPos = p.position || info.position || '—';
-      const pos = posLabel[rawPos] || rawPos;
+      const pos = formatPositionLabel(rawPos) || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, p);
       let sep = '';
-      if(rawPos!==lastPos && posSection[rawPos]) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
+      if(rawPos!==lastPos) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
         <td><div class="pcell">
           <img src="${p.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
@@ -5488,17 +5610,15 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
-    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
-    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[a.position]||5)-(posOrder[b.position]||5));
     let lastPos = '';
     const playerRows = sortedSquad.map(player => {
       const info = playerInfoById[player.id] || {};
       const rawPos = player.position || info.position || '—';
-      const pos = posLabel[rawPos] || rawPos;
+      const pos = formatPositionLabel(rawPos) || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, player);
       let sep = '';
-      if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
+      if(rawPos !== lastPos) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
@@ -5999,7 +6119,7 @@ async function pagePlayer(el, playerId) {
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
             <span>${renderNationalityDisplay(p)}</span>
-            <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
+            <span>⚽ ${esc(formatPositionLabel(curStats.games?.position||p.position||'—') || '—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
             ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
