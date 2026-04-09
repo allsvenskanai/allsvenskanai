@@ -285,10 +285,8 @@ tr.season-row td{border-left:2px solid var(--gold)}
 }
 .pos-tag{
   font-family:'Barlow Condensed',sans-serif;
-  display:inline-flex;align-items:center;justify-content:center;max-width:100%;
-  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:none;
-  background:var(--dark4);border-radius:999px;padding:4px 10px;color:var(--muted);line-height:1.2;
-  white-space:normal;text-align:center;
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  background:var(--dark4);border-radius:2px;padding:3px 8px;color:var(--muted);
 }
 .pcell{display:flex;align-items:center;gap:10px}
 .pcell img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--dark4);flex-shrink:0}
@@ -1224,11 +1222,11 @@ main > *{animation:fadeUp .3s ease both}
 
 /* LINEUP BUILDER */
 .lb-shell{display:grid;gap:1.2rem}
-.lb-grid{display:grid;grid-template-columns:1fr;gap:1rem;align-items:start}
+.lb-grid{display:grid;grid-template-columns:minmax(320px,.95fr) minmax(0,1.4fr);gap:1rem;align-items:start}
 .lb-card{
-  background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,251,243,.38)),var(--dark2);
-  border:1px solid rgba(201,165,75,.18);border-radius:24px;padding:1.25rem 1.25rem 1.3rem;
-  box-shadow:0 20px 42px rgba(66,48,18,.09), inset 0 1px 0 rgba(255,255,255,.6);position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.16)),var(--dark2);
+  border:1px solid var(--border);border-radius:22px;padding:1.15rem 1.15rem 1.2rem;
+  box-shadow:0 18px 36px rgba(66,48,18,.08);position:relative;overflow:hidden;
 }
 .lb-card::before{
   content:'';position:absolute;inset:0;background:linear-gradient(140deg,rgba(201,165,75,.10),transparent 52%);
@@ -1251,47 +1249,39 @@ main > *{animation:fadeUp .3s ease both}
   background:rgba(255,255,255,.68);border:1px solid rgba(108,86,44,.1);font-size:11px;font-weight:700;
   letter-spacing:1px;text-transform:uppercase;color:var(--text2);
 }
-.lb-controls{display:grid;gap:1.05rem}
-.lb-controls-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem .95rem}
-.lb-field{display:grid;gap:.5rem}
+.lb-controls{display:grid;gap:1rem}
+.lb-controls-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.lb-field{display:grid;gap:.45rem}
 .lb-field.full{grid-column:1 / -1}
 .lb-label{
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.6px;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.1px;
   text-transform:uppercase;color:var(--muted);
 }
 .lb-input,.lb-select{
-  width:100%;min-height:54px;padding:0 1rem;border-radius:16px;border:1px solid rgba(201,165,75,.14);
-  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,250,241,.92));color:var(--text);outline:none;
-  font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;
-  box-shadow:0 8px 18px rgba(88,66,26,.05), inset 0 1px 0 rgba(255,255,255,.78);
-  transition:border-color .18s,box-shadow .18s,background .18s,transform .18s;
+  width:100%;min-height:48px;padding:0 .95rem;border-radius:14px;border:1px solid var(--border);
+  background:rgba(255,253,248,.95);color:var(--text);outline:none;
+  font-family:'Barlow',sans-serif;font-size:14px;transition:border-color .18s,box-shadow .18s,background .18s;
 }
 .lb-input:focus,.lb-select:focus{
-  border-color:rgba(201,165,75,.5);box-shadow:0 0 0 4px rgba(201,165,75,.12),0 12px 24px rgba(88,66,26,.07);background:#fff;
+  border-color:rgba(201,165,75,.45);box-shadow:0 0 0 3px rgba(201,165,75,.12);background:#fff;
 }
-.lb-input:hover,.lb-select:hover{border-color:rgba(201,165,75,.28)}
-.lb-toolbar{display:flex;gap:.75rem;flex-wrap:wrap}
+.lb-toolbar{display:flex;gap:.7rem;flex-wrap:wrap}
 .lb-button{
-  min-height:48px;padding:0 1.05rem;border-radius:16px;border:1px solid rgba(201,165,75,.16);cursor:pointer;
-  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,248,238,.75));color:var(--text);
+  min-height:44px;padding:0 1rem;border-radius:14px;border:1px solid var(--border);cursor:pointer;
+  background:rgba(255,255,255,.72);color:var(--text);
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
-  box-shadow:0 10px 20px rgba(88,66,26,.06), inset 0 1px 0 rgba(255,255,255,.72);
   transition:transform .18s,box-shadow .18s,border-color .18s,background .18s,opacity .18s;
 }
-.lb-button:hover{transform:translateY(-1px);box-shadow:0 16px 26px rgba(66,48,18,.1);border-color:rgba(201,165,75,.26)}
+.lb-button:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(66,48,18,.08);border-color:var(--border-hi)}
 .lb-button.primary{
-  background:linear-gradient(135deg,#D8B45A,#EAD188 65%,#F2DEAA);border-color:rgba(201,165,75,.44);color:#2B2113;
-  box-shadow:0 16px 30px rgba(201,165,75,.22), inset 0 1px 0 rgba(255,255,255,.45);
+  background:linear-gradient(135deg,rgba(201,165,75,.95),rgba(230,201,119,.95));border-color:rgba(201,165,75,.4);color:#2B2113;
 }
-.lb-button.ghost{background:linear-gradient(180deg,rgba(255,255,255,.76),rgba(255,250,241,.62))}
-.lb-button.warn{color:#7B3C3C;border-color:rgba(182,81,81,.18);background:linear-gradient(180deg,rgba(255,245,245,.92),rgba(255,239,239,.7))}
+.lb-button.ghost{background:rgba(255,255,255,.38)}
+.lb-button.warn{color:#7B3C3C;border-color:rgba(182,81,81,.22);background:rgba(182,81,81,.08)}
 .lb-button:disabled{opacity:.6;cursor:wait;transform:none;box-shadow:none}
-.lb-side-note{
-  padding:.95rem 1rem;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.74),rgba(255,249,240,.58));
-  border:1px solid rgba(201,165,75,.12);font-size:12px;line-height:1.65;color:var(--text2)
-}
+.lb-side-note{font-size:12px;line-height:1.6;color:var(--muted)}
 .lb-status{
-  min-height:26px;padding:0 .1rem;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.45rem;
+  min-height:24px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.45rem;
 }
 .lb-status[data-tone="success"]{color:var(--green)}
 .lb-status[data-tone="error"]{color:var(--red)}
@@ -1301,33 +1291,28 @@ main > *{animation:fadeUp .3s ease both}
   border:1px solid var(--border);border-radius:24px;padding:1rem;
 }
 .lb-capture-shell{
-  position:relative;overflow:hidden;border-radius:28px;padding:1.4rem 1.4rem 1.25rem;
-  width:100%;max-width:1080px;margin:0 auto;min-height:0;
+  position:relative;overflow:hidden;border-radius:28px;padding:1.45rem 1.45rem 1.25rem;
   background:
-    radial-gradient(circle at top left, rgba(201,165,75,.22), transparent 36%),
-    radial-gradient(circle at bottom right, rgba(255,255,255,.06), transparent 26%),
-    linear-gradient(160deg,#103C2E 0%,#0B3025 34%,#09251D 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 16px 40px rgba(9,37,29,.2);
+    radial-gradient(circle at top left, rgba(201,165,75,.24), transparent 33%),
+    radial-gradient(circle at top right, rgba(47,143,103,.16), transparent 28%),
+    linear-gradient(160deg,#103C2E 0%,#0A2E24 34%,#071E18 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 44px rgba(9,37,29,.22);
 }
 .lb-capture-shell::before{
   content:'';position:absolute;inset:0;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.05),transparent 18%,rgba(0,0,0,.08) 100%),
-    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px),
-    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);
-  background-size:auto,26px 26px,26px 26px;opacity:.45;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:24px 24px;opacity:.18;pointer-events:none;
 }
 .lb-capture-shell::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at center, transparent 46%, rgba(0,0,0,.12) 100%);
-  opacity:.55;
+  content:'';position:absolute;left:50%;bottom:2.8rem;transform:translateX(-50%);
+  width:72%;height:220px;pointer-events:none;opacity:0;
 }
 .lb-capture-head{
-  position:relative;z-index:1;display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;
+  position:relative;z-index:2;display:flex;justify-content:space-between;gap:1.25rem;align-items:flex-start;flex-wrap:wrap;
 }
 .lb-capture-title{
-  font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;
-  line-height:.95;color:#F8F2E8;text-wrap:balance;
+  font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;letter-spacing:1.4px;text-transform:uppercase;
+  line-height:.92;color:#F8F2E8;text-wrap:balance;
 }
 .lb-capture-subtitle{
   margin-top:.35rem;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:rgba(248,242,232,.78)
@@ -1335,204 +1320,113 @@ main > *{animation:fadeUp .3s ease both}
 .lb-brand{
   display:grid;justify-items:end;gap:4px;text-align:right;font-family:'Barlow Condensed',sans-serif;color:#F8F2E8;
 }
-.lb-brand strong{font-size:17px;letter-spacing:2px;text-transform:uppercase}
+.lb-brand strong{font-size:18px;letter-spacing:.4px;text-transform:none;font-weight:900}
 .lb-brand span{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(248,242,232,.64)}
 .lb-pitch{
-  position:relative;z-index:1;margin-top:1rem;min-height:840px;border-radius:30px;padding:1rem;
+  position:relative;z-index:1;margin-top:1.15rem;min-height:790px;border-radius:30px;padding:1.05rem;
   background:
-    radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 30%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8.2%, rgba(0,0,0,.02) 8.2% 16.4%),
-    linear-gradient(180deg,#238650 0%,#1C7445 36%,#155B38 100%);
-  border:2px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset 0 18px 34px rgba(255,255,255,.04);
+    linear-gradient(90deg,rgba(255,255,255,.035) 0 8%,rgba(0,0,0,.03) 8% 16%,rgba(255,255,255,.035) 16% 24%,rgba(0,0,0,.03) 24% 32%,rgba(255,255,255,.035) 32% 40%,rgba(0,0,0,.03) 40% 48%,rgba(255,255,255,.035) 48% 56%,rgba(0,0,0,.03) 56% 64%,rgba(255,255,255,.035) 64% 72%,rgba(0,0,0,.03) 72% 80%,rgba(255,255,255,.035) 80% 88%,rgba(0,0,0,.03) 88% 100%),
+    linear-gradient(180deg,#2A8D56 0%,#1E7445 100%);
+  border:2px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset 0 18px 50px rgba(255,255,255,.05);
 }
-.lb-pitch svg{
-  position:absolute;inset:1rem;width:calc(100% - 2rem);height:calc(100% - 2rem);pointer-events:none;
+.lb-pitch::before,
+.lb-pitch::after{
+  content:'';position:absolute;left:50%;transform:translateX(-50%);pointer-events:none
 }
-.lb-pitch-mark{fill:none;stroke:rgba(255,255,255,.7);stroke-width:2}
-.lb-pitch-mark.soft{stroke:rgba(255,255,255,.58)}
-.lb-pitch-spot{fill:rgba(255,255,255,.82)}
-.lb-export-stage{
-  position:fixed;left:-20000px;top:0;width:1080px;height:1920px;opacity:0;pointer-events:none;overflow:hidden;
+.lb-pitch::before{top:1rem;bottom:1rem;width:2px;background:rgba(255,255,255,.6)}
+.lb-pitch::after{
+  top:50%;width:22%;aspect-ratio:1;border:2px solid rgba(255,255,255,.58);border-radius:50%;
+  transform:translate(-50%,-50%);
 }
-.lb-export-stage .lb-export-frame{transform:none !important}
-.lb-export-frame{
-  width:1080px;height:1920px;padding:64px 64px 54px;overflow:hidden;position:relative;
-  background:
-    radial-gradient(circle at top left, rgba(201,165,75,.16), transparent 22%),
-    radial-gradient(circle at 50% 20%, rgba(255,255,255,.04), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(255,255,255,.04), transparent 18%),
-    linear-gradient(180deg,#081712 0%,#0A2018 38%,#071611 100%);
-  display:grid;grid-template-rows:auto auto auto auto;gap:24px;
+.lb-pitch-lines{
+  position:absolute;inset:1rem;border:2px solid rgba(255,255,255,.62);border-radius:20px;pointer-events:none;
 }
-.lb-export-frame::before{
-  content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
-}
-.lb-export-frame::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 58%, transparent 34%, rgba(0,0,0,.24) 100%);
-}
-.lb-export-top{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:22px;position:relative;z-index:2;
-  padding:12px 2px 22px;
-}
-.lb-export-kicker{
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#E3C777;
-}
-.lb-export-title{
-  margin-top:10px;font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;line-height:.94;letter-spacing:.95px;text-transform:uppercase;color:#FAF4E8;
-  max-width:690px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.lb-export-subtitle{
-  margin-top:10px;font-size:16px;font-weight:600;letter-spacing:.55px;text-transform:none;color:rgba(250,244,232,.72)
-}
-.lb-export-brand{
-  display:grid;justify-items:end;gap:5px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:8px 18px 0 0;background:none;border:none
-}
-.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:.9px;text-transform:none;line-height:.95}
-.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(250,244,232,.56)}
-.lb-export-pitch-wrap{
-  position:relative;display:grid;align-items:center;justify-items:center;
-}
-.lb-export-pitch{
-  position:relative;width:100%;max-width:920px;height:1320px;border-radius:44px;padding:26px;overflow:hidden;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,.06), transparent 26%),
-    linear-gradient(180deg, rgba(255,255,255,.04), transparent 18%, rgba(0,0,0,.08) 100%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 8%, rgba(0,0,0,.02) 8% 16%),
-    linear-gradient(180deg,#248654 0%,#1C7445 42%,#134A2F 100%);
-  border:3px solid rgba(255,255,255,.2);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 22px 40px rgba(255,255,255,.03), 0 34px 80px rgba(0,0,0,.18);
-}
-.lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
-.lb-export-slot{
-  position:absolute;transform:translateX(-50%);width:180px;min-height:186px;background:none;border:none;color:#F8F2E8;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;text-align:center;
-}
-.lb-export-slot::after{
-  content:'';position:absolute;left:50%;top:88px;transform:translateX(-50%);width:86px;height:24px;border-radius:999px;
-  background:radial-gradient(circle, rgba(3,14,11,.28) 0%, rgba(3,14,11,.16) 52%, rgba(3,14,11,0) 100%);
-  filter:blur(4px);pointer-events:none;z-index:0;
-}
-.lb-export-slot-core{
-  width:116px;height:116px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
-  background:linear-gradient(180deg,rgba(10,27,21,.22),rgba(5,22,17,.09));border:3px solid rgba(255,255,255,.22);box-shadow:0 16px 30px rgba(0,0,0,.16), 0 0 0 6px rgba(255,255,255,.03), 0 0 18px rgba(255,255,255,.06);
-  z-index:1;
-}
-.lb-export-slot.empty .lb-export-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.18),rgba(4,17,13,.1));border-style:dashed;border-color:rgba(255,255,255,.18)}
-.lb-export-slot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.lb-export-slot-fallback{
-  width:100%;height:100%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;letter-spacing:1px;
-  color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.92),rgba(230,201,119,.78));text-transform:uppercase;border-radius:50%;
-}
-.lb-export-slot.empty .lb-export-slot-fallback{
-  font-size:56px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
-}
-.lb-export-slot-pos{
-  position:absolute;left:50%;top:-20px;transform:translateX(-50%);min-width:54px;height:36px;padding:0 14px;border-radius:999px;
-  background:linear-gradient(180deg,#101714,#0B110F);border:1px solid rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 14px rgba(0,0,0,.18);z-index:3;
-}
-.lb-export-slot-meta{
-  width:100%;max-width:170px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:5px;
-}
-.lb-export-slot-name{
-  width:100%;max-width:164px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 10px rgba(0,0,0,.22);letter-spacing:.12px;text-transform:none;
-}
-.lb-export-slot-club{
-  display:inline-flex;align-items:center;gap:7px;max-width:152px;padding:5px 11px;border-radius:999px;
-  background:rgba(9,34,25,.56);border:1px solid rgba(255,255,255,.18);font-size:11px;letter-spacing:.22px;text-transform:none;box-shadow:0 8px 14px rgba(0,0,0,.1);
-}
-.lb-export-slot-club img{width:17px;height:17px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:108px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#F8F2E8}
-.lb-export-slot-placeholder{
-  display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
-}
-.lb-export-slot-hint{
-  display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:0 8px;border-radius:999px;background:transparent;border:none;
-  font-size:10px;color:rgba(248,242,232,.52);letter-spacing:.75px;text-transform:uppercase
-}
-.lb-export-watermark{
-  position:absolute;left:50%;transform:translateX(-50%);bottom:158px;font-family:'Barlow Condensed',sans-serif;font-size:118px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.034);pointer-events:none;line-height:.85;text-align:center;white-space:nowrap;
-}
-.lb-export-footer{
-  display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
-  padding:16px 2px 0;border-top:1px solid rgba(255,255,255,.08)
-}
-.lb-export-footer strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.9)
-}
-.lb-export-footer-left{
-  margin-left:-10px;
-}
-.lb-export-footer-meta{
-  display:flex;align-items:center;justify-content:flex-end;gap:0;text-align:right;white-space:nowrap
-}
-.lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:.85px;text-transform:none;color:#FAF4E8
-}
+.lb-pitch-box,.lb-pitch-goal{position:absolute;left:50%;transform:translateX(-50%);border:2px solid rgba(255,255,255,.58);pointer-events:none}
+.lb-pitch-box.top{top:1rem;width:34%;height:15%;border-top:none;border-radius:0 0 18px 18px}
+.lb-pitch-box.bottom{bottom:1rem;width:34%;height:15%;border-bottom:none;border-radius:18px 18px 0 0}
+.lb-pitch-goal.top{top:.25rem;width:16%;height:5%;border-top:none;border-radius:0 0 12px 12px}
+.lb-pitch-goal.bottom{bottom:.25rem;width:16%;height:5%;border-bottom:none;border-radius:12px 12px 0 0}
 .lb-slot{
-  position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;text-align:center;
+  position:absolute;transform:translate(-50%,-50%);width:128px;background:none;border:none;cursor:pointer;color:#F8F2E8;
+  display:grid;justify-items:center;gap:.42rem;text-align:center;
 }
 .lb-slot-core{
-  width:84px;height:84px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
-  background:linear-gradient(180deg,rgba(10,27,21,.42),rgba(5,22,17,.3));border:2px solid rgba(255,255,255,.24);box-shadow:0 16px 34px rgba(0,0,0,.24), 0 0 0 7px rgba(255,255,255,.035);
-  transition:transform .18s,border-color .18s,box-shadow .18s,background .18s;
+  width:84px;height:84px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:hidden;
+  background:rgba(6,26,20,.5);border:3px solid rgba(255,255,255,.3);box-shadow:0 16px 34px rgba(0,0,0,.24);
+  transition:transform .18s,border-color .18s,box-shadow .18s,background .18s,filter .18s;
 }
-.lb-slot:hover .lb-slot-core{transform:translateY(-2px);border-color:rgba(230,201,119,.78);box-shadow:0 20px 34px rgba(0,0,0,.26)}
-.lb-slot.empty .lb-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.18),rgba(4,17,13,.1));border-style:dashed;border-color:rgba(255,255,255,.18)}
-.lb-slot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.lb-slot:hover .lb-slot-core{transform:translateY(-2px);border-color:rgba(230,201,119,.86);box-shadow:0 20px 36px rgba(0,0,0,.28);filter:drop-shadow(0 0 10px rgba(255,255,255,.10))}
+.lb-slot.empty .lb-slot-core{background:rgba(4,17,13,.22);border-style:dashed}
+.lb-slot-photo{width:100%;height:100%;object-fit:cover}
 .lb-slot-fallback{
   width:100%;height:100%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;
-  font-size:28px;font-weight:900;letter-spacing:1px;color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.92),rgba(230,201,119,.78));text-transform:uppercase;border-radius:50%;
-}
-.lb-slot.empty .lb-slot-fallback{
-  font-size:40px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
+  font-size:30px;font-weight:900;letter-spacing:1px;color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.96),rgba(230,201,119,.8));text-transform:uppercase;
 }
 .lb-slot-pos{
-  position:absolute;left:50%;top:-17px;transform:translateX(-50%);min-width:44px;height:28px;padding:0 10px;border-radius:999px;
-  background:linear-gradient(180deg,#121B17,#0D1411);border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8;
-  box-shadow:0 8px 16px rgba(0,0,0,.24);z-index:3;
-}
-.lb-slot-meta{
-  width:100%;max-width:140px;padding:8px 8px 7px;border-radius:16px;
-  background:linear-gradient(180deg,rgba(4,17,13,.36),rgba(4,17,13,.18));border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 12px 24px rgba(0,0,0,.12);display:grid;justify-items:center;gap:6px;backdrop-filter:blur(6px);
+  position:absolute;left:50%;top:-12px;transform:translateX(-50%);min-width:44px;height:30px;padding:0 10px;border-radius:999px;
+  background:#0B1411;border:1px solid rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:#F8F2E8;
+  box-shadow:0 10px 18px rgba(0,0,0,.18);
 }
 .lb-slot-name{
-  width:100%;max-width:136px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;line-height:.98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 10px rgba(0,0,0,.28);
+  width:100%;font-size:14px;font-weight:800;line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 10px rgba(0,0,0,.34);
 }
 .lb-slot-club{
-  display:inline-flex;align-items:center;gap:6px;max-width:122px;padding:4px 10px;border-radius:999px;
-  background:linear-gradient(180deg,rgba(4,17,13,.62),rgba(4,17,13,.4));border:1px solid rgba(255,255,255,.14);font-size:10px;letter-spacing:.7px;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border-radius:999px;
+  background:rgba(7,31,23,.7);border:1px solid rgba(255,255,255,.14);font-size:10px;letter-spacing:.35px;text-transform:none;
   box-shadow:0 8px 18px rgba(0,0,0,.18);
 }
 .lb-slot-club img{width:16px;height:16px;object-fit:contain;flex-shrink:0}
-.lb-slot-club span{display:block;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
-.lb-slot-placeholder{
-  display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 12px;border-radius:999px;
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase
-}
-.lb-slot-hint{
-  display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 8px;border-radius:999px;
-  background:transparent;border:1px solid rgba(255,255,255,.08);font-size:9px;color:rgba(248,242,232,.62);letter-spacing:.9px;text-transform:uppercase
-}
+.lb-slot-club span{display:block;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#F8F2E8}
+.lb-slot-placeholder{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+.lb-slot-hint{font-size:11px;color:rgba(248,242,232,.78)}
 .lb-footer-note{
-  position:relative;z-index:1;margin-top:1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  position:relative;z-index:2;margin-top:1.1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-end;
   font-size:12px;color:rgba(248,242,232,.76)
-}
-.lb-capture-export{
-  width:980px;
 }
 .lb-footer-note strong{
   font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#F8F2E8;
 }
+#lineupBuilderFooterMeta{white-space:nowrap}
+.lb-capture-shell.lb-export-mode{
+  width:1080px !important;min-height:1920px !important;max-width:none !important;display:flex;flex-direction:column;
+  padding:52px 48px 42px;border-radius:40px;overflow:hidden;
+}
+.lb-capture-shell.lb-export-mode::before{background-size:42px 42px;opacity:.12}
+.lb-capture-shell.lb-export-mode::after{
+  content:'ALLSVENSKANAI';position:absolute;left:50%;bottom:108px;transform:translateX(-50%);
+  font-family:'Barlow Condensed',sans-serif;font-size:128px;font-weight:900;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(248,242,232,.05);opacity:1;width:auto;height:auto;
+}
+.lb-export-mode .lb-capture-head{min-height:176px;align-items:flex-start}
+.lb-export-mode .lb-kicker{font-size:20px;letter-spacing:3px}
+.lb-export-mode .lb-capture-title{font-size:82px;max-width:620px;line-height:.9;letter-spacing:1px}
+.lb-export-mode .lb-capture-subtitle{margin-top:12px;font-size:22px;letter-spacing:1.8px}
+.lb-export-mode .lb-brand{margin-right:24px;transform:translateX(-18px);gap:6px}
+.lb-export-mode .lb-brand strong{font-size:34px;letter-spacing:.2px;text-transform:none}
+.lb-export-mode .lb-brand span{font-size:11px;letter-spacing:2.4px}
+.lb-export-mode .lb-pitch{margin-top:34px;min-height:1340px;padding:20px;border-radius:42px}
+.lb-export-mode .lb-pitch::before{top:20px;bottom:20px;width:2px}
+.lb-export-mode .lb-pitch::after{width:23%}
+.lb-export-mode .lb-pitch-lines{inset:20px;border-radius:30px}
+.lb-export-mode .lb-pitch-box.top{top:20px;width:44%;height:16%;border-radius:0 0 26px 26px}
+.lb-export-mode .lb-pitch-box.bottom{bottom:20px;width:44%;height:16%;border-radius:26px 26px 0 0}
+.lb-export-mode .lb-pitch-goal.top{top:4px;width:23%;height:7%}
+.lb-export-mode .lb-pitch-goal.bottom{bottom:4px;width:23%;height:7%}
+.lb-export-mode .lb-slot{width:154px;gap:8px}
+.lb-export-mode .lb-slot[data-group="mid"]{margin-top:-84px}
+.lb-export-mode .lb-slot[data-group="def"]{margin-top:18px}
+.lb-export-mode .lb-slot[data-group="gk"]{margin-top:38px}
+.lb-export-mode .lb-slot-core{width:110px;height:110px;border-width:4px;box-shadow:0 18px 40px rgba(0,0,0,.32);filter:drop-shadow(0 0 14px rgba(255,255,255,.08))}
+.lb-export-mode .lb-slot-pos{top:-14px;min-width:54px;height:36px;font-size:16px;padding:0 14px;box-shadow:0 12px 22px rgba(0,0,0,.22)}
+.lb-export-mode .lb-slot-name{font-size:18px;max-width:148px}
+.lb-export-mode .lb-slot-club{padding:6px 12px;font-size:12px;background:rgba(7,31,23,.82);border-color:rgba(255,255,255,.18)}
+.lb-export-mode .lb-slot-club img{width:18px;height:18px}
+.lb-export-mode .lb-slot-club span{max-width:104px}
+.lb-export-mode .lb-footer-note{margin-top:auto;padding-top:30px;font-size:18px;justify-content:space-between}
+.lb-export-mode .lb-footer-note strong{font-size:20px;letter-spacing:2.4px}
+.lb-export-mode #lineupBuilderFooterMeta{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:.8px;white-space:nowrap;color:#F8F2E8}
 .lb-modal{
   position:fixed;inset:0;z-index:320;background:rgba(15,14,11,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   display:none;align-items:flex-end;justify-content:center;padding:1rem;
@@ -1590,8 +1484,7 @@ main > *{animation:fadeUp .3s ease both}
 .lb-result-tags{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
 .lb-tag{
   display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 .65rem;border-radius:999px;
-  border:1px solid rgba(108,86,44,.12);background:rgba(255,255,255,.86);font-size:10px;font-weight:800;letter-spacing:.35px;text-transform:none;color:var(--muted);
-  text-align:center;white-space:normal;line-height:1.2
+  border:1px solid rgba(108,86,44,.12);background:rgba(255,255,255,.86);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)
 }
 .lb-tag.fit{color:var(--green);border-color:rgba(47,143,103,.2);background:rgba(47,143,103,.08)}
 .lb-tag.soft{color:#87611D;border-color:rgba(201,165,75,.24);background:rgba(201,165,75,.1)}
@@ -1599,31 +1492,18 @@ main > *{animation:fadeUp .3s ease both}
 .lb-empty strong{color:var(--text)}
 .lb-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
 .lb-summary-card{
-  position:relative;overflow:hidden;
-  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,248,236,.72));
-  border:1px solid rgba(201,165,75,.18);border-radius:20px;padding:1.05rem 1.1rem 1rem;
-  box-shadow:0 14px 28px rgba(88,66,26,.08), inset 0 1px 0 rgba(255,255,255,.68);
-}
-.lb-summary-card::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(145deg,rgba(201,165,75,.12),transparent 52%);
-  pointer-events:none;opacity:.95;
+  background:rgba(255,255,255,.52);border:1px solid var(--border);border-radius:16px;padding:.9rem 1rem
 }
 .lb-summary-label{
-  position:relative;z-index:1;
-  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted)
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)
 }
 .lb-summary-value{
-  position:relative;z-index:1;
-  margin-top:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:.95;color:var(--text)
+  margin-top:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;color:var(--text)
 }
-.lb-summary-copy{
-  position:relative;z-index:1;
-  margin-top:.42rem;font-size:12px;line-height:1.55;color:var(--text2);max-width:26ch
-}
+.lb-summary-copy{margin-top:.28rem;font-size:12px;line-height:1.5;color:var(--text2)}
 @media (max-width: 1080px){
-  .lb-capture-shell{max-width:1000px}
-  .lb-pitch{min-height:780px}
+  .lb-grid{grid-template-columns:1fr}
+  .lb-pitch{min-height:700px}
 }
 @media (max-width: 768px){
   .lb-card,.lb-capture{padding:.95rem}
@@ -1633,15 +1513,15 @@ main > *{animation:fadeUp .3s ease both}
   .lb-toolbar{display:grid;grid-template-columns:1fr 1fr}
   .lb-button.primary,.lb-button.ghost,.lb-button.warn{width:100%}
   .lb-capture-shell{padding:.95rem}
-  .lb-capture-export{width:100%}
   .lb-capture-title{font-size:30px}
   .lb-capture-subtitle{font-size:12px}
   .lb-brand{justify-items:start;text-align:left}
-  .lb-pitch{min-height:660px;padding:.7rem}
-  .lb-pitch svg{inset:.7rem;width:calc(100% - 1.4rem);height:calc(100% - 1.4rem)}
-  .lb-slot{width:104px;min-height:132px}
-  .lb-slot-core{width:62px;height:62px}
-  .lb-slot-pos{min-width:36px;height:24px;top:-14px;font-size:10px}
+  .lb-pitch{min-height:620px;padding:.7rem}
+  .lb-pitch-lines{inset:.7rem}
+  .lb-pitch::before{top:.7rem;bottom:.7rem}
+  .lb-slot{width:92px}
+  .lb-slot-core{width:60px;height:60px}
+  .lb-slot-pos{min-width:24px;height:24px;font-size:10px}
   .lb-slot-name{font-size:11px}
   .lb-slot-club{padding:2px 6px}
   .lb-slot-club img{width:14px;height:14px}
@@ -2781,247 +2661,6 @@ function normalizeText(str){
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-const POSITION_LABEL_MAP = {
-  'gk':'Målvakt',
-  'mv':'Målvakt',
-  'goalkeeper':'Målvakt',
-  'keeper':'Målvakt',
-  'rb':'Högerback',
-  'hb':'Högerback',
-  'right back':'Högerback',
-  'lb':'Vänsterback',
-  'vb':'Vänsterback',
-  'left back':'Vänsterback',
-  'cb':'Mittback',
-  'mb':'Mittback',
-  'centre back':'Mittback',
-  'center back':'Mittback',
-  'defender':'Försvarare',
-  'rwb':'Höger wingback',
-  'right wing back':'Höger wingback',
-  'lwb':'Vänster wingback',
-  'left wing back':'Vänster wingback',
-  'wb':'Wingback',
-  'cdm':'Defensiv mittfältare',
-  'dm':'Defensiv mittfältare',
-  'defensive midfielder':'Defensiv mittfältare',
-  'cm':'Central mittfältare',
-  'central midfielder':'Central mittfältare',
-  'midfielder':'Mittfältare',
-  'cam':'Offensiv mittfältare',
-  'am':'Offensiv mittfältare',
-  '10':'Offensiv mittfältare',
-  'attacking midfielder':'Offensiv mittfältare',
-  'rm':'Högermittfältare',
-  'hm':'Högermittfältare',
-  'ram':'Högermittfältare',
-  'right midfielder':'Högermittfältare',
-  'lm':'Vänstermittfältare',
-  'vm':'Vänstermittfältare',
-  'lam':'Vänstermittfältare',
-  'left midfielder':'Vänstermittfältare',
-  'rw':'Högerytter',
-  'hy':'Högerytter',
-  'right wing':'Högerytter',
-  'right winger':'Högerytter',
-  'lw':'Vänsterytter',
-  'vy':'Vänsterytter',
-  'left wing':'Vänsterytter',
-  'left winger':'Vänsterytter',
-  'winger':'Ytter',
-  'st':'Anfallare',
-  'anf':'Anfallare',
-  'attacker':'Anfallare',
-  'forward':'Anfallare',
-  'striker':'Anfallare',
-  'cf':'Centerforward',
-  'center forward':'Centerforward',
-  'centre forward':'Centerforward',
-  'ss':'Släpande anfallare',
-  'second striker':'Släpande anfallare'
-};
-
-const POSITION_BROAD_LABEL_MAP = {
-  'goalkeeper':'Målvakt',
-  'keeper':'Målvakt',
-  'defender':'Försvarare',
-  'midfielder':'Mittfältare',
-  'attacker':'Anfallare',
-  'forward':'Anfallare'
-};
-
-const POSITION_SECTION_LABEL_MAP = {
-  'gk':'Målvakter',
-  'goalkeeper':'Målvakter',
-  'defender':'Försvarare',
-  'cb':'Mittbackar',
-  'mb':'Mittbackar',
-  'rb':'Backar',
-  'lb':'Backar',
-  'hb':'Backar',
-  'vb':'Backar',
-  'rwb':'Wingbacks',
-  'lwb':'Wingbacks',
-  'wb':'Wingbacks',
-  'midfielder':'Mittfältare',
-  'cm':'Centrala mittfältare',
-  'cam':'Offensiva mittfältare',
-  'am':'Offensiva mittfältare',
-  'cdm':'Defensiva mittfältare',
-  'dm':'Defensiva mittfältare',
-  'rm':'Yttermittfältare',
-  'lm':'Yttermittfältare',
-  'hm':'Yttermittfältare',
-  'vm':'Yttermittfältare',
-  'attacker':'Anfallare',
-  'forward':'Anfallare',
-  'st':'Anfallare',
-  'anf':'Anfallare',
-  'cf':'Forwards',
-  'ss':'Anfallare'
-};
-
-function normalizePositionKey(value=''){
-  return normalizeText(String(value || ''))
-    .replace(/[._-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function normalizePositionCompactKey(value=''){
-  return normalizePositionKey(value).replace(/\s+/g, ' ');
-}
-
-function formatDetailedPosition(code=''){
-  const raw = String(code || '').trim();
-  if(!raw) return '';
-  const parts = raw.split(/\s*[,/|]\s*/).filter(Boolean);
-  if(parts.length > 1) {
-    return parts.map(part => formatDetailedPosition(part)).filter(Boolean).join(' / ');
-  }
-  const normalized = normalizePositionCompactKey(raw);
-  return POSITION_LABEL_MAP[normalized] || '';
-}
-
-function formatPositionLabel(value=''){
-  const detailed = formatDetailedPosition(value);
-  if(detailed) return detailed;
-  const raw = String(value || '').trim();
-  if(!raw) return '';
-  const normalized = normalizePositionCompactKey(raw);
-  return POSITION_BROAD_LABEL_MAP[normalized] || fixEnc(fixName(raw));
-}
-
-function resolveDetailedPosition(source, fallback=''){
-  const candidates = [];
-  const pushCandidate = value => {
-    if(value === null || value === undefined) return;
-    const stringValue = String(value).trim();
-    if(stringValue) candidates.push(stringValue);
-  };
-
-  if(typeof source === 'string') {
-    pushCandidate(source);
-  } else if(source && typeof source === 'object') {
-    pushCandidate(source.positionCode);
-    pushCandidate(source.pos);
-    pushCandidate(source.role);
-    pushCandidate(source.slotRole);
-    pushCandidate(source.detailedPosition);
-    pushCandidate(source.primaryPosition);
-    pushCandidate(source.secondaryPosition);
-    pushCandidate(source.position);
-    pushCandidate(source.player?.pos);
-    pushCandidate(source.player?.positionCode);
-    pushCandidate(source.player?.detailedPosition);
-    pushCandidate(source.player?.position);
-    pushCandidate(source.games?.positionCode);
-    pushCandidate(source.games?.detailedPosition);
-    pushCandidate(source.games?.position);
-    pushCandidate(source.statistics?.[0]?.games?.positionCode);
-    pushCandidate(source.statistics?.[0]?.games?.detailedPosition);
-    pushCandidate(source.statistics?.[0]?.games?.position);
-  }
-  pushCandidate(fallback);
-
-  let broadFallback = '';
-  for(const candidate of candidates){
-    const detailed = formatDetailedPosition(candidate);
-    if(detailed) return detailed;
-    if(!broadFallback) broadFallback = formatPositionLabel(candidate);
-  }
-  return broadFallback;
-}
-
-const teamDetailedPositionCache = {};
-
-function resolveDetailedRoleFromFormationGrid(formation='', grid='', fallback=''){
-  const rows = FORMATION_GRID_ROLE_CODES[String(formation || '').trim()];
-  const match = String(grid || '').trim().match(/^(\d+):(\d+)$/);
-  if(rows && match) {
-    const rowIndex = Number(match[1]) - 1;
-    const colIndex = Number(match[2]) - 1;
-    const roleCode = rows?.[rowIndex]?.[colIndex] || '';
-    if(roleCode) return resolveDetailedPosition({ positionCode: roleCode }, fallback);
-  }
-  return resolveDetailedPosition({ positionCode: fallback, pos: fallback, position: fallback }, fallback);
-}
-
-async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
-  const cacheKey = `${season}:${teamId}`;
-  if(teamDetailedPositionCache[cacheKey]) return teamDetailedPositionCache[cacheKey];
-
-  const fixtureIds = [...new Set((fixtures || [])
-    .filter(item => {
-      const started = !['NS', 'TBD', 'PST', 'CANC', 'ABD', 'AWD'].includes(String(item?.fixture?.status?.short || '').toUpperCase());
-      const involvesTeam = Number(item?.teams?.home?.id || 0) === Number(teamId) || Number(item?.teams?.away?.id || 0) === Number(teamId);
-      return started && involvesTeam;
-    })
-    .map(item => Number(item?.fixture?.id || 0))
-    .filter(Boolean))];
-
-  const promise = (async () => {
-    const counts = {};
-    const lineupResponses = await Promise.all(fixtureIds.map(async fixtureId => {
-      try {
-        const raw = await afRaw('fixtures/lineups', { fixture: fixtureId });
-        return raw?.response || [];
-      } catch {
-        return [];
-      }
-    }));
-
-    lineupResponses.forEach(lineups => {
-      const lineup = (lineups || []).find(item => Number(item?.team?.id || 0) === Number(teamId));
-      if(!lineup) return;
-      const formation = lineup?.formation || '';
-      (lineup?.startXI || []).forEach(entry => {
-        const playerId = Number(entry?.player?.id || 0);
-        if(!playerId) return;
-        const label = resolveDetailedRoleFromFormationGrid(formation, entry?.player?.grid, entry?.player?.pos || entry?.player?.position || '');
-        if(!label) return;
-        counts[playerId] ||= {};
-        counts[playerId][label] = (counts[playerId][label] || 0) + 1;
-      });
-    });
-
-    return Object.fromEntries(Object.entries(counts).map(([playerId, labels]) => {
-      const best = Object.entries(labels).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'sv'))[0]?.[0] || '';
-      return [playerId, best];
-    }));
-  })();
-
-  teamDetailedPositionCache[cacheKey] = promise;
-  return promise;
-}
-
-function formatPositionSectionLabel(value=''){
-  const raw = String(value || '').trim();
-  if(!raw) return '';
-  const normalized = normalizePositionKey(raw);
-  return POSITION_SECTION_LABEL_MAP[normalized] || formatPositionLabel(raw);
-}
-
 function withTimeout(promise, ms = 12000, label = 'Request') {
   let timer = null;
   const timeout = new Promise((_, reject) => {
@@ -3039,73 +2678,7 @@ async function afAll(ep, p={}) {
   return af(ep, p);
 }
 
-const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v2';
-const LINEUP_BUILDER_ALL_TEAMS = 'all';
-const LINEUP_BUILDER_MIN_GLOBAL_SEARCH = 2;
-const LINEUP_BUILDER_SAFE_AREA = { left: 12, right: 88, top: 8, bottom: 92 };
-const LINEUP_BUILDER_EXPORT_SAFE_AREA = { left: 9, right: 91, top: 8, bottom: 98 };
-const LINEUP_BUILDER_ROW_X = {
-  1: [50],
-  2: [38, 62],
-  3: [24, 50, 76],
-  4: [14, 38, 62, 86],
-  5: [10, 30, 50, 70, 90]
-};
-const LINEUP_BUILDER_EXPORT_ROW_X = {
-  1: [50],
-  2: [35, 65],
-  3: [20, 50, 80],
-  4: [11, 37, 63, 89],
-  5: [8, 29, 50, 71, 92]
-};
-const LINEUP_BUILDER_FORMATION_ROWS = {
-  '4-4-2': [
-    ['lst', 'rst'],
-    ['lm', 'lcm', 'rcm', 'rm'],
-    ['lb', 'lcb', 'rcb', 'rb'],
-    ['gk']
-  ],
-  '4-3-3': [
-    ['lw', 'st', 'rw'],
-    ['lcm', 'cm', 'rcm'],
-    ['lb', 'lcb', 'rcb', 'rb'],
-    ['gk']
-  ],
-  '3-5-2': [
-    ['lst', 'rst'],
-    ['lwb', 'lcm', 'cm', 'rcm', 'rwb'],
-    ['lcb', 'cb', 'rcb'],
-    ['gk']
-  ],
-  '4-2-3-1': [
-    ['st'],
-    ['lam', 'cam', 'ram'],
-    ['ldm', 'rdm'],
-    ['lb', 'lcb', 'rcb', 'rb'],
-    ['gk']
-  ],
-  '5-3-2': [
-    ['lst', 'rst'],
-    ['lcm', 'cm', 'rcm'],
-    ['lwb', 'lcb', 'cb', 'rcb', 'rwb'],
-    ['gk']
-  ]
-};
-const LINEUP_BUILDER_ROW_Y = {
-  4: [0, 28, 56, 84],
-  5: [0, 18, 38, 60, 84]
-};
-const LINEUP_BUILDER_EXPORT_ROW_Y = {
-  4: [4, 30, 68, 92],
-  5: [5, 24, 46, 69, 92]
-};
-const FORMATION_GRID_ROLE_CODES = {
-  '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
-  '4-3-3': [['mv'], ['vb','mb','mb','hb'], ['cm','cm','cm'], ['vy','cf','hy']],
-  '3-5-2': [['mv'], ['mb','mb','mb'], ['lwb','cm','cm','cm','rwb'], ['anf','anf']],
-  '4-2-3-1': [['mv'], ['vb','mb','mb','hb'], ['cdm','cdm'], ['vm','cam','hm'], ['anf']],
-  '5-3-2': [['mv'], ['lwb','mb','mb','mb','rwb'], ['cm','cm','cm'], ['anf','anf']]
-};
+const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v1';
 const LINEUP_BUILDER_FORMATIONS = {
   '4-4-2': [
     { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
@@ -3174,30 +2747,15 @@ const LINEUP_BUILDER_FORMATIONS = {
   ]
 };
 let lineupBuilderRoot = null;
+let lineupBuilderCatalog = null;
+let lineupBuilderCatalogPromise = null;
 let lineupBuilderSearchTimer = null;
 let lineupBuilderExportPromise = null;
 let lineupBuilderStatusTimer = null;
-let lineupBuilderTeamsRequestId = 0;
-let lineupBuilderSearchRequestId = 0;
-const LINEUP_BUILDER_LEAGUES = [
-  { key:'allsvenskan-men', id:LEAGUE, label:'Allsvenskan Herr', season:2026, teamOrder:true }
-];
-const LINEUP_BUILDER_LEAGUE_MAP = Object.fromEntries(LINEUP_BUILDER_LEAGUES.map(league => [league.key, league]));
-const lineupBuilderCache = {
-  leagueMeta: {},
-  teamsByLeague: {},
-  squadByLeagueTeam: {},
-  broadSearchByLeagueQuery: {}
-};
 const lineupBuilderState = {
   formation: '4-3-3',
   title: 'Omgångens elva',
-  subtitle: '',
-  selectedLeagueKey: LINEUP_BUILDER_LEAGUES[0].key,
-  selectedTeamId: LINEUP_BUILDER_ALL_TEAMS,
-  availableTeams: [],
-  teamsLoading: false,
-  teamsError: '',
+  subtitle: `Allsvenskan ${SEASON}`,
   slots: {},
   modalOpen: false,
   activeSlotId: '',
@@ -3205,8 +2763,7 @@ const lineupBuilderState = {
   searchResults: [],
   searchLoading: false,
   searchError: '',
-  searchHint: '',
-  searchScope: '',
+  catalogSeason: null,
   exportBusy: false,
   status: '',
   statusTone: 'idle'
@@ -3217,38 +2774,22 @@ function createLineupBuilderPersistedState(){
     formation: lineupBuilderState.formation,
     title: lineupBuilderState.title,
     subtitle: lineupBuilderState.subtitle,
-    selectedLeagueKey: lineupBuilderState.selectedLeagueKey,
-    selectedTeamId: lineupBuilderState.selectedTeamId,
     slots: lineupBuilderState.slots
   };
-}
-
-function lineupBuilderCurrentLeagueConfig(){
-  return LINEUP_BUILDER_LEAGUE_MAP[lineupBuilderState.selectedLeagueKey] || LINEUP_BUILDER_LEAGUES[0];
-}
-
-function lineupBuilderLeagueSeason(leagueConfig = lineupBuilderCurrentLeagueConfig()){
-  return Number(leagueConfig?.season || SEASON || 2026);
 }
 
 function loadLineupBuilderState(){
   try {
     const raw = localStorage.getItem(LINEUP_BUILDER_STORAGE_KEY);
-    if(!raw) {
-      lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
-      return;
-    }
+    if(!raw) return;
     const parsed = JSON.parse(raw);
     if(parsed && LINEUP_BUILDER_FORMATIONS[parsed.formation]) lineupBuilderState.formation = parsed.formation;
     if(parsed && typeof parsed.title === 'string') lineupBuilderState.title = parsed.title;
     if(parsed && typeof parsed.subtitle === 'string') lineupBuilderState.subtitle = parsed.subtitle;
-    if(parsed && LINEUP_BUILDER_LEAGUE_MAP[parsed.selectedLeagueKey]) lineupBuilderState.selectedLeagueKey = parsed.selectedLeagueKey;
-    if(parsed && (typeof parsed.selectedTeamId === 'string' || typeof parsed.selectedTeamId === 'number')) lineupBuilderState.selectedTeamId = String(parsed.selectedTeamId);
     if(parsed && parsed.slots && typeof parsed.slots === 'object') lineupBuilderState.slots = parsed.slots;
   } catch(e) {
     console.warn('[lineup-builder] restore failed', e.message);
   }
-  if(!lineupBuilderState.subtitle) lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
 }
 
 function saveLineupBuilderState(){
@@ -3269,62 +2810,6 @@ function lineupBuilderSlots(){
   return LINEUP_BUILDER_FORMATIONS[lineupBuilderState.formation] || LINEUP_BUILDER_FORMATIONS['4-3-3'];
 }
 
-function lineupBuilderSafePercentForArea(axis, value, safe = LINEUP_BUILDER_SAFE_AREA){
-  const min = axis === 'x' ? safe.left : safe.top;
-  const max = axis === 'x' ? safe.right : safe.bottom;
-  return min + ((max - min) * (value / 100));
-}
-
-function lineupBuilderSafePercent(axis, value){
-  return lineupBuilderSafePercentForArea(axis, value, LINEUP_BUILDER_SAFE_AREA);
-}
-
-function lineupBuilderFormationCoords(mode = 'builder'){
-  const formation = lineupBuilderState.formation;
-  const slots = lineupBuilderSlots();
-  const rows = LINEUP_BUILDER_FORMATION_ROWS[formation] || LINEUP_BUILDER_FORMATION_ROWS['4-3-3'];
-  const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
-  const rowXMap = mode === 'export' ? LINEUP_BUILDER_EXPORT_ROW_X : LINEUP_BUILDER_ROW_X;
-  const rowYMap = mode === 'export' ? LINEUP_BUILDER_EXPORT_ROW_Y : LINEUP_BUILDER_ROW_Y;
-  const yTemplate = rowYMap[rows.length] || rowYMap[4] || LINEUP_BUILDER_ROW_Y[4];
-  const coords = {};
-
-  rows.forEach((row, rowIndex) => {
-    const template = rowXMap[row.length] || rowXMap[3] || LINEUP_BUILDER_ROW_X[3];
-    const y = lineupBuilderSafePercentForArea('y', yTemplate[rowIndex] ?? 50, safeArea);
-    row.forEach((slotId, index) => {
-      const x = lineupBuilderSafePercentForArea('x', template[index] ?? 50, safeArea);
-      coords[slotId] = {
-        x: Math.max(safeArea.left, Math.min(safeArea.right, x)),
-        y: Math.max(safeArea.top, Math.min(safeArea.bottom, y))
-      };
-    });
-  });
-
-  slots.forEach(slot => {
-    if(!coords[slot.id]) coords[slot.id] = { x: 50, y: 50 };
-  });
-  return coords;
-}
-
-function lineupBuilderRenderCoords(slot, mode = 'builder'){
-  if(!slot) return { x: 50, y: 50, guideY: 42 };
-  const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
-  const coords = lineupBuilderFormationCoords(mode)[slot.id] || { x: 50, y: 50 };
-  const blockWidth = mode === 'export' ? 14 : 16;
-  const blockHeight = mode === 'export' ? 8 : 18;
-  const minX = safeArea.left + (blockWidth / 2);
-  const maxX = safeArea.right - (blockWidth / 2);
-  const minTop = safeArea.top;
-  const maxTop = safeArea.bottom - blockHeight;
-  const x = Math.max(minX, Math.min(maxX, coords.x));
-  const exportYOffset = mode === 'export'
-    ? (slot?.group === 'gk' ? 0 : slot?.group === 'mid' ? -1 : 0)
-    : 0;
-  const top = Math.max(minTop, Math.min(maxTop, coords.y + exportYOffset));
-  return { x, y: top };
-}
-
 function lineupBuilderSlotById(slotId=''){
   return lineupBuilderSlots().find(slot => slot.id === slotId) || null;
 }
@@ -3334,8 +2819,7 @@ function lineupBuilderSelectedCount(){
 }
 
 function lineupBuilderDefaultSubtitle(){
-  const league = lineupBuilderCurrentLeagueConfig();
-  return `${league.label} ${lineupBuilderLeagueSeason(league)}`;
+  return `Allsvenskan ${lineupBuilderState.catalogSeason || SEASON}`;
 }
 
 function lineupBuilderSetStatus(message = '', tone = 'idle'){
@@ -3364,13 +2848,9 @@ function lineupBuilderSyncInputs(){
   const titleInput = document.getElementById('lineupBuilderTitleInput');
   const subtitleInput = document.getElementById('lineupBuilderSubtitleInput');
   const formationSelect = document.getElementById('lineupBuilderFormation');
-  const leagueSelect = document.getElementById('lineupBuilderLeague');
-  const teamSelect = document.getElementById('lineupBuilderTeam');
   if(titleInput) titleInput.value = lineupBuilderState.title;
   if(subtitleInput) subtitleInput.value = lineupBuilderState.subtitle;
   if(formationSelect) formationSelect.value = lineupBuilderState.formation;
-  if(leagueSelect) leagueSelect.value = lineupBuilderState.selectedLeagueKey;
-  if(teamSelect) teamSelect.value = String(lineupBuilderState.selectedTeamId);
 }
 
 function lineupBuilderGetInitials(name=''){
@@ -3381,20 +2861,6 @@ function lineupBuilderGetInitials(name=''){
     .map(part => part.charAt(0))
     .join('')
     .toUpperCase() || 'AA';
-}
-
-function lineupBuilderExportName(name=''){
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if(!parts.length) return '';
-  if(parts.length === 1) return parts[0];
-  const firstInitial = `${parts[0].charAt(0)}.`;
-  const surname = parts.slice(1).join(' ');
-  return `${firstInitial} ${surname}`.trim();
-}
-
-function lineupBuilderRoleLabel(slot){
-  if(!slot) return '';
-  return resolveDetailedPosition({ role: slot.role, positionCode: slot.label }, slot.label) || slot.role || slot.label || '';
 }
 
 function lineupBuilderNormalizePosition(value=''){
@@ -3431,33 +2897,13 @@ function lineupBuilderSearchBlob(player){
   ].filter(Boolean).join(' '));
 }
 
-function lineupBuilderSortTeams(teams = [], leagueKey = lineupBuilderState.selectedLeagueKey){
-  const leagueConfig = LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || LINEUP_BUILDER_LEAGUES[0];
-  if(leagueConfig.teamOrder) return sortTeamsByOrder(teams);
-  return [...teams].sort((a,b) => fixName(a?.name || '').localeCompare(fixName(b?.name || ''), 'sv'));
-}
-
-function lineupBuilderTeamOptionLabel(teamId){
-  if(String(teamId) === LINEUP_BUILDER_ALL_TEAMS) return 'Alla lag';
-  const team = (lineupBuilderState.availableTeams || []).find(item => String(item.id) === String(teamId));
-  return team ? fixName(team.name || '') : 'Lag';
-}
-
-function lineupBuilderSubtitleLooksDefault(){
-  const normalized = normalizeText(lineupBuilderState.subtitle || '');
-  if(!normalized) return true;
-  return LINEUP_BUILDER_LEAGUES.some(league => normalized === normalizeText(`${league.label} ${lineupBuilderLeagueSeason(league)}`));
-}
-
-function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
-  const player = item.player || item;
+function lineupBuilderNormalizePlayerRow(item = {}){
+  const player = item.player || {};
   const statistics = Array.isArray(item.statistics) ? item.statistics : [];
-  const teamStat = statistics.find(stat => Number(stat?.team?.id || 0) === Number(fallbackTeam?.id || 0)) || statistics[0] || {};
-  const team = teamStat.team || fallbackTeam || {};
-  const games = teamStat.games || {};
+  const leagueStat = statistics.find(stat => Number(stat?.league?.id || 0) === LEAGUE) || statistics[0] || {};
+  const team = leagueStat.team || {};
+  const games = leagueStat.games || {};
   const name = getPlayerDisplayName(player, item);
-  const positionCode = player.pos || item.pos || games.positionCode || teamStat.positionCode || '';
-  const position = games.position || player.position || fallbackTeam.position || '';
   return {
     id: player.id || 0,
     name,
@@ -3465,99 +2911,48 @@ function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
     lastname: player.lastname || '',
     age: player.age || '',
     photo: player.photo || '',
-    teamId: team.id || fallbackTeam.id || 0,
-    teamName: fixName(team.name || fallbackTeam.name || ''),
-    teamLogo: team.logo || fallbackTeam.logo || '',
-    positionCode,
-    position,
-    detailedPosition: resolveDetailedPosition({ positionCode, position, games, player, statistics }),
+    teamId: team.id || 0,
+    teamName: fixName(team.name || ''),
+    teamLogo: team.logo || '',
+    position: games.position || player.position || '',
     searchBlob: ''
   };
 }
 
-async function resolveLineupBuilderLeagueMeta(leagueKey = lineupBuilderState.selectedLeagueKey){
-  if(lineupBuilderCache.leagueMeta[leagueKey]) return lineupBuilderCache.leagueMeta[leagueKey];
-  const leagueConfig = LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || LINEUP_BUILDER_LEAGUES[0];
-  const meta = {
-    key: leagueConfig.key,
-    id: Number(leagueConfig.id || LEAGUE),
-    name: fixName(leagueConfig.label || 'Allsvenskan Herr'),
-    season: lineupBuilderLeagueSeason(leagueConfig)
-  };
-  lineupBuilderCache.leagueMeta[leagueKey] = meta;
-  return meta;
-}
-
-async function ensureLineupBuilderTeams(leagueKey = lineupBuilderState.selectedLeagueKey){
-  if(lineupBuilderCache.teamsByLeague[leagueKey]?.length) return lineupBuilderCache.teamsByLeague[leagueKey];
-  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
-  const standingsRaw = await af('standings', { league: meta.id, season: meta.season }).catch(() => []);
-  let rows = (standingsRaw?.[0]?.league?.standings?.[0] || []).map(item => item.team).filter(team => team?.id);
-  if(!rows.length) {
-    const teamsRaw = await af('teams', { league: meta.id, season: meta.season }).catch(() => []);
-    rows = (teamsRaw || []).map(item => item?.team || item).filter(team => team?.id);
-  }
-  const teams = lineupBuilderSortTeams(rows.map(team => ({
-    id: Number(team.id),
-    name: fixName(team.name || ''),
-    logo: team.logo || ''
-  })), leagueKey);
-  lineupBuilderCache.teamsByLeague[leagueKey] = teams;
-  return teams;
-}
-
-async function ensureLineupBuilderTeamSquad(leagueKey = lineupBuilderState.selectedLeagueKey, teamId = lineupBuilderState.selectedTeamId){
-  const key = `${leagueKey}:${teamId}`;
-  if(lineupBuilderCache.squadByLeagueTeam[key]) return lineupBuilderCache.squadByLeagueTeam[key];
-  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
-  const team = (lineupBuilderCache.teamsByLeague[leagueKey] || []).find(item => String(item.id) === String(teamId)) || {};
-  let rows = [];
-  try {
-    rows = await fetchAllPages('players', { league:meta.id, season:meta.season, team:teamId }, {
-      dedupeKey: item => item?.player?.id || ''
-    });
-  } catch(e) {
-    rows = [];
-  }
-  let squad = rows
-    .map(item => lineupBuilderNormalizePlayerRow(item, team))
-    .filter(player => player.id && player.name && player.name !== '—');
-
-  if(!squad.length) {
-    const squadRaw = await af('players/squads', { team:teamId }).catch(() => []);
-    const list = squadRaw?.[0]?.players || [];
-    squad = list.map(item => lineupBuilderNormalizePlayerRow({
-      player: {
-        id: item.id,
-        name: item.name,
-        firstname: item.firstname,
-        lastname: item.lastname,
-        age: item.age,
-        photo: item.photo,
-        position: item.position
-      },
-      statistics: []
-    }, team)).filter(player => player.id && player.name && player.name !== '—');
-  }
-
-  const normalized = squad.map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
-  lineupBuilderCache.squadByLeagueTeam[key] = normalized;
-  return normalized;
-}
-
-async function searchLineupBuilderLeaguePlayers(leagueKey = lineupBuilderState.selectedLeagueKey, query = ''){
-  const normalizedQuery = normalizeText(query).replace(/\s+/g, ' ').trim();
-  if(normalizedQuery.length < LINEUP_BUILDER_MIN_GLOBAL_SEARCH) return [];
-  const cacheKey = `${leagueKey}:${normalizedQuery}`;
-  if(lineupBuilderCache.broadSearchByLeagueQuery[cacheKey]) return lineupBuilderCache.broadSearchByLeagueQuery[cacheKey];
-  const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
-  const rows = await af('players', { league: meta.id, season: meta.season, search: query.trim() }).catch(() => []);
-  const normalized = (rows || [])
-    .map(item => lineupBuilderNormalizePlayerRow(item))
+async function buildLineupBuilderCatalogForSeason(season){
+  const rows = await fetchAllPages('players', { league:LEAGUE, season }, {
+    dedupeKey: item => item?.player?.id || ''
+  });
+  return rows
+    .map(lineupBuilderNormalizePlayerRow)
     .filter(player => player.id && player.name && player.name !== '—')
     .map(player => ({ ...player, searchBlob: lineupBuilderSearchBlob(player) }));
-  lineupBuilderCache.broadSearchByLeagueQuery[cacheKey] = normalized;
-  return normalized;
+}
+
+async function ensureLineupBuilderCatalog(){
+  if(lineupBuilderCatalog?.length) return lineupBuilderCatalog;
+  if(lineupBuilderCatalogPromise) return lineupBuilderCatalogPromise;
+  lineupBuilderCatalogPromise = (async () => {
+    const seasons = [...new Set([SEASON, SEASON - 1, 2025, 2024].filter(year => Number(year) > 0))];
+    for(const season of seasons){
+      try {
+        const catalog = await buildLineupBuilderCatalogForSeason(season);
+        if(catalog.length){
+          lineupBuilderCatalog = catalog;
+          lineupBuilderState.catalogSeason = season;
+          if(!lineupBuilderState.subtitle || normalizeText(lineupBuilderState.subtitle).startsWith('allsvenskan ')) {
+            lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
+          }
+          saveLineupBuilderState();
+          return catalog;
+        }
+      } catch(e) {
+        console.warn('[lineup-builder] catalog fetch failed', { season, error: e.message });
+      }
+    }
+    throw new Error('Kunde inte läsa in spelarkatalogen för Allsvenskan.');
+  })();
+  return lineupBuilderCatalogPromise;
 }
 
 function lineupBuilderRankPlayer(player, slot, normalizedQuery){
@@ -3576,8 +2971,14 @@ function lineupBuilderRankPlayer(player, slot, normalizedQuery){
   return score;
 }
 
-function lineupBuilderSortSearchResults(rows = [], slot, query = '', limit = 24){
+function lineupBuilderSearchPlayers(query=''){
+  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
   const normalizedQuery = normalizeText(query).replace(/\s+/g, ' ').trim();
+  if(!lineupBuilderCatalog?.length || !slot) return [];
+  let rows = lineupBuilderCatalog;
+  if(normalizedQuery) {
+    rows = rows.filter(player => player.searchBlob.includes(normalizedQuery));
+  }
   return rows
     .map(player => ({
       player,
@@ -3585,35 +2986,7 @@ function lineupBuilderSortSearchResults(rows = [], slot, query = '', limit = 24)
       score: lineupBuilderRankPlayer(player, slot, normalizedQuery)
     }))
     .sort((a, b) => b.score - a.score || a.player.name.localeCompare(b.player.name, 'sv'))
-    .slice(0, limit);
-}
-
-async function lineupBuilderBootstrapLeagueTeams(){
-  const requestId = ++lineupBuilderTeamsRequestId;
-  lineupBuilderState.teamsLoading = true;
-  lineupBuilderState.teamsError = '';
-  renderLineupBuilderPage(lineupBuilderRoot);
-  try {
-    const teams = await ensureLineupBuilderTeams(lineupBuilderState.selectedLeagueKey);
-    if(requestId !== lineupBuilderTeamsRequestId) return;
-    lineupBuilderState.availableTeams = teams;
-    if(String(lineupBuilderState.selectedTeamId) !== LINEUP_BUILDER_ALL_TEAMS && !teams.find(team => String(team.id) === String(lineupBuilderState.selectedTeamId))) {
-      lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
-    }
-    lineupBuilderState.teamsLoading = false;
-    lineupBuilderState.teamsError = '';
-    saveLineupBuilderState();
-    renderLineupBuilderPage(lineupBuilderRoot);
-    if(lineupBuilderState.selectedTeamId !== LINEUP_BUILDER_ALL_TEAMS) {
-      ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId).catch(() => {});
-    }
-  } catch(e) {
-    if(requestId !== lineupBuilderTeamsRequestId) return;
-    lineupBuilderState.availableTeams = [];
-    lineupBuilderState.teamsLoading = false;
-    lineupBuilderState.teamsError = e.message || 'Kunde inte läsa in lag.';
-    renderLineupBuilderPage(lineupBuilderRoot);
-  }
+    .slice(0, normalizedQuery ? 24 : 18);
 }
 
 function renderLineupBuilderSummary(){
@@ -3628,9 +3001,9 @@ function renderLineupBuilderSummary(){
       <div class="lb-summary-copy">${remaining ? `${remaining} positioner kvar att fylla.` : 'Startelvan är komplett.'}</div>
     </div>
     <div class="lb-summary-card">
-      <div class="lb-summary-label">Källa</div>
-      <div class="lb-summary-value">${esc(lineupBuilderCurrentLeagueConfig().label)}</div>
-      <div class="lb-summary-copy">${esc(lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId))}</div>
+      <div class="lb-summary-label">Formation</div>
+      <div class="lb-summary-value">${esc(lineupBuilderState.formation)}</div>
+      <div class="lb-summary-copy">Byt struktur när som helst utan att lämna sidan.</div>
     </div>
     <div class="lb-summary-card">
       <div class="lb-summary-label">Redo för export</div>
@@ -3647,148 +3020,46 @@ function renderLineupBuilderPitch(){
   const footer = document.getElementById('lineupBuilderFooterMeta');
   if(title) title.textContent = lineupBuilderState.title || 'Omgångens elva';
   if(subtitle) subtitle.textContent = lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle();
-  if(footer) footer.textContent = `${lineupBuilderState.formation} • ${lineupBuilderCurrentLeagueConfig().label} • ${lineupBuilderSelectedCount()} av 11 valda`;
+  if(footer) footer.textContent = `${lineupBuilderState.formation} • ${lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle()}`;
   if(!pitch) return;
 
   pitch.innerHTML = `
-    <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
-      <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
-      <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
-      <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
-      <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
-
-      <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
-      <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
-      <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
-      <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
-
-      <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
-      <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
-      <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
-      <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
-
-      <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
-      <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
-    </svg>
+    <div class="lb-pitch-lines"></div>
+    <div class="lb-pitch-box top"></div>
+    <div class="lb-pitch-box bottom"></div>
+    <div class="lb-pitch-goal top"></div>
+    <div class="lb-pitch-goal bottom"></div>
     ${lineupBuilderSlots().map(slot => {
       const player = lineupBuilderState.slots?.[slot.id] || null;
       const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
-      const coords = lineupBuilderRenderCoords(slot);
       if(!player) {
         return `
-          <button class="lb-slot empty" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+          <button class="lb-slot empty" data-group="${esc(slot.group)}" data-role="${esc(slot.role)}" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
             <span class="lb-slot-core">
-              <span class="lb-slot-fallback">+</span>
+              <span class="lb-slot-fallback">${esc(slot.label)}</span>
               <span class="lb-slot-pos">${esc(slot.label)}</span>
             </span>
-            <span class="lb-slot-meta">
-              <span class="lb-slot-placeholder">Välj spelare</span>
-              <span class="lb-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
-            </span>
+            <span class="lb-slot-placeholder">Lägg till</span>
+            <span class="lb-slot-hint">${esc(slot.role.toUpperCase())}</span>
           </button>
         `;
       }
       return `
-        <button class="lb-slot" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
+        <button class="lb-slot" data-group="${esc(slot.group)}" data-role="${esc(slot.role)}" style="left:${slot.x}%;top:${slot.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
           <span class="lb-slot-core">
-            ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+            ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
             <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
             <span class="lb-slot-pos">${esc(slot.label)}</span>
           </span>
-          <span class="lb-slot-meta">
-            <span class="lb-slot-name">${esc(player.name)}</span>
-            <span class="lb-slot-club">
-              ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
-              <span>${esc(player.teamName || 'Klubblös')}</span>
-            </span>
+          <span class="lb-slot-name">${esc(player.name)}</span>
+          <span class="lb-slot-club">
+            ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+            <span>${esc(player.teamName || 'Klubblös')}</span>
           </span>
         </button>
       `;
     }).join('')}
   `;
-}
-
-function renderLineupBuilderExportStage(){
-  const host = document.getElementById('lineupBuilderExportStage');
-  if(!host) return null;
-  console.log('export positions', lineupBuilderFormationCoords('export'));
-  host.innerHTML = `
-    <div id="lineupBuilderExportCanvas" class="lb-export-frame">
-      <div class="lb-export-top">
-        <div>
-          <div class="lb-export-kicker">AllsvenskanAI</div>
-          <div class="lb-export-title">${esc((lineupBuilderState.title || 'Omgångens elva').toUpperCase())}</div>
-          <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
-        </div>
-        <div class="lb-export-brand">
-          <strong>AllsvenskanAI</strong>
-          <span>Football Intelligence</span>
-        </div>
-      </div>
-      <div class="lb-export-pitch-wrap">
-        <div class="lb-export-pitch">
-          <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
-            <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
-            <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
-            <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
-            <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
-            <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
-            <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
-            <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
-            <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
-            <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
-            <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
-            <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
-            <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
-            <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
-            <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
-          </svg>
-          ${lineupBuilderSlots().map(slot => {
-            const player = lineupBuilderState.slots?.[slot.id] || null;
-            const coords = lineupBuilderRenderCoords(slot, 'export');
-            if(!player) {
-              return `
-                <div class="lb-export-slot empty" style="left:${coords.x}%;top:${coords.y}%;">
-                  <span class="lb-export-slot-core">
-                    <span class="lb-export-slot-fallback">+</span>
-                    <span class="lb-export-slot-pos">${esc(slot.label)}</span>
-                  </span>
-                  <span class="lb-export-slot-meta">
-                    <span class="lb-export-slot-placeholder">Välj spelare</span>
-                    <span class="lb-export-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
-                  </span>
-                </div>
-              `;
-            }
-            return `
-              <div class="lb-export-slot" style="left:${coords.x}%;top:${coords.y}%;">
-                <span class="lb-export-slot-core">
-                  ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
-                  <span class="lb-export-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
-                  <span class="lb-export-slot-pos">${esc(slot.label)}</span>
-                </span>
-                <span class="lb-export-slot-meta">
-                  <span class="lb-export-slot-name">${esc(lineupBuilderExportName(player.name))}</span>
-                  <span class="lb-export-slot-club">
-                    ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
-                    <span>${esc(player.teamName || 'Klubblös')}</span>
-                  </span>
-                </span>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-      <div class="lb-export-footer">
-        <div class="lb-export-footer-left"><strong>AllsvenskanAI</strong></div>
-        <div class="lb-export-footer-meta">
-          <span>${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</span>
-        </div>
-      </div>
-      <div class="lb-export-watermark">AllsvenskanAI</div>
-    </div>
-  `;
-  return document.getElementById('lineupBuilderExportCanvas');
 }
 
 function renderLineupBuilderModal(){
@@ -3809,17 +3080,17 @@ function renderLineupBuilderModal(){
         <div>
           <div class="lb-kicker">Lineup Builder</div>
           <div class="lb-modal-title">${esc(slot ? `Välj spelare för ${slot.label}` : 'Välj spelare')}</div>
-          <div class="lb-modal-copy">Välj liga först, filtrera gärna på lag och sök sedan smart. Specifikt lag laddar bara den truppen. Alla lag söker brett först när du verkligen skriver.</div>
+          <div class="lb-modal-copy">Sök över hela Allsvenskan. Positionerna guidar bara mjukt, så du kan fortfarande bygga din egen tolkning av elvan.</div>
         </div>
         <button class="lb-close" type="button" onclick="lineupBuilderCloseModal()" aria-label="Stäng">×</button>
       </div>
       <div class="lb-modal-tools">
         <input id="lineupBuilderSearchInput" class="lb-search" type="search" value="${esc(lineupBuilderState.searchQuery)}" placeholder="Sök spelare, klubb eller position" autocomplete="off" oninput="lineupBuilderHandleSearchInput(this.value)">
         <div class="lb-guidance">
-          <span class="lb-guidance-pill">${esc(lineupBuilderCurrentLeagueConfig().label)}</span>
-          <span class="lb-guidance-pill">${esc(lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId))}</span>
           <span class="lb-guidance-pill">Formation ${esc(lineupBuilderState.formation)}</span>
+          <span class="lb-guidance-pill">Slot ${esc(slot?.label || '')}</span>
           ${currentPlayer ? `<span class="lb-guidance-pill">Nuvarande: ${esc(currentPlayer.name)}</span>` : ''}
+          ${slot?.group === 'gk' ? '<span class="lb-guidance-pill">Målvakter prioriteras högst</span>' : '<span class="lb-guidance-pill">Liknande roller rankas högre</span>'}
         </div>
         <div class="lb-toolbar">
           ${currentPlayer ? `<button class="lb-button warn" type="button" onclick="lineupBuilderRemovePlayer('${slot.id}')">Ta bort spelare</button>` : ''}
@@ -3827,24 +3098,24 @@ function renderLineupBuilderModal(){
         </div>
       </div>
       <div class="lb-results">
-        ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelare...</strong><br>${esc(lineupBuilderState.searchHint || 'Vi laddar bara den data som behövs för det val du gjort.')}</div>` : ''}
+        ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelartrupp...</strong><br>Vi laddar in Allsvenskans spelare en gång och återanvänder sedan datan lokalt för snabb sökning.</div>` : ''}
         ${!lineupBuilderState.searchLoading && lineupBuilderState.searchError ? `<div class="lb-empty"><strong>Kunde inte läsa in spelare.</strong><br>${esc(lineupBuilderState.searchError)}</div>` : ''}
-        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>${esc(lineupBuilderState.searchScope || 'Inga träffar ännu.')}</strong><br>${esc(lineupBuilderState.searchHint || 'Testa ett spelarnamn eller välj ett specifikt lag för snabbare listning.')}</div>` : ''}
+        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>Inga träffar ännu.</strong><br>Testa ett spelarnamn, en klubb eller lämna sökfältet tomt för att få förslag.</div>` : ''}
         ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError ? results.map(entry => `
           <button class="lb-result" type="button" onclick="lineupBuilderAssignPlayer('${slot?.id || ''}', ${entry.player.id})">
             <span class="lb-result-media">
-              ${entry.player.photo ? `<img src="${entry.player.photo}" alt="${esc(entry.player.name)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+              ${entry.player.photo ? `<img src="${entry.player.photo}" alt="${esc(entry.player.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
               <span style="${entry.player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(entry.player.name))}</span>
             </span>
             <span class="lb-result-body">
               <span class="lb-result-name">${esc(entry.player.name)}</span>
               <span class="lb-result-meta">
-                ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
-                <span>${esc(entry.player.teamName || lineupBuilderCurrentLeagueConfig().label)}</span>
+                ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                <span>${esc(entry.player.teamName || 'Allsvenskan')}</span>
               </span>
             </span>
             <span class="lb-result-tags">
-              ${resolveDetailedPosition(entry.player) ? `<span class="lb-tag">${esc(resolveDetailedPosition(entry.player))}</span>` : ''}
+              ${entry.player.position ? `<span class="lb-tag">${esc(entry.player.position)}</span>` : ''}
               <span class="lb-tag ${entry.fit === 'ideal' ? 'fit' : entry.fit === 'soft' ? 'soft' : ''}">${entry.fit === 'ideal' ? 'Bra match' : entry.fit === 'soft' ? 'Flexibel' : 'Fri roll'}</span>
             </span>
           </button>
@@ -3871,32 +3142,19 @@ function renderLineupBuilderPage(root){
           <div>
             <div class="lb-kicker">Ny funktion</div>
             <div class="lb-headline">Skapa Allsvenskans snyggaste elvor</div>
-            <div class="lb-copy">Bygg veckans elva, månadens elva eller en personlig favorit-XI. Ligor och lag laddas stegvis så spelarsökningen håller sig snabb och resurssnål på en live-sajt.</div>
+            <div class="lb-copy">Sätt ihop veckans elva, månadens elva eller din personliga favorit-XI med spelare från hela ligan. Allt sparas lokalt i webbläsaren så du kan fortsätta där du slutade.</div>
           </div>
           <div class="lb-pills">
-            <span class="lb-pill">Liga först</span>
-            <span class="lb-pill">Lag därefter</span>
+            <span class="lb-pill">11 startplatser</span>
+            <span class="lb-pill">5 formationer</span>
             <span class="lb-pill">PNG-export</span>
           </div>
         </div>
       </div>
 
       <div class="lb-grid">
-        <section class="lb-card lb-controls">
+        <aside class="lb-card lb-controls">
           <div class="lb-controls-grid">
-            <label class="lb-field">
-              <span class="lb-label">Liga</span>
-              <select id="lineupBuilderLeague" class="lb-select" onchange="lineupBuilderChangeLeague(this.value)">
-                ${LINEUP_BUILDER_LEAGUES.map(league => `<option value="${league.key}" ${league.key === lineupBuilderState.selectedLeagueKey ? 'selected' : ''}>${esc(league.label)}</option>`).join('')}
-              </select>
-            </label>
-            <label class="lb-field">
-              <span class="lb-label">Lag</span>
-              <select id="lineupBuilderTeam" class="lb-select" onchange="lineupBuilderChangeTeam(this.value)" ${lineupBuilderState.teamsLoading ? 'disabled' : ''}>
-                <option value="${LINEUP_BUILDER_ALL_TEAMS}">Alla lag</option>
-                ${(lineupBuilderState.availableTeams || []).map(team => `<option value="${team.id}" ${String(team.id) === String(lineupBuilderState.selectedTeamId) ? 'selected' : ''}>${esc(team.name)}</option>`).join('')}
-              </select>
-            </label>
             <label class="lb-field">
               <span class="lb-label">Formation</span>
               <select id="lineupBuilderFormation" class="lb-select" onchange="lineupBuilderChangeFormation(this.value)">
@@ -3904,8 +3162,8 @@ function renderLineupBuilderPage(root){
               </select>
             </label>
             <label class="lb-field">
-              <span class="lb-label">Underrubrik</span>
-              <input id="lineupBuilderSubtitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.subtitle)}" placeholder="${esc(lineupBuilderDefaultSubtitle())}" oninput="lineupBuilderUpdateField('subtitle', this.value)">
+              <span class="lb-label">Smeknamn</span>
+              <input id="lineupBuilderSubtitleInput" class="lb-input" type="text" maxlength="60" value="${esc(lineupBuilderState.subtitle)}" placeholder="Allsvenskan 2026" oninput="lineupBuilderUpdateField('subtitle', this.value)">
             </label>
             <label class="lb-field full">
               <span class="lb-label">Titel</span>
@@ -3918,10 +3176,14 @@ function renderLineupBuilderPage(root){
             <button class="lb-button ghost" type="button" onclick="lineupBuilderResetTitles()">Återställ rubrik</button>
             <button class="lb-button warn" type="button" onclick="lineupBuilderClear()">Rensa elvan</button>
           </div>
-        </section>
+
+          <div id="lineupBuilderSummary" class="lb-summary-grid"></div>
+          <div class="lb-side-note">Tips: klicka på en position för att välja eller byta spelare. Målvakter, mittfältare och anfallare rankas smart i sökningen, men du kan fortfarande välja vem du vill.</div>
+          <div id="lineupBuilderStatus" class="lb-status" data-tone="${esc(lineupBuilderState.statusTone || 'idle')}">${esc(lineupBuilderState.status || '')}</div>
+        </aside>
 
         <section class="lb-capture">
-          <div id="lineupBuilderCapture" class="lb-capture-shell lb-capture-export">
+          <div id="lineupBuilderCapture" class="lb-capture-shell">
             <div class="lb-capture-head">
               <div>
                 <div class="lb-kicker">AllsvenskanAI.se</div>
@@ -3943,7 +3205,6 @@ function renderLineupBuilderPage(root){
       </div>
     </section>
     <div id="lineupBuilderModal" class="lb-modal" onclick="lineupBuilderCloseModal()"></div>
-    <div id="lineupBuilderExportStage" class="lb-export-stage" aria-hidden="true"></div>
   `;
   lineupBuilderSyncInputs();
   renderLineupBuilderSummary();
@@ -3953,61 +3214,17 @@ function renderLineupBuilderPage(root){
 
 function pageLineupBuilder(el){
   renderLineupBuilderPage(el);
-  lineupBuilderBootstrapLeagueTeams();
 }
 
-async function lineupBuilderRefreshSearch(){
-  const slot = lineupBuilderSlotById(lineupBuilderState.activeSlotId);
-  if(!slot) return;
-  const requestId = ++lineupBuilderSearchRequestId;
-  const query = lineupBuilderState.searchQuery.trim();
-  const isAllTeams = String(lineupBuilderState.selectedTeamId) === LINEUP_BUILDER_ALL_TEAMS;
-  lineupBuilderState.searchLoading = false;
-  lineupBuilderState.searchError = '';
-  lineupBuilderState.searchResults = [];
-  lineupBuilderState.searchHint = '';
-  lineupBuilderState.searchScope = '';
-
+function lineupBuilderRefreshSearch(){
   try {
-    if(isAllTeams) {
-      if(query.length < LINEUP_BUILDER_MIN_GLOBAL_SEARCH) {
-        lineupBuilderState.searchScope = 'Alla lag';
-        lineupBuilderState.searchHint = `Skriv minst ${LINEUP_BUILDER_MIN_GLOBAL_SEARCH} tecken för att starta ligasökningen utan att belasta API:t i onödan.`;
-        renderLineupBuilderModal();
-        return;
-      }
-      lineupBuilderState.searchLoading = true;
-      lineupBuilderState.searchScope = 'Ligabred sökning';
-      lineupBuilderState.searchHint = `Söker i ${lineupBuilderCurrentLeagueConfig().label} först nu när du faktiskt skrivit en sökfråga.`;
-      renderLineupBuilderModal();
-      const players = await searchLineupBuilderLeaguePlayers(lineupBuilderState.selectedLeagueKey, query);
-      if(requestId !== lineupBuilderSearchRequestId) return;
-      lineupBuilderState.searchResults = lineupBuilderSortSearchResults(players, slot, query, 24);
-      lineupBuilderState.searchLoading = false;
-      lineupBuilderState.searchScope = lineupBuilderState.searchResults.length ? 'Resultat från hela ligan' : 'Inga spelare matchade';
-      lineupBuilderState.searchHint = lineupBuilderState.searchResults.length ? 'Resultaten är cacheade per liga och sökfras för att undvika upprepade API-anrop.' : 'Testa fler bokstäver, en klubb eller ett annat namn.';
-      renderLineupBuilderModal();
-      return;
-    }
-
-    lineupBuilderState.searchLoading = true;
-    lineupBuilderState.searchScope = 'Lagtrupp';
-    lineupBuilderState.searchHint = `Laddar bara spelare för ${lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId)}.`;
-    renderLineupBuilderModal();
-    const squad = await ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId);
-    if(requestId !== lineupBuilderSearchRequestId) return;
-    const filtered = query ? squad.filter(player => player.searchBlob.includes(normalizeText(query))) : squad;
-    lineupBuilderState.searchResults = lineupBuilderSortSearchResults(filtered, slot, query, 24);
-    lineupBuilderState.searchLoading = false;
-    lineupBuilderState.searchScope = lineupBuilderState.searchResults.length ? `${lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId)}s trupp` : 'Inga spelare matchade';
-    lineupBuilderState.searchHint = lineupBuilderState.searchResults.length ? 'Lagets trupp återanvänds från cache när du öppnar samma lag igen.' : 'Testa ett annat namn eller byt till Alla lag för bredare sökning.';
-    renderLineupBuilderModal();
+    lineupBuilderState.searchResults = lineupBuilderSearchPlayers(lineupBuilderState.searchQuery);
+    lineupBuilderState.searchError = '';
   } catch(e) {
-    if(requestId !== lineupBuilderSearchRequestId) return;
-    lineupBuilderState.searchLoading = false;
+    lineupBuilderState.searchResults = [];
     lineupBuilderState.searchError = e.message || 'Sökningen gick inte att köra.';
-    renderLineupBuilderModal();
   }
+  renderLineupBuilderModal();
 }
 
 function lineupBuilderUpdateField(field, value){
@@ -4030,48 +3247,23 @@ function lineupBuilderChangeFormation(value){
   if(lineupBuilderState.modalOpen) lineupBuilderRefreshSearch();
 }
 
-async function lineupBuilderChangeLeague(leagueKey){
-  if(!LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || leagueKey === lineupBuilderState.selectedLeagueKey) return;
-  const shouldUpdateSubtitle = lineupBuilderSubtitleLooksDefault();
-  lineupBuilderState.selectedLeagueKey = leagueKey;
-  lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
-  lineupBuilderState.availableTeams = [];
-  lineupBuilderState.searchResults = [];
-  lineupBuilderState.searchQuery = '';
-  lineupBuilderState.searchError = '';
-  lineupBuilderState.searchHint = '';
-  lineupBuilderState.searchScope = '';
-  if(shouldUpdateSubtitle) lineupBuilderState.subtitle = lineupBuilderDefaultSubtitle();
-  saveLineupBuilderState();
-  renderLineupBuilderPage(lineupBuilderRoot);
-  await lineupBuilderBootstrapLeagueTeams();
-}
-
-async function lineupBuilderChangeTeam(teamId){
-  lineupBuilderState.selectedTeamId = String(teamId || LINEUP_BUILDER_ALL_TEAMS);
-  lineupBuilderState.searchResults = [];
-  lineupBuilderState.searchQuery = '';
-  lineupBuilderState.searchError = '';
-  lineupBuilderState.searchHint = '';
-  lineupBuilderState.searchScope = '';
-  saveLineupBuilderState();
-  renderLineupBuilderPage(lineupBuilderRoot);
-  if(lineupBuilderState.selectedTeamId !== LINEUP_BUILDER_ALL_TEAMS) {
-    ensureLineupBuilderTeamSquad(lineupBuilderState.selectedLeagueKey, lineupBuilderState.selectedTeamId).catch(() => {});
-  }
-  if(lineupBuilderState.modalOpen) await lineupBuilderRefreshSearch();
-}
-
 async function lineupBuilderOpenSlot(slotId){
   lineupBuilderState.activeSlotId = slotId;
   lineupBuilderState.modalOpen = true;
   lineupBuilderState.searchQuery = '';
+  lineupBuilderState.searchLoading = true;
   lineupBuilderState.searchError = '';
   lineupBuilderState.searchResults = [];
-  lineupBuilderState.searchHint = '';
-  lineupBuilderState.searchScope = '';
   renderLineupBuilderModal();
-  await lineupBuilderRefreshSearch();
+  try {
+    await ensureLineupBuilderCatalog();
+    lineupBuilderState.searchLoading = false;
+    lineupBuilderRefreshSearch();
+  } catch(e) {
+    lineupBuilderState.searchLoading = false;
+    lineupBuilderState.searchError = e.message || 'Kunde inte läsa in spelarkatalogen.';
+    renderLineupBuilderModal();
+  }
 }
 
 function lineupBuilderCloseModal(){
@@ -4080,8 +3272,6 @@ function lineupBuilderCloseModal(){
   lineupBuilderState.searchQuery = '';
   lineupBuilderState.searchResults = [];
   lineupBuilderState.searchError = '';
-  lineupBuilderState.searchHint = '';
-  lineupBuilderState.searchScope = '';
   renderLineupBuilderModal();
 }
 
@@ -4090,24 +3280,11 @@ function lineupBuilderHandleSearchInput(value){
   if(lineupBuilderSearchTimer) clearTimeout(lineupBuilderSearchTimer);
   lineupBuilderSearchTimer = setTimeout(() => {
     lineupBuilderRefreshSearch();
-  }, 260);
-}
-
-function lineupBuilderFindPlayerInCaches(playerId){
-  const targetId = Number(playerId);
-  for(const bucket of Object.values(lineupBuilderCache.squadByLeagueTeam || {})){
-    const match = (bucket || []).find(player => Number(player.id) === targetId);
-    if(match) return match;
-  }
-  for(const bucket of Object.values(lineupBuilderCache.broadSearchByLeagueQuery || {})){
-    const match = (bucket || []).find(player => Number(player.id) === targetId);
-    if(match) return match;
-  }
-  return null;
+  }, 180);
 }
 
 function lineupBuilderAssignPlayer(slotId, playerId){
-  const player = lineupBuilderFindPlayerInCaches(playerId);
+  const player = (lineupBuilderCatalog || []).find(item => Number(item.id) === Number(playerId));
   if(!player) return;
   lineupBuilderState.slots[slotId] = {
     id: player.id,
@@ -4153,33 +3330,15 @@ function lineupBuilderResetTitles(){
 }
 
 function ensureLineupBuilderExportLib(){
-  if(window.htmlToImage?.toPng) return Promise.resolve(window.htmlToImage);
+  if(window.htmlToImage) return Promise.resolve(window.htmlToImage);
   if(lineupBuilderExportPromise) return lineupBuilderExportPromise;
   lineupBuilderExportPromise = new Promise((resolve, reject) => {
-    const sources = [
-      'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js',
-      'https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.min.js'
-    ];
-    let index = 0;
-    const tryLoad = () => {
-      if(index >= sources.length) {
-        reject(new Error('Kunde inte ladda exportbiblioteket.'));
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = sources[index++];
-      script.async = true;
-      script.onload = () => window.htmlToImage?.toPng ? resolve(window.htmlToImage) : tryLoad();
-      script.onerror = () => {
-        script.remove();
-        tryLoad();
-      };
-      document.head.appendChild(script);
-    };
-    tryLoad();
-  }).catch(error => {
-    lineupBuilderExportPromise = null;
-    throw error;
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js';
+    script.async = true;
+    script.onload = () => window.htmlToImage ? resolve(window.htmlToImage) : reject(new Error('html-to-image kunde inte starta.'));
+    script.onerror = () => reject(new Error('Kunde inte ladda exportbiblioteket.'));
+    document.head.appendChild(script);
   });
   return lineupBuilderExportPromise;
 }
@@ -4192,201 +3351,69 @@ function lineupBuilderSlug(value=''){
     .slice(0, 48) || 'lineup';
 }
 
-function lineupBuilderDelay(ms = 0){
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-const lineupBuilderExportImageCache = {};
-
-function lineupBuilderBlobToDataUrl(blob){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function lineupBuilderFetchImageDataUrl(src=''){
-  const original = String(src || '').trim();
-  if(!original) return '';
-  if(original.startsWith('data:')) return original;
-  if(lineupBuilderExportImageCache[original]) return lineupBuilderExportImageCache[original];
-  const proxied = `/api/image-proxy?url=${encodeURIComponent(original)}`;
-  const promise = fetch(proxied, { cache:'force-cache' })
-    .then(response => {
-      if(!response.ok) throw new Error(`image-proxy ${response.status}`);
-      return response.blob();
-    })
-    .then(blob => lineupBuilderBlobToDataUrl(blob));
-  lineupBuilderExportImageCache[original] = promise;
-  return promise;
-}
-
 function lineupBuilderWaitForImage(img){
   return new Promise(resolve => {
-    if(!img) {
-      resolve();
-      return;
-    }
-    if(img.complete && img.naturalWidth > 0) {
-      if(typeof img.decode === 'function') {
-        img.decode().catch(() => {}).finally(resolve);
-      } else {
-        resolve();
-      }
-      return;
-    }
-    const done = () => {
-      img.removeEventListener('load', done);
-      img.removeEventListener('error', done);
-      resolve();
-    };
+    if(!img) return resolve();
+    if(img.complete && img.naturalWidth !== 0) return resolve();
+    const done = () => resolve();
     img.addEventListener('load', done, { once:true });
     img.addEventListener('error', done, { once:true });
   });
 }
 
-async function lineupBuilderPrepareExport(target){
-  if(document.fonts?.ready) {
+async function lineupBuilderPrepareExportNode(node){
+  if(document.fonts?.ready){
     try { await document.fonts.ready; } catch(e) {}
   }
-  const images = [...target.querySelectorAll('img')];
+  const images = [...node.querySelectorAll('img')];
   await Promise.all(images.map(lineupBuilderWaitForImage));
-  await lineupBuilderDelay(80);
-}
-
-async function lineupBuilderInlineExportImages(target){
-  const images = [...target.querySelectorAll('img')];
-  await Promise.all(images.map(async img => {
-    const src = img.getAttribute('src') || '';
-    if(!src || src.startsWith('data:')) return;
-    try {
-      const dataUrl = await lineupBuilderFetchImageDataUrl(src);
-      if(!dataUrl) throw new Error('empty image data');
-      img.setAttribute('src', dataUrl);
-      await lineupBuilderWaitForImage(img);
-    } catch(error) {
-      console.error('[lineup-builder] export image inline failed', { src, error: error.message });
-      img.remove();
-    }
-  }));
-  await lineupBuilderDelay(80);
-}
-
-function lineupBuilderWaitForFrame(){
-  return new Promise(resolve => requestAnimationFrame(() => resolve()));
-}
-
-async function lineupBuilderStabilizeExportNode(target){
-  await lineupBuilderPrepareExport(target);
-  await lineupBuilderInlineExportImages(target);
-  await lineupBuilderWaitForFrame();
-  await lineupBuilderWaitForFrame();
-  await lineupBuilderDelay(60);
-}
-
-function lineupBuilderCreateExportClone(){
-  const source = renderLineupBuilderExportStage();
-  if(!source) throw new Error('Exportyta saknas.');
-  const host = document.getElementById('lineupBuilderExportStage');
-  if(!host) throw new Error('Exportvärd saknas.');
-  host.innerHTML = '';
-  const clone = source.cloneNode(true);
-  clone.id = 'lineupBuilderExportCanvasClone';
-  host.appendChild(clone);
-  return clone;
-}
-
-async function lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight){
-  return htmlToImage.toCanvas(target, {
-    cacheBust: true,
-    pixelRatio: 2,
-    backgroundColor: '#0B3025',
-    width: exportWidth,
-    height: exportHeight,
-    canvasWidth: exportWidth * 2,
-    canvasHeight: exportHeight * 2,
-    skipAutoScale: true,
-    imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
-    style: {
-      margin: '0',
-      width: `${exportWidth}px`,
-      minHeight: `${exportHeight}px`,
-      maxWidth: `${exportWidth}px`,
-      transform: 'none'
-    }
-  });
-}
-
-function lineupBuilderCanvasToBlob(canvas){
-  return new Promise((resolve, reject) => {
-    if(!canvas?.toBlob) {
-      reject(new Error('Canvas saknar toBlob-stöd.'));
-      return;
-    }
-    canvas.toBlob(blob => {
-      if(!blob) {
-        reject(new Error('Canvas genererade ingen PNG-blob.'));
-        return;
-      }
-      resolve(blob);
-    }, 'image/png', 1);
-  });
-}
-
-async function lineupBuilderValidateExportBlob(blob){
-  if(!(blob instanceof Blob)) throw new Error('Exporten gav ingen blob.');
-  if(blob.type !== 'image/png') throw new Error(`Fel filtyp från exporten: ${blob.type || 'okänd'}`);
-  if((blob.size || 0) < 25000) throw new Error(`Exportbloben är för liten (${blob.size || 0} bytes).`);
-  const buffer = await blob.slice(0, 8).arrayBuffer();
-  const signature = [...new Uint8Array(buffer)].map(byte => byte.toString(16).padStart(2, '0')).join('');
-  if(signature !== '89504e470d0a1a0a') throw new Error('Exportfilen saknar giltig PNG-signatur.');
-  return blob;
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
 async function lineupBuilderDownloadImage(){
   const button = document.getElementById('lineupBuilderDownloadBtn');
-  if(!button) return;
+  const target = document.getElementById('lineupBuilderCapture');
+  if(!button || !target) return;
   lineupBuilderState.exportBusy = true;
   button.disabled = true;
   button.textContent = 'Exporterar...';
-  lineupBuilderSetStatus('Skapar TikTok-PNG i hög upplösning...', 'loading');
+  lineupBuilderSetStatus('Skapar PNG i hög upplösning...', 'loading');
+  let host = null;
   try {
     const htmlToImage = await ensureLineupBuilderExportLib();
-    const exportWidth = 1080;
-    const exportHeight = 1920;
-    const target = lineupBuilderCreateExportClone();
-    let pngBlob = null;
-    try {
-      await lineupBuilderStabilizeExportNode(target);
-      const canvas = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
-      if(!canvas || !canvas.width || !canvas.height) throw new Error('Exportcanvas blev tom.');
-      pngBlob = await lineupBuilderValidateExportBlob(await lineupBuilderCanvasToBlob(canvas));
-    } catch(firstError) {
-      console.error('[lineup-builder] export first attempt failed', firstError);
-      await lineupBuilderDelay(180);
-      await lineupBuilderStabilizeExportNode(target);
-      const retryCanvas = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
-      if(!retryCanvas || !retryCanvas.width || !retryCanvas.height) throw new Error('Retry-canvas blev tom.');
-      pngBlob = await lineupBuilderValidateExportBlob(await lineupBuilderCanvasToBlob(retryCanvas));
-    }
-    if(!pngBlob) throw new Error('Ingen PNG-data skapades.');
-    const blobUrl = URL.createObjectURL(pngBlob);
+    host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-99999px;top:0;width:0;height:0;overflow:hidden;pointer-events:none;';
+    const clone = target.cloneNode(true);
+    clone.classList.add('lb-export-mode');
+    clone.style.width = '1080px';
+    clone.style.minHeight = '1920px';
+    clone.style.maxWidth = '1080px';
+    clone.style.margin = '0';
+    host.appendChild(clone);
+    document.body.appendChild(host);
+    await lineupBuilderPrepareExportNode(clone);
+    const dataUrl = await htmlToImage.toPng(clone, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: '#071E18',
+      width: 1080,
+      height: 1920,
+      canvasWidth: 2160,
+      canvasHeight: 3840,
+      style: { margin:'0', transform:'none' }
+    });
     const link = document.createElement('a');
-    link.href = blobUrl;
+    link.href = dataUrl;
     link.download = `${lineupBuilderSlug(lineupBuilderState.title || 'allsvenskanai-lineup')}.png`;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
     lineupBuilderSetStatus('PNG-filen är klar att delas.', 'success');
   } catch(e) {
     console.error('[lineup-builder] export failed', e);
-    lineupBuilderSetStatus('PNG skapades inte. Kontrollera konsolen för fel.', 'error');
+    lineupBuilderSetStatus(e.message || 'Exporten misslyckades.', 'error');
   } finally {
-    const host = document.getElementById('lineupBuilderExportStage');
-    if(host) host.innerHTML = '';
+    if(host) host.remove();
     lineupBuilderState.exportBusy = false;
     button.disabled = false;
     button.textContent = 'Ladda ner PNG';
@@ -5341,7 +4368,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
       <div class="kicker">${item.kicker}</div>
       <div class="name">${esc(leader.player.playerName)}</div>
       <div class="value">${getCategoryDisplayValue(category, leader.player, leader.value)}</div>
-      <div class="meta">${esc(resolveDetailedPosition(leader.player) || leader.player.teamName || 'Spelare')}</div>
+      <div class="meta">${esc(leader.player.position || leader.player.teamName || 'Spelare')}</div>
     </div>`;
   }).filter(Boolean).join('');
 
@@ -5363,7 +4390,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
             <img src="${item.player.photo || ''}" onerror="this.style.opacity='.15'" loading="lazy" style="border-radius:50%">
             <div>
               <div class="pn">${esc(item.player.playerName)}</div>
-              <div class="ps">${esc(resolveDetailedPosition(item.player) || item.player.teamName || 'Spelare')}</div>
+              <div class="ps">${esc(item.player.position || item.player.teamName || 'Spelare')}</div>
             </div>
           </div>
         </td>
@@ -5489,6 +4516,8 @@ async function pageTeam(el, teamId) {
     `;
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sorted = [...squadPlayers].sort((a,b)=>
       (posOrder[a.position]||5)-(posOrder[b.position]||5));
 
@@ -5496,10 +4525,10 @@ async function pageTeam(el, teamId) {
     const playerRows = sorted.map(p => {
       const info = playerInfoById[p.id] || {};
       const rawPos = p.position || info.position || '—';
-      const pos = resolveDetailedPosition({ ...p, ...info }, rawPos) || rawPos;
+      const pos = posLabel[rawPos] || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, p);
       let sep = '';
-      if(rawPos!==lastPos) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
+      if(rawPos!==lastPos && posSection[rawPos]) { lastPos=rawPos; sep=`<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${p.id}?team=${teamId}')">
         <td><div class="pcell">
           <img src="${p.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy">
@@ -5674,23 +4703,11 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       lastname: item?.player?.lastname || '',
       age: item?.player?.age || null,
       number: item?.statistics?.[0]?.games?.number || null,
-      positionCode: item?.player?.pos || item?.statistics?.[0]?.games?.positionCode || '',
       position: item?.statistics?.[0]?.games?.position || '',
       photo: item?.player?.photo || '',
       injured: false,
     })).filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
-    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
-    squadPlayers.forEach(player => {
-      const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(detailedPosition) player.detailedPosition = detailedPosition;
-    });
-    Object.keys(playerInfoById).forEach(playerId => {
-      const detailedPosition = detailedPositionsByPlayerId[String(playerId)] || '';
-      if(detailedPosition && playerInfoById[playerId]) {
-        playerInfoById[playerId].detailedPosition = detailedPosition;
-      }
-    });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
@@ -5786,15 +4803,17 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
+    const posLabel = {Goalkeeper:'Målvakt',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
+    const posSection = {Goalkeeper:'Målvakter',Defender:'Försvarare',Midfielder:'Mittfältare',Attacker:'Anfallare'};
     const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[a.position]||5)-(posOrder[b.position]||5));
     let lastPos = '';
     const playerRows = sortedSquad.map(player => {
       const info = playerInfoById[player.id] || {};
       const rawPos = player.position || info.position || '—';
-      const pos = resolveDetailedPosition({ ...player, ...info }, rawPos) || rawPos;
+      const pos = posLabel[rawPos] || rawPos;
       const nationalityDisplay = renderNationalityDisplay(info, player);
       let sep = '';
-      if(rawPos !== lastPos) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${esc(formatPositionSectionLabel(rawPos) || rawPos)}</td></tr>`; }
+      if(rawPos !== lastPos && posSection[rawPos]) { lastPos = rawPos; sep = `<tr class="pos-sep"><td colspan="5">${posSection[rawPos]}</td></tr>`; }
       return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
@@ -6295,7 +5314,7 @@ async function pagePlayer(el, playerId) {
           <h1>${esc(playerDisplayName)}</h1>
           <div class="p-meta">
             <span>${renderNationalityDisplay(p)}</span>
-            <span>⚽ ${esc(resolveDetailedPosition({ games: curStats.games, position: p.position }, '—') || '—')}</span>
+            <span>⚽ ${esc(curStats.games?.position||p.position||'—')}</span>
             ${p.birth?.date?`<span>📅 ${p.birth.date} (${p.age||'?'} år)</span>`:''}
             ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
@@ -6645,7 +5664,7 @@ function renderLineups(lineups){
         <div class="lineup-player">
           <div>
             <div class="nm">${esc(getPlayerDisplayName(p.player))}</div>
-            <div class="pos">${esc(resolveDetailedPosition(p.player, p.player?.pos || '') || '')}</div>
+            <div class="pos">${esc(p.player?.pos || '')}</div>
           </div>
           <div class="num">#${esc(String(p.player?.number || '—'))}</div>
         </div>`).join('') || '<div class="empty" style="padding:1rem 0">Ingen startelva</div>'}
