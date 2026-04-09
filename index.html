@@ -2972,7 +2972,7 @@ async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
       return started && involvesTeam;
     })
     .sort((a, b) => String(b?.fixture?.date || '').localeCompare(String(a?.fixture?.date || '')))
-    .slice(0, 12)
+    .slice(0, 30)
     .map(item => Number(item?.fixture?.id || 0))
     .filter(Boolean))];
 
@@ -2992,14 +2992,18 @@ async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
       const lineup = (lineups || []).find(item => Number(item?.team?.id || 0) === Number(teamId));
       if(!lineup) return;
       const formation = lineup?.formation || '';
-      (lineup?.startXI || []).forEach(entry => {
+      const applyEntry = (entry, useGrid = false) => {
         const playerId = Number(entry?.player?.id || 0);
         if(!playerId) return;
-        const label = resolveDetailedRoleFromFormationGrid(formation, entry?.player?.grid, entry?.player?.pos || entry?.player?.position || '');
+        const label = useGrid
+          ? resolveDetailedRoleFromFormationGrid(formation, entry?.player?.grid, entry?.player?.pos || entry?.player?.position || '')
+          : resolveDetailedPosition(entry?.player, entry?.player?.pos || entry?.player?.position || '');
         if(!label) return;
         counts[playerId] ||= {};
         counts[playerId][label] = (counts[playerId][label] || 0) + 1;
-      });
+      };
+      (lineup?.startXI || []).forEach(entry => applyEntry(entry, true));
+      (lineup?.substitutes || []).forEach(entry => applyEntry(entry, false));
     });
 
     return Object.fromEntries(Object.entries(counts).map(([playerId, labels]) => {
