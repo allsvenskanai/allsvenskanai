@@ -1222,7 +1222,7 @@ main > *{animation:fadeUp .3s ease both}
 
 /* LINEUP BUILDER */
 .lb-shell{display:grid;gap:1.2rem}
-.lb-grid{display:grid;grid-template-columns:minmax(320px,.95fr) minmax(0,1.4fr);gap:1rem;align-items:start}
+.lb-grid{display:grid;grid-template-columns:1fr;gap:1rem;align-items:start}
 .lb-card{
   background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,251,243,.38)),var(--dark2);
   border:1px solid rgba(201,165,75,.18);border-radius:24px;padding:1.25rem 1.25rem 1.3rem;
@@ -1336,30 +1336,19 @@ main > *{animation:fadeUp .3s ease both}
 .lb-brand strong{font-size:17px;letter-spacing:2px;text-transform:uppercase}
 .lb-brand span{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(248,242,232,.64)}
 .lb-pitch{
-  position:relative;z-index:1;margin-top:1rem;min-height:760px;border-radius:30px;padding:1rem;
+  position:relative;z-index:1;margin-top:1rem;min-height:820px;border-radius:30px;padding:1rem;
   background:
     radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), transparent 30%),
     repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8.2%, rgba(0,0,0,.02) 8.2% 16.4%),
     linear-gradient(180deg,#238650 0%,#1C7445 36%,#155B38 100%);
   border:2px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset 0 18px 34px rgba(255,255,255,.04);
 }
-.lb-pitch::before,
-.lb-pitch::after{
-  content:'';position:absolute;left:50%;transform:translateX(-50%);pointer-events:none
+.lb-pitch svg{
+  position:absolute;inset:1rem;width:calc(100% - 2rem);height:calc(100% - 2rem);pointer-events:none;
 }
-.lb-pitch::before{top:1rem;bottom:1rem;width:2px;background:rgba(255,255,255,.68)}
-.lb-pitch::after{
-  top:50%;width:22%;aspect-ratio:1;border:2px solid rgba(255,255,255,.66);border-radius:50%;
-  transform:translate(-50%,-50%);
-}
-.lb-pitch-lines{
-  position:absolute;inset:1rem;border:2px solid rgba(255,255,255,.68);border-radius:24px;pointer-events:none;
-}
-.lb-pitch-box,.lb-pitch-goal{position:absolute;left:50%;transform:translateX(-50%);border:2px solid rgba(255,255,255,.58);pointer-events:none}
-.lb-pitch-box.top{top:1rem;width:34%;height:15%;border-top:none;border-radius:0 0 18px 18px}
-.lb-pitch-box.bottom{bottom:1rem;width:34%;height:15%;border-bottom:none;border-radius:18px 18px 0 0}
-.lb-pitch-goal.top{top:.25rem;width:16%;height:5%;border-top:none;border-radius:0 0 12px 12px}
-.lb-pitch-goal.bottom{bottom:.25rem;width:16%;height:5%;border-bottom:none;border-radius:12px 12px 0 0}
+.lb-pitch-mark{fill:none;stroke:rgba(255,255,255,.7);stroke-width:2}
+.lb-pitch-mark.soft{stroke:rgba(255,255,255,.58)}
+.lb-pitch-spot{fill:rgba(255,255,255,.82)}
 .lb-slot-guide{
   position:absolute;transform:translate(-50%,-50%);pointer-events:none;
   min-width:78px;padding:5px 10px;border-radius:999px;
@@ -1503,8 +1492,7 @@ main > *{animation:fadeUp .3s ease both}
   margin-top:.42rem;font-size:12px;line-height:1.55;color:var(--text2);max-width:26ch
 }
 @media (max-width: 1080px){
-  .lb-grid{grid-template-columns:1fr}
-  .lb-pitch{min-height:700px}
+  .lb-pitch{min-height:760px}
 }
 @media (max-width: 768px){
   .lb-card,.lb-capture{padding:.95rem}
@@ -1518,9 +1506,8 @@ main > *{animation:fadeUp .3s ease both}
   .lb-capture-title{font-size:30px}
   .lb-capture-subtitle{font-size:12px}
   .lb-brand{justify-items:start;text-align:left}
-  .lb-pitch{min-height:620px;padding:.7rem}
-  .lb-pitch-lines{inset:.7rem}
-  .lb-pitch::before{top:.7rem;bottom:.7rem}
+  .lb-pitch{min-height:660px;padding:.7rem}
+  .lb-pitch svg{inset:.7rem;width:calc(100% - 1.4rem);height:calc(100% - 1.4rem)}
   .lb-slot-guide{min-width:64px;padding:4px 8px;font-size:9px}
   .lb-slot{width:96px}
   .lb-slot-core{width:62px;height:62px}
@@ -3155,11 +3142,25 @@ function renderLineupBuilderPitch(){
   if(!pitch) return;
 
   pitch.innerHTML = `
-    <div class="lb-pitch-lines"></div>
-    <div class="lb-pitch-box top"></div>
-    <div class="lb-pitch-box bottom"></div>
-    <div class="lb-pitch-goal top"></div>
-    <div class="lb-pitch-goal bottom"></div>
+    <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
+      <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
+      <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
+      <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
+      <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
+
+      <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
+      <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
+      <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
+      <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
+
+      <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
+      <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
+      <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
+      <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
+
+      <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
+      <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
+    </svg>
     ${lineupBuilderSlots().map(slot => {
       const player = lineupBuilderState.slots?.[slot.id] || null;
       const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
@@ -3287,7 +3288,7 @@ function renderLineupBuilderPage(root){
       </div>
 
       <div class="lb-grid">
-        <aside class="lb-card lb-controls">
+        <section class="lb-card lb-controls">
           <div class="lb-controls-grid">
             <label class="lb-field">
               <span class="lb-label">Liga</span>
@@ -3327,7 +3328,7 @@ function renderLineupBuilderPage(root){
           <div id="lineupBuilderSummary" class="lb-summary-grid"></div>
           <div class="lb-side-note">${lineupBuilderState.teamsLoading ? 'Laddar lag för vald liga...' : lineupBuilderState.teamsError ? esc(lineupBuilderState.teamsError) : 'Tips: välj först liga, filtrera sedan på lag om du vill hålla spelarpoolen liten. I Alla lag-läget startar bred sökning först när du skriver minst två tecken.'}</div>
           <div id="lineupBuilderStatus" class="lb-status" data-tone="${esc(lineupBuilderState.statusTone || 'idle')}">${esc(lineupBuilderState.status || '')}</div>
-        </aside>
+        </section>
 
         <section class="lb-capture">
           <div id="lineupBuilderCapture" class="lb-capture-shell lb-capture-export">
