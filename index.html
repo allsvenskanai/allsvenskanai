@@ -1372,25 +1372,25 @@ main > *{animation:fadeUp .3s ease both}
   background:radial-gradient(circle at 50% 58%, transparent 34%, rgba(0,0,0,.24) 100%);
 }
 .lb-export-top{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:24px;position:relative;z-index:2;
-  padding:6px 2px 18px;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:20px;position:relative;z-index:2;
+  padding:4px 2px 16px;
 }
 .lb-export-kicker{
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:3.2px;text-transform:uppercase;color:#E3C777;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#E3C777;
 }
 .lb-export-title{
-  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:62px;font-weight:900;line-height:.94;letter-spacing:1.2px;text-transform:uppercase;color:#FAF4E8;
-  max-width:720px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:56px;font-weight:900;line-height:.96;letter-spacing:1px;text-transform:uppercase;color:#FAF4E8;
+  max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .lb-export-subtitle{
-  margin-top:10px;font-size:18px;font-weight:600;letter-spacing:1.2px;text-transform:none;color:rgba(250,244,232,.72)
+  margin-top:8px;font-size:17px;font-weight:600;letter-spacing:.8px;text-transform:none;color:rgba(250,244,232,.7)
 }
 .lb-export-brand{
   display:grid;justify-items:end;gap:4px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05)
+  padding:9px 11px;border-radius:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.045)
 }
-.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
-.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(250,244,232,.52)}
+.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase}
+.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(250,244,232,.5)}
 .lb-export-pitch-wrap{
   position:relative;display:grid;align-items:center;justify-items:center;
 }
@@ -1449,24 +1449,24 @@ main > *{animation:fadeUp .3s ease both}
   font-size:10px;color:rgba(248,242,232,.52);letter-spacing:.75px;text-transform:uppercase
 }
 .lb-export-watermark{
-  position:absolute;right:54px;bottom:88px;font-family:'Barlow Condensed',sans-serif;font-size:92px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.038);pointer-events:none;line-height:.85;
+  position:absolute;right:54px;bottom:88px;font-family:'Barlow Condensed',sans-serif;font-size:88px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.034);pointer-events:none;line-height:.85;
 }
 .lb-export-footer{
   display:flex;justify-content:space-between;align-items:flex-end;gap:16px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
-  padding:10px 2px 0;border-top:1px solid rgba(255,255,255,.08)
+  padding:8px 2px 0;border-top:1px solid rgba(255,255,255,.07)
 }
 .lb-export-footer strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2.2px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#FAF4E8
 }
 .lb-export-footer-meta{
   display:grid;justify-items:end;gap:4px;text-align:right
 }
 .lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#FAF4E8
 }
 .lb-export-footer-meta small{
-  font-size:11px;letter-spacing:.9px;text-transform:none;color:rgba(248,242,232,.56)
+  font-size:10px;letter-spacing:.7px;text-transform:none;color:rgba(248,242,232,.54)
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -2939,81 +2939,10 @@ function formatPositionLabel(value=''){
 }
 
 function resolveDetailedPosition(source, fallback=''){
-  const candidates = [source, fallback];
-  for(const candidate of candidates){
-    const broad = getMainPositionCategory(candidate);
-    if(broad && broad !== 'Okänd') return broad;
-  }
-  return 'Okänd';
-}
-
-const teamDetailedPositionCache = {};
-
-function resolveDetailedRoleFromFormationGrid(formation='', grid='', fallback=''){
-  const rows = FORMATION_GRID_ROLE_CODES[String(formation || '').trim()];
-  const match = String(grid || '').trim().match(/^(\d+):(\d+)$/);
-  if(rows && match) {
-    const rowIndex = Number(match[1]) - 1;
-    const colIndex = Number(match[2]) - 1;
-    const roleCode = rows?.[rowIndex]?.[colIndex] || '';
-    if(roleCode) return resolveDetailedPosition({ positionCode: roleCode }, fallback);
-  }
-  return resolveDetailedPosition({ positionCode: fallback, pos: fallback, position: fallback }, fallback);
-}
-
-async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
-  const cacheKey = `${season}:${teamId}`;
-  if(teamDetailedPositionCache[cacheKey]) return teamDetailedPositionCache[cacheKey];
-
-  const fixtureIds = [...new Set((fixtures || [])
-    .filter(item => {
-      const started = !['NS', 'TBD', 'PST', 'CANC', 'ABD', 'AWD'].includes(String(item?.fixture?.status?.short || '').toUpperCase());
-      const involvesTeam = Number(item?.teams?.home?.id || 0) === Number(teamId) || Number(item?.teams?.away?.id || 0) === Number(teamId);
-      return started && involvesTeam;
-    })
-    .sort((a, b) => String(b?.fixture?.date || '').localeCompare(String(a?.fixture?.date || '')))
-    .slice(0, 30)
-    .map(item => Number(item?.fixture?.id || 0))
-    .filter(Boolean))];
-
-  const promise = (async () => {
-    const counts = {};
-    const lineupResponses = [];
-    for(const fixtureId of fixtureIds){
-      try {
-        const raw = await afRaw('fixtures/lineups', { fixture: fixtureId });
-        lineupResponses.push(raw?.response || []);
-      } catch {
-        lineupResponses.push([]);
-      }
-    }
-
-    lineupResponses.forEach(lineups => {
-      const lineup = (lineups || []).find(item => Number(item?.team?.id || 0) === Number(teamId));
-      if(!lineup) return;
-      const formation = lineup?.formation || '';
-      const applyEntry = (entry, useGrid = false) => {
-        const playerId = Number(entry?.player?.id || 0);
-        if(!playerId) return;
-        const label = useGrid
-          ? resolveDetailedRoleFromFormationGrid(formation, entry?.player?.grid, entry?.player?.pos || entry?.player?.position || '')
-          : resolveDetailedPosition(entry?.player, entry?.player?.pos || entry?.player?.position || '');
-        if(!label) return;
-        counts[playerId] ||= {};
-        counts[playerId][label] = (counts[playerId][label] || 0) + 1;
-      };
-      (lineup?.startXI || []).forEach(entry => applyEntry(entry, true));
-      (lineup?.substitutes || []).forEach(entry => applyEntry(entry, false));
-    });
-
-    return Object.fromEntries(Object.entries(counts).map(([playerId, labels]) => {
-      const best = Object.entries(labels).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'sv'))[0]?.[0] || '';
-      return [playerId, best];
-    }));
-  })();
-
-  teamDetailedPositionCache[cacheKey] = promise;
-  return promise;
+  const broad = getMainPositionCategory(source);
+  if(broad && broad !== 'Okänd') return broad;
+  const fallbackBroad = getMainPositionCategory(fallback);
+  return fallbackBroad && fallbackBroad !== 'Okänd' ? fallbackBroad : 'Okänd';
 }
 
 function formatPositionSectionLabel(value=''){
@@ -3700,7 +3629,7 @@ function renderLineupBuilderExportStage(){
           <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
         </div>
         <div class="lb-export-brand">
-          <strong>Lineup</strong>
+          <strong>Graphic</strong>
           <span>1080 x 1920</span>
         </div>
       </div>
@@ -5405,58 +5334,10 @@ async function pageTeam(el, teamId) {
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
     const team = stats?.team || {id:teamId, name:'', logo:''};
     const venue = stats?.venue || {};
-    const squadPlayersById = new Map();
-    (squadD[0]?.players || []).forEach(player => {
-      if(!player?.id) return;
-      squadPlayersById.set(player.id, {
-        ...player,
-        injured: !!player?.injured,
-      });
-    });
-    (seasonPlayers || []).forEach(item => {
-      const playerId = item?.player?.id;
-      if(!playerId) return;
-      const stats = Array.isArray(item?.statistics) ? item.statistics : [];
-      const statWithPosition = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
-      const existing = squadPlayersById.get(playerId) || {};
-      squadPlayersById.set(playerId, {
-        id: playerId,
-        name: item?.player?.name || existing.name || '',
-        firstname: item?.player?.firstname || existing.firstname || '',
-        lastname: item?.player?.lastname || existing.lastname || '',
-        age: item?.player?.age || existing.age || null,
-        number: existing.number || statWithPosition?.games?.number || null,
-        positionCode: item?.player?.pos || statWithPosition?.games?.positionCode || existing.positionCode || '',
-        position: statWithPosition?.games?.position || existing.position || item?.player?.position || '',
-        photo: item?.player?.photo || existing.photo || '',
-        injured: !!existing.injured,
-      });
-    });
-    const squadPlayers = [...squadPlayersById.values()].filter(player => player?.id);
+    const squadPlayers = (squadD[0]?.players || []);
     const playerInfoById = Object.fromEntries((seasonPlayers||[]).map(item => {
-      const stats = item?.statistics || [];
-      const primaryStats = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
-      return [item.player?.id, {
-        ...(item.player || {}),
-        statistics: stats,
-        games: primaryStats.games || {},
-        position: primaryStats.games?.position || item?.player?.position || '',
-      }];
+      return [item.player?.id, item.player || {}];
     }));
-    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(teamId, SEASON);
-    squadPlayers.forEach(player => {
-      const fallbackPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(fallbackPosition && getMainPositionCategory(player) === 'Okänd') {
-        player.position = fallbackPosition;
-      }
-    });
-    Object.keys(playerInfoById).forEach(playerId => {
-      const info = playerInfoById[playerId];
-      const fallbackPosition = detailedPositionsByPlayerId[String(playerId)] || '';
-      if(fallbackPosition && getMainPositionCategory(info) === 'Okänd') {
-        info.position = fallbackPosition;
-      }
-    });
     document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
@@ -5688,67 +5569,21 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     );
     const teamDisplayName = getTeamDisplayName(team);
     const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
-    console.debug('[team-page] route resolution', {
-      routeTeamId,
-      selectedSeason,
-      statsTeamId: stats?.team?.id || null,
-      teamInfoId: teamInfo?.id || null,
-      standingTeamId: selectedStanding?.team?.id || null,
-      resolvedTeamId: team?.id || null,
-      resolvedTeamName: teamDisplayName,
-    });
-    const squadPlayersById = new Map();
-    (squadD?.[0]?.players || []).forEach(player => {
-      if(!player?.id) return;
-      squadPlayersById.set(player.id, {
-        ...player,
-        injured: !!player?.injured,
-      });
-    });
-    (seasonPlayers || []).forEach(item => {
-      const playerId = item?.player?.id;
-      if(!playerId) return;
-      const stats = Array.isArray(item?.statistics) ? item.statistics : [];
-      const statWithPosition = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
-      const existing = squadPlayersById.get(playerId) || {};
-      squadPlayersById.set(playerId, {
-        id: playerId,
-        name: item?.player?.name || existing.name || '',
-        firstname: item?.player?.firstname || existing.firstname || '',
-        lastname: item?.player?.lastname || existing.lastname || '',
-        age: item?.player?.age || existing.age || null,
-        number: existing.number || statWithPosition?.games?.number || null,
-        positionCode: item?.player?.pos || statWithPosition?.games?.positionCode || existing.positionCode || '',
-        position: statWithPosition?.games?.position || existing.position || item?.player?.position || '',
-        photo: item?.player?.photo || existing.photo || '',
-        injured: !!existing.injured,
-      });
-    });
-    const squadPlayers = [...squadPlayersById.values()].filter(player => player?.id);
+    const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
+      id: item?.player?.id,
+      name: item?.player?.name || '',
+      firstname: item?.player?.firstname || '',
+      lastname: item?.player?.lastname || '',
+      age: item?.player?.age || null,
+      number: item?.statistics?.[0]?.games?.number || null,
+      positionCode: item?.player?.pos || item?.statistics?.[0]?.games?.positionCode || '',
+      position: item?.statistics?.[0]?.games?.position || '',
+      photo: item?.player?.photo || '',
+      injured: false,
+    })).filter(player => player?.id);
     const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => {
-      const stats = item?.statistics || [];
-      const primaryStats = stats.find(stat => stat?.games?.position || stat?.games?.positionCode) || stats[0] || {};
-      return [item.player?.id, {
-        ...(item.player || {}),
-        statistics: stats,
-        games: primaryStats.games || {},
-        position: primaryStats.games?.position || item?.player?.position || '',
-      }];
+      return [item.player?.id, item.player || {}];
     }));
-    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
-    squadPlayers.forEach(player => {
-      const fallbackPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(fallbackPosition && getMainPositionCategory(playerInfoById[player.id] || player) === 'Okänd') {
-        player.position = fallbackPosition;
-      }
-    });
-    Object.keys(playerInfoById).forEach(playerId => {
-      const info = playerInfoById[playerId];
-      const fallbackPosition = detailedPositionsByPlayerId[String(playerId)] || '';
-      if(fallbackPosition && getMainPositionCategory(info) === 'Okänd') {
-        info.position = fallbackPosition;
-      }
-    });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
