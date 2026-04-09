@@ -5443,6 +5443,20 @@ async function pageTeam(el, teamId) {
         position: primaryStats.games?.position || item?.player?.position || '',
       }];
     }));
+    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(teamId, SEASON);
+    squadPlayers.forEach(player => {
+      const fallbackPosition = detailedPositionsByPlayerId[String(player.id)] || '';
+      if(fallbackPosition && getMainPositionCategory(player) === 'Okänd') {
+        player.position = fallbackPosition;
+      }
+    });
+    Object.keys(playerInfoById).forEach(playerId => {
+      const info = playerInfoById[playerId];
+      const fallbackPosition = detailedPositionsByPlayerId[String(playerId)] || '';
+      if(fallbackPosition && getMainPositionCategory(info) === 'Okänd') {
+        info.position = fallbackPosition;
+      }
+    });
     document.title = `${team.name} — trupp, statistik & övergångar | AllsvenskanAI`;
 
     const w = stats?.fixtures?.wins?.total||0;
@@ -5721,6 +5735,20 @@ async function pageTeam(el, teamId, explicitSeason = null) {
         position: primaryStats.games?.position || item?.player?.position || '',
       }];
     }));
+    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
+    squadPlayers.forEach(player => {
+      const fallbackPosition = detailedPositionsByPlayerId[String(player.id)] || '';
+      if(fallbackPosition && getMainPositionCategory(playerInfoById[player.id] || player) === 'Okänd') {
+        player.position = fallbackPosition;
+      }
+    });
+    Object.keys(playerInfoById).forEach(playerId => {
+      const info = playerInfoById[playerId];
+      const fallbackPosition = detailedPositionsByPlayerId[String(playerId)] || '';
+      if(fallbackPosition && getMainPositionCategory(info) === 'Okänd') {
+        info.position = fallbackPosition;
+      }
+    });
     await enrichSquadNationalities(squadPlayers, playerInfoById);
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
