@@ -1387,7 +1387,7 @@ main > *{animation:fadeUp .3s ease both}
 }
 .lb-export-brand{
   display:grid;justify-items:end;gap:5px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:4px 0 0;background:none;border:none
+  padding:4px 18px 0 0;background:none;border:none
 }
 .lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:1px;text-transform:none;line-height:.95}
 .lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(250,244,232,.5)}
@@ -1436,10 +1436,10 @@ main > *{animation:fadeUp .3s ease both}
 }
 .lb-export-slot-club{
   display:inline-flex;align-items:center;gap:6px;max-width:136px;padding:4px 9px;border-radius:999px;
-  background:rgba(5,22,17,.16);border:1px solid rgba(255,255,255,.07);font-size:10px;letter-spacing:.28px;text-transform:none;box-shadow:none;
+  background:rgba(8,31,23,.42);border:1px solid rgba(255,255,255,.12);font-size:10px;letter-spacing:.28px;text-transform:none;box-shadow:0 6px 12px rgba(0,0,0,.08);
 }
-.lb-export-slot-club img{width:14px;height:14px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:rgba(248,242,232,.88)}
+.lb-export-slot-club img{width:15px;height:15px;object-fit:contain;flex-shrink:0}
+.lb-export-slot-club span{display:block;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:rgba(248,242,232,.94)}
 .lb-export-slot-placeholder{
   display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
   font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
@@ -1449,18 +1449,8 @@ main > *{animation:fadeUp .3s ease both}
   font-size:10px;color:rgba(248,242,232,.52);letter-spacing:.75px;text-transform:uppercase
 }
 .lb-export-watermark{
-  position:absolute;right:54px;bottom:88px;font-family:'Barlow Condensed',sans-serif;font-size:92px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.038);pointer-events:none;line-height:.85;
-}
-.lb-export-brandline{
-  position:relative;z-index:2;display:grid;justify-items:center;gap:5px;margin-top:-4px;
-}
-.lb-export-brandline strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;letter-spacing:1.4px;line-height:.95;color:#F7F1E6;
-  text-transform:none;text-shadow:0 10px 26px rgba(0,0,0,.18);
-}
-.lb-export-brandline span{
-  font-size:12px;letter-spacing:1.2px;text-transform:none;color:rgba(247,241,230,.58);
+  position:absolute;left:50%;transform:translateX(-50%);bottom:158px;font-family:'Barlow Condensed',sans-serif;font-size:118px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.03);pointer-events:none;line-height:.85;text-align:center;white-space:nowrap;
 }
 .lb-export-footer{
   display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
@@ -1469,14 +1459,14 @@ main > *{animation:fadeUp .3s ease both}
 .lb-export-footer strong{
   font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.9)
 }
+.lb-export-footer-left{
+  margin-left:-10px;
+}
 .lb-export-footer-meta{
   display:flex;align-items:center;justify-content:flex-end;gap:0;text-align:right;white-space:nowrap
 }
 .lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#FAF4E8
-}
-.lb-export-footer-meta small{
-  font-size:12px;letter-spacing:.45px;text-transform:none;color:rgba(248,242,232,.58);margin-left:8px
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:.8px;text-transform:none;color:#FAF4E8
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -3047,12 +3037,20 @@ const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v2';
 const LINEUP_BUILDER_ALL_TEAMS = 'all';
 const LINEUP_BUILDER_MIN_GLOBAL_SEARCH = 2;
 const LINEUP_BUILDER_SAFE_AREA = { left: 12, right: 88, top: 8, bottom: 92 };
+const LINEUP_BUILDER_EXPORT_SAFE_AREA = { left: 9, right: 91, top: 10, bottom: 93 };
 const LINEUP_BUILDER_ROW_X = {
   1: [50],
   2: [38, 62],
   3: [24, 50, 76],
   4: [14, 38, 62, 86],
   5: [10, 30, 50, 70, 90]
+};
+const LINEUP_BUILDER_EXPORT_ROW_X = {
+  1: [50],
+  2: [35, 65],
+  3: [20, 50, 80],
+  4: [11, 37, 63, 89],
+  5: [8, 29, 50, 71, 92]
 };
 const LINEUP_BUILDER_FORMATION_ROWS = {
   '4-4-2': [
@@ -3090,6 +3088,10 @@ const LINEUP_BUILDER_FORMATION_ROWS = {
 const LINEUP_BUILDER_ROW_Y = {
   4: [0, 28, 56, 84],
   5: [0, 18, 38, 60, 84]
+};
+const LINEUP_BUILDER_EXPORT_ROW_Y = {
+  4: [2, 34, 63, 89],
+  5: [4, 24, 45, 66, 90]
 };
 const FORMATION_GRID_ROLE_CODES = {
   '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
@@ -3261,28 +3263,34 @@ function lineupBuilderSlots(){
   return LINEUP_BUILDER_FORMATIONS[lineupBuilderState.formation] || LINEUP_BUILDER_FORMATIONS['4-3-3'];
 }
 
-function lineupBuilderSafePercent(axis, value){
-  const safe = LINEUP_BUILDER_SAFE_AREA;
+function lineupBuilderSafePercentForArea(axis, value, safe = LINEUP_BUILDER_SAFE_AREA){
   const min = axis === 'x' ? safe.left : safe.top;
   const max = axis === 'x' ? safe.right : safe.bottom;
   return min + ((max - min) * (value / 100));
 }
 
-function lineupBuilderFormationCoords(){
+function lineupBuilderSafePercent(axis, value){
+  return lineupBuilderSafePercentForArea(axis, value, LINEUP_BUILDER_SAFE_AREA);
+}
+
+function lineupBuilderFormationCoords(mode = 'builder'){
   const formation = lineupBuilderState.formation;
   const slots = lineupBuilderSlots();
   const rows = LINEUP_BUILDER_FORMATION_ROWS[formation] || LINEUP_BUILDER_FORMATION_ROWS['4-3-3'];
-  const yTemplate = LINEUP_BUILDER_ROW_Y[rows.length] || LINEUP_BUILDER_ROW_Y[4];
+  const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
+  const rowXMap = mode === 'export' ? LINEUP_BUILDER_EXPORT_ROW_X : LINEUP_BUILDER_ROW_X;
+  const rowYMap = mode === 'export' ? LINEUP_BUILDER_EXPORT_ROW_Y : LINEUP_BUILDER_ROW_Y;
+  const yTemplate = rowYMap[rows.length] || rowYMap[4] || LINEUP_BUILDER_ROW_Y[4];
   const coords = {};
 
   rows.forEach((row, rowIndex) => {
-    const template = LINEUP_BUILDER_ROW_X[row.length] || LINEUP_BUILDER_ROW_X[3];
-    const y = lineupBuilderSafePercent('y', yTemplate[rowIndex] ?? 50);
+    const template = rowXMap[row.length] || rowXMap[3] || LINEUP_BUILDER_ROW_X[3];
+    const y = lineupBuilderSafePercentForArea('y', yTemplate[rowIndex] ?? 50, safeArea);
     row.forEach((slotId, index) => {
-      const x = lineupBuilderSafePercent('x', template[index] ?? 50);
+      const x = lineupBuilderSafePercentForArea('x', template[index] ?? 50, safeArea);
       coords[slotId] = {
-        x: Math.max(LINEUP_BUILDER_SAFE_AREA.left, Math.min(LINEUP_BUILDER_SAFE_AREA.right, x)),
-        y: Math.max(LINEUP_BUILDER_SAFE_AREA.top, Math.min(LINEUP_BUILDER_SAFE_AREA.bottom, y))
+        x: Math.max(safeArea.left, Math.min(safeArea.right, x)),
+        y: Math.max(safeArea.top, Math.min(safeArea.bottom, y))
       };
     });
   });
@@ -3293,15 +3301,16 @@ function lineupBuilderFormationCoords(){
   return coords;
 }
 
-function lineupBuilderRenderCoords(slot){
+function lineupBuilderRenderCoords(slot, mode = 'builder'){
   if(!slot) return { x: 50, y: 50, guideY: 42 };
-  const coords = lineupBuilderFormationCoords()[slot.id] || { x: 50, y: 50 };
-  const blockWidth = 16;
-  const blockHeight = 18;
-  const minX = LINEUP_BUILDER_SAFE_AREA.left + (blockWidth / 2);
-  const maxX = LINEUP_BUILDER_SAFE_AREA.right - (blockWidth / 2);
-  const minTop = LINEUP_BUILDER_SAFE_AREA.top;
-  const maxTop = LINEUP_BUILDER_SAFE_AREA.bottom - blockHeight;
+  const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
+  const coords = lineupBuilderFormationCoords(mode)[slot.id] || { x: 50, y: 50 };
+  const blockWidth = mode === 'export' ? 18 : 16;
+  const blockHeight = mode === 'export' ? 20 : 18;
+  const minX = safeArea.left + (blockWidth / 2);
+  const maxX = safeArea.right - (blockWidth / 2);
+  const minTop = safeArea.top;
+  const maxTop = safeArea.bottom - blockHeight;
   const x = Math.max(minX, Math.min(maxX, coords.x));
   const top = Math.max(minTop, Math.min(maxTop, coords.y));
   return { x, y: top };
@@ -3726,7 +3735,7 @@ function renderLineupBuilderExportStage(){
           </svg>
           ${lineupBuilderSlots().map(slot => {
             const player = lineupBuilderState.slots?.[slot.id] || null;
-            const coords = lineupBuilderRenderCoords(slot);
+            const coords = lineupBuilderRenderCoords(slot, 'export');
             if(!player) {
               return `
                 <div class="lb-export-slot empty" style="left:${coords.x}%;top:${coords.y}%;">
@@ -3760,14 +3769,10 @@ function renderLineupBuilderExportStage(){
           }).join('')}
         </div>
       </div>
-      <div class="lb-export-brandline">
-        <strong>AllsvenskanAI.se</strong>
-        <span>AllsvenskanAI:s slogan:</span>
-      </div>
       <div class="lb-export-footer">
-        <div><strong>AllsvenskanAI</strong></div>
+        <div class="lb-export-footer-left"><strong>AllsvenskanAI</strong></div>
         <div class="lb-export-footer-meta">
-          <span>${esc(lineupBuilderState.formation)} <small>• ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</small></span>
+          <span>${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</span>
         </div>
       </div>
       <div class="lb-export-watermark">AllsvenskanAI</div>
