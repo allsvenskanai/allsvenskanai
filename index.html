@@ -2771,6 +2771,51 @@ async function afAll(ep, p={}) {
 const LINEUP_BUILDER_STORAGE_KEY = 'allsvenskanai-lineup-builder-v2';
 const LINEUP_BUILDER_ALL_TEAMS = 'all';
 const LINEUP_BUILDER_MIN_GLOBAL_SEARCH = 2;
+const LINEUP_BUILDER_SAFE_AREA = { left: 14, right: 86, top: 20, bottom: 86 };
+const LINEUP_BUILDER_ROW_X = {
+  1: [50],
+  2: [38, 62],
+  3: [24, 50, 76],
+  4: [14, 38, 62, 86],
+  5: [10, 30, 50, 70, 90]
+};
+const LINEUP_BUILDER_FORMATION_ROWS = {
+  '4-4-2': [
+    ['lst', 'rst'],
+    ['lm', 'lcm', 'rcm', 'rm'],
+    ['lb', 'lcb', 'rcb', 'rb'],
+    ['gk']
+  ],
+  '4-3-3': [
+    ['lw', 'st', 'rw'],
+    ['lcm', 'cm', 'rcm'],
+    ['lb', 'lcb', 'rcb', 'rb'],
+    ['gk']
+  ],
+  '3-5-2': [
+    ['lst', 'rst'],
+    ['lwb', 'lcm', 'cm', 'rcm', 'rwb'],
+    ['lcb', 'cb', 'rcb'],
+    ['gk']
+  ],
+  '4-2-3-1': [
+    ['st'],
+    ['lam', 'cam', 'ram'],
+    ['ldm', 'rdm'],
+    ['lb', 'lcb', 'rcb', 'rb'],
+    ['gk']
+  ],
+  '5-3-2': [
+    ['lst', 'rst'],
+    ['lcm', 'cm', 'rcm'],
+    ['lwb', 'lcb', 'cb', 'rcb', 'rwb'],
+    ['gk']
+  ]
+};
+const LINEUP_BUILDER_ROW_Y = {
+  4: [18, 41, 66, 86],
+  5: [18, 34, 50, 68, 86]
+};
 const LINEUP_BUILDER_FORMATIONS = {
   '4-4-2': [
     { id:'gk', label:'MV', role:'gk', group:'gk', x:50, y:91 },
@@ -2934,28 +2979,44 @@ function lineupBuilderSlots(){
   return LINEUP_BUILDER_FORMATIONS[lineupBuilderState.formation] || LINEUP_BUILDER_FORMATIONS['4-3-3'];
 }
 
+function lineupBuilderSafePercent(axis, value){
+  const safe = LINEUP_BUILDER_SAFE_AREA;
+  const min = axis === 'x' ? safe.left : safe.top;
+  const max = axis === 'x' ? safe.right : safe.bottom;
+  return min + ((max - min) * (value / 100));
+}
+
+function lineupBuilderFormationCoords(){
+  const formation = lineupBuilderState.formation;
+  const slots = lineupBuilderSlots();
+  const rows = LINEUP_BUILDER_FORMATION_ROWS[formation] || LINEUP_BUILDER_FORMATION_ROWS['4-3-3'];
+  const yTemplate = LINEUP_BUILDER_ROW_Y[rows.length] || LINEUP_BUILDER_ROW_Y[4];
+  const coords = {};
+
+  rows.forEach((row, rowIndex) => {
+    const template = LINEUP_BUILDER_ROW_X[row.length] || LINEUP_BUILDER_ROW_X[3];
+    const y = lineupBuilderSafePercent('y', yTemplate[rowIndex] ?? 50);
+    row.forEach((slotId, index) => {
+      const x = lineupBuilderSafePercent('x', template[index] ?? 50);
+      coords[slotId] = {
+        x: Math.max(LINEUP_BUILDER_SAFE_AREA.left, Math.min(LINEUP_BUILDER_SAFE_AREA.right, x)),
+        y: Math.max(LINEUP_BUILDER_SAFE_AREA.top, Math.min(LINEUP_BUILDER_SAFE_AREA.bottom, y))
+      };
+    });
+  });
+
+  slots.forEach(slot => {
+    if(!coords[slot.id]) coords[slot.id] = { x: 50, y: 50 };
+  });
+  return coords;
+}
+
 function lineupBuilderRenderCoords(slot){
   if(!slot) return { x: 50, y: 50, guideY: 42 };
-  let x = Number(slot.x || 50);
-  let y = Number(slot.y || 50);
-
-  if(slot.group === 'att') y -= 2;
-  if(slot.group === 'mid') {
-    if(['am', 'cam'].includes(slot.role)) y -= 1;
-    else if(['dm', 'cdm'].includes(slot.role)) y += 1.5;
-    else y -= 1;
-  }
-  if(slot.group === 'def') y += 4;
-  if(slot.group === 'gk') y += 5;
-
-  if(['lb', 'rb', 'lwb', 'rwb', 'lm', 'rm', 'lw', 'rw'].includes(slot.role)) {
-    if(x < 50) x -= 1.8;
-    if(x > 50) x += 1.8;
-  }
-
-  x = Math.max(12, Math.min(88, x));
-  y = Math.max(16, Math.min(94, y));
-  const guideY = Math.max(8, y - 9);
+  const coords = lineupBuilderFormationCoords()[slot.id] || { x: 50, y: 50 };
+  const x = coords.x;
+  const y = coords.y;
+  const guideY = Math.max(LINEUP_BUILDER_SAFE_AREA.top - 2, y - 9);
   return { x, y, guideY };
 }
 
