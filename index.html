@@ -1372,25 +1372,25 @@ main > *{animation:fadeUp .3s ease both}
   background:radial-gradient(circle at 50% 58%, transparent 34%, rgba(0,0,0,.24) 100%);
 }
 .lb-export-top{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:24px;position:relative;z-index:2;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:22px;position:relative;z-index:2;
   padding:6px 2px 18px;
 }
 .lb-export-kicker{
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:3.2px;text-transform:uppercase;color:#E3C777;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#E3C777;
 }
 .lb-export-title{
-  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;line-height:.95;letter-spacing:1px;text-transform:uppercase;color:#FAF4E8;
-  max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:56px;font-weight:900;line-height:.95;letter-spacing:.9px;text-transform:uppercase;color:#FAF4E8;
+  max-width:690px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .lb-export-subtitle{
-  margin-top:9px;font-size:17px;font-weight:600;letter-spacing:.8px;text-transform:none;color:rgba(250,244,232,.72)
+  margin-top:8px;font-size:16px;font-weight:600;letter-spacing:.55px;text-transform:none;color:rgba(250,244,232,.68)
 }
 .lb-export-brand{
-  display:grid;justify-items:end;gap:4px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05)
+  display:grid;justify-items:end;gap:5px;text-align:right;color:#FAF4E8;align-self:start;
+  padding:4px 0 0;background:none;border:none
 }
-.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
-.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(250,244,232,.52)}
+.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:1px;text-transform:none;line-height:.95}
+.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(250,244,232,.5)}
 .lb-export-pitch-wrap{
   position:relative;display:grid;align-items:center;justify-items:center;
 }
@@ -1453,14 +1453,14 @@ main > *{animation:fadeUp .3s ease both}
   color:rgba(255,255,255,.038);pointer-events:none;line-height:.85;
 }
 .lb-export-brandline{
-  position:relative;z-index:2;display:grid;justify-items:center;gap:6px;margin-top:-2px;
+  position:relative;z-index:2;display:grid;justify-items:center;gap:5px;margin-top:-4px;
 }
 .lb-export-brandline strong{
   font-family:'Barlow Condensed',sans-serif;font-size:44px;font-weight:900;letter-spacing:1.4px;line-height:.95;color:#F7F1E6;
   text-transform:none;text-shadow:0 10px 26px rgba(0,0,0,.18);
 }
 .lb-export-brandline span{
-  font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(247,241,230,.52);
+  font-size:12px;letter-spacing:1.2px;text-transform:none;color:rgba(247,241,230,.58);
 }
 .lb-export-footer{
   display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
@@ -1470,13 +1470,13 @@ main > *{animation:fadeUp .3s ease both}
   font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.9)
 }
 .lb-export-footer-meta{
-  display:grid;justify-items:end;gap:6px;text-align:right
+  display:flex;align-items:center;justify-content:flex-end;gap:0;text-align:right;white-space:nowrap
 }
 .lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#FAF4E8
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#FAF4E8
 }
 .lb-export-footer-meta small{
-  font-size:12px;letter-spacing:.7px;text-transform:none;color:rgba(248,242,232,.58)
+  font-size:12px;letter-spacing:.45px;text-transform:none;color:rgba(248,242,232,.58);margin-left:8px
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -3702,8 +3702,8 @@ function renderLineupBuilderExportStage(){
           <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
         </div>
         <div class="lb-export-brand">
-          <strong>Lineup</strong>
-          <span>1080 x 1920</span>
+          <strong>AllsvenskanAI</strong>
+          <span>Football Intelligence</span>
         </div>
       </div>
       <div class="lb-export-pitch-wrap">
@@ -3762,13 +3762,12 @@ function renderLineupBuilderExportStage(){
       </div>
       <div class="lb-export-brandline">
         <strong>AllsvenskanAI.se</strong>
-        <span>Data-driven fotbollsgrafik</span>
+        <span>AllsvenskanAI:s slogan:</span>
       </div>
       <div class="lb-export-footer">
         <div><strong>AllsvenskanAI</strong></div>
         <div class="lb-export-footer-meta">
-          <span>${esc(lineupBuilderState.formation)}</span>
-          <small>${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</small>
+          <span>${esc(lineupBuilderState.formation)} <small>• ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</small></span>
         </div>
       </div>
       <div class="lb-export-watermark">AllsvenskanAI</div>
