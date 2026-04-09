@@ -1291,7 +1291,8 @@ main > *{animation:fadeUp .3s ease both}
   border:1px solid var(--border);border-radius:24px;padding:1rem;
 }
 .lb-capture-shell{
-  position:relative;overflow:hidden;border-radius:24px;padding:1.25rem;
+  position:relative;overflow:hidden;border-radius:28px;padding:1.4rem 1.4rem 1.25rem;
+  width:100%;max-width:980px;margin:0 auto;min-height:0;
   background:
     radial-gradient(circle at top left, rgba(201,165,75,.22), transparent 36%),
     linear-gradient(160deg,#103C2E 0%,#0B3025 34%,#09251D 100%);
@@ -1378,6 +1379,9 @@ main > *{animation:fadeUp .3s ease both}
   position:relative;z-index:1;margin-top:1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
   font-size:12px;color:rgba(248,242,232,.76)
 }
+.lb-capture-export{
+  width:980px;
+}
 .lb-footer-note strong{
   font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#F8F2E8;
 }
@@ -1446,15 +1450,28 @@ main > *{animation:fadeUp .3s ease both}
 .lb-empty strong{color:var(--text)}
 .lb-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
 .lb-summary-card{
-  background:rgba(255,255,255,.52);border:1px solid var(--border);border-radius:16px;padding:.9rem 1rem
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,248,236,.72));
+  border:1px solid rgba(201,165,75,.18);border-radius:20px;padding:1.05rem 1.1rem 1rem;
+  box-shadow:0 14px 28px rgba(88,66,26,.08), inset 0 1px 0 rgba(255,255,255,.68);
+}
+.lb-summary-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(145deg,rgba(201,165,75,.12),transparent 52%);
+  pointer-events:none;opacity:.95;
 }
 .lb-summary-label{
-  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)
+  position:relative;z-index:1;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted)
 }
 .lb-summary-value{
-  margin-top:.38rem;font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;color:var(--text)
+  position:relative;z-index:1;
+  margin-top:.5rem;font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;line-height:.95;color:var(--text)
 }
-.lb-summary-copy{margin-top:.28rem;font-size:12px;line-height:1.5;color:var(--text2)}
+.lb-summary-copy{
+  position:relative;z-index:1;
+  margin-top:.42rem;font-size:12px;line-height:1.55;color:var(--text2);max-width:26ch
+}
 @media (max-width: 1080px){
   .lb-grid{grid-template-columns:1fr}
   .lb-pitch{min-height:700px}
@@ -1467,6 +1484,7 @@ main > *{animation:fadeUp .3s ease both}
   .lb-toolbar{display:grid;grid-template-columns:1fr 1fr}
   .lb-button.primary,.lb-button.ghost,.lb-button.warn{width:100%}
   .lb-capture-shell{padding:.95rem}
+  .lb-capture-export{width:100%}
   .lb-capture-title{font-size:30px}
   .lb-capture-subtitle{font-size:12px}
   .lb-brand{justify-items:start;text-align:left}
@@ -2709,9 +2727,7 @@ let lineupBuilderStatusTimer = null;
 let lineupBuilderTeamsRequestId = 0;
 let lineupBuilderSearchRequestId = 0;
 const LINEUP_BUILDER_LEAGUES = [
-  { key:'allsvenskan-men', label:'Allsvenskan Herr', search:'Allsvenskan', country:'Sweden', season:SEASON, teamOrder:true },
-  { key:'superettan', label:'Superettan', search:'Superettan', country:'Sweden', season:SEASON, teamOrder:false },
-  { key:'damallsvenskan', label:'Damallsvenskan', search:'Damallsvenskan', country:'Sweden', season:SEASON, teamOrder:false }
+  { key:'allsvenskan-men', id:LEAGUE, label:'Allsvenskan Herr', season:2026, teamOrder:true }
 ];
 const LINEUP_BUILDER_LEAGUE_MAP = Object.fromEntries(LINEUP_BUILDER_LEAGUES.map(league => [league.key, league]));
 const lineupBuilderCache = {
@@ -2935,18 +2951,11 @@ function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
 async function resolveLineupBuilderLeagueMeta(leagueKey = lineupBuilderState.selectedLeagueKey){
   if(lineupBuilderCache.leagueMeta[leagueKey]) return lineupBuilderCache.leagueMeta[leagueKey];
   const leagueConfig = LINEUP_BUILDER_LEAGUE_MAP[leagueKey] || LINEUP_BUILDER_LEAGUES[0];
-  const season = lineupBuilderLeagueSeason(leagueConfig);
-  const rows = await af('leagues', { search: leagueConfig.search, country: leagueConfig.country, season }).catch(() => []);
-  const normalizedTarget = normalizeText(leagueConfig.search);
-  const match = (rows || []).find(item => normalizeText(item?.league?.name || '') === normalizedTarget)
-    || (rows || []).find(item => normalizeText(item?.league?.name || '').includes(normalizedTarget))
-    || null;
-  if(!match?.league?.id) throw new Error(`Ligainfo saknas för ${leagueConfig.label}.`);
   const meta = {
     key: leagueConfig.key,
-    id: Number(match.league.id),
-    name: fixName(match.league.name || leagueConfig.label),
-    season
+    id: Number(leagueConfig.id || LEAGUE),
+    name: fixName(leagueConfig.label || 'Allsvenskan Herr'),
+    season: lineupBuilderLeagueSeason(leagueConfig)
   };
   lineupBuilderCache.leagueMeta[leagueKey] = meta;
   return meta;
@@ -2955,16 +2964,11 @@ async function resolveLineupBuilderLeagueMeta(leagueKey = lineupBuilderState.sel
 async function ensureLineupBuilderTeams(leagueKey = lineupBuilderState.selectedLeagueKey){
   if(lineupBuilderCache.teamsByLeague[leagueKey]?.length) return lineupBuilderCache.teamsByLeague[leagueKey];
   const meta = await resolveLineupBuilderLeagueMeta(leagueKey);
-  let rows = [];
-  try {
-    const teamsRaw = await af('teams', { league: meta.id, season: meta.season });
-    rows = (teamsRaw || []).map(item => item?.team || item).filter(team => team?.id);
-  } catch(e) {
-    rows = [];
-  }
+  const standingsRaw = await af('standings', { league: meta.id, season: meta.season }).catch(() => []);
+  let rows = (standingsRaw?.[0]?.league?.standings?.[0] || []).map(item => item.team).filter(team => team?.id);
   if(!rows.length) {
-    const standingsRaw = await af('standings', { league: meta.id, season: meta.season }).catch(() => []);
-    rows = (standingsRaw?.[0]?.league?.standings?.[0] || []).map(item => item.team).filter(team => team?.id);
+    const teamsRaw = await af('teams', { league: meta.id, season: meta.season }).catch(() => []);
+    rows = (teamsRaw || []).map(item => item?.team || item).filter(team => team?.id);
   }
   const teams = lineupBuilderSortTeams(rows.map(team => ({
     id: Number(team.id),
@@ -3292,7 +3296,7 @@ function renderLineupBuilderPage(root){
         </aside>
 
         <section class="lb-capture">
-          <div id="lineupBuilderCapture" class="lb-capture-shell">
+          <div id="lineupBuilderCapture" class="lb-capture-shell lb-capture-export">
             <div class="lb-capture-head">
               <div>
                 <div class="lb-kicker">AllsvenskanAI.se</div>
@@ -3557,13 +3561,21 @@ async function lineupBuilderDownloadImage(){
     if(document.fonts?.ready) {
       try { await document.fonts.ready; } catch(e) {}
     }
-    const width = Math.max(target.offsetWidth, 900);
+    const exportWidth = 980;
+    const exportHeight = Math.max(1320, Math.round(exportWidth * 1.42));
     const dataUrl = await htmlToImage.toPng(target, {
       cacheBust: true,
-      pixelRatio: 3,
+      pixelRatio: 4,
       backgroundColor: '#0B3025',
-      canvasWidth: width * 3,
-      style: { margin: '0' }
+      width: exportWidth,
+      height: exportHeight,
+      canvasWidth: exportWidth * 4,
+      canvasHeight: exportHeight * 4,
+      style: {
+        margin: '0',
+        width: `${exportWidth}px`,
+        minHeight: `${exportHeight}px`
+      }
     });
     const link = document.createElement('a');
     link.href = dataUrl;
