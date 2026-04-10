@@ -3126,6 +3126,7 @@ const LINEUP_BUILDER_EXPORT_ROW_Y = {
   4: [19, 40, 62, 86],
   5: [18, 31, 44, 65, 86]
 };
+const LINEUP_BUILDER_EXPORT_GLOBAL_Y_OFFSET = -8;
 const FORMATION_GRID_ROLE_CODES = {
   '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
   '4-3-3': [['mv'], ['vb','mb','mb','hb'], ['cm','cm','cm'], ['vy','cf','hy']],
@@ -3349,7 +3350,7 @@ function lineupBuilderRenderCoords(slot, mode = 'builder'){
   const minTop = safeArea.top;
   const maxTop = safeArea.bottom - blockHeight;
   const x = Math.max(minX, Math.min(maxX, coords.x));
-  const exportYOffset = 0;
+  const exportYOffset = mode === 'export' ? LINEUP_BUILDER_EXPORT_GLOBAL_Y_OFFSET : 0;
   const top = Math.max(minTop, Math.min(maxTop, coords.y + exportYOffset));
   return { x, y: top };
 }
