@@ -3416,9 +3416,7 @@ function lineupBuilderExportName(name=''){
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if(!parts.length) return '';
   if(parts.length === 1) return parts[0];
-  const firstInitial = `${parts[0].charAt(0)}.`;
-  const surname = parts.slice(1).join(' ');
-  return `${firstInitial} ${surname}`.trim();
+  return parts[parts.length - 1];
 }
 
 function lineupBuilderRoleLabel(slot){
