@@ -3420,7 +3420,8 @@ function lineupBuilderGetInitials(name=''){
 function lineupBuilderExportName(name=''){
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if(!parts.length) return '';
-  return parts.join(' ');
+  if(parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1]}`;
 }
 
 function lineupBuilderRoleLabel(slot){
