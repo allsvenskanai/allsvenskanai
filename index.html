@@ -1356,38 +1356,38 @@ main > *{animation:fadeUp .3s ease both}
 }
 .lb-export-stage .lb-export-frame{transform:none !important}
 .lb-export-frame{
-  width:1080px;height:1920px;padding:54px 56px 50px;overflow:hidden;position:relative;
+  width:1080px;height:1920px;padding:48px 58px 54px;overflow:hidden;position:relative;
   background:
     radial-gradient(circle at top left, rgba(201,165,75,.16), transparent 22%),
     radial-gradient(circle at 50% 16%, rgba(255,255,255,.05), transparent 24%),
     radial-gradient(circle at bottom right, rgba(255,255,255,.04), transparent 18%),
     linear-gradient(180deg,#071510 0%,#0A2018 34%,#071611 100%);
-  display:grid;grid-template-rows:auto 1fr auto;gap:18px;
+  display:grid;grid-template-rows:auto 1fr auto;gap:14px;
 }
 .lb-export-frame::before{
   content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
 }
 .lb-export-frame::after{
   content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 58%, transparent 34%, rgba(0,0,0,.24) 100%);
+  background:radial-gradient(circle at 50% 56%, transparent 32%, rgba(0,0,0,.26) 100%);
 }
 .lb-export-top{
   display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:22px;position:relative;z-index:2;
-  padding:8px 0 10px;
+  padding:4px 0 8px;
 }
 .lb-export-kicker{
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#E3C777;
 }
 .lb-export-title{
-  margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:900;line-height:.94;letter-spacing:.8px;text-transform:uppercase;color:#FAF4E8;
+  margin-top:7px;font-family:'Barlow Condensed',sans-serif;font-size:66px;font-weight:900;line-height:.92;letter-spacing:.8px;text-transform:uppercase;color:#FAF4E8;
   max-width:720px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 8px 28px rgba(0,0,0,.18);
 }
 .lb-export-subtitle{
-  margin-top:8px;font-size:17px;font-weight:600;letter-spacing:.45px;text-transform:none;color:rgba(250,244,232,.74)
+  margin-top:7px;font-size:17px;font-weight:600;letter-spacing:.45px;text-transform:none;color:rgba(250,244,232,.74)
 }
 .lb-export-brand{
   display:grid;justify-items:end;gap:4px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:10px 34px 0 0;background:none;border:none
+  padding:8px 38px 0 0;background:none;border:none
 }
 .lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;letter-spacing:.7px;text-transform:none;line-height:.95}
 .lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase;color:rgba(250,244,232,.52)}
@@ -1395,7 +1395,7 @@ main > *{animation:fadeUp .3s ease both}
   position:relative;display:grid;align-items:center;justify-items:center;
 }
 .lb-export-pitch{
-  position:relative;width:100%;max-width:932px;height:1328px;border-radius:44px;padding:26px;overflow:hidden;
+  position:relative;width:100%;max-width:936px;height:1350px;border-radius:44px;padding:26px;overflow:hidden;
   background:
     radial-gradient(circle at 50% 40%, rgba(255,255,255,.07), transparent 28%),
     linear-gradient(180deg, rgba(255,255,255,.05), transparent 18%, rgba(0,0,0,.08) 100%),
@@ -1416,8 +1416,8 @@ main > *{animation:fadeUp .3s ease both}
 }
 .lb-export-slot-core{
   width:112px;height:112px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
-  background:linear-gradient(180deg,rgba(10,27,21,.24),rgba(5,22,17,.1));border:3px solid rgba(255,255,255,.24);box-shadow:0 14px 26px rgba(0,0,0,.2), 0 0 0 6px rgba(255,255,255,.04), 0 0 20px rgba(255,255,255,.07);
-  filter:drop-shadow(0 0 8px rgba(255,255,255,.05));z-index:1;
+  background:linear-gradient(180deg,rgba(10,27,21,.24),rgba(5,22,17,.1));border:3px solid rgba(255,255,255,.28);box-shadow:0 6px 14px rgba(0,0,0,.25), 0 0 0 6px rgba(255,255,255,.045), 0 0 22px rgba(255,255,255,.09);
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.08));z-index:1;
 }
 .lb-export-slot.empty .lb-export-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.18),rgba(4,17,13,.1));border-style:dashed;border-color:rgba(255,255,255,.18)}
 .lb-export-slot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
@@ -1441,11 +1441,11 @@ main > *{animation:fadeUp .3s ease both}
   text-shadow:0 2px 10px rgba(0,0,0,.24);letter-spacing:.05px;text-transform:none;
 }
 .lb-export-slot-club{
-  display:inline-flex;align-items:center;gap:7px;max-width:158px;padding:6px 12px;border-radius:999px;
-  background:rgba(9,42,30,.8);border:1px solid rgba(255,255,255,.22);font-size:11.5px;letter-spacing:.18px;text-transform:none;box-shadow:0 10px 16px rgba(0,0,0,.12);
+  display:inline-flex;align-items:center;gap:7px;max-width:164px;padding:6px 13px;border-radius:999px;
+  background:rgba(18,70,48,.88);border:1px solid rgba(255,255,255,.24);font-size:12px;letter-spacing:.14px;text-transform:none;box-shadow:0 10px 16px rgba(0,0,0,.14);
 }
-.lb-export-slot-club img{width:17px;height:17px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;color:#F8F2E8}
+.lb-export-slot-club img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.lb-export-slot-club span{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;color:#FFF8EC}
 .lb-export-slot-placeholder{
   display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
   font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
@@ -1455,8 +1455,8 @@ main > *{animation:fadeUp .3s ease both}
   font-size:10px;color:rgba(248,242,232,.52);letter-spacing:.75px;text-transform:uppercase
 }
 .lb-export-watermark{
-  position:absolute;left:50%;transform:translateX(-50%);bottom:132px;font-family:'Barlow Condensed',sans-serif;font-size:132px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.05);pointer-events:none;line-height:.85;text-align:center;white-space:nowrap;
+  position:absolute;left:50%;transform:translateX(-50%);bottom:146px;font-family:'Barlow Condensed',sans-serif;font-size:138px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,.075);pointer-events:none;line-height:.85;text-align:center;white-space:nowrap;
 }
 .lb-export-footer{
   display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
@@ -3051,10 +3051,10 @@ const LINEUP_BUILDER_ROW_X = {
 };
 const LINEUP_BUILDER_EXPORT_ROW_X = {
   1: [50],
-  2: [33, 67],
-  3: [18, 50, 82],
-  4: [8, 34, 66, 92],
-  5: [7, 28, 50, 72, 93]
+  2: [35, 65],
+  3: [21, 50, 79],
+  4: [15, 38, 62, 85],
+  5: [12, 31, 50, 69, 88]
 };
 const LINEUP_BUILDER_FORMATION_ROWS = {
   '4-4-2': [
@@ -3094,8 +3094,8 @@ const LINEUP_BUILDER_ROW_Y = {
   5: [0, 18, 38, 60, 84]
 };
 const LINEUP_BUILDER_EXPORT_ROW_Y = {
-  4: [10, 46, 74, 93],
-  5: [10, 28, 50, 74, 93]
+  4: [25, 45, 68, 85],
+  5: [24, 36, 48, 69, 85]
 };
 const FORMATION_GRID_ROLE_CODES = {
   '4-4-2': [['mv'], ['vb','mb','mb','hb'], ['vm','cm','cm','hm'], ['anf','anf']],
@@ -3289,9 +3289,13 @@ function lineupBuilderFormationCoords(mode = 'builder'){
 
   rows.forEach((row, rowIndex) => {
     const template = rowXMap[row.length] || rowXMap[3] || LINEUP_BUILDER_ROW_X[3];
-    const y = lineupBuilderSafePercentForArea('y', yTemplate[rowIndex] ?? 50, safeArea);
+    const y = mode === 'export'
+      ? (yTemplate[rowIndex] ?? 50)
+      : lineupBuilderSafePercentForArea('y', yTemplate[rowIndex] ?? 50, safeArea);
     row.forEach((slotId, index) => {
-      const x = lineupBuilderSafePercentForArea('x', template[index] ?? 50, safeArea);
+      const x = mode === 'export'
+        ? (template[index] ?? 50)
+        : lineupBuilderSafePercentForArea('x', template[index] ?? 50, safeArea);
       coords[slotId] = {
         x: Math.max(safeArea.left, Math.min(safeArea.right, x)),
         y: Math.max(safeArea.top, Math.min(safeArea.bottom, y))
@@ -3309,16 +3313,14 @@ function lineupBuilderRenderCoords(slot, mode = 'builder'){
   if(!slot) return { x: 50, y: 50, guideY: 42 };
   const safeArea = mode === 'export' ? LINEUP_BUILDER_EXPORT_SAFE_AREA : LINEUP_BUILDER_SAFE_AREA;
   const coords = lineupBuilderFormationCoords(mode)[slot.id] || { x: 50, y: 50 };
-  const blockWidth = mode === 'export' ? 14 : 16;
+  const blockWidth = mode === 'export' ? 10 : 16;
   const blockHeight = mode === 'export' ? 8 : 18;
   const minX = safeArea.left + (blockWidth / 2);
   const maxX = safeArea.right - (blockWidth / 2);
   const minTop = safeArea.top;
   const maxTop = safeArea.bottom - blockHeight;
   const x = Math.max(minX, Math.min(maxX, coords.x));
-  const exportYOffset = mode === 'export'
-    ? (slot?.group === 'gk' ? -2 : slot?.group === 'def' ? -1 : slot?.group === 'mid' ? -3 : 0)
-    : 0;
+  const exportYOffset = 0;
   const top = Math.max(minTop, Math.min(maxTop, coords.y + exportYOffset));
   return { x, y: top };
 }
@@ -3709,7 +3711,7 @@ function renderLineupBuilderPitch(){
 function renderLineupBuilderExportStage(){
   const host = document.getElementById('lineupBuilderExportStage');
   if(!host) return null;
-  console.log('export positions', lineupBuilderFormationCoords('export'));
+  console.log('export positions', Object.fromEntries(lineupBuilderSlots().map(slot => [slot.id, lineupBuilderRenderCoords(slot, 'export')])));
   host.innerHTML = `
     <div id="lineupBuilderExportCanvas" class="lb-export-frame">
       <div class="lb-export-top">
