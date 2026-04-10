@@ -7957,12 +7957,41 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
   currentStatGroup = activeCategory.group;
   currentStatCategory = activeCategory.id;
 
-  const sorted = (cache.players || [])
+  const limit = Math.max(10, activeCategory.limit || 10);
+  const eligibleRows = (cache.players || [])
     .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
-    .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
-    .filter(item => Number.isFinite(item.value) && item.value > (activeCategory.minValue ?? 0))
-    .sort(getCategorySorter(activeCategory))
-    .slice(0, activeCategory.limit || 10);
+    .map(player => {
+      const rawValue = getCategoryValue(player, activeCategory);
+      const hasValue = Number.isFinite(rawValue);
+      return {
+        player,
+        value: hasValue ? rawValue : null,
+        hasValue,
+        qualifies: hasValue && rawValue > (activeCategory.minValue ?? 0)
+      };
+    });
+
+  const sorter = getCategorySorter(activeCategory);
+  const qualifiedRows = eligibleRows.filter(item => item.qualifies).sort(sorter);
+  const fallbackRows = eligibleRows
+    .filter(item => !item.qualifies)
+    .sort((a,b) => {
+      if(a.hasValue && !b.hasValue) return -1;
+      if(!a.hasValue && b.hasValue) return 1;
+      if(!a.hasValue && !b.hasValue) return String(a.player?.playerName || '').localeCompare(String(b.player?.playerName || ''));
+      return sorter(a,b);
+    });
+
+  const sorted = [];
+  const seen = new Set();
+  [...qualifiedRows, ...fallbackRows].forEach(item => {
+    const key = item.player?.playerId || `${item.player?.playerName || ''}-${item.player?.teamId || ''}`;
+    if(seen.has(key)) return;
+    seen.add(key);
+    sorted.push(item);
+  });
+
+  const displayRows = sorted.slice(0, limit);
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
@@ -7977,11 +8006,11 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
     .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderStats(document.getElementById('mc'),'${category.id}','${currentStatGroup}')">${category.label}</button>`)
     .join('');
 
-  const rows = sorted.map((item, index) => {
+  const rows = displayRows.map((item, index) => {
     const medal = index===0?'&#x1F947;':index===1?'&#x1F948;':index===2?'&#x1F949;':'';
     const ratingClass = activeCategory.ratingClass ? (item.player.stats.rating>=7.5?'rg':item.player.stats.rating>=6.5?'ry':'rr') : '';
     const statClass = `stats-value ${ratingClass}`.trim();
-    const displayValue = getCategoryDisplayValue(activeCategory, item.player, item.value);
+    const displayValue = item.hasValue ? getCategoryDisplayValue(activeCategory, item.player, item.value) : '—';
     const secondary = getCategorySecondary(activeCategory, item.player);
     return `<tr class="link" onclick="go('/spelare/${item.player.playerId}')">
       <td><span class="stats-rank ${medal?'medal':''}">${medal||index+1}</span></td>
@@ -8018,7 +8047,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
         <div class="stats-category-head">
           <div>
             <div class="stats-category-title">${activeCategory.title}</div>
-            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}.</div>
+            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}. Tabellen visar alltid minst 10 spelare när spelarunderlag finns.</div>
           </div>
           <div class="stats-category-badges">
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
