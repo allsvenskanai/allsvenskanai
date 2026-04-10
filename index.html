@@ -2131,172 +2131,122 @@ main{max-width:1360px}
 
 
 
-/* ===== MOBILE OPTIMIZATION PATCH APR 2026 ===== */
-@media (max-width: 900px){
-  html,body{overflow-x:hidden}
-  main,header,.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel,.team-hero,.team-summary-card,.team-player-highlight,.team-metric-card,.team-match-row,.lb-card,.lb-capture{max-width:100%}
-  .pg-header,.entity-topbar,.results-toolbar,.results-round-controls,.transfer-filters,.match-detail-meta{align-items:flex-start}
-  .pg-header > *, .entity-topbar > *{min-width:0}
-  .pg-title,.player-history-title,.team-title-line .pg-title{overflow-wrap:anywhere}
-  .team-title-line{align-items:flex-start}
-  .team-subline,.team-season-switcher,.results-round-controls,.transfer-filters,.match-meta-row{width:100%}
-  .results-round-current,.results-round-select,.results-round-btn,.transfer-filter,.transfer-filter.search{width:100%}
-  .team-hero-stat .value,.team-summary-card .value,.team-metric-card .value,.player-detail-chip .value{font-size:clamp(24px,7vw,30px)}
-  .team-detail-row{align-items:flex-start;flex-direction:column;gap:6px}
-  .team-overview-grid,
-  .stats-overview-grid,
-  .player-detail-summary,
-  .stat-grid,
-  .lb-summary-grid,
-  .lb-controls-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .standings-wrap,.tw > div,div[style*="overflow-x:auto"]{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-  .standings-table,.player-history-table,.transfer-table,.stats-table{min-width:720px}
-  .match-detail-grid{grid-template-columns:1fr;justify-items:center;text-align:center}
-  .match-detail-mid{min-width:0}
-  .match-detail-team .name{font-size:clamp(24px,7vw,30px)}
-  .match-detail-mid .score{font-size:clamp(42px,12vw,58px)}
-  .news-grid,.podcast-grid,.matches-grid{grid-template-columns:1fr}
-  .match-card{grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);min-height:148px;gap:.65rem}
-  .match-score,.match-card.upcoming .match-score{width:104px;min-width:104px}
-  .match-score .score,.match-card.upcoming .match-score .score{font-size:34px;letter-spacing:1px;transform:none}
-  .match-team{font-size:13px}
-  .match-team img{width:40px;height:40px}
-  .news-title,.podcast-title{font-size:16px;line-height:1.3}
-  .news-summary,.podcast-summary{font-size:13px;line-height:1.55}
-  .lb-toolbar{grid-template-columns:1fr 1fr}
-}
-
-@media (max-width: 768px){
-  header{padding:.65rem .9rem}
-  .header-brand{min-width:0;max-width:calc(100% - 40px)}
-  .logo{font-size:15px;letter-spacing:1.6px;min-width:0}
-  .logo em{letter-spacing:2.3px}
-  main{padding:.9rem .8rem 6.2rem}
+/* ===== MOBILE HOTFIXES APR 2026 ===== */
+@media (max-width: 560px){
+  main{padding:.9rem .75rem 6.6rem}
   .pg-header{gap:8px}
-  .pg-title{font-size:22px;line-height:.98}
-  .pg-sub{font-size:12px}
-  .back{margin-bottom:.9rem}
-  .start-hero,.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel,.team-summary-card,.team-player-highlight,.team-metric-card,.lb-card,.lb-capture{border-radius:16px}
-  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px}
-  .start-tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .tcard,.start-tcard{min-height:114px}
-  .profile-inner{padding:1rem;align-items:flex-start;text-align:left}
-  .p-body h1{font-size:21px}
-  .p-meta{font-size:12px}
-  .pill,.team-stat-pills .pill,.player-current-pills .pill,.player-career-pills .pill{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px)}
-  .team-hero-stats,
+  .pg-title{font-size:20px;line-height:1}
+  .pg-sub{font-size:11px;line-height:1.4}
+
+  .matches-grid{gap:10px}
+  .match-card{
+    grid-template-columns:1fr;
+    gap:.55rem;
+    padding:.95rem .85rem;
+    min-height:0;
+    border-radius:16px;
+  }
+  .match-team{gap:6px;font-size:13px}
+  .match-team img{width:34px;height:34px}
+  .match-team .name{font-size:13px}
+  .match-score{width:100%;min-width:0;padding:.15rem 0}
+  .match-score .score{font-size:28px;letter-spacing:1px}
+  .match-meta-row{justify-content:flex-start;gap:6px}
+  .match-meta-pill{min-height:26px;padding:4px 8px;font-size:10px;max-width:100%}
+
+  .transfer-filters{display:grid;grid-template-columns:1fr;gap:8px}
+  .transfer-filter,.transfer-filter.search{width:100%;min-width:0}
+  .transfer-row td{padding:8px 6px;font-size:11px;vertical-align:middle}
+  .transfer-row td:nth-child(1){white-space:nowrap;font-size:10px}
+  .transfer-player{font-size:12px;line-height:1.15}
+  .transfer-flow{gap:6px;align-items:center}
+  .transfer-club{gap:4px;align-items:center}
+  .transfer-club img{width:15px;height:15px}
+  .transfer-club span{font-size:11px;line-height:1.15;white-space:normal;word-break:break-word}
+  .transfer-arrow{font-size:16px}
+  .transfer-badge{min-height:24px;padding:0 8px;font-size:9px;letter-spacing:.8px}
+
+  .stats-shell .pg-header{align-items:flex-start!important}
+  .stats-shell .ai-btn{width:100%}
+  .stat-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:6px}
+  .stat-tab{min-height:40px;padding:8px 8px;font-size:11px;white-space:normal;line-height:1.1}
+  .stats-group-tabs,
+  .stats-category-tabs{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    overflow:visible;
+  }
+  .stats-group-chip{min-height:42px;padding:8px 10px;font-size:11px;white-space:normal;line-height:1.05;text-align:center}
+  .stats-group-chip small{display:block;margin:4px 0 0}
+  .stats-category-panel{padding:.9rem .85rem;border-radius:16px}
+  .stats-category-head{flex-direction:column;align-items:flex-start;gap:10px}
+  .stats-category-title{font-size:18px;line-height:1}
+  .stats-category-copy{font-size:12px;line-height:1.45}
+  .stats-category-badges{gap:6px}
+  .stats-category-badge{min-height:24px;padding:0 8px;font-size:9px}
+  .stats-table{table-layout:auto}
+  .stats-table th,
+  .stats-table td{padding:9px 8px}
+  .stats-table th:nth-child(1), .stats-table td:nth-child(1){width:38px}
+  .stats-table th:nth-child(3), .stats-table td:nth-child(3){width:56px}
+  .stats-player-cell{gap:8px}
+  .stats-player-photo{width:36px;height:36px}
+  .stats-player-name{font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .stats-player-club{font-size:10px;white-space:normal;overflow:visible;text-overflow:clip}
+  .stats-value{font-size:18px}
+  .stats-value-meta{font-size:9px}
+
   .team-summary-grid,
   .team-player-highlight-grid,
-  .stats-overview-grid,
   .player-detail-summary,
-  .stat-grid,
-  .lb-summary-grid,
-  .lb-controls-grid{grid-template-columns:1fr}
+  .stats-overview-grid{grid-template-columns:1fr}
+  .team-hero-stats{grid-template-columns:1fr}
   .team-season-switcher{grid-template-columns:1fr 1fr}
-  .team-subpill{min-height:32px;font-size:11px;padding:0 10px}
-  .team-match-row{padding:.8rem .85rem}
-  .team-match-row .score{font-size:24px}
-  .player-history-head{padding:.9rem .95rem .7rem}
-  .player-history-badge{font-size:11px;padding:6px 10px}
-  .stats-shell .pg-header[style]{align-items:flex-start!important;justify-content:flex-start!important}
-  .stats-group-tabs,.stat-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .stats-group-chip,.stat-tab{width:100%;min-height:42px}
-  .stats-category-panel{padding:.85rem}
-  .stats-category-title{font-size:20px}
-  .stats-player-photo{width:38px;height:38px}
-  .matches-grid{gap:10px}
-  .match-card{grid-template-columns:1fr;min-height:auto;padding:.9rem .85rem;text-align:left}
-  .match-team,.match-team.away,.match-score{text-align:left;align-items:flex-start;width:100%}
-  .match-score,.match-card.upcoming .match-score{width:100%;min-width:0;padding:.1rem 0 .25rem}
-  .match-score .score,.match-card.upcoming .match-score .score{font-size:30px;letter-spacing:1px}
-  .match-meta-row{justify-content:flex-start}
-  .results-round-current,.results-round-select,.results-round-btn,.transfer-filter,.transfer-filter.search{min-width:0}
-  .transfer-filter.search{flex-basis:100%}
-  .lb-headline,.lb-capture-title{font-size:26px}
-  .lb-toolbar{grid-template-columns:1fr}
-  .lb-slot{width:92px;min-height:124px}
-  .lb-slot-core{width:58px;height:58px}
-  .lb-slot-name{font-size:10px}
-  .lb-slot-club span{max-width:52px}
-  .mobile-nav{height:64px}
-  .mnav-btn{font-size:8px}
-}
+  .team-subline{display:grid;grid-template-columns:1fr;gap:8px}
 
-@media (max-width: 560px){
-  main{padding:.8rem .7rem 6rem}
-  .pg-title{font-size:20px}
-  .pg-sub,.player-history-copy,.team-note,.lb-copy,.lb-empty,.news-summary,.podcast-summary{font-size:12px}
-  .tgrid,.start-tgrid{grid-template-columns:1fr 1fr}
-  .tcard,.start-tcard{padding:.9rem .45rem}
-  .tcard img,.start-tcard img{width:42px;height:42px}
-  .tcard .tn,.start-tn{font-size:11px}
-  .profile-inner{padding:.9rem}
-  .p-img{width:72px;height:72px}
-  .p-photo{width:82px;height:82px}
-  .pills{gap:7px}
-  .pill .pn{font-size:26px}
-  .pill .pl{font-size:9px}
-  .team-season-switcher,
-  .stats-group-tabs,
-  .stat-tabs,
-  .team-subline,
-  .results-round-controls{grid-template-columns:1fr}
-  .tabs{gap:6px}
-  .tab{padding:10px 12px;font-size:11px}
-  .share,.ai-btn,.header-cta,.results-round-btn,.team-season-btn{min-height:40px}
-  .team-title-line{gap:10px}
-  .team-rank-badge{min-width:46px;height:46px;font-size:22px}
-  .team-hero-stat,.team-summary-card,.team-player-highlight,.team-metric-card,.stat-box{padding:.85rem .9rem}
-  .team-hero-stat .value,.team-summary-card .value,.team-player-highlight .value,.team-metric-card .value,.stat-box .value{font-size:26px}
-  .match-detail-hero{padding:1rem .9rem}
-  .match-detail-team img{width:60px;height:60px}
-  .match-detail-team .name{font-size:22px}
-  .match-detail-mid .score{font-size:40px}
-  .match-meta-pill{min-height:26px;font-size:10px}
-  .standings-team-name{font-size:12px}
-  .standings-points{font-size:18px}
-  .lb-card,.lb-capture{padding:.85rem}
-  .lb-pitch{min-height:590px;padding:.55rem}
-  .lb-pitch svg{inset:.55rem;width:calc(100% - 1.1rem);height:calc(100% - 1.1rem)}
-  .lb-slot{width:84px;min-height:116px}
-  .lb-slot-core{width:52px;height:52px}
-  .lb-slot-pos{min-width:34px;height:22px;top:-12px;font-size:9px}
-  .lb-slot-name{font-size:9px}
-  .lb-slot-club{padding:2px 5px;border-radius:999px}
-  .lb-slot-club img{width:12px;height:12px}
-  .lb-slot-club span{max-width:46px;font-size:8px}
-  .lb-slot-hint{font-size:9px}
-  .lb-modal{padding:.35rem}
-  .lb-modal-panel{border-radius:18px}
-  .mobile-nav{padding:0 .2rem calc(env(safe-area-inset-bottom) + 2px)}
+  .lb-card,.lb-capture{padding:.75rem}
+  .lb-headline,.lb-capture-title{font-size:22px;line-height:.95}
+  .lb-copy,.lb-capture-subtitle{font-size:11px;line-height:1.4}
+  .lb-toolbar{grid-template-columns:1fr}
+  .lb-pitch{min-height:540px;padding:.45rem;border-radius:22px;margin-top:.75rem}
+  .lb-pitch svg{inset:.45rem;width:calc(100% - .9rem);height:calc(100% - .9rem)}
+  .lb-slot{width:78px;min-height:92px;gap:5px}
+  .lb-slot-core{width:44px;height:44px;box-shadow:0 10px 18px rgba(0,0,0,.22),0 0 0 4px rgba(255,255,255,.03)}
+  .lb-slot-pos{min-width:30px;height:20px;top:-10px;padding:0 6px;font-size:8px;letter-spacing:.8px}
+  .lb-slot-meta{max-width:78px;padding:4px 5px;border-radius:10px;gap:3px}
+  .lb-slot-name{max-width:68px;font-size:8px;line-height:1.02;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .lb-slot-club{max-width:68px;padding:2px 5px;gap:3px;font-size:7px;letter-spacing:.4px}
+  .lb-slot-club img{width:10px;height:10px}
+  .lb-slot-club span{max-width:42px}
+  .lb-slot-placeholder{min-height:22px;padding:0 7px;font-size:8px;letter-spacing:.7px;line-height:1.05;text-align:center}
+  .lb-slot-hint{display:none}
+  .lb-footer-note{font-size:11px}
+  .lb-footer-note strong{font-size:13px;letter-spacing:1.2px}
+  .lb-result{grid-template-columns:auto minmax(0,1fr);gap:.6rem;padding:.75rem}
+  .lb-result-photo{width:46px;height:46px}
+  .lb-result-name{font-size:13px}
+  .lb-result-meta{font-size:11px}
+  .lb-tag{min-height:24px;padding:0 .5rem;font-size:9px}
+
+  .mobile-nav{height:72px;padding:0 .25rem calc(env(safe-area-inset-bottom) + 6px)}
+  .mnav-btn{min-width:44px;padding:.25rem .25rem;font-size:8px;letter-spacing:.8px}
+  .mnav-btn .icon{font-size:17px}
 }
 
 @media (max-width: 420px){
-  .logo{font-size:14px;letter-spacing:1.3px}
-  .pg-title{font-size:18px}
-  .start-wordmark{font-size:30px}
-  .tcard,.start-tcard{min-height:108px}
-  .tcard img,.start-tcard img{width:38px;height:38px}
-  .tcard .tn,.start-tn{font-size:10px}
-  .p-body h1{font-size:19px}
-  .p-meta{gap:4px 10px}
-  .pill{padding:.7rem .6rem}
-  .pill .pn{font-size:24px}
-  .player-detail-chip .value,.team-hero-stat .value,.team-summary-card .value,.team-metric-card .value,.team-player-highlight .value,.stat-box .value{font-size:24px}
-  .match-card{padding:.85rem .75rem}
-  .match-team img{width:34px;height:34px}
-  .match-score .score,.match-card.upcoming .match-score .score{font-size:26px}
-  .news-card,.podcast-card{padding:.9rem}
-  .stats-player-cell{gap:6px}
-  .stats-player-photo{width:34px;height:34px}
-  .stats-player-name{font-size:11px}
-  .stats-player-club{font-size:9px}
-  .lb-headline,.lb-capture-title{font-size:22px}
-  .lb-pitch{min-height:540px}
-  .lb-slot{width:78px;min-height:108px}
-  .lb-slot-core{width:48px;height:48px}
-  .lb-slot-name{font-size:8.5px}
-  .lb-slot-club span{max-width:40px}
+  main{padding:.85rem .65rem 6.7rem}
+  .tgrid,.start-tgrid{grid-template-columns:1fr 1fr}
+  .stat-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats-group-tabs,.stats-category-tabs{grid-template-columns:1fr}
+  .lb-pitch{min-height:500px}
+  .lb-slot{width:70px;min-height:86px}
+  .lb-slot-core{width:40px;height:40px}
+  .lb-slot-meta{max-width:70px}
+  .lb-slot-name{max-width:60px;font-size:7.5px}
+  .lb-slot-club{max-width:62px}
+  .lb-slot-club span{max-width:36px}
+  .match-score .score{font-size:26px}
 }
 
 </style>
