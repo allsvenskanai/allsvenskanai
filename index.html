@@ -2203,6 +2203,48 @@ const C = {};
 
 // Cache
 const CACHE = {};
+const SEASON_CANDIDATES = Array.from(new Set([SEASON, 2025, 2024, 2023, 2022])).filter(Boolean);
+const LEAGUE_COVERAGE_CACHE = {};
+
+async function getLeagueSeasonCoverage(season = SEASON){
+  const key = `${LEAGUE}-${season}`;
+  if(LEAGUE_COVERAGE_CACHE[key]) return LEAGUE_COVERAGE_CACHE[key];
+  try {
+    const data = await afRaw('leagues', { id: LEAGUE, season });
+    const coverage = data?.response?.[0]?.seasons?.find(item => Number(item.year) === Number(season))?.coverage || {};
+    LEAGUE_COVERAGE_CACHE[key] = coverage;
+    return coverage;
+  } catch(e) {
+    LEAGUE_COVERAGE_CACHE[key] = {};
+    return {};
+  }
+}
+
+async function getWorkingSeason(preferred = SEASON, validator = rows => Array.isArray(rows) && rows.length){
+  const seasons = Array.from(new Set([preferred, ...SEASON_CANDIDATES])).filter(Boolean);
+  for(const season of seasons){
+    try {
+      const data = await af('standings', { league: LEAGUE, season });
+      const rows = data?.[0]?.league?.standings?.[0] || [];
+      if(validator(rows)) return season;
+    } catch(e) {}
+  }
+  return preferred;
+}
+
+async function searchPlayersAcrossSeasons(query, seasons = null){
+  const tried = [];
+  const seasonList = Array.from(new Set(seasons && seasons.length ? seasons : [SEASON, ...SEASON_CANDIDATES])).filter(Boolean);
+  for(const season of seasonList){
+    tried.push(season);
+    try {
+      const players = await af('players', { search: query, season });
+      if(Array.isArray(players) && players.length) return { players, season, tried };
+    } catch(e) {}
+  }
+  return { players: [], season: seasonList[0] || SEASON, tried };
+}
+
 
 // Name corrections — API-Football 2026 strips Swedish/special chars
 const NAME_FIX = {
@@ -4536,8 +4578,8 @@ async function runSearch(q) {
   box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)"><div class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px"></div>Söker…</div>`;
   box.classList.add('open');
   try {
-    const [players, teams] = await Promise.all([
-      af('players', {search:q, season:2025}).catch(()=>af('players', {search:q, season:2024}).catch(()=>[])),
+    const [{ players, season: searchSeason }, teams] = await Promise.all([
+      searchPlayersAcrossSeasons(q),
       af('teams', {search:q}).catch(()=>[])
     ]);
     let html = '';
@@ -4557,7 +4599,7 @@ async function runSearch(q) {
         html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
           <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
           <div><div class="sr-name">${esc(getPlayerDisplayName(p.player))}</div>
-          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
+          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')} · ${searchSeason}</div></div>
         </div>`;
       });
     }
@@ -4579,10 +4621,8 @@ async function pageStart(el) {
   document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
   try {
-    let data = await af('standings', {league:LEAGUE, season:SEASON});
-    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
-      data = await af('standings', {league:LEAGUE, season:2025});
-    }
+    const activeSeason = await getWorkingSeason(SEASON);
+    let data = await af('standings', {league:LEAGUE, season:activeSeason});
     const standings = data[0]?.league?.standings?.[0] || [];
     const teams = standings.map(t=>t.team);
     const topThree = standings.slice(0,3);
@@ -5241,10 +5281,8 @@ async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    let data = await af('standings', {league:LEAGUE, season:SEASON});
-    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
-      data = await af('standings', {league:LEAGUE, season:2025});
-    }
+    const activeSeason = await getWorkingSeason(SEASON);
+    let data = await af('standings', {league:LEAGUE, season:activeSeason});
     const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
@@ -5252,7 +5290,7 @@ async function pageTeams(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
+      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${teams.length} lag</span></div>
       <div class="start-tgrid">${cards}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
@@ -5682,7 +5720,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
-    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
+    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason, leagueCoverage] = await Promise.all([
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
       Promise.all(TEAM_PAGE_SEASONS.map(async season => {
@@ -5706,7 +5744,8 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       }).catch(e => {
         console.warn('[team-page] fixtures missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
-      })
+      }),
+      getLeagueSeasonCoverage(selectedSeason)
     ]);
 
     const teamInfoD = teamInfoRaw?.response || [];
@@ -5810,6 +5849,24 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     window.__teamPlayerStatsData = { players: teamPlayers };
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
+    const topAssist = getTeamPlayerLeader(teamPlayers, 'assists');
+    const topKeyPasser = getTeamPlayerLeader(teamPlayers, 'keyPasses');
+    const mostBooked = getTeamPlayerLeader(teamPlayers, 'yellow');
+    const topRated = getTeamPlayerLeader(teamPlayers, 'rating');
+    const totalAssists = teamPlayers.reduce((sum, player) => sum + (player?.stats?.assists || 0), 0);
+    const totalYellow = teamPlayers.reduce((sum, player) => sum + (player?.stats?.yellow || 0), 0);
+    const totalRed = teamPlayers.reduce((sum, player) => sum + (player?.stats?.red || 0), 0);
+    const totalShots = teamPlayers.reduce((sum, player) => sum + (player?.stats?.shots || 0), 0);
+    const totalShotsOn = teamPlayers.reduce((sum, player) => sum + (player?.stats?.shotsOn || 0), 0);
+    const totalKeyPasses = teamPlayers.reduce((sum, player) => sum + (player?.stats?.keyPasses || 0), 0);
+    const shotsOnPct = totalShots ? Math.round((totalShotsOn / totalShots) * 100) : 0;
+    const teamCoverageFlags = [
+      leagueCoverage?.players ? 'Spelarstatistik' : null,
+      leagueCoverage?.top_scorers ? 'Skytteliga' : null,
+      leagueCoverage?.top_assists ? 'Assistliga' : null,
+      leagueCoverage?.top_cards ? 'Kortliga' : null,
+      leagueCoverage?.fixtures?.statistics_fixtures ? 'Matchstatistik' : null
+    ].filter(Boolean);
     const seasonButtons = TEAM_PAGE_SEASONS
       .filter(season => historyMap.has(season) || season === selectedSeason)
       .map(season => teamSeasonButton(routeTeamId, season, season === selectedSeason, historyMap.has(season)))
@@ -5820,6 +5877,10 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       { label:'Målskillnad', value:`${goalDiff > 0 ? '+' : ''}${goalDiff}`, copy:`${gf} gjorda • ${ga} insläppta` },
       { label:'Form senaste 5', value:`${recentFive.points}p`, copy:`${recentFive.goalsFor}-${recentFive.goalsAgainst} i mål` },
       { label:'Vinstprocent', value:`${winPct}%`, copy:`${w} segrar på ${played} matcher` },
+      { label:'Assist', value: totalAssists, copy:`${totalKeyPasses} nyckelpass totalt` },
+      { label:'Kort', value: `${totalYellow}/${totalRed}`, copy:'Gula / röda kort i spelarstatistiken' },
+      { label:'Skott på mål', value: `${totalShotsOn}/${totalShots}`, copy:`${shotsOnPct}% träffprocent` },
+      { label:'Topprating', value: topRated ? formatStatValue(topRated.value, 2) : '—', copy: topRated ? topRated.player.playerName : 'Ingen ratingdata' },
     ].map(card => `<div class="team-summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div><div class="copy">${card.copy}</div></div>`).join('');
 
     const heroStats = [
@@ -5884,6 +5945,13 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${stats?.fixtures?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${stats.fixtures.form.slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
         </div></div>
 
+        <div class="tw" style="margin-bottom:1rem">
+          <div style="padding:1rem 1.1rem;display:grid;gap:.55rem">
+            <div class="team-detail-row"><span>API-täckning ${selectedSeason}</span><strong>${teamCoverageFlags.length ? teamCoverageFlags.join(' • ') : 'Begränsad / okänd'}</strong></div>
+            <div class="team-note">Tomma värden beror oftast på att just den här ligan eller säsongen saknar täckning för ett statistikfält i API:t. Den här sidan visar nu fler värden direkt från spelarunderlaget även när lag-endpointen är tunn.</div>
+          </div>
+        </div>
+
         <div class="tabs">
           <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
           <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
@@ -5935,6 +6003,10 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Historik</div><div style="overflow-x:auto"><table class="team-history-table"><thead><tr><th>Säsong</th><th>#</th><th>Poäng</th><th>M</th><th>V-O-F</th><th>Mål</th><th>GS</th><th>PPM</th></tr></thead><tbody>${historyRowsHtml || `<tr><td colspan="8" class="empty">Ingen historik hittades ännu.</td></tr>`}</tbody></table></div></div>
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
               <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Bästa assistläggare</span><strong>${topAssist ? `${topAssist.player.playerName} (${Math.round(topAssist.value)} assist)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Mest kreativ</span><strong>${topKeyPasser ? `${topKeyPasser.player.playerName} (${Math.round(topKeyPasser.value)} nyckelpass)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Mest varnad</span><strong>${mostBooked ? `${mostBooked.player.playerName} (${Math.round(mostBooked.value)} gula)` : 'Ingen data'}</strong></div>
+              <div class="team-detail-row"><span>Bäst rating</span><strong>${topRated ? `${topRated.player.playerName} (${formatStatValue(topRated.value, 2)})` : 'Ingen data'}</strong></div>
               <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
               <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? recentTen.formTokens.join(' ') : 'Ingen formdata ännu'}</strong></div>
               <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
@@ -7677,6 +7749,8 @@ async function pageStats(el, year=null, force=false) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
 
     // Get teams from standings for that year
+    const workingStatsSeason = await getWorkingSeason(statsYear);
+    if(workingStatsSeason !== statsYear) statsYear = workingStatsSeason;
     const standData = await af('standings', {league:LEAGUE, season:statsYear});
     const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
 
@@ -8172,8 +8246,8 @@ async function routeQuestion({ intent, team, player, scope, rawQuestion, normali
 async function tryDataAnswer(question) {
   const rawQuestion = String(question || '').trim();
   const normalizedQuestion = normalizeQuestion(rawQuestion);
-  const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
-    af('standings', {league:LEAGUE, season:2025}));
+  const standingsSeason = await getWorkingSeason(SEASON);
+  const standData = await af('standings', {league:LEAGUE, season:standingsSeason}).catch(() => []);
   const standings = standData[0]?.league?.standings?.[0] || [];
   const teams = standings.map(t=>t.team) || [];
 
