@@ -1594,10 +1594,13 @@ main > *{animation:fadeUp .3s ease both}
   font-size:24px;line-height:1;color:var(--text2)
 }
 .lb-modal-tools{display:grid;gap:.75rem;padding:1rem;border-bottom:1px solid var(--border)}
+.lb-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.65rem;align-items:center}
 .lb-search{
-  min-height:52px;padding:0 1rem;border-radius:16px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none;font-size:15px
+  min-height:52px;padding:0 1rem;border-radius:16px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none;font-size:15px;width:100%
 }
 .lb-search:focus{border-color:rgba(201,165,75,.45);box-shadow:0 0 0 3px rgba(201,165,75,.12)}
+.lb-search-btn{min-height:52px;padding:0 1rem;border:none;border-radius:16px;background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#1e170d;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 10px 24px rgba(201,165,75,.22);white-space:nowrap}
+.lb-search-btn:hover{filter:brightness(.98);transform:translateY(-1px)}
 .lb-guidance{display:flex;gap:.5rem;flex-wrap:wrap}
 .lb-guidance-pill{
   display:inline-flex;align-items:center;min-height:28px;padding:0 .75rem;border-radius:999px;background:rgba(201,165,75,.12);
@@ -1689,6 +1692,8 @@ main > *{animation:fadeUp .3s ease both}
   .lb-slot-hint{font-size:10px}
   .lb-modal{padding:.5rem}
   .lb-modal-panel{max-height:min(92vh,900px);border-radius:20px}
+  .lb-search-row{grid-template-columns:1fr}
+  .lb-search-btn{width:100%}
   .lb-result{grid-template-columns:auto minmax(0,1fr);align-items:flex-start}
   .lb-result-tags{grid-column:2;justify-content:flex-start}
 }
@@ -2127,115 +2132,6 @@ main{max-width:1360px}
   .mobile-nav{height:68px;padding:0 .35rem calc(env(safe-area-inset-bottom) + 4px)}
   .mnav-btn{min-width:50px;padding:.35rem .4rem;font-size:9px}
   .mnav-btn .icon{font-size:18px}
-}
-
-
-/* ==== MOBILE PATCH V3 ==== */
-html,body{max-width:100%;overflow-x:hidden}
-main{max-width:100%;overflow-x:hidden}
-.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tw > div{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.standings-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.stats-group-tabs,.stats-category-tabs{max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-.stats-category-panel,.stats-shell,.profile,.match-detail-hero,.tw,.team-hero,.player-history-card{max-width:100%}
-.lb-search-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.7rem;align-items:center}
-.lb-search-btn{
-  min-height:52px;padding:0 18px;border-radius:16px;border:1px solid rgba(201,165,75,.28);
-  background:linear-gradient(180deg,rgba(201,165,75,.18),rgba(201,165,75,.1));color:var(--text);
-  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
-}
-.lb-search-btn:hover{border-color:rgba(201,165,75,.45);background:linear-gradient(180deg,rgba(201,165,75,.24),rgba(201,165,75,.14))}
-.lb-search{width:100%;min-width:0}
-
-@media (max-width: 768px){
-  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
-  main{padding:1rem .9rem calc(84px + env(safe-area-inset-bottom))}
-  .pg-header{flex-direction:column;align-items:flex-start;gap:6px}
-  .pg-title{font-size:26px}
-
-  .matches-grid{grid-template-columns:1fr!important;gap:12px}
-  .match-card{
-    grid-template-columns:1fr!important;
-    grid-auto-rows:auto;
-    gap:.7rem;
-    text-align:left;
-    padding:1rem .95rem;
-    min-height:auto;
-  }
-  .match-team,.match-team.away{align-items:flex-start;text-align:left}
-  .match-team img{width:38px;height:38px}
-  .match-score{width:100%;min-width:0;align-items:flex-start;text-align:left;padding:0}
-  .match-score .score{font-size:34px;letter-spacing:1px}
-  .match-meta-row{justify-content:flex-start}
-  .match-meta-pill{max-width:100%}
-
-  .stat-grid{grid-template-columns:1fr;gap:10px}
-  .stats-overview-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .stats-group-chip,.stats-category-tabs .tab,.stats-category-tabs button,.stats-group-tabs button{flex:0 0 auto}
-  .stats-category-panel{padding:1rem .95rem;overflow:hidden}
-  .stats-category-head{gap:.8rem;align-items:flex-start;flex-direction:column}
-  .stats-category-title{font-size:22px;line-height:1}
-  .stats-category-copy{font-size:13px;line-height:1.45}
-  .stats-table{table-layout:auto!important;min-width:540px}
-  .stats-table th,.stats-table td{white-space:nowrap}
-  .stats-player-name,.stats-player-club{white-space:normal}
-
-  .transfer-filters{display:grid;grid-template-columns:1fr;gap:.7rem}
-  .transfer-filter,.transfer-filter.search{width:100%;min-width:0}
-  .transfer-table{min-width:720px}
-
-  .results-toolbar,.results-round-controls{display:grid;grid-template-columns:1fr;align-items:stretch}
-  .results-round-select,.results-round-current,.results-round-btn{width:100%;min-width:0}
-
-  .lb-modal{padding:.6rem}
-  .lb-modal-panel{width:100%;max-height:min(88vh,760px);border-radius:22px}
-  .lb-modal-head{padding:.95rem .95rem .75rem}
-  .lb-modal-title{font-size:22px;line-height:1}
-  .lb-modal-copy{font-size:12px;line-height:1.45}
-  .lb-modal-tools{padding:.85rem}
-  .lb-search-form{grid-template-columns:1fr;gap:.65rem}
-  .lb-search-btn{width:100%}
-  .lb-guidance{gap:.45rem}
-  .lb-guidance-pill{font-size:10px;padding:0 .65rem}
-  .lb-toolbar{grid-template-columns:1fr;gap:.65rem}
-  .lb-results{padding:.8rem .85rem .95rem}
-  .lb-result{grid-template-columns:48px minmax(0,1fr);gap:.7rem;padding:.72rem}
-  .lb-result-media{width:48px;height:48px}
-  .lb-result-tags{grid-column:1 / -1;justify-content:flex-start}
-
-  .lb-card,.lb-capture{padding:.9rem}
-  .lb-headline{font-size:28px;line-height:.95}
-  .lb-copy{font-size:12px;line-height:1.45}
-  .lb-pitch{min-height:760px;padding:.55rem}
-  .lb-pitch svg{inset:.55rem;width:calc(100% - 1.1rem);height:calc(100% - 1.1rem)}
-  .lb-slot{width:82px;min-height:98px;gap:6px}
-  .lb-slot-core{width:52px;height:52px;box-shadow:0 10px 22px rgba(0,0,0,.22),0 0 0 5px rgba(255,255,255,.03)}
-  .lb-slot-pos{min-width:34px;height:22px;top:-12px;padding:0 8px;font-size:9px;letter-spacing:.8px}
-  .lb-slot-meta{max-width:82px;padding:6px 5px 5px;gap:4px;border-radius:12px}
-  .lb-slot-name{max-width:72px;font-size:10px;line-height:1.02;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .lb-slot-club{max-width:72px;padding:2px 6px;gap:4px}
-  .lb-slot-club img{width:12px;height:12px}
-  .lb-slot-club span{max-width:42px;font-size:8px}
-  .lb-slot-placeholder{min-height:22px;padding:0 8px;font-size:10px;letter-spacing:.8px}
-  .lb-slot-hint{display:none}
-
-  .profile-inner{padding:1rem}
-  .player-detail-summary,.team-hero-stats{grid-template-columns:1fr 1fr}
-  .news-grid,.podcast-grid{grid-template-columns:1fr}
-}
-
-@media (max-width: 560px){
-  .tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .start-tgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .match-score .score{font-size:30px}
-  .stats-overview-grid,.player-detail-summary,.team-hero-stats{grid-template-columns:1fr}
-  .stats-category-badges{gap:6px}
-  .stats-category-badge{font-size:10px}
-  .lb-pitch{min-height:700px}
-  .lb-slot{width:74px;min-height:92px}
-  .lb-slot-core{width:46px;height:46px}
-  .lb-slot-meta{max-width:74px}
-  .lb-slot-name{max-width:66px;font-size:9px}
 }
 
 </style>
@@ -3965,12 +3861,12 @@ function renderLineupBuilderModal(){
         <div>
           <div class="lb-kicker">Lineup Builder</div>
           <div class="lb-modal-title">${esc(slot ? `Välj spelare för ${slot.label}` : 'Välj spelare')}</div>
-          <div class="lb-modal-copy">Välj liga först, filtrera gärna på lag och sök sedan smart. Specifikt lag laddar bara den truppen. Alla lag söker brett först när du verkligen skriver.</div>
+          <div class="lb-modal-copy">På mobil är snabbast att först välja ett lag och sedan trycka Sök. Har du valt ett specifikt lag visas hela truppen direkt när du öppnar positionen.</div>
         </div>
         <button class="lb-close" type="button" onclick="lineupBuilderCloseModal()" aria-label="Stäng">×</button>
       </div>
       <div class="lb-modal-tools">
-        <form class="lb-search-form" onsubmit="event.preventDefault(); lineupBuilderSubmitSearch();">
+        <form class="lb-search-row" onsubmit="event.preventDefault(); lineupBuilderSubmitSearch();">
           <input id="lineupBuilderSearchInput" class="lb-search" type="search" value="${esc(lineupBuilderState.searchQuery)}" placeholder="Sök spelare, klubb eller position" autocomplete="off" enterkeyhint="search" oninput="lineupBuilderHandleSearchInput(this.value)" onsearch="lineupBuilderSubmitSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();lineupBuilderSubmitSearch();}">
           <button class="lb-search-btn" type="submit">Sök</button>
         </form>
@@ -4234,6 +4130,10 @@ async function lineupBuilderOpenSlot(slotId){
 }
 
 function lineupBuilderCloseModal(){
+  if(lineupBuilderSearchTimer) {
+    clearTimeout(lineupBuilderSearchTimer);
+    lineupBuilderSearchTimer = null;
+  }
   lineupBuilderState.modalOpen = false;
   lineupBuilderState.activeSlotId = '';
   lineupBuilderState.searchQuery = '';
@@ -4249,7 +4149,10 @@ function lineupBuilderHandleSearchInput(value){
 }
 
 async function lineupBuilderSubmitSearch(){
-  if(lineupBuilderSearchTimer) clearTimeout(lineupBuilderSearchTimer);
+  if(lineupBuilderSearchTimer) {
+    clearTimeout(lineupBuilderSearchTimer);
+    lineupBuilderSearchTimer = null;
+  }
   lineupBuilderState.searchError = '';
   lineupBuilderState.searchHint = '';
   lineupBuilderState.searchResults = [];
