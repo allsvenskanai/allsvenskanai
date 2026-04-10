@@ -1474,15 +1474,23 @@ main > *{animation:fadeUp .3s ease both}
   background:linear-gradient(180deg,rgba(4,17,13,.36),rgba(4,17,13,.18));border:1px solid rgba(255,255,255,.08);
   box-shadow:0 12px 24px rgba(0,0,0,.12);display:grid;justify-items:center;gap:6px;backdrop-filter:blur(6px);
 }
+.export-player:not(.empty) .export-player-meta{
+  max-width:168px;grid-template-columns:42px minmax(0,1fr);align-items:center;justify-items:start;gap:8px;padding:8px 10px;
+}
+.export-player-team-logo{
+  width:42px;height:42px;object-fit:contain;align-self:stretch;justify-self:center;filter:drop-shadow(0 3px 8px rgba(0,0,0,.34));
+}
+.export-player-text{min-width:0;display:grid;gap:3px;justify-items:start}
 .export-player-name{
-  width:100%;max-width:136px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;line-height:.98;white-space:normal;overflow:visible;color:#F8F2E8;text-shadow:0 2px 10px rgba(0,0,0,.28);
+  width:100%;max-width:104px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;line-height:.98;white-space:pre-line;overflow:visible;color:#F8F2E8;text-align:left;text-shadow:0 2px 10px rgba(0,0,0,.28);
   display:block;
 }
 .export-team-pill{
-  display:inline-flex;align-items:center;gap:6px;max-width:none;padding:4px 10px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:6px;max-width:none;padding:0;border-radius:0;
   background:linear-gradient(180deg,rgba(4,17,13,.62),rgba(4,17,13,.4));border:1px solid rgba(255,255,255,.14);
   box-shadow:0 8px 18px rgba(0,0,0,.18);font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:#F8F2E8;
 }
+.export-player:not(.empty) .export-team-pill{background:transparent;border:0;box-shadow:none}
 .export-team-pill img{width:16px;height:16px;object-fit:contain;flex-shrink:0;filter:none}
 .export-team-pill span{display:block;max-width:none;overflow:visible;text-overflow:clip;white-space:nowrap;line-height:1;text-align:left;font-weight:700;text-shadow:none}
 .export-empty-label{
@@ -3421,7 +3429,7 @@ function lineupBuilderExportName(name=''){
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if(!parts.length) return '';
   if(parts.length === 1) return parts[0];
-  return `${parts[0]} ${parts[parts.length - 1]}`;
+  return `${parts[0]}\n${parts[parts.length - 1]}`;
 }
 
 function lineupBuilderRoleLabel(slot){
@@ -3800,10 +3808,12 @@ function renderLineupBuilderExportStage(){
                 <span class="export-position">${esc(slot.label)}</span>
               </span>
               <span class="export-player-meta">
-                <span class="export-player-name">${esc(lineupBuilderExportName(player.name))}</span>
+                ${player.teamLogo ? `<img class="export-player-team-logo" src="${player.teamLogo}" alt="${esc(player.teamName)}">` : `<span class="export-player-team-logo"></span>`}
+                <span class="export-player-text">
+                  <span class="export-player-name">${esc(lineupBuilderExportName(player.name))}</span>
                 <span class="export-team-pill">
-                  ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
                   <span>${esc((player.teamName || 'Klubblös').toUpperCase())}</span>
+                </span>
                 </span>
               </span>
             </div>
