@@ -1352,7 +1352,7 @@ main > *{animation:fadeUp .3s ease both}
 .lb-pitch-mark.soft{stroke:rgba(255,255,255,.58)}
 .lb-pitch-spot{fill:rgba(255,255,255,.82)}
 .lb-export-stage{
-  position:fixed;left:-20000px;top:0;width:max-content;height:auto;opacity:1;pointer-events:none;overflow:visible;
+  position:fixed;left:-20000px;top:0;width:1080px;height:1920px;opacity:0;pointer-events:none;overflow:hidden;
 }
 .lb-export-stage .export-shell{transform:none !important}
 .export-shell{
@@ -4325,37 +4325,22 @@ async function lineupBuilderStabilizeExportNode(target){
 }
 
 function lineupBuilderCreateExportClone(){
-  const source = document.querySelector('#lineupBuilderCapture');
-  if(!source) throw new Error('Preview-komponenten saknas.');
+  const source = renderLineupBuilderExportStage();
+  if(!source) throw new Error('Exportyta saknas.');
   const host = document.getElementById('lineupBuilderExportStage');
   if(!host) throw new Error('Exportvärd saknas.');
-  const rect = source.getBoundingClientRect();
-  const width = Math.ceil(rect.width || source.scrollWidth || 1080);
   host.innerHTML = '';
   const clone = source.cloneNode(true);
   clone.id = 'lineupBuilderExportCanvasClone';
-  clone.style.position = 'relative';
-  clone.style.width = `${width}px`;
-  clone.style.maxWidth = `${width}px`;
-  clone.style.transform = 'none';
-  clone.style.margin = '0';
   host.appendChild(clone);
   return clone;
-}
-
-function lineupBuilderMeasureExportTarget(target){
-  const rect = target.getBoundingClientRect();
-  return {
-    width: Math.ceil(target.scrollWidth || rect.width || 1080),
-    height: Math.ceil(target.scrollHeight || rect.height || 1920)
-  };
 }
 
 async function lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight){
   return htmlToImage.toCanvas(target, {
     cacheBust: true,
     pixelRatio: 2,
-    backgroundColor: null,
+    backgroundColor: '#0B3025',
     width: exportWidth,
     height: exportHeight,
     canvasWidth: exportWidth * 2,
@@ -4365,11 +4350,8 @@ async function lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHe
     style: {
       margin: '0',
       width: `${exportWidth}px`,
-      height: `${exportHeight}px`,
       minHeight: `${exportHeight}px`,
       maxWidth: `${exportWidth}px`,
-      maxHeight: `${exportHeight}px`,
-      position: 'relative',
       transform: 'none'
     }
   });
@@ -4410,11 +4392,12 @@ async function lineupBuilderDownloadImage(){
   lineupBuilderSetStatus('Skapar TikTok-PNG i hög upplösning...', 'loading');
   try {
     const htmlToImage = await ensureLineupBuilderExportLib();
+    const exportWidth = 1080;
+    const exportHeight = 1920;
     const target = lineupBuilderCreateExportClone();
     let pngBlob = null;
     try {
       await lineupBuilderStabilizeExportNode(target);
-      const { width: exportWidth, height: exportHeight } = lineupBuilderMeasureExportTarget(target);
       const canvas = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
       if(!canvas || !canvas.width || !canvas.height) throw new Error('Exportcanvas blev tom.');
       pngBlob = await lineupBuilderValidateExportBlob(await lineupBuilderCanvasToBlob(canvas));
@@ -4422,7 +4405,6 @@ async function lineupBuilderDownloadImage(){
       console.error('[lineup-builder] export first attempt failed', firstError);
       await lineupBuilderDelay(180);
       await lineupBuilderStabilizeExportNode(target);
-      const { width: exportWidth, height: exportHeight } = lineupBuilderMeasureExportTarget(target);
       const retryCanvas = await lineupBuilderTryExport(htmlToImage, target, exportWidth, exportHeight);
       if(!retryCanvas || !retryCanvas.width || !retryCanvas.height) throw new Error('Retry-canvas blev tom.');
       pngBlob = await lineupBuilderValidateExportBlob(await lineupBuilderCanvasToBlob(retryCanvas));
