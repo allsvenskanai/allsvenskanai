@@ -1354,123 +1354,112 @@ main > *{animation:fadeUp .3s ease both}
 .lb-export-stage{
   position:fixed;left:-20000px;top:0;width:1080px;height:1920px;opacity:0;pointer-events:none;overflow:hidden;
 }
-.lb-export-stage .lb-export-frame{transform:none !important}
-.lb-export-frame{
-  width:1080px;height:1920px;padding:48px 58px 54px;overflow:hidden;position:relative;
+.lb-export-stage .export-shell{transform:none !important}
+.export-shell{
+  width:1080px;height:1920px;position:relative;overflow:hidden;padding:56px 58px 54px;
   background:
-    radial-gradient(circle at top left, rgba(201,165,75,.16), transparent 22%),
-    radial-gradient(circle at 50% 16%, rgba(255,255,255,.05), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(255,255,255,.04), transparent 18%),
-    linear-gradient(180deg,#071510 0%,#0A2018 34%,#071611 100%);
-  display:grid;grid-template-rows:auto 1fr auto;gap:14px;
+    radial-gradient(circle at 18% 8%, rgba(219,184,93,.16), transparent 22%),
+    radial-gradient(circle at 82% 12%, rgba(255,255,255,.07), transparent 20%),
+    radial-gradient(circle at 50% 70%, rgba(16,83,53,.28), transparent 40%),
+    linear-gradient(180deg,#06120E 0%,#092119 48%,#050E0B 100%);
+  display:grid;grid-template-rows:218px 1fr 128px;gap:24px;color:#F8F2E8;
 }
-.lb-export-frame::before{
-  content:'';position:absolute;inset:24px;border:1px solid rgba(255,255,255,.08);border-radius:40px;pointer-events:none;
+.export-shell::before{
+  content:'';position:absolute;inset:28px;border:1px solid rgba(255,255,255,.08);border-radius:42px;pointer-events:none;
 }
-.lb-export-frame::after{
+.export-shell::after{
   content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 56%, transparent 32%, rgba(0,0,0,.26) 100%);
-}
-.lb-export-top{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:22px;position:relative;z-index:2;
-  padding:4px 0 8px;
-}
-.lb-export-kicker{
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#E3C777;
-}
-.lb-export-title{
-  margin-top:7px;font-family:'Barlow Condensed',sans-serif;font-size:66px;font-weight:900;line-height:.92;letter-spacing:.8px;text-transform:uppercase;color:#FAF4E8;
-  max-width:720px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 8px 28px rgba(0,0,0,.18);
-}
-.lb-export-subtitle{
-  margin-top:7px;font-size:17px;font-weight:600;letter-spacing:.45px;text-transform:none;color:rgba(250,244,232,.74)
-}
-.lb-export-brand{
-  display:grid;justify-items:end;gap:4px;text-align:right;color:#FAF4E8;align-self:start;
-  padding:8px 38px 0 0;background:none;border:none
-}
-.lb-export-brand strong{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;letter-spacing:.7px;text-transform:none;line-height:.95}
-.lb-export-brand span{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase;color:rgba(250,244,232,.52)}
-.lb-export-pitch-wrap{
-  position:relative;display:grid;align-items:center;justify-items:center;
-}
-.lb-export-pitch{
-  position:relative;width:100%;max-width:936px;height:1350px;border-radius:44px;padding:26px;overflow:hidden;
   background:
-    radial-gradient(circle at 50% 40%, rgba(255,255,255,.07), transparent 28%),
-    linear-gradient(180deg, rgba(255,255,255,.05), transparent 18%, rgba(0,0,0,.08) 100%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 8%, rgba(0,0,0,.02) 8% 16%),
-    linear-gradient(180deg,#258A56 0%,#1E7A48 42%,#145131 100%);
-  border:3px solid rgba(255,255,255,.2);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 26px 48px rgba(255,255,255,.04), 0 38px 88px rgba(0,0,0,.18);
+    radial-gradient(circle at 50% 48%, transparent 35%, rgba(0,0,0,.28) 100%),
+    linear-gradient(180deg, rgba(255,255,255,.025), transparent 22%, rgba(0,0,0,.16) 100%);
 }
-.lb-export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px)}
-.lb-export-slot{
-  position:absolute;transform:translateX(-50%);width:176px;min-height:158px;background:none;border:none;color:#F8F2E8;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;text-align:center;
+.export-header{
+  position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:32px;align-items:start;padding:2px 4px 0;
 }
-.lb-export-slot::after{
-  content:'';position:absolute;left:50%;top:82px;transform:translateX(-50%);width:94px;height:28px;border-radius:999px;
-  background:radial-gradient(circle, rgba(3,14,11,.34) 0%, rgba(3,14,11,.18) 52%, rgba(3,14,11,0) 100%);
-  filter:blur(5px);pointer-events:none;z-index:0;
+.export-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:3.4px;text-transform:uppercase;color:#E6C977;
 }
-.lb-export-slot-core{
-  width:112px;height:112px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;
-  background:linear-gradient(180deg,rgba(10,27,21,.24),rgba(5,22,17,.1));border:3px solid rgba(255,255,255,.28);box-shadow:0 6px 14px rgba(0,0,0,.25), 0 0 0 6px rgba(255,255,255,.045), 0 0 22px rgba(255,255,255,.09);
-  filter:drop-shadow(0 0 6px rgba(255,255,255,.08));z-index:1;
+.export-title{
+  margin-top:14px;max-width:720px;font-family:'Barlow Condensed',sans-serif;font-size:68px;font-weight:900;line-height:.9;letter-spacing:.6px;text-transform:uppercase;color:#FFF7E8;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 12px 30px rgba(0,0,0,.28);
 }
-.lb-export-slot.empty .lb-export-slot-core{background:linear-gradient(180deg,rgba(6,24,18,.18),rgba(4,17,13,.1));border-style:dashed;border-color:rgba(255,255,255,.18)}
-.lb-export-slot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.lb-export-slot-fallback{
-  width:100%;height:100%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;letter-spacing:1px;
-  color:#F8F2E8;background:linear-gradient(135deg,rgba(201,165,75,.92),rgba(230,201,119,.78));text-transform:uppercase;border-radius:50%;
+.export-subtitle{
+  margin-top:12px;font-size:18px;font-weight:600;letter-spacing:.35px;color:rgba(255,247,232,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.lb-export-slot.empty .lb-export-slot-fallback{
-  font-size:56px;line-height:1;background:radial-gradient(circle at 50% 38%, rgba(230,201,119,.92), rgba(201,165,75,.82) 70%);
+.export-brand-block{
+  justify-self:end;min-width:200px;margin-right:22px;padding-top:10px;text-align:right;display:grid;gap:7px;
 }
-.lb-export-slot-pos{
-  position:absolute;left:50%;top:-18px;transform:translateX(-50%);min-width:54px;height:34px;padding:0 14px;border-radius:999px;
-  background:linear-gradient(180deg,#101714,#0B110F);border:1px solid rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;
-  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F8F2E8;box-shadow:0 8px 14px rgba(0,0,0,.18);z-index:3;
+.export-brand-block strong{
+  font-family:'Barlow Condensed',sans-serif;font-size:25px;font-weight:900;letter-spacing:1px;line-height:.95;color:#FFF7E8;
 }
-.lb-export-slot-meta{
-  width:100%;max-width:172px;padding:0;border:none;background:none;box-shadow:none;display:grid;justify-items:center;gap:4px;
+.export-brand-block span{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(230,201,119,.74);
 }
-.lb-export-slot-name{
-  width:100%;max-width:168px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 10px rgba(0,0,0,.24);letter-spacing:.05px;text-transform:none;
+.export-pitch{
+  position:relative;z-index:2;justify-self:center;align-self:start;width:936px;height:1370px;border-radius:46px;padding:26px;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255,255,255,.065), transparent 27%),
+    linear-gradient(180deg, rgba(255,255,255,.055), transparent 20%, rgba(0,0,0,.1) 100%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8.333%, rgba(0,0,0,.028) 8.333% 16.666%),
+    linear-gradient(180deg,#248A55 0%,#1E7848 48%,#12492E 100%);
+  border:2px solid rgba(255,255,255,.2);
+  box-shadow:0 42px 96px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 28px 54px rgba(255,255,255,.045);
 }
-.lb-export-slot-club{
-  display:inline-flex;align-items:center;gap:7px;max-width:164px;padding:6px 13px;border-radius:999px;
-  background:rgba(18,70,48,.88);border:1px solid rgba(255,255,255,.24);font-size:12px;letter-spacing:.14px;text-transform:none;box-shadow:0 10px 16px rgba(0,0,0,.14);
+.export-pitch::after{
+  content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 48%, transparent 46%, rgba(0,0,0,.18) 100%);
 }
-.lb-export-slot-club img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
-.lb-export-slot-club span{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;color:#FFF8EC}
-.lb-export-slot-placeholder{
+.export-pitch svg{position:absolute;inset:26px;width:calc(100% - 52px);height:calc(100% - 52px);z-index:1}
+.export-player{
+  position:absolute;z-index:3;transform:translateX(-50%);width:178px;min-height:158px;background:none;border:none;color:#F8F2E8;
+  display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;
+}
+.export-player::after{
+  content:'';position:absolute;left:50%;top:84px;transform:translateX(-50%);width:96px;height:26px;border-radius:999px;background:radial-gradient(circle, rgba(0,0,0,.32), rgba(0,0,0,.14) 58%, transparent 100%);filter:blur(5px);z-index:0;
+}
+.export-avatar{
+  width:112px;height:112px;border-radius:50%;display:grid;place-items:center;position:relative;overflow:visible;z-index:1;
+  background:linear-gradient(180deg,rgba(10,27,21,.2),rgba(5,22,17,.08));border:3px solid rgba(255,255,255,.32);
+  box-shadow:0 6px 14px rgba(0,0,0,.25),0 0 0 6px rgba(255,255,255,.045),0 0 22px rgba(255,255,255,.09);
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.08));
+}
+.export-player.empty .export-avatar{border-style:dashed;border-color:rgba(255,255,255,.2);background:linear-gradient(180deg,rgba(6,24,18,.2),rgba(4,17,13,.11))}
+.export-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.export-avatar-fallback{
+  width:100%;height:100%;border-radius:50%;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#FFF7E8;
+  background:linear-gradient(135deg,rgba(201,165,75,.94),rgba(230,201,119,.78));
+}
+.export-player.empty .export-avatar-fallback{font-size:56px}
+.export-position{
+  position:absolute;left:50%;top:-18px;transform:translateX(-50%);height:32px;min-width:52px;padding:0 13px;border-radius:999px;z-index:4;
+  display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#101713,#080D0B);border:1px solid rgba(255,255,255,.2);
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#FFF7E8;box-shadow:0 8px 14px rgba(0,0,0,.22);
+}
+.export-player-meta{width:100%;max-width:176px;display:grid;justify-items:center;gap:5px;z-index:2}
+.export-player-name{
+  width:100%;max-width:172px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFF7E8;text-shadow:0 2px 10px rgba(0,0,0,.26);
+}
+.export-team-pill{
+  display:inline-flex;align-items:center;gap:7px;max-width:166px;padding:6px 13px;border-radius:999px;background:rgba(18,70,48,.9);border:1px solid rgba(255,255,255,.24);
+  box-shadow:0 10px 16px rgba(0,0,0,.14);font-size:12px;letter-spacing:.14px;color:#FFF8EC;
+}
+.export-team-pill img{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.export-team-pill span{display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
+.export-empty-label{
   display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:#F8F2E8
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;color:#FFF7E8;
 }
-.lb-export-slot-hint{
-  display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:0 8px;border-radius:999px;background:transparent;border:none;
-  font-size:10px;color:rgba(248,242,232,.52);letter-spacing:.75px;text-transform:uppercase
+.export-empty-role{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,247,232,.55)}
+.export-footer{
+  position:relative;z-index:2;display:flex;align-items:end;justify-content:space-between;gap:20px;padding:22px 4px 0;border-top:1px solid rgba(255,255,255,.08);
 }
-.lb-export-watermark{
-  position:absolute;left:50%;transform:translateX(-50%);bottom:146px;font-family:'Barlow Condensed',sans-serif;font-size:138px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,.075);pointer-events:none;line-height:.85;text-align:center;white-space:nowrap;
+.export-footer::before{
+  content:'AllsvenskanAI';position:absolute;left:50%;top:-98px;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:138px;font-weight:900;letter-spacing:2px;text-transform:uppercase;line-height:.85;color:rgba(255,255,255,.07);white-space:nowrap;pointer-events:none;
 }
-.lb-export-footer{
-  display:flex;justify-content:space-between;align-items:flex-end;gap:18px;position:relative;z-index:2;color:rgba(248,242,232,.72);font-size:16px;
-  padding:14px 2px 0;border-top:1px solid rgba(255,255,255,.08)
+.export-footer-brand{
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(255,247,232,.88);
 }
-.lb-export-footer strong{
-  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(250,244,232,.9)
-}
-.lb-export-footer-left{margin-left:0;}
-.lb-export-footer-meta{
-  display:flex;align-items:center;justify-content:flex-end;gap:0;text-align:right;white-space:nowrap
-}
-.lb-export-footer-meta span{
-  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:.55px;text-transform:none;color:#FAF4E8
+.export-footer-meta{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:.55px;color:#FFF7E8;white-space:nowrap;text-align:right;
 }
 .lb-slot{
   position:absolute;transform:translateX(-50%);width:152px;min-height:152px;background:none;border:none;cursor:pointer;color:#F8F2E8;
@@ -3711,81 +3700,77 @@ function renderLineupBuilderPitch(){
 function renderLineupBuilderExportStage(){
   const host = document.getElementById('lineupBuilderExportStage');
   if(!host) return null;
-  console.log('export positions', Object.fromEntries(lineupBuilderSlots().map(slot => [slot.id, lineupBuilderRenderCoords(slot, 'export')])));
+  const exportPositions = Object.fromEntries(lineupBuilderSlots().map(slot => [slot.id, lineupBuilderRenderCoords(slot, 'export')]));
+  console.log('export positions', exportPositions);
   host.innerHTML = `
-    <div id="lineupBuilderExportCanvas" class="lb-export-frame">
-      <div class="lb-export-top">
-        <div>
-          <div class="lb-export-kicker">AllsvenskanAI</div>
-          <div class="lb-export-title">${esc((lineupBuilderState.title || 'Omgångens elva').toUpperCase())}</div>
-          <div class="lb-export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
+    <div id="lineupBuilderExportCanvas" class="export-shell">
+      <header class="export-header">
+        <div class="export-header-copy">
+          <div class="export-kicker">ALLSVENSKANAI</div>
+          <div class="export-title">${esc((lineupBuilderState.title || 'Omgångens elva').toUpperCase())}</div>
+          <div class="export-subtitle">${esc(lineupBuilderState.subtitle || lineupBuilderDefaultSubtitle())}</div>
         </div>
-        <div class="lb-export-brand">
+        <div class="export-brand-block">
           <strong>AllsvenskanAI</strong>
           <span>Football Intelligence</span>
         </div>
-      </div>
-      <div class="lb-export-pitch-wrap">
-        <div class="lb-export-pitch">
-          <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
-            <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
-            <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
-            <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
-            <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
-            <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
-            <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
-            <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
-            <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
-            <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
-            <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
-            <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
-            <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
-            <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
-            <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
-          </svg>
-          ${lineupBuilderSlots().map(slot => {
-            const player = lineupBuilderState.slots?.[slot.id] || null;
-            const coords = lineupBuilderRenderCoords(slot, 'export');
-            if(!player) {
-              return `
-                <div class="lb-export-slot empty" style="left:${coords.x}%;top:${coords.y}%;">
-                  <span class="lb-export-slot-core">
-                    <span class="lb-export-slot-fallback">+</span>
-                    <span class="lb-export-slot-pos">${esc(slot.label)}</span>
-                  </span>
-                  <span class="lb-export-slot-meta">
-                    <span class="lb-export-slot-placeholder">Välj spelare</span>
-                    <span class="lb-export-slot-hint">${esc(lineupBuilderRoleLabel(slot))}</span>
-                  </span>
-                </div>
-              `;
-            }
+      </header>
+      <section class="export-pitch">
+        <svg viewBox="0 0 1000 1400" aria-hidden="true" focusable="false">
+          <rect class="lb-pitch-mark" x="0" y="0" width="1000" height="1400" rx="26" ry="26"></rect>
+          <line class="lb-pitch-mark" x1="0" y1="700" x2="1000" y2="700"></line>
+          <circle class="lb-pitch-mark" cx="500" cy="700" r="120"></circle>
+          <circle class="lb-pitch-spot" cx="500" cy="700" r="6"></circle>
+          <rect class="lb-pitch-mark" x="210" y="0" width="580" height="220"></rect>
+          <rect class="lb-pitch-mark soft" x="330" y="0" width="340" height="84"></rect>
+          <circle class="lb-pitch-spot" cx="500" cy="150" r="6"></circle>
+          <path class="lb-pitch-mark soft" d="M 390 220 A 110 110 0 0 0 610 220"></path>
+          <rect class="lb-pitch-mark" x="210" y="1180" width="580" height="220"></rect>
+          <rect class="lb-pitch-mark soft" x="330" y="1316" width="340" height="84"></rect>
+          <circle class="lb-pitch-spot" cx="500" cy="1250" r="6"></circle>
+          <path class="lb-pitch-mark soft" d="M 390 1180 A 110 110 0 0 1 610 1180"></path>
+          <rect class="lb-pitch-mark soft" x="430" y="-22" width="140" height="22"></rect>
+          <rect class="lb-pitch-mark soft" x="430" y="1400" width="140" height="22"></rect>
+        </svg>
+        ${lineupBuilderSlots().map(slot => {
+          const player = lineupBuilderState.slots?.[slot.id] || null;
+          const coords = exportPositions[slot.id] || lineupBuilderRenderCoords(slot, 'export');
+          if(!player) {
             return `
-              <div class="lb-export-slot" style="left:${coords.x}%;top:${coords.y}%;">
-                <span class="lb-export-slot-core">
-                  ${player.photo ? `<img class="lb-export-slot-photo" src="${player.photo}" alt="${esc(player.name)}">` : ''}
-                  <span class="lb-export-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
-                  <span class="lb-export-slot-pos">${esc(slot.label)}</span>
+              <div class="export-player empty" style="left:${coords.x}%;top:${coords.y}%;">
+                <span class="export-avatar">
+                  <span class="export-avatar-fallback">+</span>
+                  <span class="export-position">${esc(slot.label)}</span>
                 </span>
-                <span class="lb-export-slot-meta">
-                  <span class="lb-export-slot-name">${esc(lineupBuilderExportName(player.name))}</span>
-                  <span class="lb-export-slot-club">
-                    ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
-                    <span>${esc(player.teamName || 'Klubblös')}</span>
-                  </span>
+                <span class="export-player-meta">
+                  <span class="export-empty-label">Välj spelare</span>
+                  <span class="export-empty-role">${esc(lineupBuilderRoleLabel(slot))}</span>
                 </span>
               </div>
             `;
-          }).join('')}
-        </div>
-      </div>
-      <div class="lb-export-footer">
-        <div class="lb-export-footer-left"><strong>AllsvenskanAI</strong></div>
-        <div class="lb-export-footer-meta">
-          <span>${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</span>
-        </div>
-      </div>
-      <div class="lb-export-watermark">AllsvenskanAI</div>
+          }
+          return `
+            <div class="export-player" style="left:${coords.x}%;top:${coords.y}%;">
+              <span class="export-avatar">
+                ${player.photo ? `<img src="${player.photo}" alt="${esc(player.name)}">` : ''}
+                <span class="export-avatar-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
+                <span class="export-position">${esc(slot.label)}</span>
+              </span>
+              <span class="export-player-meta">
+                <span class="export-player-name">${esc(lineupBuilderExportName(player.name))}</span>
+                <span class="export-team-pill">
+                  ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}">` : ''}
+                  <span>${esc(player.teamName || 'Klubblös')}</span>
+                </span>
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </section>
+      <footer class="export-footer">
+        <div class="export-footer-brand">AllsvenskanAI</div>
+        <div class="export-footer-meta">${esc(lineupBuilderState.formation)} • ${esc(lineupBuilderCurrentLeagueConfig().label)} ${esc(lineupBuilderLeagueSeason())}</div>
+      </footer>
     </div>
   `;
   return document.getElementById('lineupBuilderExportCanvas');
