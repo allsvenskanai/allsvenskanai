@@ -646,6 +646,26 @@ tr.season-row td{border-left:2px solid var(--gold)}
 }
 .stat-box .label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
 .stat-box .value{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;color:var(--gold)}
+.match-player-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.match-player-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:1rem 1rem .85rem;box-shadow:0 10px 22px rgba(0,0,0,.12)}
+.match-player-card-head{display:flex;align-items:center;gap:10px;margin-bottom:.85rem}
+.match-player-card-head img{width:28px;height:28px;object-fit:contain;flex-shrink:0}
+.match-player-card-head .name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.match-player-card-head .meta{font-size:11px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;font-weight:700}
+.match-player-table{width:100%;border-collapse:collapse}
+.match-player-table th,.match-player-table td{padding:8px 6px;border-bottom:1px solid rgba(108,86,44,.08);font-size:12px;vertical-align:middle}
+.match-player-table th{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)}
+.match-player-table tr:last-child td{border-bottom:none}
+.match-player-main{display:flex;align-items:center;gap:8px;min-width:0}
+.match-player-main img{width:24px;height:24px;border-radius:50%;object-fit:cover;background:var(--dark3);flex-shrink:0}
+.match-player-name{font-weight:700;color:var(--text);line-height:1.15}
+.match-player-sub{font-size:10px;color:var(--muted);line-height:1.1}
+.match-rating-badge{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:28px;padding:0 8px;border-radius:999px;background:var(--dark3);border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:.4px}
+.match-rating-badge.rg{background:rgba(47,143,103,.12);border-color:rgba(47,143,103,.2)}
+.match-rating-badge.ry{background:rgba(201,165,75,.12);border-color:rgba(201,165,75,.2)}
+.match-rating-badge.rr{background:rgba(182,81,81,.10);border-color:rgba(182,81,81,.18)}
+.match-player-notes{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.match-player-note{display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 6px;border-radius:999px;background:var(--dark3);border:1px solid var(--border);font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.7px;text-transform:uppercase}
 .duel-stat{display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center;padding:.8rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .duel-stat:last-child{border-bottom:none}
 .duel-stat .val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--text)}
@@ -2080,6 +2100,9 @@ main{max-width:1360px}
   .stats-value-meta{font-size:10px}
   .team-hero{grid-template-columns:1fr}
   .team-summary-grid,.team-player-highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .match-player-grid{grid-template-columns:1fr}
+  .match-player-table th,.match-player-table td{padding:7px 5px;font-size:11px}
+  .match-player-card-head .name{font-size:20px}
   .team-dual-grid{grid-template-columns:1fr}
   .team-metric-grid{grid-template-columns:1fr}
   .team-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -2203,48 +2226,6 @@ const C = {};
 
 // Cache
 const CACHE = {};
-const SEASON_CANDIDATES = Array.from(new Set([SEASON, 2025, 2024, 2023, 2022])).filter(Boolean);
-const LEAGUE_COVERAGE_CACHE = {};
-
-async function getLeagueSeasonCoverage(season = SEASON){
-  const key = `${LEAGUE}-${season}`;
-  if(LEAGUE_COVERAGE_CACHE[key]) return LEAGUE_COVERAGE_CACHE[key];
-  try {
-    const data = await afRaw('leagues', { id: LEAGUE, season });
-    const coverage = data?.response?.[0]?.seasons?.find(item => Number(item.year) === Number(season))?.coverage || {};
-    LEAGUE_COVERAGE_CACHE[key] = coverage;
-    return coverage;
-  } catch(e) {
-    LEAGUE_COVERAGE_CACHE[key] = {};
-    return {};
-  }
-}
-
-async function getWorkingSeason(preferred = SEASON, validator = rows => Array.isArray(rows) && rows.length){
-  const seasons = Array.from(new Set([preferred, ...SEASON_CANDIDATES])).filter(Boolean);
-  for(const season of seasons){
-    try {
-      const data = await af('standings', { league: LEAGUE, season });
-      const rows = data?.[0]?.league?.standings?.[0] || [];
-      if(validator(rows)) return season;
-    } catch(e) {}
-  }
-  return preferred;
-}
-
-async function searchPlayersAcrossSeasons(query, seasons = null){
-  const tried = [];
-  const seasonList = Array.from(new Set(seasons && seasons.length ? seasons : [SEASON, ...SEASON_CANDIDATES])).filter(Boolean);
-  for(const season of seasonList){
-    tried.push(season);
-    try {
-      const players = await af('players', { search: query, season });
-      if(Array.isArray(players) && players.length) return { players, season, tried };
-    } catch(e) {}
-  }
-  return { players: [], season: seasonList[0] || SEASON, tried };
-}
-
 
 // Name corrections — API-Football 2026 strips Swedish/special chars
 const NAME_FIX = {
@@ -4578,8 +4559,8 @@ async function runSearch(q) {
   box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)"><div class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px"></div>Söker…</div>`;
   box.classList.add('open');
   try {
-    const [{ players, season: searchSeason }, teams] = await Promise.all([
-      searchPlayersAcrossSeasons(q),
+    const [players, teams] = await Promise.all([
+      af('players', {search:q, season:2025}).catch(()=>af('players', {search:q, season:2024}).catch(()=>[])),
       af('teams', {search:q}).catch(()=>[])
     ]);
     let html = '';
@@ -4599,7 +4580,7 @@ async function runSearch(q) {
         html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
           <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
           <div><div class="sr-name">${esc(getPlayerDisplayName(p.player))}</div>
-          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')} · ${searchSeason}</div></div>
+          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
         </div>`;
       });
     }
@@ -4621,8 +4602,10 @@ async function pageStart(el) {
   document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
   try {
-    const activeSeason = await getWorkingSeason(SEASON);
-    let data = await af('standings', {league:LEAGUE, season:activeSeason});
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
     const standings = data[0]?.league?.standings?.[0] || [];
     const teams = standings.map(t=>t.team);
     const topThree = standings.slice(0,3);
@@ -5281,8 +5264,10 @@ async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const activeSeason = await getWorkingSeason(SEASON);
-    let data = await af('standings', {league:LEAGUE, season:activeSeason});
+    let data = await af('standings', {league:LEAGUE, season:SEASON});
+    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
+      data = await af('standings', {league:LEAGUE, season:2025});
+    }
     const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
@@ -5290,7 +5275,7 @@ async function pageTeams(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${teams.length} lag</span></div>
+      <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
       <div class="start-tgrid">${cards}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
@@ -5720,7 +5705,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
-    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason, leagueCoverage] = await Promise.all([
+    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
       Promise.all(TEAM_PAGE_SEASONS.map(async season => {
@@ -5744,8 +5729,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       }).catch(e => {
         console.warn('[team-page] fixtures missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
-      }),
-      getLeagueSeasonCoverage(selectedSeason)
+      })
     ]);
 
     const teamInfoD = teamInfoRaw?.response || [];
@@ -5849,24 +5833,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     window.__teamPlayerStatsData = { players: teamPlayers };
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
-    const topAssist = getTeamPlayerLeader(teamPlayers, 'assists');
-    const topKeyPasser = getTeamPlayerLeader(teamPlayers, 'keyPasses');
-    const mostBooked = getTeamPlayerLeader(teamPlayers, 'yellow');
-    const topRated = getTeamPlayerLeader(teamPlayers, 'rating');
-    const totalAssists = teamPlayers.reduce((sum, player) => sum + (player?.stats?.assists || 0), 0);
-    const totalYellow = teamPlayers.reduce((sum, player) => sum + (player?.stats?.yellow || 0), 0);
-    const totalRed = teamPlayers.reduce((sum, player) => sum + (player?.stats?.red || 0), 0);
-    const totalShots = teamPlayers.reduce((sum, player) => sum + (player?.stats?.shots || 0), 0);
-    const totalShotsOn = teamPlayers.reduce((sum, player) => sum + (player?.stats?.shotsOn || 0), 0);
-    const totalKeyPasses = teamPlayers.reduce((sum, player) => sum + (player?.stats?.keyPasses || 0), 0);
-    const shotsOnPct = totalShots ? Math.round((totalShotsOn / totalShots) * 100) : 0;
-    const teamCoverageFlags = [
-      leagueCoverage?.players ? 'Spelarstatistik' : null,
-      leagueCoverage?.top_scorers ? 'Skytteliga' : null,
-      leagueCoverage?.top_assists ? 'Assistliga' : null,
-      leagueCoverage?.top_cards ? 'Kortliga' : null,
-      leagueCoverage?.fixtures?.statistics_fixtures ? 'Matchstatistik' : null
-    ].filter(Boolean);
     const seasonButtons = TEAM_PAGE_SEASONS
       .filter(season => historyMap.has(season) || season === selectedSeason)
       .map(season => teamSeasonButton(routeTeamId, season, season === selectedSeason, historyMap.has(season)))
@@ -5877,10 +5843,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       { label:'Målskillnad', value:`${goalDiff > 0 ? '+' : ''}${goalDiff}`, copy:`${gf} gjorda • ${ga} insläppta` },
       { label:'Form senaste 5', value:`${recentFive.points}p`, copy:`${recentFive.goalsFor}-${recentFive.goalsAgainst} i mål` },
       { label:'Vinstprocent', value:`${winPct}%`, copy:`${w} segrar på ${played} matcher` },
-      { label:'Assist', value: totalAssists, copy:`${totalKeyPasses} nyckelpass totalt` },
-      { label:'Kort', value: `${totalYellow}/${totalRed}`, copy:'Gula / röda kort i spelarstatistiken' },
-      { label:'Skott på mål', value: `${totalShotsOn}/${totalShots}`, copy:`${shotsOnPct}% träffprocent` },
-      { label:'Topprating', value: topRated ? formatStatValue(topRated.value, 2) : '—', copy: topRated ? topRated.player.playerName : 'Ingen ratingdata' },
     ].map(card => `<div class="team-summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div><div class="copy">${card.copy}</div></div>`).join('');
 
     const heroStats = [
@@ -5945,13 +5907,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${stats?.fixtures?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${stats.fixtures.form.slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
         </div></div>
 
-        <div class="tw" style="margin-bottom:1rem">
-          <div style="padding:1rem 1.1rem;display:grid;gap:.55rem">
-            <div class="team-detail-row"><span>API-täckning ${selectedSeason}</span><strong>${teamCoverageFlags.length ? teamCoverageFlags.join(' • ') : 'Begränsad / okänd'}</strong></div>
-            <div class="team-note">Tomma värden beror oftast på att just den här ligan eller säsongen saknar täckning för ett statistikfält i API:t. Den här sidan visar nu fler värden direkt från spelarunderlaget även när lag-endpointen är tunn.</div>
-          </div>
-        </div>
-
         <div class="tabs">
           <button class="tab active" onclick="switchTab(this,'t-overview')">Lagstatistik</button>
           <button class="tab" onclick="switchTab(this,'t-players');renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [])">Spelarstatistik</button>
@@ -6003,10 +5958,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Historik</div><div style="overflow-x:auto"><table class="team-history-table"><thead><tr><th>Säsong</th><th>#</th><th>Poäng</th><th>M</th><th>V-O-F</th><th>Mål</th><th>GS</th><th>PPM</th></tr></thead><tbody>${historyRowsHtml || `<tr><td colspan="8" class="empty">Ingen historik hittades ännu.</td></tr>`}</tbody></table></div></div>
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Lagets toppspelare</div><div style="padding:1rem 1.1rem" class="team-detail-list">
               <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
-              <div class="team-detail-row"><span>Bästa assistläggare</span><strong>${topAssist ? `${topAssist.player.playerName} (${Math.round(topAssist.value)} assist)` : 'Ingen data'}</strong></div>
-              <div class="team-detail-row"><span>Mest kreativ</span><strong>${topKeyPasser ? `${topKeyPasser.player.playerName} (${Math.round(topKeyPasser.value)} nyckelpass)` : 'Ingen data'}</strong></div>
-              <div class="team-detail-row"><span>Mest varnad</span><strong>${mostBooked ? `${mostBooked.player.playerName} (${Math.round(mostBooked.value)} gula)` : 'Ingen data'}</strong></div>
-              <div class="team-detail-row"><span>Bäst rating</span><strong>${topRated ? `${topRated.player.playerName} (${formatStatValue(topRated.value, 2)})` : 'Ingen data'}</strong></div>
               <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
               <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? recentTen.formTokens.join(' ') : 'Ingen formdata ännu'}</strong></div>
               <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
@@ -6802,6 +6753,191 @@ function renderLineups(lineups){
     </div>`).join('')}</div>`;
 }
 
+function matchStatLookup(stats = [], type=''){
+  const row = (stats || []).find(item => String(item?.type || '') === String(type));
+  return row?.value ?? '—';
+}
+function normalizeMatchStatNumber(value){
+  if(value === null || value === undefined || value === '' || value === '—') return 0;
+  if(typeof value === 'string' && value.includes('%')) return parseFloat(value) || 0;
+  return Number(value) || parseFloat(value) || 0;
+}
+function renderMatchSummaryCard(label, homeValue, awayValue){
+  return `<div class="stat-box"><div class="label">${esc(label)}</div><div class="value">${esc(String(homeValue))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(awayValue))}</span></div></div>`;
+}
+function getMatchPlayerStat(player, path, fallback = 0){
+  try {
+    const value = path.split('.').reduce((acc, key) => acc?.[key], player);
+    if(value === null || value === undefined || value === '') return fallback;
+    return value;
+  } catch(e){
+    return fallback;
+  }
+}
+function buildMatchPlayerRows(playersResponse = []){
+  return (playersResponse || []).map(teamBlock => {
+    const team = teamBlock?.team || {};
+    const rows = (teamBlock?.players || []).map(entry => {
+      const player = entry?.player || {};
+      const stats = entry?.statistics?.[0] || {};
+      const games = stats?.games || {};
+      const goals = stats?.goals || {};
+      const shots = stats?.shots || {};
+      const passes = stats?.passes || {};
+      const tackles = stats?.tackles || {};
+      const duels = stats?.duels || {};
+      const dribbles = stats?.dribbles || {};
+      const fouls = stats?.fouls || {};
+      const cards = stats?.cards || {};
+      const penalty = stats?.penalty || {};
+      const rating = parseFloat(games?.rating || 0) || 0;
+      const minutes = Number(games?.minutes || 0) || 0;
+      const minutesDisplay = minutes ? `${minutes}'` : '—';
+      const goalsTotal = Number(goals?.total || 0) || 0;
+      const assists = Number(goals?.assists || 0) || 0;
+      const saves = Number(goals?.saves || 0) || 0;
+      const conceded = Number(goals?.conceded || 0) || 0;
+      const shotsOn = Number(shots?.on || 0) || 0;
+      const shotsTotal = Number(shots?.total || 0) || 0;
+      const passesTotal = Number(passes?.total || 0) || 0;
+      const keyPasses = Number(passes?.key || 0) || 0;
+      const passAccuracy = passes?.accuracy || '';
+      const tacklesTotal = Number(tackles?.total || 0) || 0;
+      const interceptions = Number(tackles?.interceptions || 0) || 0;
+      const blocks = Number(tackles?.blocks || 0) || 0;
+      const duelsWon = Number(duels?.won || 0) || 0;
+      const duelsTotal = Number(duels?.total || 0) || 0;
+      const dribblesWon = Number(dribbles?.success || 0) || 0;
+      const dribblesAttempts = Number(dribbles?.attempts || 0) || 0;
+      const foulsDrawn = Number(fouls?.drawn || 0) || 0;
+      const foulsCommitted = Number(fouls?.committed || 0) || 0;
+      const yellow = Number(cards?.yellow || 0) || 0;
+      const red = Number(cards?.red || 0) || 0;
+      const penaltiesScored = Number(penalty?.scored || 0) || 0;
+      const penaltiesMissed = Number(penalty?.missed || 0) || 0;
+      const penaltiesSaved = Number(penalty?.saved || 0) || 0;
+      const penaltiesWon = Number(penalty?.won || 0) || 0;
+      const penaltiesCommitted = Number(penalty?.commited || penalty?.committed || 0) || 0;
+      const notes = [];
+      if(games?.captain) notes.push('Kapten');
+      if(goalsTotal > 0) notes.push(`${goalsTotal} mål`);
+      if(assists > 0) notes.push(`${assists} assist`);
+      if(yellow > 0) notes.push(`${yellow} gult`);
+      if(red > 0) notes.push(`${red} rött`);
+      if(penaltiesScored > 0) notes.push('Straffmål');
+      if(saves > 0) notes.push(`${saves} räddn.`);
+      return {
+        teamId: team?.id || 0,
+        teamName: fixName(team?.name || 'Lag'),
+        teamLogo: team?.logo || '',
+        playerId: player?.id || 0,
+        name: getPlayerDisplayName(player) || 'Okänd spelare',
+        photo: player?.photo || '',
+        number: games?.number || player?.number || '',
+        position: resolveDetailedPosition({ positionCode: games?.position || player?.pos || '', position: games?.position || player?.pos || '' }, games?.position || player?.pos || ''),
+        captain: !!games?.captain,
+        substitute: !!games?.substitute,
+        rating,
+        ratingDisplay: rating ? formatStatValue(rating, 2) : '—',
+        minutes,
+        minutesDisplay,
+        goals: goalsTotal,
+        assists,
+        saves,
+        conceded,
+        shotsOn,
+        shotsTotal,
+        passesTotal,
+        keyPasses,
+        passAccuracy: passAccuracy || '—',
+        tackles: tacklesTotal,
+        interceptions,
+        blocks,
+        duelsWon,
+        duelsTotal,
+        dribblesWon,
+        dribblesAttempts,
+        foulsDrawn,
+        foulsCommitted,
+        yellow,
+        red,
+        penaltiesScored,
+        penaltiesMissed,
+        penaltiesSaved,
+        penaltiesWon,
+        penaltiesCommitted,
+        notes
+      };
+    }).sort((a,b) => {
+      if(b.rating !== a.rating) return b.rating - a.rating;
+      if(b.minutes !== a.minutes) return b.minutes - a.minutes;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'sv');
+    });
+    return { team, rows };
+  });
+}
+function renderMatchPlayerStats(playersResponse = []){
+  const groups = buildMatchPlayerRows(playersResponse).filter(group => (group.rows || []).length);
+  if(!groups.length) return `<div class="tw"><div class="empty">Ingen spelarstatistik tillgänglig för matchen</div></div>`;
+  return `<div class="match-player-grid">${groups.map(group => {
+    const topRating = (group.rows || []).find(item => item.rating > 0)?.ratingDisplay || '—';
+    return `<div class="match-player-card">
+      <div class="match-player-card-head">
+        <img src="${group.team?.logo || ''}" onerror="this.style.opacity='.15'">
+        <div>
+          <div class="name">${esc(fixName(group.team?.name || 'Lag'))}</div>
+          <div class="meta">Topprating: ${esc(String(topRating))} · ${group.rows.length} spelare</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="match-player-table">
+          <thead>
+            <tr>
+              <th>Spelare</th>
+              <th>Rt</th>
+              <th>Min</th>
+              <th>M</th>
+              <th>A</th>
+              <th>SOT</th>
+              <th>Pass</th>
+              <th>Dueller</th>
+              <th>Tack</th>
+              <th>Kort</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.rows.map(item => {
+              const notes = item.notes.map(note => `<span class="match-player-note">${esc(note)}</span>`).join('');
+              const cardDisplay = item.red > 0 ? `${item.yellow}+${item.red}` : (item.yellow > 0 ? `${item.yellow}` : '—');
+              return `<tr class="link" onclick="go('/spelare/${item.playerId}')">
+                <td>
+                  <div class="match-player-main">
+                    <img src="${item.photo || ''}" onerror="this.style.opacity='.15'">
+                    <div style="min-width:0">
+                      <div class="match-player-name">${esc(item.name)}</div>
+                      <div class="match-player-sub">${esc(item.position || 'Spelare')}${item.number ? ` · #${esc(String(item.number))}` : ''}</div>
+                      ${notes ? `<div class="match-player-notes">${notes}</div>` : ''}
+                    </div>
+                  </div>
+                </td>
+                <td><span class="match-rating-badge ${item.rating ? ratingCls(item.rating) : ''}">${esc(item.ratingDisplay)}</span></td>
+                <td>${esc(item.minutesDisplay)}</td>
+                <td>${item.goals || '—'}</td>
+                <td>${item.assists || '—'}</td>
+                <td>${item.shotsOn ? `${item.shotsOn}/${item.shotsTotal || item.shotsOn}` : (item.shotsTotal ? `0/${item.shotsTotal}` : '—')}</td>
+                <td>${item.passesTotal ? `${item.passesTotal}${item.passAccuracy !== '—' ? ` · ${esc(String(item.passAccuracy))}%` : ''}` : '—'}</td>
+                <td>${item.duelsTotal ? `${item.duelsWon}/${item.duelsTotal}` : '—'}</td>
+                <td>${item.tackles || item.interceptions || item.blocks ? `${item.tackles}/${item.interceptions}/${item.blocks}` : '—'}</td>
+                <td>${esc(String(cardDisplay))}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 let resultsSelectedRound = '';
 
 function getFixtureRoundInfo(f){
@@ -6908,11 +7044,12 @@ async function pageResults(el) {
 async function pageMatch(el, fixtureId) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matchdata…</div>`;
   try {
-    const [fixtureRes, statsRes, eventsRes, lineupsRes] = await Promise.all([
+    const [fixtureRes, statsRes, eventsRes, lineupsRes, playersRes] = await Promise.all([
       af('fixtures', {id: fixtureId}),
       af('fixtures/statistics', {fixture: fixtureId}).catch(() => []),
       af('fixtures/events', {fixture: fixtureId}).catch(() => []),
-      af('fixtures/lineups', {fixture: fixtureId}).catch(() => [])
+      af('fixtures/lineups', {fixture: fixtureId}).catch(() => []),
+      af('fixtures/players', {fixture: fixtureId}).catch(() => [])
     ]);
     const f = fixtureRes?.[0];
     if(!f) throw new Error('Matchen hittades inte');
@@ -6929,7 +7066,20 @@ async function pageMatch(el, fixtureId) {
     const away = f.teams?.away || {};
     const hStats = statsRes?.[0]?.statistics || [];
     const aStats = statsRes?.[1]?.statistics || [];
-    const statVal = (arr, type) => arr.find(x => x.type === type)?.value ?? '—';
+    const statVal = (arr, type) => matchStatLookup(arr, type);
+    const summaryCards = [
+      ['Bollinnehav', statVal(hStats,'Ball Possession'), statVal(aStats,'Ball Possession')],
+      ['Skott', statVal(hStats,'Total Shots'), statVal(aStats,'Total Shots')],
+      ['Skott på mål', statVal(hStats,'Shots on Goal'), statVal(aStats,'Shots on Goal')],
+      ['Hörnor', statVal(hStats,'Corner Kicks'), statVal(aStats,'Corner Kicks')],
+      ['Passningar', statVal(hStats,'Total passes'), statVal(aStats,'Total passes')],
+      ['Passnings%', statVal(hStats,'Passes %'), statVal(aStats,'Passes %')],
+      ['Räddningar', statVal(hStats,'Goalkeeper Saves'), statVal(aStats,'Goalkeeper Saves')],
+      ['xG', statVal(hStats,'expected_goals'), statVal(aStats,'expected_goals')],
+    ]
+      .filter(item => !(String(item[1]) === '—' && String(item[2]) === '—'))
+      .map(item => renderMatchSummaryCard(item[0], item[1], item[2]))
+      .join('');
 
     el.innerHTML = `
       <button class="back" onclick="go('/resultat')">Tillbaka till resultat</button>
@@ -6958,14 +7108,14 @@ async function pageMatch(el, fixtureId) {
       </div>
 
       <div class="stat-grid">
-        <div class="stat-box"><div class="label">Bollinnehav</div><div class="value">${esc(String(statVal(hStats,'Ball Possession')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Ball Possession')))}</span></div></div>
-        <div class="stat-box"><div class="label">Skott på mål</div><div class="value">${esc(String(statVal(hStats,'Shots on Goal')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Shots on Goal')))}</span></div></div>
-        <div class="stat-box"><div class="label">Hörnor</div><div class="value">${esc(String(statVal(hStats,'Corner Kicks')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'Corner Kicks')))}</span></div></div>
-        <div class="stat-box"><div class="label">xG</div><div class="value">${esc(String(statVal(hStats,'expected_goals')))} <span style="font-size:18px;color:var(--muted)">/ ${esc(String(statVal(aStats,'expected_goals')))}</span></div></div>
+        ${summaryCards || '<div class="tw"><div class="empty">Ingen sammanfattande matchstatistik ännu</div></div>'}
       </div>
 
       <div class="section-label">Matchstatistik</div>
       ${renderDuelStats(statsRes)}
+
+      <div class="section-label" style="margin-top:1rem">Spelarbetyg & spelarstatistik</div>
+      ${renderMatchPlayerStats(playersRes)}
 
       <div class="section-label" style="margin-top:1rem">Matchhändelser</div>
       ${renderEventsList(eventsRes)}
@@ -7475,6 +7625,13 @@ function formatStatValue(value, decimals = 1){
     maximumFractionDigits: decimals
   });
 }
+function ratingCls(value){
+  const rating = parseFloat(value || 0) || 0;
+  if(rating >= 7.5) return 'rg';
+  if(rating >= 6.5) return 'ry';
+  if(rating > 0) return 'rr';
+  return '';
+}
 
 function per90(value, minutes){
   return minutes > 0 ? (value / minutes) * 90 : 0;
@@ -7749,8 +7906,6 @@ async function pageStats(el, year=null, force=false) {
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
 
     // Get teams from standings for that year
-    const workingStatsSeason = await getWorkingSeason(statsYear);
-    if(workingStatsSeason !== statsYear) statsYear = workingStatsSeason;
     const standData = await af('standings', {league:LEAGUE, season:statsYear});
     const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
 
@@ -8246,8 +8401,8 @@ async function routeQuestion({ intent, team, player, scope, rawQuestion, normali
 async function tryDataAnswer(question) {
   const rawQuestion = String(question || '').trim();
   const normalizedQuestion = normalizeQuestion(rawQuestion);
-  const standingsSeason = await getWorkingSeason(SEASON);
-  const standData = await af('standings', {league:LEAGUE, season:standingsSeason}).catch(() => []);
+  const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
+    af('standings', {league:LEAGUE, season:2025}));
   const standings = standData[0]?.league?.standings?.[0] || [];
   const teams = standings.map(t=>t.team) || [];
 
