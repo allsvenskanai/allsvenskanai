@@ -29,9 +29,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --gold:#C9A54B;--gold-light:#E6C977;--gold-dim:rgba(201,165,75,.14);
-  --dark:#F7F3EB;--dark2:#FFFDF8;--dark3:#F3EBDD;--dark4:#E9DFC9;--dark5:#DED0B3;
-  --border:rgba(108,86,44,0.14);--border-hi:rgba(108,86,44,0.28);
-  --text:#241C12;--text2:#5D503D;--muted:#8A7A63;
+  --dark:#080A0E;--dark2:#0B0F16;--dark3:#111823;--dark4:#17202C;--dark5:#223044;
+  --border:rgba(255,255,255,0.08);--border-hi:rgba(255,255,255,0.16);
+  --text:#FFFFFF;--text2:#D9DEE7;--muted:#8B95A5;
   --red:#B65151;--green:#2F8F67;--blue:#7AA8D8;
   --radius:12px;
 }
@@ -980,7 +980,7 @@ main > *{animation:fadeUp .3s ease both}
 .start-result-teams{
   display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
 }
-.start-result-side{font-size:13px;font-weight:800;color:var(--text)}
+.start-result-side{font-size:13px;font-weight:800;color:var(--text);line-height:1.2;min-width:0}
 .start-result-side.away{text-align:right}
 .start-result-vs{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
 .start-teams-section{margin-bottom:2rem}
@@ -2157,6 +2157,444 @@ main{max-width:1360px}
   .mnav-btn .icon{font-size:18px}
 }
 
+
+/* === HOMEPAGE PREMIUM V2 OVERRIDES === */
+body{
+  background:
+    radial-gradient(circle at top, rgba(201,165,75,.10), transparent 28%),
+    linear-gradient(180deg, #0b0f14 0%, #101720 100%);
+  color:#f4efe4;
+}
+header{
+  background:rgba(10,14,19,.82);
+  border-bottom:1px solid rgba(201,165,75,.12);
+}
+.logo{color:#f8f3e7}
+.logo-tagline,.np{color:rgba(244,239,228,.68)}
+.np:hover,.np.active{color:#fff;background:rgba(201,165,75,.10);border-color:rgba(201,165,75,.18)}
+.header-cta{
+  background:linear-gradient(180deg,#d6b45b,#b9912e);
+  color:#0d1117;border:none;box-shadow:0 14px 28px rgba(0,0,0,.28)
+}
+main{max-width:1380px;padding-top:1.4rem}
+.start-hero{
+  background:
+    radial-gradient(circle at 50% -10%, rgba(201,165,75,.20), transparent 34%),
+    linear-gradient(180deg, rgba(18,24,32,.98), rgba(12,17,24,.98));
+  border:1px solid rgba(201,165,75,.18);
+  border-radius:28px;
+  padding:3.2rem 2rem 2.6rem;
+  box-shadow:0 28px 70px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.start-hero::before{
+  background:
+    radial-gradient(circle at 50% 0%, rgba(201,165,75,.24), transparent 30%),
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,.03) 48%, transparent 100%);
+  opacity:1;
+}
+.start-wordmark{
+  color:#fff;
+  font-size:clamp(54px,8vw,100px);
+  letter-spacing:3px;
+  text-shadow:0 10px 30px rgba(0,0,0,.28);
+}
+.start-wordmark span{
+  color:#d4af4f;
+  text-shadow:0 0 28px rgba(201,165,75,.24);
+}
+.start-sub{color:#c8ab67;letter-spacing:3px}
+.start-lead{color:rgba(244,239,228,.82);font-size:16px}
+.start-proof-pill{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  color:#f2ecde;
+  box-shadow:none;
+}
+.start-primary-btn{
+  background:linear-gradient(180deg,#d9b85e,#bc9531);
+  color:#11151c;
+  box-shadow:0 16px 34px rgba(0,0,0,.35);
+}
+.start-secondary-btn{
+  background:rgba(255,255,255,.04);
+  color:#f8f3e7;
+  border:1px solid rgba(255,255,255,.10);
+}
+.start-highlight-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  margin:0 0 1.4rem;
+}
+.start-highlight,.start-mini-card,.start-ai{
+  background:linear-gradient(180deg, rgba(21,29,39,.96), rgba(14,20,28,.96));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 18px 44px rgba(0,0,0,.24);
+}
+.start-highlight{border-radius:20px;padding:1.2rem 1.15rem;position:relative;overflow:hidden}
+.start-highlight::before{
+  content:'';
+  position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,#d2ad50,transparent);
+}
+.start-highlight-kicker,.start-mini-sub,.start-ai-live,.start-result-round{color:#c7ad72}
+.start-highlight-title,.start-mini-title,.start-ai-title,.start-team-name,.start-wordmark,.start-points{color:#fff}
+.start-highlight-copy,.start-ai-copy,.start-ai-note,.start-team-gd{color:rgba(244,239,228,.72)}
+.start-snapshot{gap:14px}
+.start-mini-head{margin-bottom:1rem}
+.start-mini-link,.start-rank,.start-result-score{color:#d4af4f}
+.start-table-row,.start-result-row,.start-chip,.start-ai-suggestion{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+}
+.start-table-row:hover,.start-result-row:hover,.start-chip:hover,.start-ai-suggestion:hover{
+  background:rgba(255,255,255,.06);
+  box-shadow:0 14px 28px rgba(0,0,0,.22);
+}
+.start-ai{
+  border-radius:22px;
+  padding:1.55rem;
+}
+.start-ai-input{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.10);
+  color:#fff;
+}
+.start-ai-input::placeholder{color:rgba(244,239,228,.42)}
+.start-ai-submit{
+  background:linear-gradient(180deg,#d9b85e,#bc9531);
+  color:#10151b;
+}
+.start-ai-result{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+}
+.start-mini-empty{
+  background:rgba(255,255,255,.02);
+  border:1px dashed rgba(255,255,255,.12);
+  color:rgba(244,239,228,.62);
+}
+.start-mini-empty strong{color:#fff}
+@media (max-width: 1100px){
+  .start-highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width: 700px){
+  .start-hero{padding:2rem 1rem 1.6rem;border-radius:22px}
+  .start-wordmark{font-size:clamp(40px,14vw,62px);letter-spacing:2px}
+  .start-highlight-grid{grid-template-columns:1fr}
+}
+
+
+/* HOME V3 PREMIUM OVERRIDE */
+.start-hero{
+  position:relative;
+  overflow:hidden;
+  padding:0;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(212,175,79,.20), transparent 24%),
+    radial-gradient(circle at 88% 14%, rgba(212,175,79,.12), transparent 20%),
+    linear-gradient(135deg, #0b1016 0%, #111925 38%, #0c1118 100%);
+  border:1px solid rgba(212,175,79,.22);
+  box-shadow:0 32px 80px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.start-hero::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:52px 52px;
+  mask-image:linear-gradient(180deg, rgba(0,0,0,.3), transparent 85%);
+  opacity:.22;
+}
+.start-hero-shell{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);
+  gap:18px;padding:1.1rem;
+}
+.start-hero-left{
+  min-width:0;
+  padding:2.15rem 2.15rem 1.9rem;
+  border-radius:24px;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  border:1px solid rgba(255,255,255,.06);
+}
+.start-hero-kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:30px;padding:0 12px;border-radius:999px;
+  background:rgba(212,175,79,.12);border:1px solid rgba(212,175,79,.18);
+  color:#e0c274;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:1.9px;text-transform:uppercase;margin-bottom:1rem;
+}
+.start-hero-kicker::before{content:'';width:7px;height:7px;border-radius:50%;background:#d4af4f;box-shadow:0 0 18px rgba(212,175,79,.7)}
+.start-wordmark{
+  font-size:clamp(56px,8vw,104px);
+  line-height:.9;
+  letter-spacing:2px;
+  margin-bottom:.6rem;
+}
+.start-wordmark small{
+  display:block;font-size:clamp(15px,1.8vw,18px);font-weight:700;letter-spacing:3.2px;
+  color:rgba(244,239,228,.54);margin-top:12px;text-transform:uppercase;
+}
+.start-lead{
+  max-width:620px;
+  font-size:18px;line-height:1.5;
+  color:rgba(244,239,228,.86);
+  margin-bottom:1.1rem;
+}
+.start-hero-actions{margin-top:1.35rem;gap:12px}
+.start-primary-btn,.start-secondary-btn{min-height:50px;padding:0 20px;border-radius:14px;font-size:14px;letter-spacing:1.1px}
+.start-proof{gap:10px;margin-top:1.1rem}
+.start-proof-pill{
+  min-height:38px;padding:0 14px;border-radius:999px;
+  backdrop-filter:blur(10px);
+}
+.start-hero-side{
+  display:grid;grid-template-rows:auto auto;gap:14px;min-width:0;
+}
+.start-side-card{
+  background:linear-gradient(180deg, rgba(9,13,18,.84), rgba(17,24,34,.94));
+  border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:1.15rem 1.1rem;
+  box-shadow:0 16px 34px rgba(0,0,0,.24);
+}
+.start-side-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:.85rem}
+.start-side-kicker{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.8px;
+  text-transform:uppercase;color:#cfb26f;
+}
+.start-side-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:1px;
+  text-transform:uppercase;color:#fff;line-height:1;
+}
+.start-side-link{
+  border:none;background:none;color:#cfb26f;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+}
+.start-side-card .start-table-row,.start-side-card .start-result-row{border-radius:16px}
+.start-side-card .start-result-row{padding:.85rem}
+.start-overview-band{
+  display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin:.2rem 0 1.2rem;
+}
+.start-quick-strip,.start-brand-strip{
+  background:linear-gradient(180deg, rgba(19,27,37,.96), rgba(12,18,25,.96));
+  border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:1rem 1.1rem;
+  box-shadow:0 16px 40px rgba(0,0,0,.22);
+}
+.start-quick-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:.6rem}
+.start-quick-title,.start-brand-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#fff;
+}
+.start-quick-sub,.start-brand-copy{color:rgba(244,239,228,.68);font-size:13px}
+.start-chip-row{gap:10px}
+.start-chip{padding:.68rem .95rem;border-radius:999px;font-weight:800}
+.start-brand-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:.85rem}
+.start-brand-stat{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:.9rem .95rem;
+}
+.start-brand-stat-num{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:#fff;line-height:1}
+.start-brand-stat-label{margin-top:4px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#c9af73;font-weight:800}
+.start-result-teams{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px}
+.start-result-club{display:flex;align-items:center;gap:10px;min-width:0}
+.start-result-club.away{justify-content:flex-end}
+.start-result-club img{width:24px;height:24px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(0,0,0,.2))}
+.start-quick-head,.start-brand-strip{align-items:flex-start}
+.start-quick-head{display:block;margin-bottom:.85rem}
+.start-quick-sub{margin-top:.38rem;max-width:38ch;line-height:1.5;color:rgba(244,239,228,.76)}
+.start-overview-band{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);align-items:stretch}
+.start-quick-strip,.start-brand-strip{min-height:146px}
+.start-brand-title{font-size:24px;line-height:.98;max-width:12ch}
+.start-brand-copy{margin-top:.38rem;max-width:42ch;line-height:1.5;color:rgba(244,239,228,.76)}
+.start-chip-row{margin-top:.85rem}
+.start-chip{min-height:42px;padding:.72rem 1rem}
+.start-proof-pill{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
+.start-highlight-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 1.25rem}
+.start-highlight{padding:1.3rem 1.15rem 1.2rem;min-height:160px}
+.start-highlight-title{font-size:30px;line-height:.95;margin:.4rem 0 .55rem}
+.start-highlight-copy{font-size:13px;line-height:1.45}
+.start-ai{padding:1.7rem;border-radius:24px}
+.start-snapshot{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.start-mini-card{border-radius:22px;padding:1.15rem}
+.start-mini-title{font-size:28px;line-height:1}
+.start-section-label{color:#fff}
+.start-teams-section{background:linear-gradient(180deg, rgba(16,23,31,.96), rgba(12,17,24,.96));border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:1.15rem;margin-bottom:2rem;box-shadow:0 16px 38px rgba(0,0,0,.2)}
+.start-tcard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:18px}
+.start-tcard .start-tn{color:#fff}
+@media (max-width: 1100px){
+  .start-hero-shell,.start-overview-band,.start-snapshot{grid-template-columns:1fr}
+  .start-highlight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width: 700px){
+  .start-hero-shell{padding:.8rem}
+  .start-hero-left,.start-side-card,.start-quick-strip,.start-brand-strip,.start-ai,.start-mini-card,.start-teams-section{padding:1rem}
+  .start-wordmark{font-size:clamp(42px,14vw,62px)}
+  .start-wordmark small{font-size:13px;letter-spacing:2px}
+  .start-lead{font-size:15px}
+  .start-highlight-grid,.start-brand-grid,.start-snapshot{grid-template-columns:1fr}
+  .start-highlight{min-height:auto}
+  .start-result-club img{width:20px;height:20px}
+  .start-result-club{gap:8px}
+  .start-quick-sub,.start-brand-copy,.start-brand-title{max-width:none}
+  .start-quick-title,.start-brand-title,.start-mini-title,.start-side-title,.start-highlight-title{font-size:24px}
+}
+
+
+
+/* === GLOBAL DARK OVERHAUL V4 === */
+:root{
+  --gold:#D4AF37;
+  --gold-light:#F0CF67;
+  --gold-dim:rgba(212,175,55,.16);
+  --dark:#05070B;
+  --dark2:#0A0F17;
+  --dark3:#101722;
+  --dark4:#151E2B;
+  --dark5:#1A2433;
+  --border:rgba(255,255,255,.08);
+  --border-hi:rgba(212,175,55,.28);
+  --text:#F8FAFC;
+  --text2:#D5D9E1;
+  --muted:#96A0AF;
+  --red:#D05A5A;
+  --green:#3AAA75;
+  --blue:#7FB4FF;
+}
+html,body{background:
+  radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 34%),
+  radial-gradient(circle at bottom right, rgba(30,96,180,.12), transparent 28%),
+  #05070B !important;color:var(--text)!important;}
+body{background-image:
+  radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 34%),
+  radial-gradient(circle at bottom right, rgba(30,96,180,.12), transparent 28%),
+  url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") !important;}
+header{
+  background:linear-gradient(180deg,rgba(5,7,11,.97),rgba(5,7,11,.93)) !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34) !important;
+}
+.logo,.logo a,.pg-title,.p-body h1,.start-wordmark,.start-highlight-title,.start-ai-title,.start-mini-title,.start-team-name,.start-result-side,.match-detail-team .name,.lineup-head .ln,.transfer-player,.standings-team-name,.pills .pn,.num,.stat-box .value,.tabs .tab.active,.tabs .tab:hover,.np.active,.np:hover{color:var(--text)!important;}
+.logo-tagline,.pg-sub,.p-meta,.p-meta *,.pill .pl,.start-sub,.start-lead,.start-ai-copy,.start-ai-note,.start-mini-sub,.start-proof-pill,.start-highlight-copy,.start-highlight-kicker,.start-section-label,.match-meta-pill,.results-round-label,.pagination-meta,.empty,.loading,.back,.pcell .ps,.lineup-player .pos,.install-banner .ib-sub,.news-card p,.podcast-card p,.podcast-meta,.notif-sub,.stats-helper,.results-round-current,.results-round-select,.transfer-filter,.transfer-filter.search{color:var(--text2)!important;}
+a,span,div,p,td,th,label,strong,small{color:inherit;}
+.install-banner{display:none !important;}
+main{padding-top:1.6rem !important;}
+.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel,.match-detail-hero,.stat-box,.lineup-card,.start-highlight,.start-ai,.start-mini-card,.start-tcard,.tcard,.transfer-filter,.results-round-select,.results-round-current,.results-round-btn,.pill,.p-img,.p-photo,.share,.header-cta,.ai-btn,.transfer-badge,.match-meta-pill,.live-badge,.pos-tag,.fee-tag{
+  background:linear-gradient(180deg,rgba(12,17,26,.96),rgba(8,12,20,.98)) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.24) !important;
+}
+.start-hero,.match-detail-hero{
+  background:
+   radial-gradient(circle at 18% 18%, rgba(212,175,55,.15), transparent 28%),
+   radial-gradient(circle at 82% 82%, rgba(40,94,180,.14), transparent 30%),
+   linear-gradient(180deg,rgba(10,15,23,.98),rgba(7,10,16,.98)) !important;
+  border:1px solid rgba(212,175,55,.18) !important;
+  box-shadow:0 30px 70px rgba(0,0,0,.35) !important;
+}
+.start-wordmark,.pg-title,.p-body h1{
+  color:#fff !important;
+  text-shadow:0 10px 28px rgba(0,0,0,.52) !important;
+}
+.start-wordmark span,.pg-title em,.logo em,.match-detail-mid .status,.start-proof-pill strong,.start-result-score,.start-points,.standings-points,.stat-box .value,.pill .pn,.transfer-arrow,.live-badge,.start-rank{color:var(--gold) !important;}
+.start-sub,.pg-sub{color:rgba(255,255,255,.82)!important;letter-spacing:1.4px!important;}
+.start-lead,.start-ai-copy{color:rgba(255,255,255,.88)!important;}
+.nav-pills .np,.tab,.header-cta,.share,.ai-btn,.results-round-btn,.results-round-select,.results-round-current,.transfer-filter,.transfer-filter.search,.start-chip,.start-secondary-btn{
+  background:rgba(255,255,255,.04) !important;
+  color:var(--text2) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+}
+.np.active,.tab.active,.header-cta:hover,.share:hover,.ai-btn:hover,.results-round-btn:hover:not(:disabled),.start-chip:hover,.start-secondary-btn:hover{
+  background:rgba(212,175,55,.14) !important;
+  border-color:rgba(212,175,55,.30) !important;
+  color:#fff !important;
+}
+.start-primary-btn,.start-ai-submit{
+  background:linear-gradient(180deg,#DAB84B,#C89E28) !important;
+  color:#111 !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 16px 32px rgba(212,175,55,.24) !important;
+}
+.start-primary-btn:hover,.start-ai-submit:hover{filter:brightness(1.05);}
+.news-card::before,.tcard::before,.start-tcard::before,.start-highlight::before{background:linear-gradient(135deg,rgba(212,175,55,.10),transparent 60%) !important;}
+.tcard:hover,.start-tcard:hover,.news-card:hover,.podcast-card:hover,.start-highlight:hover,.match-card:hover,.lineup-card:hover,.profile:hover,.tw:hover{
+  border-color:rgba(212,175,55,.22) !important;
+  transform:translateY(-2px);
+}
+.tcard .tn,.start-tn,.news-title,.podcast-title,.start-highlight-title,.start-mini-title,.results-round-current,.results-round-select,.transfer-club span,.pcell .pn,.lineup-player .nm,.match-team .name,.match-score .score,.match-score .time,.match-detail-mid .score,.start-result-side,.start-team-name,.start-mini-empty strong,.standings-rank{color:#fff !important;}
+thead, .tw thead, .standings-table thead th, .stats-table thead th, .match-player-table th{background:rgba(255,255,255,.04) !important;color:#C8D0DB !important;border-bottom:1px solid rgba(255,255,255,.08)!important;}
+td,th,.match-player-table td,.match-player-table th{border-bottom:1px solid rgba(255,255,255,.06)!important;}
+tr:hover td,.stats-table tbody tr:hover td,.standings-table tbody tr.link:hover td{background:rgba(255,255,255,.035)!important;}
+tr.total-row td{background:rgba(255,255,255,.04)!important;}
+.start-table-row,.start-result-row,.transfer-row,.lineup-player,.match-player-table tr,.stat-box,.start-mini-card,.start-highlight,.start-ai-result{background-color:transparent !important;}
+.start-table-row,.start-result-row,.transfer-row,.match-player-table tr{border:1px solid transparent;}
+.start-table-row:hover,.start-result-row:hover,.transfer-row:hover{background:rgba(255,255,255,.035)!important;box-shadow:none!important;}
+.transfer-row.is-permanent td{background:rgba(212,175,55,.04)!important;}
+.transfer-badge,.fee-tag,.pos-tag{background:rgba(255,255,255,.05)!important;color:var(--text2)!important;}
+.live-badge{color:#ff8d8d!important;background:rgba(208,90,90,.12)!important;border-color:rgba(208,90,90,.28)!important;}
+.match-score .time,.match-score .time.upcoming{background:rgba(255,255,255,.05)!important;color:#D8DEE7!important;border-color:rgba(255,255,255,.10)!important;}
+.match-score .time.finished{background:rgba(212,175,55,.12)!important;color:var(--gold)!important;border-color:rgba(212,175,55,.26)!important;}
+input,select,textarea,button{color:#fff;}
+.start-ai-input, .transfer-filter.search, .transfer-filter, .results-round-select, .results-round-current{
+  background:rgba(255,255,255,.04)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+}
+.start-ai-input::placeholder,.transfer-filter.search::placeholder{color:#9BA6B6!important;}
+.start-ai-suggestions,.start-ai-result,.notif-panel,.lb-search-results,.lb-sidepanel,.lb-modal-card,.lb-formation-card{
+  background:linear-gradient(180deg,rgba(12,17,26,.98),rgba(8,12,20,.99)) !important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+}
+.mobile-nav{background:rgba(5,7,11,.97)!important;border-top:1px solid rgba(255,255,255,.08)!important;}
+.mnav-btn{color:var(--muted)!important;}
+.mnav-btn.active{color:var(--gold)!important;}
+.start-proof-pill,.start-chip,.start-mini-link,.results-round-btn,.share,.header-cta{backdrop-filter:blur(10px);}
+.best-players{
+  background:linear-gradient(180deg,#0B0F16,#0A0D14);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;
+  padding:18px;
+}
+.best-players h3{
+  color:#fff;
+  font-family:'Barlow Condensed',sans-serif;
+}
+.best-players p{
+  color:#888;
+  font-size:13px;
+  margin-bottom:10px;
+}
+.bp-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.bp-row:last-child{border-bottom:none}
+.bp-row img{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  object-fit:cover;
+}
+.bp-name{
+  color:#fff;
+  font-weight:700;
+}
+.bp-team{
+  color:#888;
+  font-size:12px;
+}
+.bp-rating{
+  margin-left:auto;
+  font-size:20px;
+  font-weight:900;
+  color:#E6C977;
+}
+@media (max-width: 900px){
+  main{padding-top:1rem !important;}
+  .start-wordmark{font-size:clamp(50px,16vw,86px)!important;}
+  .start-sub{font-size:13px!important;}
+}
+
 </style>
 
 </head>
@@ -2226,6 +2664,76 @@ const C = {};
 
 // Cache
 const CACHE = {};
+const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v2';
+const API_PERSIST_DISABLED = false;
+
+function apiCacheKey(ep, p = {}, raw = false){
+  return `${API_PERSIST_CACHE_PREFIX}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
+}
+
+function apiCacheTtl(ep, p = {}, raw = false){
+  const season = Number(p?.season || SEASON || 0);
+  const currentSeason = Number(SEASON || 0);
+  const isCurrentSeason = season && currentSeason ? season === currentSeason : true;
+
+  if(ep === 'teams') return 30 * 24 * 60 * 60 * 1000;
+  if(ep === 'players/profiles') return 14 * 24 * 60 * 60 * 1000;
+  if(ep === 'standings') return isCurrentSeason ? 15 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  if(ep === 'fixtures') {
+    if(p?.live || p?.next || p?.last) return 3 * 60 * 1000;
+    return isCurrentSeason ? 20 * 60 * 1000 : 3 * 24 * 60 * 60 * 1000;
+  }
+  if(ep === 'players') return isCurrentSeason ? 12 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+  if(ep === 'transfers') return isCurrentSeason ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  if(ep === 'players/squads') return 12 * 60 * 60 * 1000;
+  if(ep === 'teams/statistics') return isCurrentSeason ? 2 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  return raw ? 30 * 60 * 1000 : 60 * 60 * 1000;
+}
+
+function canPersistApiCache(ep, p = {}, raw = false){
+  if(API_PERSIST_DISABLED) return false;
+  if(!ep) return false;
+  if(typeof localStorage === 'undefined') return false;
+  if(p?.cacheBust) return false;
+  return true;
+}
+
+function readPersistedApiCache(ep, p = {}, raw = false){
+  if(!canPersistApiCache(ep, p, raw)) return null;
+  try {
+    const stored = localStorage.getItem(apiCacheKey(ep, p, raw));
+    if(!stored) return null;
+    const parsed = JSON.parse(stored);
+    const ttl = apiCacheTtl(ep, p, raw);
+    const age = Date.now() - Number(parsed?.createdAt || 0);
+    if(!parsed || !('data' in parsed) || age < 0 || age > ttl) {
+      localStorage.removeItem(apiCacheKey(ep, p, raw));
+      return null;
+    }
+    return parsed.data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function writePersistedApiCache(ep, p = {}, data = null, raw = false){
+  if(!canPersistApiCache(ep, p, raw) || data === null || data === undefined) return;
+  try {
+    localStorage.setItem(apiCacheKey(ep, p, raw), JSON.stringify({
+      createdAt: Date.now(),
+      data
+    }));
+  } catch(e) {}
+}
+
+function clearPersistedApiCache(prefix = API_PERSIST_CACHE_PREFIX){
+  if(typeof localStorage === 'undefined') return;
+  try {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(prefix))
+      .forEach(key => localStorage.removeItem(key));
+  } catch(e) {}
+}
 
 // Name corrections — API-Football 2026 strips Swedish/special chars
 const NAME_FIX = {
@@ -2718,21 +3226,33 @@ function svDate(input){
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
+
+  const persisted = readPersistedApiCache(ep, p, false);
+  if(Array.isArray(persisted)) {
+    CACHE[key] = persisted;
+    return CACHE[key];
+  }
+
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetch(`${AF}?${q}`);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
   CACHE[key] = d.response || [];
+  writePersistedApiCache(ep, p, CACHE[key], false);
   return CACHE[key];
 }
 
 async function afRaw(ep, p={}) {
+  const persisted = readPersistedApiCache(ep, p, true);
+  if(persisted && typeof persisted === 'object') return persisted;
+
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
+  writePersistedApiCache(ep, p, d, true);
   return d;
 }
 
@@ -4582,62 +5102,9 @@ function route(path) {
   if(tm)                               { pageTeam(el, +tm[1]); return; }
   const pm = path.match(/^\/spelare\/(\d+)/);
   if(pm)                               { pagePlayer(el, +pm[1]); return; }
-  el.innerHTML = `<div class="err">Sidan hittades inte.</div>`;
+  el.innerHTML = `<div class="err">Sidan kunde inte hittas.</div>`;
 }
 
-// â”€â”€â”€ SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-let searchTimer;
-function onSearch(v) {
-  clearTimeout(searchTimer);
-  const box = document.getElementById('sr');
-  if(!box) return;
-  if(v.trim().length < 3){box.classList.remove('open');return;}
-  searchTimer = setTimeout(()=>runSearch(v.trim()), 350);
-}
-async function runSearch(q) {
-  const box = document.getElementById('sr');
-  box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)"><div class="spinner" style="display:inline-block;width:12px;height:12px;margin-right:6px"></div>Söker…</div>`;
-  box.classList.add('open');
-  try {
-    const [players, teams] = await Promise.all([
-      (async()=>{ const activeSeason = await getResolvedSeason(); return af('players', {search:q, season:activeSeason}).catch(()=>af('players', {search:q, season:Math.max(activeSeason-1, 2018)}).catch(()=>[])); })(),
-      af('teams', {search:q}).catch(()=>[])
-    ]);
-    let html = '';
-    if(teams.length) {
-      html += `<div class="sr-label">Lag</div>`;
-      teams.slice(0,3).forEach(t => {
-        html += `<div class="sr-item team-item" onclick="go('/lag/${t.team.id}')">
-          <img src="${t.team.logo||''}" onerror="this.style.opacity='.2'">
-          <div><div class="sr-name">${esc(t.team.name)}</div><div class="sr-sub">Allsvenskan</div></div>
-        </div>`;
-      });
-    }
-    if(players.length) {
-      html += `<div class="sr-label">Spelare</div>`;
-      players.slice(0,6).forEach(p => {
-        const s = p.statistics?.[0];
-        html += `<div class="sr-item" onclick="go('/spelare/${p.player.id}?team=${p.statistics?.[0]?.team?.id||''}')">
-          <img src="${p.player.photo||''}" style="border-radius:50%" onerror="this.style.opacity='.2'">
-          <div><div class="sr-name">${esc(getPlayerDisplayName(p.player))}</div>
-          <div class="sr-sub">${esc(s?.team?.name||'')} · ${esc(s?.games?.position||'')}</div></div>
-        </div>`;
-      });
-    }
-    if(!html) html = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--muted)">Inga resultat för "${q}"</div>`;
-    box.innerHTML = html;
-  } catch(e) {
-    box.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:#f08080">Fel: ${esc(e.message)}</div>`;
-  }
-}
-function handleSearchKey(e) {
-  if(e.key==='Escape') document.getElementById('sr')?.classList.remove('open');
-}
-document.addEventListener('click', e => {
-  if(!e.target.closest('.search-wrap')) document.getElementById('sr')?.classList.remove('open');
-});
-
-// â”€â”€â”€ START PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageStart(el) {
   document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
@@ -4650,7 +5117,7 @@ async function pageStart(el) {
 
     let recentFixtures = [];
     try {
-      recentFixtures = await af('fixtures', {league:LEAGUE, season:SEASON, last:3});
+      recentFixtures = await af('fixtures', {league:LEAGUE, season:activeSeason, last:3});
     } catch(e) {
       recentFixtures = [];
     }
@@ -4667,30 +5134,10 @@ async function pageStart(el) {
       </div>`).join('');
 
     const highlights = [
-      {
-        kicker: 'Snabbt in',
-        title: 'Tabell',
-        copy: 'Se poäng, form och målskillnad för hela ligan.',
-        path: '/tabell'
-      },
-      {
-        kicker: 'Följ nu',
-        title: 'Resultat',
-        copy: 'Kolla senaste matcherna och öppna varje matchrapport.',
-        path: '/resultat'
-      },
-      {
-        kicker: 'Djupdata',
-        title: 'Statistik',
-        copy: 'Jämför spelare och hitta ligans starkaste siffror.',
-        path: '/statistik'
-      },
-      {
-        kicker: 'Skapa nu',
-        title: 'Startelva',
-        copy: 'Bygg din bästa XI och ladda ner en snygg bild direkt.',
-        path: '/lineup-builder'
-      }
+      { kicker: 'Snabbt in', title: 'Tabell', copy: 'Se poäng, form och målskillnad för hela ligan.', path: '/tabell' },
+      { kicker: 'Följ nu', title: 'Resultat', copy: 'Kolla senaste matcherna och öppna varje matchrapport.', path: '/resultat' },
+      { kicker: 'Djupdata', title: 'Statistik', copy: 'Jämför spelare och hitta ligans starkaste siffror.', path: '/statistik' },
+      { kicker: 'Skapa nu', title: 'Startelva', copy: 'Bygg din bästa XI och ladda ner en snygg bild direkt.', path: '/lineup-builder' }
     ].map(item => `
       <div class="start-highlight" onclick="go('${item.path}')">
         <div class="start-highlight-kicker">${item.kicker}</div>
@@ -4720,28 +5167,81 @@ async function pageStart(el) {
             <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
           </div>
           <div class="start-result-teams">
-            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            <div class="start-result-club">
+              <img src="${f.teams?.home?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            </div>
             <div class="start-result-vs">mot</div>
-            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+            <div class="start-result-club away">
+              <img src="${f.teams?.away?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+            </div>
           </div>
         </div>`).join('')
       : `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
 
     el.innerHTML = `
       <div class="start-hero">
-        <div class="start-hero-inner">
-          <div class="start-wordmark">Allsvenskan<span>AI</span></div>
-          <div class="start-sub">S&ouml;k Allsvenskan med AI</div>
-          <div class="start-lead">Hitta resultat, statistik och spelardata direkt.</div>
-          <div class="start-proof">
-            <div class="start-proof-pill">16 lag</div>
-            <div class="start-proof-pill">240 matcher</div>
-            <div class="start-proof-pill">Live & statistik</div>
+        <div class="start-hero-shell">
+          <div class="start-hero-left">
+            <div class="start-hero-kicker">Matchdag • Statistik • Transfers</div>
+            <div class="start-wordmark">Allsvenskan<span>AI</span><small>Live data för svensk fotboll</small></div>
+            <div class="start-lead">Resultat, tabell, spelarsidor och startelvor på ett sätt som känns mer sportmedia än stel databas. Snabbt in, enkelt att dela, byggt för fans.</div>
+            <div class="start-proof">
+              <div class="start-proof-pill">${standings.length || 16} lag</div>
+              <div class="start-proof-pill">${standings.length ? standings.length * 15 : 240} matcher</div>
+              <div class="start-proof-pill">AI-sök • live • transfers</div>
+            </div>
+            <div class="start-hero-actions">
+              <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">Fråga AI nu</button>
+              <button class="start-secondary-btn" onclick="go('/tabell')">Öppna tabellen</button>
+            </div>
           </div>
-          <div class="start-hero-actions">
-            <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">B&ouml;rja s&ouml;ka</button>
-            <button class="start-secondary-btn" onclick="go('/tabell')">Se tabellen</button>
+          <div class="start-hero-side">
+            <div class="start-side-card">
+              <div class="start-side-head">
+                <div>
+                  <div class="start-side-kicker">Just nu</div>
+                  <div class="start-side-title">Toppen</div>
+                </div>
+                <button class="start-side-link" onclick="go('/tabell')">Hela tabellen</button>
+              </div>
+              <div class="start-table-list">${topRows}</div>
+            </div>
+            <div class="start-side-card">
+              <div class="start-side-head">
+                <div>
+                  <div class="start-side-kicker">Senaste</div>
+                  <div class="start-side-title">Resultat</div>
+                </div>
+                <button class="start-side-link" onclick="go('/resultat')">Alla matcher</button>
+              </div>
+              <div class="start-result-list">${resultRows}</div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="start-overview-band">
+        <div class="start-quick-strip">
+          <div class="start-quick-head">
+            <div>
+              <div class="start-side-kicker">Snabbaste vägen in</div>
+              <div class="start-quick-title">Just nu</div>
+            </div>
+            <div class="start-quick-sub">Hoppa direkt till det fans faktiskt vill åt.</div>
+          </div>
+          <div class="start-chip-row">
+            <button class="start-chip" onclick="go('/resultat')" type="button">Senaste resultat</button>
+            <button class="start-chip" onclick="go('/statistik')" type="button">Topplistor</button>
+            <button class="start-chip" onclick="go('/overgangar')" type="button">Övergångar</button>
+            <button class="start-chip" onclick="go('/lineup-builder')" type="button">Bygg XI</button>
+          </div>
+        </div>
+        <div class="best-players">
+          <h3>🔥 Bäst just nu</h3>
+          <p>Högst snittbetyg i Allsvenskan</p>
+          <div id="bestPlayersList"></div>
         </div>
       </div>
 
@@ -4750,8 +5250,8 @@ async function pageStart(el) {
       <div class="start-ai">
         <div class="start-ai-head">
           <div>
-            <div class="start-ai-title">Fr&aring;ga AllsvenskanAI</div>
-            <div class="start-ai-copy">Skriv en fr&aring;ga om tabellen eller spelardata. Prova g&auml;rna en av fr&aring;gorna nedan f&ouml;r att komma ig&aring;ng.</div>
+            <div class="start-ai-title">Fråga AllsvenskanAI</div>
+            <div class="start-ai-copy">Skriv en fråga om tabellen, spelare eller lag. Här ska startsidan kännas smart direkt, inte tom.</div>
           </div>
           <div class="start-ai-live">Live-data</div>
         </div>
@@ -4760,20 +5260,20 @@ async function pageStart(el) {
             <input id="startAiInput" class="start-ai-input" type="text" placeholder="Till exempel: Vem leder tabellen just nu?" autocomplete="off" onfocus="showStartAiSuggestions()" oninput="showStartAiSuggestions(this.value)">
             <div id="startAiSuggestions" class="start-ai-suggestions" hidden></div>
           </div>
-          <button class="start-ai-submit" type="submit">Fr&aring;ga AI</button>
+          <button class="start-ai-submit" type="submit">Fråga AI</button>
         </form>
         <div class="start-chip-row">
           <button class="start-chip" onclick="startFillPrompt('Vem leder tabellen just nu?', true)" type="button">Vem leder tabellen just nu?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest m&aring;l?', true)" type="button">Vilka spelare i AIK har flest m&aring;l?</button>
-          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest po&auml;ng?', true)" type="button">Vilket lag har flest po&auml;ng?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilka spelare i AIK har flest mål?', true)" type="button">Vilka spelare i AIK har flest mål?</button>
+          <button class="start-chip" onclick="startFillPrompt('Vilket lag har flest poäng?', true)" type="button">Vilket lag har flest poäng?</button>
         </div>
-        <div class="start-ai-note">Snabbsvaren nedan bygger p&aring; den live-data som redan finns i sajten.</div>
+        <div class="start-ai-note">Snabbsvaren nedan bygger på den live-data som redan finns i sajten.</div>
         <div id="startAiResult" class="start-ai-result">
           <div class="start-ai-result-head">
-            <div class="start-ai-result-label">Redo f&ouml;r fr&aring;ga</div>
-            <div class="start-ai-result-query">V&auml;lj en fr&aring;ga eller skriv din egen</div>
+            <div class="start-ai-result-label">Redo för fråga</div>
+            <div class="start-ai-result-query">Välj en fråga eller skriv din egen</div>
           </div>
-          <div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>
+          <div class="start-ai-empty">Fråga om tabellen, ett lag eller en spelkategori så visar vi ett direkt svar här.</div>
         </div>
       </div>
 
@@ -4827,6 +5327,7 @@ async function pageStart(el) {
     
     // Load feeds async after page renders
     initStartAiPlaceholder();
+    renderBestPlayers();
     loadStartPodcasts();
     loadStartNews();
   } catch(e) {
@@ -4891,6 +5392,45 @@ function applyStartAiSuggestion(text) {
   input.value = text;
   input.focus();
   hideStartAiSuggestions();
+}
+
+async function renderBestPlayers(){
+  try{
+    const el = document.getElementById('bestPlayersList');
+    if(!el) return;
+    el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar spelare…</div>`;
+
+    const q = new URLSearchParams({_endpoint:'players', league:113, season:2026});
+    const res = await fetch(`${AF}?${q}`);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+
+    const players = data.response || [];
+
+    const best = players
+      .filter(p => p.statistics?.[0]?.games?.appearences >= 5)
+      .sort((a,b) => (parseFloat(b.statistics?.[0]?.games?.rating) || 0) - (parseFloat(a.statistics?.[0]?.games?.rating) || 0))
+      .slice(0,5);
+
+    el.innerHTML = best.length ? best.map(p=>{
+      const stat = p.statistics[0];
+      return `
+        <div class="bp-row">
+          <img src="${p.player?.photo || ''}" alt="${esc(p.player?.name || 'Spelare')}" loading="lazy" onerror="this.style.opacity='.15'">
+          <div>
+            <div class="bp-name">${esc(p.player?.name || 'Okänd spelare')}</div>
+            <div class="bp-team">${esc(stat.team?.name || 'Okänt lag')}</div>
+          </div>
+          <div class="bp-rating">${esc(stat.games?.rating || '-')}</div>
+        </div>
+      `;
+    }).join('') : `<div class="start-ai-empty">Inga spelare med tillräckligt betygsunderlag ännu.</div>`;
+
+  }catch(e){
+    console.log("best players error", e);
+    const el = document.getElementById('bestPlayersList');
+    if(el) el.innerHTML = `<div class="start-ai-empty">Kunde inte hämta topplistan just nu.</div>`;
+  }
 }
 
 function startFillPrompt(text, submit = false) {
@@ -8143,6 +8683,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
         </div>
         <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Bygg om cache</button>
+          <button class="ai-btn" onclick="clearPersistedApiCache()">Rensa API-cache</button>
       </div>
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
       <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
@@ -8157,6 +8698,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
             <span class="stats-category-badge">${activeCategory.col}</span>
             <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
+            <span class="stats-category-badge">cachead databas i webbläsaren</span>
           </div>
         </div>
         <div class="section-label" style="margin-top:1rem">Kategori</div>
