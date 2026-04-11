@@ -1,28 +1,87 @@
+const cache = new Map();
+const inFlight = new Map();
+
+function getTTL(endpoint) {
+  // 🔥 SMARTA REGLER
+  if (endpoint.includes('standings')) return 1000 * 60 * 60 * 6; // 6h
+  if (endpoint.includes('players')) return 1000 * 60 * 60 * 12; // 12h
+  if (endpoint.includes('teams')) return 1000 * 60 * 60 * 6;
+  if (endpoint.includes('transfers')) return 1000 * 60 * 60 * 24; // 24h
+  if (endpoint.includes('fixtures')) return 1000 * 60 * 5; // 5 min
+  if (endpoint.includes('events')) return 1000 * 30; // live
+  if (endpoint.includes('statistics')) return 1000 * 30;
+  if (endpoint.includes('lineups')) return 1000 * 60;
+
+  return 1000 * 60 * 10; // default 10 min
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const apiKey = process.env.APIFOOTBALL_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'APIFOOTBALL_KEY saknas' });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'APIFOOTBALL_KEY saknas' });
+  }
 
   const params = new URLSearchParams(req.query);
   const endpoint = req.query._endpoint;
-  if (!endpoint) return res.status(400).json({ error: 'Endpoint saknas' });
+
+  if (!endpoint) {
+    return res.status(400).json({ error: 'Endpoint saknas' });
+  }
+
   params.delete('_endpoint');
 
   const url = `https://v3.football.api-sports.io/${endpoint}?${params.toString()}`;
+  const cacheKey = url;
+
+  // ✅ CACHE HIT
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiry > Date.now()) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cached.data);
+  }
+
+  // 🔁 IN-FLIGHT (undvik spam)
+  if (inFlight.has(cacheKey)) {
+    const data = await inFlight.get(cacheKey);
+    res.setHeader('X-Cache', 'DEDUPED');
+    return res.status(200).json(data);
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const response = await fetch(url, {
+        headers: { 'x-apisports-key': apiKey }
+      });
+
+      const data = await response.json();
+
+      const ttl = getTTL(endpoint);
+
+      cache.set(cacheKey, {
+        data,
+        expiry: Date.now() + ttl
+      });
+
+      return data;
+    } catch (err) {
+      // fallback till gammal cache om finns
+      if (cached) return cached.data;
+      throw err;
+    } finally {
+      inFlight.delete(cacheKey);
+    }
+  })();
+
+  inFlight.set(cacheKey, fetchPromise);
 
   try {
-    const response = await fetch(url, {
-      headers: { 'x-apisports-key': apiKey }
-    });
-
-    // Force read as UTF-8 bytes then decode correctly
-    const bytes = await response.arrayBuffer();
-    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
-
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).send(decoded);
+    const data = await fetchPromise;
+    res.setHeader('X-Cache', 'MISS');
+    return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
