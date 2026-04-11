@@ -3,6 +3,7 @@
     { "source": "/data/static/(.*)", "destination": "/data/static/$1" },
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/football", "destination": "/api/football.js" },
+    { "source": "/api/sportmonks", "destination": "/api/sportmonks.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
