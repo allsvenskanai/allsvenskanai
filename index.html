@@ -3247,7 +3247,23 @@ const C = {};
 // Cache
 const CACHE = {};
 const API_PERSIST_CACHE_PREFIX = 'aai:sportmonks-cache:v1';
+const SPORTMONKS_CACHE_MIGRATION_KEY = 'aai:sportmonks-cache-migrated:v1';
 const API_PERSIST_DISABLED = false;
+
+function invalidateLegacyFootballCachesOnce(){
+  if(typeof localStorage === 'undefined') return;
+  if(localStorage.getItem(SPORTMONKS_CACHE_MIGRATION_KEY) === '1') return;
+  try {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('aai:api-cache:') || key.startsWith('allsvenskanai:stats-dataset:') || key.startsWith('stats:'))
+      .forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(SPORTMONKS_CACHE_MIGRATION_KEY, '1');
+  } catch(e) {
+    console.warn('[sportmonks-cache] legacy cache invalidation failed', e.message);
+  }
+}
+
+invalidateLegacyFootballCachesOnce();
 
 function apiCacheKey(ep, p = {}, raw = false){
   return `${API_PERSIST_CACHE_PREFIX}:${getActiveLeagueKey()}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
@@ -9001,7 +9017,7 @@ let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
 let statsSelectedTeamId = '';
 const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:sportmonks-stats-dataset:v1';
-const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
+const STATS_CURRENT_SEASON_TTL = 30 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
 const STATS_STALE_TEAM_AUTO_REFRESH_LIMIT = 12;
@@ -9095,18 +9111,6 @@ function writeCachedTeamStats(teamId, leagueId = LEAGUE, season = SEASON, data =
   } catch(e) {
     console.warn('[stats-team-cache] write failed', { teamId, leagueId, season, error:e.message });
   }
-}
-
-function getCachedTeamPlayed(cache){
-  return toStatNumber(cache?.teamStats?.played ?? cache?.fixtures?.playedCount ?? 0);
-}
-
-function getCachedTeamMaxPlayerAppearances(cache){
-  return Math.max(0, ...(cache?.players || []).map(player => toStatNumber(player?.stats?.appearances)));
-}
-
-function getStandingPlayed(row){
-  return toStatNumber(row?.all?.played ?? row?.played ?? 0);
 }
 
 function teamStatsCacheSummary(cache){
@@ -9561,13 +9565,9 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
   let teams = [];
-  const standingsByTeam = new Map();
   try {
     const standData = await afRaw('standings', {league:league.leagueId, season}, { force:true });
     const standingGroups = standData?.response?.[0]?.league?.standings || [];
-    standingGroups.flat().forEach(row => {
-      if(row?.team?.id) standingsByTeam.set(String(row.team.id), row);
-    });
     teams = [...new Map(
       standingGroups
         .flat()
@@ -9594,35 +9594,25 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
   }
 
   if(!options.refreshTeamId && teams.length) {
-    const staleTeams = teams.map(team => {
+    const teamsToRefresh = teams.map(team => {
       const cached = getCachedTeamStats(team.id, league.leagueId, season);
-      const standingPlayed = getStandingPlayed(standingsByTeam.get(String(team.id)));
-      const cachedPlayed = getCachedTeamPlayed(cached);
-      const playerAppearances = getCachedTeamMaxPlayerAppearances(cached);
-      const hasCache = Boolean(cached?.players?.length);
       return {
         team,
-        cached,
-        standingPlayed,
-        cachedPlayed,
-        playerAppearances,
-        hasCache,
-        diff: Math.max(standingPlayed - cachedPlayed, standingPlayed - playerAppearances, 0),
+        hasCache: Boolean(cached?.players?.length),
+        updatedAt: Number(cached?.updatedAt || 0),
       };
     })
     .filter(item => {
-      if(!item.standingPlayed) return false;
-      if(!item.hasCache) return item.standingPlayed > 0;
-      return item.standingPlayed > item.cachedPlayed || item.standingPlayed > item.playerAppearances;
+      return !item.hasCache;
     })
     .sort((a,b) => {
       if(a.hasCache !== b.hasCache) return a.hasCache ? 1 : -1;
-      return b.diff - a.diff;
+      return a.updatedAt - b.updatedAt;
     })
     .map(item => item.team);
 
-    if(staleTeams.length) {
-      const refreshQueue = staleTeams.slice(0, STATS_STALE_TEAM_AUTO_REFRESH_LIMIT);
+    if(teamsToRefresh.length) {
+      const refreshQueue = teamsToRefresh.slice(0, STATS_STALE_TEAM_AUTO_REFRESH_LIMIT);
       for(const [index, team] of refreshQueue.entries()) {
         if(onStatus) onStatus(`Uppdaterar ny statistik för ${fixName(team.name || 'lag')} (${index + 1}/${refreshQueue.length})…`);
         try {
@@ -9636,8 +9626,8 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
         }
         if(index + 1 < refreshQueue.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
       }
-      if(staleTeams.length > refreshQueue.length && !warning) {
-        warning = `Ny statistik hittades för ${staleTeams.length} lag. ${refreshQueue.length} lag uppdaterades nu för att undvika API-spam.`;
+      if(teamsToRefresh.length > refreshQueue.length && !warning) {
+        warning = `${teamsToRefresh.length} lag behöver Sportmonks-uppdateras. ${refreshQueue.length} lag uppdaterades nu för att undvika API-spam.`;
       }
     }
   }
