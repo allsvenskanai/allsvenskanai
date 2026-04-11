@@ -3265,10 +3265,10 @@ function apiCacheTtl(ep, p = {}, raw = false){
     if(p?.live || p?.next || p?.last) return 3 * 60 * 1000;
     return isCurrentSeason ? 20 * 60 * 1000 : 3 * 24 * 60 * 60 * 1000;
   }
-  if(ep === 'players') return isCurrentSeason ? 12 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+  if(ep === 'players') return isCurrentSeason ? 20 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
   if(ep === 'transfers') return isCurrentSeason ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
   if(ep === 'players/squads') return 12 * 60 * 60 * 1000;
-  if(ep === 'teams/statistics') return isCurrentSeason ? 2 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  if(ep === 'teams/statistics') return isCurrentSeason ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
   return raw ? 30 * 60 * 1000 : 60 * 60 * 1000;
 }
 
@@ -3873,6 +3873,7 @@ async function afRaw(ep, p={}, opts = {}) {
   if(persisted && typeof persisted === 'object') return persisted;
 
   const q = new URLSearchParams({_endpoint:ep,...p});
+  if(force) q.set('_force', '1');
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
@@ -9003,7 +9004,6 @@ const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v4';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
-const STATS_STALE_TEAM_AUTO_REFRESH_LIMIT = 6;
 
 function statsDatasetCacheKey(season = SEASON){
   return `${STATS_DATASET_CACHE_PREFIX}:${getActiveLeagueKey()}:${season}`;
@@ -9098,6 +9098,10 @@ function writeCachedTeamStats(teamId, leagueId = LEAGUE, season = SEASON, data =
 
 function getCachedTeamPlayed(cache){
   return toStatNumber(cache?.teamStats?.played ?? cache?.fixtures?.playedCount ?? 0);
+}
+
+function getCachedTeamMaxPlayerAppearances(cache){
+  return Math.max(0, ...(cache?.players || []).map(player => toStatNumber(player?.stats?.appearances)));
 }
 
 function getStandingPlayed(row){
@@ -9594,11 +9598,12 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
       if(!cached?.players?.length) return false;
       const standingPlayed = getStandingPlayed(standingsByTeam.get(String(team.id)));
       if(!standingPlayed) return false;
-      return standingPlayed > getCachedTeamPlayed(cached);
+      return standingPlayed > getCachedTeamPlayed(cached)
+        || standingPlayed > getCachedTeamMaxPlayerAppearances(cached);
     });
 
     if(staleTeams.length) {
-      const refreshQueue = staleTeams.slice(0, STATS_STALE_TEAM_AUTO_REFRESH_LIMIT);
+      const refreshQueue = staleTeams;
       for(const [index, team] of refreshQueue.entries()) {
         if(onStatus) onStatus(`Uppdaterar ny statistik för ${fixName(team.name || 'lag')} (${index + 1}/${refreshQueue.length})…`);
         try {
@@ -9611,9 +9616,6 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
           break;
         }
         if(index + 1 < refreshQueue.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
-      }
-      if(staleTeams.length > refreshQueue.length && !warning) {
-        warning = `Ny statistik hittades för ${staleTeams.length} lag. ${refreshQueue.length} lag uppdaterades nu för att undvika API-spam.`;
       }
     }
   }
