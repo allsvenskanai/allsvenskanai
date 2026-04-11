@@ -3245,7 +3245,7 @@ const C = {};
 
 // Cache
 const CACHE = {};
-const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v3';
+const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v4';
 const API_PERSIST_DISABLED = false;
 
 function apiCacheKey(ep, p = {}, raw = false){
@@ -3804,9 +3804,11 @@ function svDate(input){
   return formatSvDate(input);
 }
 
-const DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS = {
+const TEAM_LOGO_FALLBACKS = {
   // Lägg bara in externa fallback-loggor här om API:t saknar både logo och fungerande team-id.
+  // Nyckeln ska vara normalizeText(lagnamn), t.ex. 'bk hacken'.
 };
+const DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS = TEAM_LOGO_FALLBACKS;
 
 function teamLogoPlaceholder(name = 'Lag'){
   const cleaned = fixName(name || 'Lag').trim();
@@ -3828,8 +3830,9 @@ function teamLogoPlaceholder(name = 'Lag'){
 function getTeamLogo(team = {}){
   const name = fixName(team?.name || team?.team?.name || team?.teamName || '');
   const directLogo = String(team?.logo || team?.team?.logo || team?.teamLogo || '').trim();
-  if(/^https?:\/\//i.test(directLogo) || directLogo.startsWith('data:image/')) return directLogo;
-  const fallback = DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS[normalizeText(name)];
+  const invalidLogo = !directLogo || ['null','undefined','false','0','-','—','#'].includes(directLogo.toLowerCase());
+  if(!invalidLogo && (/^https?:\/\//i.test(directLogo) || directLogo.startsWith('data:image/'))) return directLogo;
+  const fallback = TEAM_LOGO_FALLBACKS[normalizeText(name)] || DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS[normalizeText(name)];
   if(fallback) return fallback;
   const id = team?.id || team?.team?.id || team?.teamId;
   if(id) return `https://media.api-sports.io/football/teams/${id}.png`;
@@ -6543,7 +6546,7 @@ function normalizeTeamFixture(fixture, teamId){
     date: fixture?.fixture?.date || '',
     venueLabel: isHome ? 'Hemma' : 'Borta',
     opponentName: opponent?.name || '—',
-    opponentLogo: opponent?.logo || '',
+    opponentLogo: getTeamLogo(opponent),
     goalsFor,
     goalsAgainst,
     started,
@@ -8816,7 +8819,7 @@ let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
-const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v2';
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v3';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -8913,8 +8916,10 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
     if(!playerId) return;
 
     const statEntries = (item.statistics || []).filter(entry => {
-      const sameSeason = Number(entry?.league?.season || 0) === Number(season || 0);
-      const sameLeague = Number(entry?.league?.id || 0) === Number(leagueId || LEAGUE);
+      const entrySeason = Number(entry?.league?.season || 0);
+      const entryLeagueId = Number(entry?.league?.id || 0);
+      const sameSeason = !entrySeason || entrySeason === Number(season || 0);
+      const sameLeague = !entryLeagueId || entryLeagueId === Number(leagueId || LEAGUE);
       return sameSeason && sameLeague;
     });
     if(!statEntries.length) return;
@@ -9216,7 +9221,14 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
   const standData = await af('standings', {league:league.leagueId, season});
-  const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+  const standingGroups = standData[0]?.league?.standings || [];
+  const teams = [...new Map(
+    standingGroups
+      .flat()
+      .map(row => row?.team)
+      .filter(team => team?.id)
+      .map(team => [team.id, team])
+  ).values()];
   if(!teams.length) throw new Error(`Inga lag hittades för säsong ${season}. API-Football kanske saknar denna säsong.`);
 
   if(onStatus) onStatus(`Hämtar statistik för ${teams.length} lag…`);
@@ -9228,7 +9240,13 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
       const arr = await fetchAllPages('players', {league:league.leagueId, season, team:t.id}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
-          const matchingStat = (item?.statistics || []).find(stat => Number(stat?.league?.id || 0) === Number(league.leagueId) && Number(stat?.league?.season || 0) === Number(season));
+          const matchingStat = (item?.statistics || []).find(stat => {
+            const statLeagueId = Number(stat?.league?.id || 0);
+            const statSeason = Number(stat?.league?.season || 0);
+            const sameLeague = !statLeagueId || statLeagueId === Number(league.leagueId);
+            const sameSeason = !statSeason || statSeason === Number(season);
+            return sameLeague && sameSeason;
+          });
           const statTeamId = matchingStat?.team?.id || t.id || '';
           return `${playerId}-${statTeamId}-${league.leagueId}-${season}`;
         }
