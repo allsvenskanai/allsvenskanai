@@ -2589,6 +2589,14 @@ input,select,textarea,button{color:#fff;}
   font-weight:900;
   color:#E6C977;
 }
+.bp-rank{
+  width:24px;
+  flex:0 0 24px;
+  color:#E6C977;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;
+  font-weight:900;
+}
 @media (max-width: 900px){
   main{padding-top:1rem !important;}
   .start-wordmark{font-size:clamp(50px,16vw,86px)!important;}
@@ -5400,28 +5408,28 @@ async function renderBestPlayers(){
     if(!el) return;
     el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar spelare…</div>`;
 
-    const q = new URLSearchParams({_endpoint:'players', league:113, season:2026});
-    const res = await fetch(`${AF}?${q}`);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
+    const activeSeason = await getResolvedSeason();
+    const cache = await ensureStatsDatasetForSeason(activeSeason, {
+      onStatus: message => {
+        el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>${esc(message)}</div>`;
+      }
+    });
 
-    const players = data.response || [];
+    const best = getStatsLeaderboardRows(cache.players, 'rating', 1);
 
-    const best = players
-      .filter(p => p.statistics?.[0]?.games?.appearences >= 5)
-      .sort((a,b) => (parseFloat(b.statistics?.[0]?.games?.rating) || 0) - (parseFloat(a.statistics?.[0]?.games?.rating) || 0))
-      .slice(0,5);
-
-    el.innerHTML = best.length ? best.map(p=>{
-      const stat = p.statistics[0];
+    el.innerHTML = best.length ? best.map(item=>{
+      const player = item.player;
+      const category = STAT_CATEGORIES.find(cat => cat.id === 'rating');
+      const displayValue = getCategoryDisplayValue(category, player, item.value);
       return `
-        <div class="bp-row">
-          <img src="${p.player?.photo || ''}" alt="${esc(p.player?.name || 'Spelare')}" loading="lazy" onerror="this.style.opacity='.15'">
+        <div class="bp-row" onclick="go('/spelare/${player.playerId}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/spelare/${player.playerId}')}">
+          <div class="bp-rank">#1</div>
+          <img src="${player.photo || ''}" alt="${esc(player.playerName || 'Spelare')}" loading="lazy" onerror="this.style.opacity='.15'">
           <div>
-            <div class="bp-name">${esc(p.player?.name || 'Okänd spelare')}</div>
-            <div class="bp-team">${esc(stat.team?.name || 'Okänt lag')}</div>
+            <div class="bp-name">${esc(player.playerName || 'Okänd spelare')}</div>
+            <div class="bp-team">${esc(player.teamName || 'Okänt lag')}</div>
           </div>
-          <div class="bp-rating">${esc(stat.games?.rating || '-')}</div>
+          <div class="bp-rating">${esc(displayValue || '-')}</div>
         </div>
       `;
     }).join('') : `<div class="start-ai-empty">Inga spelare med tillräckligt betygsunderlag ännu.</div>`;
@@ -8522,87 +8530,9 @@ function getCategorySecondary(category, player){
   return typeof category.secondary === 'function' ? category.secondary(player) : '';
 }
 
-function setStatsGroup(groupId){
-  renderStats(document.getElementById('mc'), null, groupId);
-}
-
-async function pageStats(el, year=null, force=false) {
-  if(year) statsYear = year;
-  else statsYear = await getResolvedSeason();
-  await getResolvedSeason();
-  document.title = `Statistik ${statsYear} — AllsvenskanAI`;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
-  try {
-    if(force) statsCache = null;
-    if(!force && statsCache?.year === statsYear) {
-      renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
-      return;
-    }
-
-    const cachedStats = !force ? readStatsDatasetCache(statsYear) : null;
-    if(cachedStats?.year === statsYear && Array.isArray(cachedStats.players)) {
-      statsCache = cachedStats;
-      renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
-      return;
-    }
-
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
-
-    // Get teams from standings for that year
-    const standData = await af('standings', {league:LEAGUE, season:statsYear});
-    const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
-
-    if(!teams.length) throw new Error(`Inga lag hittades för säsong ${statsYear}. API-Football kanske saknar denna säsong.`);
-
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik för ${teams.length} lag…</div>`;
-
-    // Fetch every paginated players page per team so older seasons include the full player pool.
-    const allPlayers = [];
-    const chunks = [];
-    for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
-    for(const chunk of chunks) {
-      await Promise.all(chunk.map(async t => {
-        const arr = await fetchAllPages('players', {league:LEAGUE, season:statsYear, team:t.id}, {
-          dedupeKey: item => {
-            const playerId = item?.player?.id || '';
-            const statTeamId = item?.statistics?.[0]?.team?.id || t.id || '';
-            const statSeason = item?.statistics?.[0]?.league?.season || statsYear || '';
-            return `${playerId}-${statTeamId}-${statSeason}`;
-          }
-        }).catch(e => {
-          console.warn('[stats] team players fetch failed', { teamId: t.id, teamName: t.name, season: statsYear, error: e.message });
-          return [];
-        });
-        allPlayers.push(...arr);
-      }));
-    }
-
-    const players = buildNormalizedStatsDataset(allPlayers, statsYear);
-    statsCache = {
-      year: statsYear,
-      players,
-      meta: {
-        playerCount: players.length,
-        teamCount: teams.length,
-        categoryCount: STAT_CATEGORIES.length,
-        fieldCount: PLAYER_STATS_INVENTORY.length,
-      }
-    };
-    writeStatsDatasetCache(statsYear, statsCache);
-    renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
-  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
-}
-function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
-  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
-  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
-  const categoriesInGroup = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
-  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || STAT_CATEGORIES[0];
-
-  currentStatGroup = activeCategory.group;
-  currentStatCategory = activeCategory.id;
-
-  const limit = Math.max(10, activeCategory.limit || 10);
-  const eligibleRows = (cache.players || [])
+function getStatsLeaderboardRows(players = [], categoryId = currentStatCategory, limit = 10){
+  const activeCategory = STAT_CATEGORIES.find(category => category.id === categoryId) || STAT_CATEGORIES[0];
+  const eligibleRows = (players || [])
     .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
     .map(player => {
       const rawValue = getCategoryValue(player, activeCategory);
@@ -8635,7 +8565,93 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
     sorted.push(item);
   });
 
-  const displayRows = sorted.slice(0, limit);
+  return sorted.slice(0, Math.max(1, limit || 10));
+}
+
+function setStatsGroup(groupId){
+  renderStats(document.getElementById('mc'), null, groupId);
+}
+
+async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
+  const force = !!options.force;
+  const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
+  if(force) statsCache = null;
+  if(!force && statsCache?.year === season) return statsCache;
+
+  const cachedStats = !force ? readStatsDatasetCache(season) : null;
+  if(cachedStats?.year === season && Array.isArray(cachedStats.players)) {
+    statsCache = cachedStats;
+    return statsCache;
+  }
+
+  if(onStatus) onStatus(`Hämtar lag för ${season}…`);
+  const standData = await af('standings', {league:LEAGUE, season});
+  const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
+  if(!teams.length) throw new Error(`Inga lag hittades för säsong ${season}. API-Football kanske saknar denna säsong.`);
+
+  if(onStatus) onStatus(`Hämtar statistik för ${teams.length} lag…`);
+  const allPlayers = [];
+  const chunks = [];
+  for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
+  for(const chunk of chunks) {
+    await Promise.all(chunk.map(async t => {
+      const arr = await fetchAllPages('players', {league:LEAGUE, season, team:t.id}, {
+        dedupeKey: item => {
+          const playerId = item?.player?.id || '';
+          const statTeamId = item?.statistics?.[0]?.team?.id || t.id || '';
+          const statSeason = item?.statistics?.[0]?.league?.season || season || '';
+          return `${playerId}-${statTeamId}-${statSeason}`;
+        }
+      }).catch(e => {
+        console.warn('[stats] team players fetch failed', { teamId: t.id, teamName: t.name, season, error: e.message });
+        return [];
+      });
+      allPlayers.push(...arr);
+    }));
+  }
+
+  const players = buildNormalizedStatsDataset(allPlayers, season);
+  statsCache = {
+    year: season,
+    players,
+    meta: {
+      playerCount: players.length,
+      teamCount: teams.length,
+      categoryCount: STAT_CATEGORIES.length,
+      fieldCount: PLAYER_STATS_INVENTORY.length,
+    }
+  };
+  writeStatsDatasetCache(season, statsCache);
+  return statsCache;
+}
+
+async function pageStats(el, year=null, force=false) {
+  if(year) statsYear = year;
+  else statsYear = await getResolvedSeason();
+  await getResolvedSeason();
+  document.title = `Statistik ${statsYear} — AllsvenskanAI`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
+  try {
+    await ensureStatsDatasetForSeason(statsYear, {
+      force,
+      onStatus: message => {
+        el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(message)}</div>`;
+      }
+    });
+    renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
+  } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
+}
+function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
+  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
+  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
+  const categoriesInGroup = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
+  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || STAT_CATEGORIES[0];
+
+  currentStatGroup = activeCategory.group;
+  currentStatCategory = activeCategory.id;
+
+  const limit = Math.max(10, activeCategory.limit || 10);
+  const displayRows = getStatsLeaderboardRows(cache.players || [], activeCategory.id, limit);
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
