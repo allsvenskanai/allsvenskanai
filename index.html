@@ -6589,6 +6589,148 @@ function calculateRecentForm(fixtures = [], limit = 5){
   return { recent, points, goalsFor, goalsAgainst, cleanSheets, wins, draws, losses, formTokens, formSummary: `${wins}V ${draws}O ${losses}F` };
 }
 
+function buildTeamStatsCachePayload({
+  teamId,
+  leagueId = LEAGUE,
+  season = SEASON,
+  team = {},
+  venue = {},
+  stats = {},
+  seasonRow = null,
+  selectedStanding = null,
+  fixturesSeason = [],
+  players = [],
+  rawPlayers = [],
+  squadPlayers = [],
+  warning = '',
+} = {}){
+  const resolvedTeamId = Number(teamId || team?.id || 0);
+  const normalizedFixtures = (fixturesSeason || []).map(item => normalizeTeamFixture(item, resolvedTeamId)).filter(Boolean);
+  const recentFive = calculateRecentForm(normalizedFixtures, 5);
+  const recentTen = calculateRecentForm(normalizedFixtures, 10);
+  const latestPlayed = [...normalizedFixtures]
+    .filter(item => item.started)
+    .sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, 5);
+  const upcoming = [...normalizedFixtures]
+    .filter(item => !item.started)
+    .sort((a,b) => String(a.date || '').localeCompare(String(b.date || '')))
+    .slice(0, 3);
+
+  const wins = stats?.fixtures?.wins?.total || seasonRow?.wins || 0;
+  const draws = stats?.fixtures?.draws?.total || seasonRow?.draws || 0;
+  const losses = stats?.fixtures?.loses?.total || seasonRow?.losses || 0;
+  const played = stats?.fixtures?.played?.total || seasonRow?.played || (wins + draws + losses);
+  const points = seasonRow?.points ?? (wins * 3 + draws);
+  const goalsFor = stats?.goals?.for?.total?.total || seasonRow?.goalsFor || 0;
+  const goalsAgainst = stats?.goals?.against?.total?.total || seasonRow?.goalsAgainst || 0;
+  const goalDiff = seasonRow?.goalDiff ?? (goalsFor - goalsAgainst);
+  const cleanSheets = stats?.clean_sheet?.total || 0;
+  const failedToScore = stats?.failed_to_score?.total || 0;
+  const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || (played ? goalsFor / played : 0);
+  const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || (played ? goalsAgainst / played : 0);
+  const pointsPerMatch = played ? points / played : 0;
+  const pointsPct = played ? Math.round((points / (played * 3)) * 100) : 0;
+  const winPct = played ? Math.round((wins / played) * 100) : 0;
+
+  const homeWins = stats?.fixtures?.wins?.home || 0;
+  const awayWins = stats?.fixtures?.wins?.away || 0;
+  const homeDraws = stats?.fixtures?.draws?.home || 0;
+  const awayDraws = stats?.fixtures?.draws?.away || 0;
+  const homeLosses = stats?.fixtures?.loses?.home || 0;
+  const awayLosses = stats?.fixtures?.loses?.away || 0;
+  const homePlayed = stats?.fixtures?.played?.home || 0;
+  const awayPlayed = stats?.fixtures?.played?.away || 0;
+  const homeGoalsFor = stats?.goals?.for?.total?.home || 0;
+  const awayGoalsFor = stats?.goals?.for?.total?.away || 0;
+  const homeGoalsAgainst = stats?.goals?.against?.total?.home || 0;
+  const awayGoalsAgainst = stats?.goals?.against?.total?.away || 0;
+  const homePoints = homeWins * 3 + homeDraws;
+  const awayPoints = awayWins * 3 + awayDraws;
+
+  const scoredMinuteStats = Object.entries(stats?.goals?.for?.minute || {})
+    .map(([range, val]) => ({ range, total: val?.total || 0, percentage: val?.percentage || null }))
+    .filter(item => item.total > 0)
+    .sort((a,b) => b.total - a.total);
+  const concededMinuteStats = Object.entries(stats?.goals?.against?.minute || {})
+    .map(([range, val]) => ({ range, total: val?.total || 0, percentage: val?.percentage || null }))
+    .filter(item => item.total > 0)
+    .sort((a,b) => b.total - a.total);
+
+  return {
+    teamId: resolvedTeamId,
+    leagueId: Number(leagueId),
+    season: Number(season),
+    team: {
+      ...(team || {}),
+      id: resolvedTeamId || team?.id,
+      name: fixName(team?.name || ''),
+      logo: getTeamLogo(team || {}),
+    },
+    venue,
+    players,
+    rawCount: (rawPlayers || []).length,
+    squadCount: (squadPlayers || []).length,
+    updatedAt: Date.now(),
+    warning,
+    teamStats: {
+      played,
+      wins,
+      draws,
+      losses,
+      points,
+      goalsFor,
+      goalsAgainst,
+      goalDiff,
+      cleanSheets,
+      failedToScore,
+      avgFor,
+      avgAgainst,
+      pointsPerMatch,
+      pointsPct,
+      winPct,
+      rank: seasonRow?.rank || selectedStanding?.rank || null,
+    },
+    homeAway: {
+      home: {
+        played: homePlayed,
+        wins: homeWins,
+        draws: homeDraws,
+        losses: homeLosses,
+        goalsFor: homeGoalsFor,
+        goalsAgainst: homeGoalsAgainst,
+        points: homePoints,
+        winPct: homePlayed ? Math.round((homeWins / homePlayed) * 100) : 0,
+      },
+      away: {
+        played: awayPlayed,
+        wins: awayWins,
+        draws: awayDraws,
+        losses: awayLosses,
+        goalsFor: awayGoalsFor,
+        goalsAgainst: awayGoalsAgainst,
+        points: awayPoints,
+        winPct: awayPlayed ? Math.round((awayWins / awayPlayed) * 100) : 0,
+      },
+    },
+    form: {
+      recentFive,
+      recentTen,
+    },
+    fixtures: {
+      all: normalizedFixtures,
+      latestPlayed,
+      upcoming,
+      playedCount: normalizedFixtures.filter(item => item.started).length,
+      upcomingCount: normalizedFixtures.filter(item => !item.started).length,
+    },
+    minuteStats: {
+      scored: scoredMinuteStats,
+      conceded: concededMinuteStats,
+    },
+  };
+}
+
 function buildTeamHistoryRows(historyResponses = [], teamId){
   return TEAM_PAGE_SEASONS.map((season, index) => {
     const rows = historyResponses[index]?.response?.[0]?.league?.standings?.[0] || [];
@@ -7058,16 +7200,21 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason, LEAGUE);
     window.__teamPlayerStatsData = { players: teamPlayers };
     if(typeof writeCachedTeamStats === 'function' && teamPlayers.length) {
-      writeCachedTeamStats(routeTeamId, LEAGUE, selectedSeason, {
+      writeCachedTeamStats(routeTeamId, LEAGUE, selectedSeason, buildTeamStatsCachePayload({
         teamId:routeTeamId,
         leagueId:LEAGUE,
         season:selectedSeason,
         team,
+        venue,
+        stats,
+        seasonRow,
+        selectedStanding,
+        fixturesSeason,
         players:teamPlayers,
-        rawCount:(seasonPlayers || []).length,
-        updatedAt:Date.now(),
+        rawPlayers:seasonPlayers,
+        squadPlayers,
         warning:''
-      });
+      }));
       if(statsCache?.leagueId === LEAGUE && Number(statsCache?.year) === Number(selectedSeason)) statsCache = null;
     }
 
@@ -9224,6 +9371,15 @@ async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON){
   if(!teamId) throw new Error('Inget lag valt.');
   const params = { league:leagueId, season, team:teamId };
   let rateLimited = false;
+  let statsRaw = null;
+  let fixturesSeason = [];
+  try {
+    statsRaw = await afRaw('teams/statistics', params).catch(() => ({ response:null }));
+    await delay(STATS_PAGE_FETCH_DELAY_MS);
+  } catch(e) {
+    if(isApiRateLimitError(e)) rateLimited = true;
+    console.warn('[stats] team aggregate refresh failed', { teamId, leagueId, season, error:e.message });
+  }
   const rawPlayers = await fetchAllPages('players', params, {
     delayMs: STATS_PAGE_FETCH_DELAY_MS,
     stopOnRateLimit: true,
@@ -9243,21 +9399,40 @@ async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON){
       return `${playerId}-${stat?.team?.id || teamId}-${leagueId}-${season}`;
     }
   });
+  if(!rateLimited) {
+    try {
+      await delay(STATS_PAGE_FETCH_DELAY_MS);
+      fixturesSeason = await fetchAllPages('fixtures', params, {
+        delayMs: STATS_PAGE_FETCH_DELAY_MS,
+        stopOnRateLimit: true,
+        onRateLimit: () => {
+          rateLimited = true;
+        },
+        dedupeKey: item => item?.fixture?.id || ''
+      });
+    } catch(e) {
+      if(isApiRateLimitError(e)) rateLimited = true;
+      console.warn('[stats] team fixtures refresh failed', { teamId, leagueId, season, error:e.message });
+    }
+  }
   if(rateLimited && !rawPlayers.length) throw new Error('Too many requests. Viss statistik uppdateras inom kort.');
   const firstTeam = rawPlayers
     .flatMap(item => item?.statistics || [])
-    .find(stat => Number(stat?.team?.id || 0) === Number(teamId))?.team || { id:teamId, name:'Lag' };
+    .find(stat => Number(stat?.team?.id || 0) === Number(teamId))?.team
+    || statsRaw?.response?.team
+    || { id:teamId, name:'Lag' };
   const players = normalizeStatsTeamDataset(rawPlayers, firstTeam, leagueId, season);
-  const data = {
+  const data = buildTeamStatsCachePayload({
     teamId:Number(teamId),
     leagueId:Number(leagueId),
     season:Number(season),
     team:firstTeam,
+    stats:statsRaw?.response || {},
+    fixturesSeason,
     players,
-    rawCount:rawPlayers.length,
-    updatedAt:Date.now(),
+    rawPlayers,
     warning:rateLimited ? 'Viss statistik uppdateras inom kort. Lagcachen innehåller den data som hann laddas.' : ''
-  };
+  });
   writeCachedTeamStats(teamId, leagueId, season, data);
   return data;
 }
@@ -9267,7 +9442,21 @@ function combineCachedTeamStats(teams = [], leagueId = LEAGUE, season = SEASON){
     .map(team => getCachedTeamStats(team.id, leagueId, season))
     .filter(cache => cache?.players?.length);
   const players = teamCaches.flatMap(cache => cache.players || []);
-  return { players, teamCaches };
+  const teamStats = teamCaches.map(cache => ({
+    teamId: cache.teamId,
+    leagueId: cache.leagueId,
+    season: cache.season,
+    team: cache.team,
+    venue: cache.venue,
+    teamStats: cache.teamStats || null,
+    homeAway: cache.homeAway || null,
+    form: cache.form || null,
+    fixtures: cache.fixtures || null,
+    minuteStats: cache.minuteStats || null,
+    updatedAt: cache.updatedAt,
+    warning: cache.warning || ''
+  }));
+  return { players, teamCaches, teamStats };
 }
 
 function listCachedTeamStatsForLeagueSeason(leagueId = LEAGUE, season = SEASON){
@@ -9377,10 +9566,24 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     }
   }
 
-  let { players, teamCaches } = combineCachedTeamStats(teams, league.leagueId, season);
+  let { players, teamCaches, teamStats } = combineCachedTeamStats(teams, league.leagueId, season);
   if(!teamCaches.length) {
     teamCaches = listCachedTeamStatsForLeagueSeason(league.leagueId, season);
     players = teamCaches.flatMap(cache => cache.players || []);
+    teamStats = teamCaches.map(cache => ({
+      teamId: cache.teamId,
+      leagueId: cache.leagueId,
+      season: cache.season,
+      team: cache.team,
+      venue: cache.venue,
+      teamStats: cache.teamStats || null,
+      homeAway: cache.homeAway || null,
+      form: cache.form || null,
+      fixtures: cache.fixtures || null,
+      minuteStats: cache.minuteStats || null,
+      updatedAt: cache.updatedAt,
+      warning: cache.warning || ''
+    }));
     if(!teams.length) teams = teamCaches.map(cache => cache.team || { id:cache.teamId, name:`Lag ${cache.teamId}` });
   }
   const partialTeamCache = teamCaches.some(cache => cache.warning);
@@ -9395,6 +9598,7 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     leagueId: league.leagueId,
     teams,
     players,
+    teamStats,
     meta: {
       playerCount: players.length,
       teamCount: teams.length || new Set(players.map(player => player.teamId).filter(Boolean)).size,
