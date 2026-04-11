@@ -3223,6 +3223,7 @@ function setActiveLeagueKey(key){
   resolvedSeasonPromise = null;
   if(typeof statsYear !== 'undefined') statsYear = league.season;
   if(typeof statsCache !== 'undefined') statsCache = null;
+  if(typeof statsSelectedTeamId !== 'undefined') statsSelectedTeamId = '';
   if(typeof transfersCache !== 'undefined') transfersCache = null;
   if(typeof transfersLeagueTeams !== 'undefined') transfersLeagueTeams = [];
   if(typeof lineupBuilderState !== 'undefined' && previous !== key) {
@@ -8835,7 +8836,8 @@ let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
-const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v3';
+let statsSelectedTeamId = '';
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v4';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
@@ -8844,12 +8846,15 @@ function statsDatasetCacheKey(season = SEASON){
   return `${STATS_DATASET_CACHE_PREFIX}:${getActiveLeagueKey()}:${season}`;
 }
 
+function statsTeamCacheKey(teamId, leagueId = LEAGUE, season = SEASON){
+  return `stats:${leagueId}:${season}:team:${teamId}`;
+}
+
 function statsDatasetCacheTtl(season = SEASON){
   return Number(season) === Number(SEASON) ? STATS_CURRENT_SEASON_TTL : STATS_OLDER_SEASON_TTL;
 }
 
-// LocalStorage cache for the heavy statistics player dataset.
-// First load per season may hit every team, but revisits should reuse this dataset.
+// Legacy full-dataset cache reader kept only for old localStorage compatibility.
 function readStatsDatasetCache(season = SEASON, options = {}){
   try {
     const raw = localStorage.getItem(statsDatasetCacheKey(season));
@@ -8884,13 +8889,47 @@ function clearStatsDatasetCache(season = null){
   try {
     if(season) {
       localStorage.removeItem(statsDatasetCacheKey(season));
+      Object.keys(localStorage)
+        .filter(key => key.startsWith(`stats:${LEAGUE}:${season}:team:`))
+        .forEach(key => localStorage.removeItem(key));
       return;
     }
     Object.keys(localStorage)
-      .filter(key => key.startsWith(STATS_DATASET_CACHE_PREFIX))
+      .filter(key => key.startsWith(STATS_DATASET_CACHE_PREFIX) || key.startsWith('stats:'))
       .forEach(key => localStorage.removeItem(key));
   } catch(e) {
     console.warn('[stats-cache] clear failed', e.message);
+  }
+}
+
+function getCachedTeamStats(teamId, leagueId = LEAGUE, season = SEASON, options = {}){
+  if(!teamId || typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(statsTeamCacheKey(teamId, leagueId, season));
+    if(!raw) return null;
+    const cached = JSON.parse(raw);
+    const age = Date.now() - Number(cached?.createdAt || 0);
+    if(!cached?.data || age < 0) {
+      localStorage.removeItem(statsTeamCacheKey(teamId, leagueId, season));
+      return null;
+    }
+    if(!options.allowExpired && age > statsDatasetCacheTtl(season)) return null;
+    return cached.data;
+  } catch(e) {
+    console.warn('[stats-team-cache] read failed', { teamId, leagueId, season, error:e.message });
+    return null;
+  }
+}
+
+function writeCachedTeamStats(teamId, leagueId = LEAGUE, season = SEASON, data = null){
+  if(!teamId || !data?.players || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(statsTeamCacheKey(teamId, leagueId, season), JSON.stringify({
+      createdAt: Date.now(),
+      data
+    }));
+  } catch(e) {
+    console.warn('[stats-team-cache] write failed', { teamId, leagueId, season, error:e.message });
   }
 }
 
@@ -9164,6 +9203,72 @@ function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], tea
   });
 }
 
+function normalizeStatsTeamDataset(rawPlayers = [], team = {}, leagueId = LEAGUE, season = SEASON){
+  return buildCompleteTeamPlayersDataset([], rawPlayers, team, season, leagueId);
+}
+
+async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON){
+  if(!teamId) throw new Error('Inget lag valt.');
+  const params = { league:leagueId, season, team:teamId };
+  let rateLimited = false;
+  const rawPlayers = await fetchAllPages('players', params, {
+    delayMs: STATS_PAGE_FETCH_DELAY_MS,
+    stopOnRateLimit: true,
+    onRateLimit: () => {
+      rateLimited = true;
+    },
+    dedupeKey: item => {
+      const playerId = item?.player?.id || '';
+      const stat = (item?.statistics || []).find(entry => {
+        const statLeagueId = Number(entry?.league?.id || 0);
+        const statSeason = Number(entry?.league?.season || 0);
+        const statTeamId = Number(entry?.team?.id || 0);
+        return (!statLeagueId || statLeagueId === Number(leagueId))
+          && (!statSeason || statSeason === Number(season))
+          && (!statTeamId || statTeamId === Number(teamId));
+      }) || item?.statistics?.[0] || {};
+      return `${playerId}-${stat?.team?.id || teamId}-${leagueId}-${season}`;
+    }
+  });
+  if(rateLimited && !rawPlayers.length) throw new Error('Too many requests. Viss statistik uppdateras inom kort.');
+  const firstTeam = rawPlayers
+    .flatMap(item => item?.statistics || [])
+    .find(stat => Number(stat?.team?.id || 0) === Number(teamId))?.team || { id:teamId, name:'Lag' };
+  const players = normalizeStatsTeamDataset(rawPlayers, firstTeam, leagueId, season);
+  const data = {
+    teamId:Number(teamId),
+    leagueId:Number(leagueId),
+    season:Number(season),
+    team:firstTeam,
+    players,
+    rawCount:rawPlayers.length,
+    updatedAt:Date.now(),
+    warning:rateLimited ? 'Viss statistik uppdateras inom kort. Lagcachen innehåller den data som hann laddas.' : ''
+  };
+  writeCachedTeamStats(teamId, leagueId, season, data);
+  return data;
+}
+
+function combineCachedTeamStats(teams = [], leagueId = LEAGUE, season = SEASON){
+  const teamCaches = teams
+    .map(team => getCachedTeamStats(team.id, leagueId, season))
+    .filter(cache => cache?.players?.length);
+  const players = teamCaches.flatMap(cache => cache.players || []);
+  return { players, teamCaches };
+}
+
+function listCachedTeamStatsForLeagueSeason(leagueId = LEAGUE, season = SEASON){
+  if(typeof localStorage === 'undefined') return [];
+  const prefix = `stats:${leagueId}:${season}:team:`;
+  return Object.keys(localStorage)
+    .filter(key => key.startsWith(prefix))
+    .map(key => {
+      const teamId = key.slice(prefix.length);
+      return getCachedTeamStats(teamId, leagueId, season);
+    })
+    .filter(cache => cache?.players?.length);
+}
+
 function getCategoryValue(player, category){
   if(category.type === 'derived' && typeof category.compute === 'function') return category.compute(player);
   return getNestedVal(player, category.source || '') || 0;
@@ -9225,18 +9330,9 @@ function setStatsGroup(groupId){
 }
 
 async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
-  const force = !!options.force;
   const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
   const league = getActiveLeagueConfig();
-  if(force) statsCache = null;
-  if(!force && statsCache?.year === season && statsCache?.leagueKey === league.key) return statsCache;
-
-  const cachedStats = !force ? readStatsDatasetCache(season) : null;
-  if(cachedStats?.year === season && cachedStats?.leagueKey === league.key && Array.isArray(cachedStats.players)) {
-    statsCache = cachedStats;
-    return statsCache;
-  }
-  const staleStats = readStatsDatasetCache(season, { allowExpired:true });
+  if(statsCache?.year === season && statsCache?.leagueKey === league.key && !options.refreshTeamId) return statsCache;
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
   let teams = [];
@@ -9254,59 +9350,47 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     console.warn('[stats] standings fetch failed', { league:league.key, season, error:e.message });
   }
 
-  if(onStatus) onStatus(`Hämtar säsongsstatistik för ${league.name} ${season}…`);
-  let rawPlayers = [];
   let warning = '';
-  try {
-    rawPlayers = await fetchAllPages('players', { league:league.leagueId, season }, {
-      delayMs: STATS_PAGE_FETCH_DELAY_MS,
-      stopOnRateLimit: true,
-      onRateLimit: () => {
-        warning = 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så tabellen visar den data som hann laddas.';
-      },
-      dedupeKey: item => {
-        const playerId = item?.player?.id || '';
-        const stat = (item?.statistics || []).find(entry => {
-          const statLeagueId = Number(entry?.league?.id || 0);
-          const statSeason = Number(entry?.league?.season || 0);
-          return (!statLeagueId || statLeagueId === Number(league.leagueId)) && (!statSeason || statSeason === Number(season));
-        }) || item?.statistics?.[0] || {};
-        const statTeamId = stat?.team?.id || '';
-        return `${playerId}-${statTeamId}-${league.leagueId}-${season}`;
-      }
-    });
-  } catch(e) {
-    console.warn('[stats] season-wide players fetch failed', { league:league.key, season, error:e.message });
-    if(isApiRateLimitError(e)) warning = 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så vi visar cachead eller delvis tillgänglig data.';
-    else warning = 'Viss statistik uppdateras inom kort.';
+  if(options.refreshTeamId) {
+    const team = teams.find(item => String(item.id) === String(options.refreshTeamId));
+    if(onStatus) onStatus(`Uppdaterar ${fixName(team?.name || 'valt lag')}…`);
+    try {
+      await refreshTeamStats(options.refreshTeamId, league.leagueId, season);
+    } catch(e) {
+      console.warn('[stats] selected team refresh failed', { teamId:options.refreshTeamId, league:league.key, season, error:e.message });
+      warning = isApiRateLimitError(e)
+        ? 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så vi visar cachead data.'
+        : 'Viss statistik uppdateras inom kort.';
+    }
   }
 
-  if(!rawPlayers.length && staleStats?.year === season && staleStats?.leagueKey === league.key && Array.isArray(staleStats.players)) {
-    statsCache = {
-      ...staleStats,
-      meta: {
-        ...(staleStats.meta || {}),
-        warning: warning || 'Viss statistik uppdateras inom kort. Visar senast sparade data.'
-      }
-    };
-    return statsCache;
+  let { players, teamCaches } = combineCachedTeamStats(teams, league.leagueId, season);
+  if(!teamCaches.length) {
+    teamCaches = listCachedTeamStatsForLeagueSeason(league.leagueId, season);
+    players = teamCaches.flatMap(cache => cache.players || []);
+    if(!teams.length) teams = teamCaches.map(cache => cache.team || { id:cache.teamId, name:`Lag ${cache.teamId}` });
   }
-
-  const players = buildNormalizedStatsDataset(rawPlayers, season, league.leagueId);
+  const partialTeamCache = teamCaches.some(cache => cache.warning);
+  if(!players.length && !warning) {
+    warning = 'Ingen lagstatistik är cachead ännu. Välj ett lag och tryck Uppdatera valt lag.';
+  } else if(partialTeamCache && !warning) {
+    warning = 'Viss statistik uppdateras inom kort. Några lagcacher är delvis uppdaterade.';
+  }
   statsCache = {
     year: season,
     leagueKey: league.key,
     leagueId: league.leagueId,
+    teams,
     players,
     meta: {
       playerCount: players.length,
       teamCount: teams.length || new Set(players.map(player => player.teamId).filter(Boolean)).size,
+      cachedTeamCount: teamCaches.length,
       categoryCount: STAT_CATEGORIES.length,
       fieldCount: PLAYER_STATS_INVENTORY.length,
-      warning: warning || (!players.length ? 'Viss statistik uppdateras inom kort.' : ''),
+      warning,
     }
   };
-  writeStatsDatasetCache(season, statsCache);
   return statsCache;
 }
 
@@ -9318,7 +9402,6 @@ async function pageStats(el, year=null, force=false) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
     await ensureStatsDatasetForSeason(statsYear, {
-      force,
       onStatus: message => {
         el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(message)}</div>`;
       }
@@ -9326,6 +9409,31 @@ async function pageStats(el, year=null, force=false) {
     renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
+
+async function refreshSelectedStatsTeam(){
+  const select = document.getElementById('statsTeamRefreshSelect');
+  const teamId = select?.value || statsSelectedTeamId || '';
+  if(!teamId) {
+    alert('Välj ett lag att uppdatera först.');
+    return;
+  }
+  statsSelectedTeamId = teamId;
+  statsCache = null;
+  const el = document.getElementById('mc');
+  if(el) el.innerHTML = `<div class="loading"><div class="spinner"></div>Uppdaterar valt lag…</div>`;
+  try {
+    await ensureStatsDatasetForSeason(statsYear, {
+      refreshTeamId:teamId,
+      onStatus: message => {
+        if(el) el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(message)}</div>`;
+      }
+    });
+    renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
+  } catch(e) {
+    if(el) el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+  }
+}
+
 function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
   const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
   const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
@@ -9350,6 +9458,13 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
     .filter(category => category.group === currentStatGroup)
     .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderStats(document.getElementById('mc'),'${category.id}','${currentStatGroup}')">${category.label}</button>`)
     .join('');
+  const teams = cache.teams || [];
+  if(teams.length && !teams.some(team => String(team.id) === String(statsSelectedTeamId))) statsSelectedTeamId = String(teams[0].id);
+  const teamOptions = teams.map(team => {
+    const cached = getCachedTeamStats(team.id, cache.leagueId || LEAGUE, statsYear);
+    const suffix = cached?.players?.length ? ` (${cached.players.length})` : ' (ej cachead)';
+    return `<option value="${team.id}" ${String(team.id) === String(statsSelectedTeamId) ? 'selected' : ''}>${esc(fixName(team.name || 'Lag') + suffix)}</option>`;
+  }).join('');
 
   const rows = displayRows.map((item, index) => {
     const medal = index===0?'&#x1F947;':index===1?'&#x1F948;':index===2?'&#x1F949;':'';
@@ -9384,8 +9499,13 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="pg-title">Statistik <em>${statsYear}</em></div>
           <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
         </div>
-        <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="statsTeamRefreshSelect" class="results-round-select" onchange="statsSelectedTeamId=this.value" style="min-width:220px">
+            ${teamOptions || '<option value="">Inga lag tillgängliga</option>'}
+          </select>
+          <button class="ai-btn" onclick="refreshSelectedStatsTeam()">Uppdatera valt lag</button>
           <button class="ai-btn" onclick="clearPersistedApiCache()">Rensa API-cache</button>
+        </div>
       </div>
       ${statsWarning}
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
@@ -9401,7 +9521,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
             <span class="stats-category-badge">${activeCategory.col}</span>
             <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
-            <span class="stats-category-badge">cachead databas i webbläsaren</span>
+            <span class="stats-category-badge">${cache.meta.cachedTeamCount || 0}/${cache.meta.teamCount || 0} lag cacheade</span>
           </div>
         </div>
         <div class="section-label" style="margin-top:1rem">Kategori</div>
