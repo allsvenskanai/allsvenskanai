@@ -3867,8 +3867,9 @@ async function af(ep, p={}) {
   return CACHE[key];
 }
 
-async function afRaw(ep, p={}) {
-  const persisted = readPersistedApiCache(ep, p, true);
+async function afRaw(ep, p={}, opts = {}) {
+  const force = Boolean(opts.force);
+  const persisted = force ? null : readPersistedApiCache(ep, p, true);
   if(persisted && typeof persisted === 'object') return persisted;
 
   const q = new URLSearchParams({_endpoint:ep,...p});
@@ -3926,7 +3927,8 @@ async function fetchAllPages(ep, p = {}, opts = {}) {
   const dedupeKey = opts.dedupeKey || null;
   const delayMs = Number(opts.delayMs || 0);
   const stopOnRateLimit = opts.stopOnRateLimit !== false;
-  const first = await afRaw(ep, p);
+  const force = Boolean(opts.force);
+  const first = await afRaw(ep, p, { force });
   const firstRows = Array.isArray(first?.response) ? first.response : [];
   const totalPages = Number(first?.paging?.total || first?.pagination?.total || 1);
   let rows = [...firstRows];
@@ -3935,7 +3937,7 @@ async function fetchAllPages(ep, p = {}, opts = {}) {
     for(let page = 2; page <= totalPages; page += 1) {
       try {
         if(delayMs > 0) await delay(delayMs);
-        const next = await afRaw(ep, { ...p, [pageParam]: page });
+        const next = await afRaw(ep, { ...p, [pageParam]: page }, { force });
         const nextRows = Array.isArray(next?.response) ? next.response : [];
         rows.push(...nextRows);
       } catch(e) {
@@ -9001,6 +9003,7 @@ const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v4';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
+const STATS_STALE_TEAM_AUTO_REFRESH_LIMIT = 6;
 
 function statsDatasetCacheKey(season = SEASON){
   return `${STATS_DATASET_CACHE_PREFIX}:${getActiveLeagueKey()}:${season}`;
@@ -9091,6 +9094,31 @@ function writeCachedTeamStats(teamId, leagueId = LEAGUE, season = SEASON, data =
   } catch(e) {
     console.warn('[stats-team-cache] write failed', { teamId, leagueId, season, error:e.message });
   }
+}
+
+function getCachedTeamPlayed(cache){
+  return toStatNumber(cache?.teamStats?.played ?? cache?.fixtures?.playedCount ?? 0);
+}
+
+function getStandingPlayed(row){
+  return toStatNumber(row?.all?.played ?? row?.played ?? 0);
+}
+
+function teamStatsCacheSummary(cache){
+  return {
+    teamId: cache.teamId,
+    leagueId: cache.leagueId,
+    season: cache.season,
+    team: cache.team,
+    venue: cache.venue,
+    teamStats: cache.teamStats || null,
+    homeAway: cache.homeAway || null,
+    form: cache.form || null,
+    fixtures: cache.fixtures || null,
+    minuteStats: cache.minuteStats || null,
+    updatedAt: cache.updatedAt,
+    warning: cache.warning || ''
+  };
 }
 
 function toStatNumber(value){
@@ -9374,13 +9402,14 @@ async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON){
   let statsRaw = null;
   let fixturesSeason = [];
   try {
-    statsRaw = await afRaw('teams/statistics', params).catch(() => ({ response:null }));
+    statsRaw = await afRaw('teams/statistics', params, { force:true }).catch(() => ({ response:null }));
     await delay(STATS_PAGE_FETCH_DELAY_MS);
   } catch(e) {
     if(isApiRateLimitError(e)) rateLimited = true;
     console.warn('[stats] team aggregate refresh failed', { teamId, leagueId, season, error:e.message });
   }
   const rawPlayers = await fetchAllPages('players', params, {
+    force:true,
     delayMs: STATS_PAGE_FETCH_DELAY_MS,
     stopOnRateLimit: true,
     onRateLimit: () => {
@@ -9403,6 +9432,7 @@ async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON){
     try {
       await delay(STATS_PAGE_FETCH_DELAY_MS);
       fixturesSeason = await fetchAllPages('fixtures', params, {
+        force:true,
         delayMs: STATS_PAGE_FETCH_DELAY_MS,
         stopOnRateLimit: true,
         onRateLimit: () => {
@@ -9442,20 +9472,7 @@ function combineCachedTeamStats(teams = [], leagueId = LEAGUE, season = SEASON){
     .map(team => getCachedTeamStats(team.id, leagueId, season))
     .filter(cache => cache?.players?.length);
   const players = teamCaches.flatMap(cache => cache.players || []);
-  const teamStats = teamCaches.map(cache => ({
-    teamId: cache.teamId,
-    leagueId: cache.leagueId,
-    season: cache.season,
-    team: cache.team,
-    venue: cache.venue,
-    teamStats: cache.teamStats || null,
-    homeAway: cache.homeAway || null,
-    form: cache.form || null,
-    fixtures: cache.fixtures || null,
-    minuteStats: cache.minuteStats || null,
-    updatedAt: cache.updatedAt,
-    warning: cache.warning || ''
-  }));
+  const teamStats = teamCaches.map(teamStatsCacheSummary);
   return { players, teamCaches, teamStats };
 }
 
@@ -9534,13 +9551,18 @@ function setStatsGroup(groupId){
 async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
   const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
   const league = getActiveLeagueConfig();
-  if(statsCache?.year === season && statsCache?.leagueKey === league.key && !options.refreshTeamId) return statsCache;
+  const statsMemoryCacheAge = Date.now() - Number(statsCache?.loadedAt || 0);
+  if(statsCache?.year === season && statsCache?.leagueKey === league.key && !options.refreshTeamId && statsMemoryCacheAge >= 0 && statsMemoryCacheAge < 2 * 60 * 1000) return statsCache;
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
   let teams = [];
+  const standingsByTeam = new Map();
   try {
-    const standData = await af('standings', {league:league.leagueId, season});
-    const standingGroups = standData[0]?.league?.standings || [];
+    const standData = await afRaw('standings', {league:league.leagueId, season}, { force:true });
+    const standingGroups = standData?.response?.[0]?.league?.standings || [];
+    standingGroups.flat().forEach(row => {
+      if(row?.team?.id) standingsByTeam.set(String(row.team.id), row);
+    });
     teams = [...new Map(
       standingGroups
         .flat()
@@ -9566,24 +9588,41 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     }
   }
 
+  if(!options.refreshTeamId && teams.length) {
+    const staleTeams = teams.filter(team => {
+      const cached = getCachedTeamStats(team.id, league.leagueId, season);
+      if(!cached?.players?.length) return false;
+      const standingPlayed = getStandingPlayed(standingsByTeam.get(String(team.id)));
+      if(!standingPlayed) return false;
+      return standingPlayed > getCachedTeamPlayed(cached);
+    });
+
+    if(staleTeams.length) {
+      const refreshQueue = staleTeams.slice(0, STATS_STALE_TEAM_AUTO_REFRESH_LIMIT);
+      for(const [index, team] of refreshQueue.entries()) {
+        if(onStatus) onStatus(`Uppdaterar ny statistik för ${fixName(team.name || 'lag')} (${index + 1}/${refreshQueue.length})…`);
+        try {
+          await refreshTeamStats(team.id, league.leagueId, season);
+        } catch(e) {
+          console.warn('[stats] stale team refresh failed', { teamId:team.id, league:league.key, season, error:e.message });
+          warning = isApiRateLimitError(e)
+            ? 'Viss statistik uppdateras inom kort. API-gränsen nåddes vid uppdatering av nya matcher.'
+            : 'Viss statistik uppdateras inom kort.';
+          break;
+        }
+        if(index + 1 < refreshQueue.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
+      }
+      if(staleTeams.length > refreshQueue.length && !warning) {
+        warning = `Ny statistik hittades för ${staleTeams.length} lag. ${refreshQueue.length} lag uppdaterades nu för att undvika API-spam.`;
+      }
+    }
+  }
+
   let { players, teamCaches, teamStats } = combineCachedTeamStats(teams, league.leagueId, season);
   if(!teamCaches.length) {
     teamCaches = listCachedTeamStatsForLeagueSeason(league.leagueId, season);
     players = teamCaches.flatMap(cache => cache.players || []);
-    teamStats = teamCaches.map(cache => ({
-      teamId: cache.teamId,
-      leagueId: cache.leagueId,
-      season: cache.season,
-      team: cache.team,
-      venue: cache.venue,
-      teamStats: cache.teamStats || null,
-      homeAway: cache.homeAway || null,
-      form: cache.form || null,
-      fixtures: cache.fixtures || null,
-      minuteStats: cache.minuteStats || null,
-      updatedAt: cache.updatedAt,
-      warning: cache.warning || ''
-    }));
+    teamStats = teamCaches.map(teamStatsCacheSummary);
     if(!teams.length) teams = teamCaches.map(cache => cache.team || { id:cache.teamId, name:`Lag ${cache.teamId}` });
   }
   const partialTeamCache = teamCaches.some(cache => cache.warning);
@@ -9594,6 +9633,7 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
   }
   statsCache = {
     year: season,
+    loadedAt: Date.now(),
     leagueKey: league.key,
     leagueId: league.leagueId,
     teams,
