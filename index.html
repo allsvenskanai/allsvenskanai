@@ -2624,6 +2624,280 @@ input,select,textarea,button{color:#fff;}
   .start-sub{font-size:13px!important;}
 }
 
+/* Final production dark-theme safety layer.
+   Keep this at the end so older light/beige component styles cannot win. */
+:root{
+  --text:#FFFFFF;
+  --text2:#CFCFCF;
+  --muted:#8A8F98;
+  --dark:#080A0E;
+  --dark2:#0B0F16;
+  --dark3:#111823;
+  --border:rgba(255,255,255,0.08);
+  --border-hi:rgba(255,255,255,0.16);
+}
+
+body,
+main,
+header,
+.mobile-nav,
+.install-banner,
+.notif-panel{
+  background-color:#080A0E !important;
+  color:#FFFFFF !important;
+}
+
+header{
+  background:rgba(5,7,11,.94) !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 18px 42px rgba(0,0,0,.28) !important;
+}
+
+input,
+select,
+textarea,
+.transfer-filter,
+.transfer-filter.search,
+.results-round-select,
+.results-round-current,
+.lb-field input,
+.lb-field select,
+.lb-modal-search input,
+.start-ai-input{
+  background:#0B0F16 !important;
+  color:#FFFFFF !important;
+  border:1px solid rgba(255,255,255,0.08) !important;
+  box-shadow:none !important;
+  caret-color:#FFFFFF !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+.start-ai-input::placeholder,
+.transfer-filter.search::placeholder{
+  color:#777 !important;
+  opacity:1 !important;
+}
+
+select option{
+  background:#0B0F16 !important;
+  color:#FFFFFF !important;
+}
+
+button:not(.start-primary-btn):not(.start-ai-submit):not(.lb-search-btn):not(.primary):not(.active),
+.np,
+.tab,
+.share,
+.ai-btn,
+.header-cta,
+.start-secondary-btn,
+.results-round-btn,
+.team-season-btn,
+.stats-group-chip,
+.stat-tab,
+.page-btn:not(.active),
+.start-chip,
+.lb-button.ghost,
+.lb-button.warn{
+  background:#0B0F16 !important;
+  color:#FFFFFF !important;
+  border:1px solid rgba(255,255,255,0.08) !important;
+}
+
+button:not(.start-primary-btn):not(.start-ai-submit):not(.lb-search-btn):not(.primary):not(.active):hover,
+.np:hover,
+.tab:hover,
+.share:hover,
+.ai-btn:hover,
+.header-cta:hover,
+.start-secondary-btn:hover,
+.results-round-btn:hover:not(:disabled),
+.team-season-btn:hover,
+.stats-group-chip:hover,
+.stat-tab:hover,
+.page-btn:not(.active):hover,
+.start-chip:hover,
+.lb-button.ghost:hover,
+.lb-button.warn:hover{
+  background:#111823 !important;
+  color:#FFFFFF !important;
+  border-color:rgba(201,165,75,.28) !important;
+}
+
+.profile,
+.tw,
+.table-wrap,
+.news-card,
+.podcast-card,
+.match-card,
+.match-detail-hero,
+.match-detail-card,
+.match-player-card,
+.lineup-card,
+.lineup-section,
+.stat-box,
+.stats-intro,
+.start-highlight,
+.start-ai,
+.start-ai-result,
+.start-ai-suggestions,
+.start-mini-card,
+.start-tcard,
+.start-proof-pill,
+.start-feature-card,
+.start-brand-panel,
+.tcard,
+.pill,
+.p-img,
+.p-photo,
+.best-players,
+.transfer-row,
+.transfer-filter,
+.results-round-select,
+.results-round-current,
+.results-round-btn,
+.team-season-btn,
+.team-metric-card,
+.team-player-highlight,
+.lb-panel,
+.lb-controls,
+.lb-control-panel,
+.lb-formation-card,
+.lb-sidepanel,
+.lb-modal-card,
+.lb-result,
+.lb-status,
+.lb-empty,
+.match-meta-pill,
+.live-badge,
+.pos-tag,
+.fee-tag,
+.transfer-badge{
+  background:linear-gradient(180deg,#0B0F16,#0A0D14) !important;
+  color:#FFFFFF !important;
+  border-color:rgba(255,255,255,0.08) !important;
+  box-shadow:0 18px 42px rgba(0,0,0,.22) !important;
+}
+
+.news-card:hover,
+.podcast-card:hover,
+.match-card:hover,
+.start-highlight:hover,
+.start-tcard:hover,
+.tcard:hover,
+.lb-result:hover,
+.transfer-row:hover{
+  background:linear-gradient(180deg,#111823,#0B0F16) !important;
+}
+
+thead,
+.tw thead,
+.standings-table thead th,
+.stats-table thead th,
+.match-player-table th{
+  background:#111823 !important;
+  color:#CFCFCF !important;
+}
+
+tbody,
+tr,
+td,
+th,
+.match-player-table td,
+.match-player-table th{
+  color:#FFFFFF !important;
+}
+
+.pg-title,
+.p-body h1,
+.logo,
+.logo a,
+.start-wordmark,
+.start-highlight-title,
+.start-ai-title,
+.start-mini-title,
+.start-team-name,
+.start-result-side,
+.match-detail-team .name,
+.lineup-head .ln,
+.transfer-player,
+.standings-team-name,
+.pills .pn,
+.num,
+.stat-box .value,
+.tabs .tab.active,
+.tabs .tab:hover,
+.stats-player-name,
+.news-title,
+.podcast-title,
+.pcell .pn,
+.lineup-player .nm,
+.match-team .name,
+.match-score .score,
+.match-score .time,
+.bp-name{
+  color:#FFFFFF !important;
+}
+
+.logo-tagline,
+.pg-sub,
+.p-meta,
+.p-meta *,
+.pill .pl,
+.start-sub,
+.start-lead,
+.start-ai-copy,
+.start-ai-note,
+.start-mini-sub,
+.start-highlight-copy,
+.start-highlight-kicker,
+.start-section-label,
+.match-meta-pill,
+.results-round-label,
+.pagination-meta,
+.empty,
+.loading,
+.back,
+.pcell .ps,
+.lineup-player .pos,
+.install-banner .ib-sub,
+.news-card p,
+.podcast-card p,
+.podcast-meta,
+.notif-sub,
+.stats-helper,
+.transfer-filter,
+.transfer-filter.search,
+.bp-team,
+.team-player-highlight .meta,
+.lb-copy,
+.lb-modal-copy,
+.lb-status{
+  color:#CFCFCF !important;
+}
+
+.muted,
+.small,
+.season-label,
+.p-meta,
+.start-ai-meta,
+.start-mini-empty,
+.lb-empty,
+.export-empty-role{
+  color:#8A8F98 !important;
+}
+
+.start-primary-btn,
+.start-ai-submit,
+.lb-search-btn,
+.lb-button.primary,
+.page-btn.active,
+.league-switcher button.active{
+  background:linear-gradient(180deg,#E6C977,#C9A54B) !important;
+  color:#080A0E !important;
+  border-color:rgba(230,201,119,.42) !important;
+}
+
 </style>
 
 </head>
