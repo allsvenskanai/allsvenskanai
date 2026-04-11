@@ -3443,33 +3443,6 @@ function lineupBuilderSyncInputs(){
   if(teamSelect) teamSelect.value = String(lineupBuilderState.selectedTeamId);
 }
 
-const LINEUP_BUILDER_NAME_OVERRIDES = {
-  // Lägg till nya namnfixar här efter hand.
-  // Du kan använda spelar-ID eller fullständigt API-namn som nyckel.
-  // Exempel: 12345: 'Rätt Tilltalsnamn',
-  // Exempel: 'bo kristoffer nordfeldt': 'Kristoffer Nordfeldt',
-  'bo kristoffer nordfeldt': 'Kristoffer Nordfeldt',
-  'kenneth viktor isak bjerkebo': 'Isak Bjerkebo'
-};
-
-function lineupBuilderResolveDisplayName(playerOrName='', playerId=''){
-  const rawName = typeof playerOrName === 'object'
-    ? String(playerOrName?.name || '')
-    : String(playerOrName || '');
-  const rawId = typeof playerOrName === 'object'
-    ? (playerOrName?.id ?? playerId)
-    : playerId;
-  const normalizedName = normalizeText(rawName).trim();
-  const idKey = String(rawId || '').trim();
-  if(idKey && LINEUP_BUILDER_NAME_OVERRIDES[idKey]) return String(LINEUP_BUILDER_NAME_OVERRIDES[idKey]).trim();
-  if(normalizedName && LINEUP_BUILDER_NAME_OVERRIDES[normalizedName]) return String(LINEUP_BUILDER_NAME_OVERRIDES[normalizedName]).trim();
-  return rawName.trim();
-}
-
-function lineupBuilderExportDisplayName(playerOrName='', playerId=''){
-  return lineupBuilderResolveDisplayName(playerOrName, playerId);
-}
-
 function lineupBuilderGetInitials(name=''){
   return String(name || '')
     .split(/\s+/)
@@ -3480,9 +3453,8 @@ function lineupBuilderGetInitials(name=''){
     .toUpperCase() || 'AA';
 }
 
-function lineupBuilderExportName(playerOrName='', playerId=''){
-  const resolved = lineupBuilderExportDisplayName(playerOrName, playerId);
-  const parts = String(resolved || '').trim().split(/\s+/).filter(Boolean);
+function lineupBuilderExportName(name=''){
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if(!parts.length) return '';
   if(parts.length === 1) return parts[0];
   return `${parts[0]}\n${parts[parts.length - 1]}`;
@@ -3875,7 +3847,7 @@ function renderLineupBuilderExportStage(){
               <span class="export-player-meta">
                 ${player.teamLogo ? `<img class="export-player-team-logo" src="${player.teamLogo}" alt="${esc(player.teamName)}">` : `<span class="export-player-team-logo"></span>`}
                 <span class="export-player-text">
-                  <span class="export-player-name">${esc(lineupBuilderExportName(player.displayName || player.name, player.id))}</span>
+                  <span class="export-player-name">${esc(lineupBuilderExportName(player.name))}</span>
                 <span class="export-team-pill">
                   <span>${esc((player.teamName || 'Klubblös').toUpperCase())}</span>
                 </span>
@@ -4230,7 +4202,6 @@ function lineupBuilderAssignPlayer(slotId, playerId){
   lineupBuilderState.slots[slotId] = {
     id: player.id,
     name: player.name,
-    displayName: lineupBuilderResolveDisplayName(player),
     photo: player.photo,
     teamName: player.teamName,
     teamLogo: player.teamLogo,
@@ -4240,7 +4211,7 @@ function lineupBuilderAssignPlayer(slotId, playerId){
   renderLineupBuilderSummary();
   renderLineupBuilderPitch();
   lineupBuilderCloseModal();
-  lineupBuilderSetStatus(`${lineupBuilderResolveDisplayName(player)} lades till i elvan.`, 'success');
+  lineupBuilderSetStatus(`${player.name} lades till i elvan.`, 'success');
 }
 
 function lineupBuilderRemovePlayer(slotId){
