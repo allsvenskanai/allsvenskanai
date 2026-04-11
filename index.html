@@ -7055,8 +7055,21 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const scoredMin = Object.entries(stats?.goals?.for?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
     const concededMin = Object.entries(stats?.goals?.against?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
 
-    const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason);
+    const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason, LEAGUE);
     window.__teamPlayerStatsData = { players: teamPlayers };
+    if(typeof writeCachedTeamStats === 'function' && teamPlayers.length) {
+      writeCachedTeamStats(routeTeamId, LEAGUE, selectedSeason, {
+        teamId:routeTeamId,
+        leagueId:LEAGUE,
+        season:selectedSeason,
+        team,
+        players:teamPlayers,
+        rawCount:(seasonPlayers || []).length,
+        updatedAt:Date.now(),
+        warning:''
+      });
+      if(statsCache?.leagueId === LEAGUE && Number(statsCache?.year) === Number(selectedSeason)) statsCache = null;
+    }
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
     const seasonButtons = TEAM_PAGE_SEASONS
