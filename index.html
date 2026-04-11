@@ -3246,7 +3246,7 @@ const C = {};
 
 // Cache
 const CACHE = {};
-const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v4';
+const API_PERSIST_CACHE_PREFIX = 'aai:sportmonks-cache:v1';
 const API_PERSIST_DISABLED = false;
 
 function apiCacheKey(ep, p = {}, raw = false){
@@ -4789,7 +4789,7 @@ async function ensureLineupBuilderTeamSquad(leagueKey = lineupBuilderState.selec
     .filter(player => player.id && player.name && player.name !== '—');
 
   if(!squad.length) {
-    const squadRaw = await af('players/squads', { team:teamId }).catch(() => []);
+    const squadRaw = await af('players/squads', { team:teamId, league:meta.id, season:meta.season }).catch(() => []);
     const list = squadRaw?.[0]?.players || [];
     squad = list.map(item => lineupBuilderNormalizePlayerRow({
       player: {
@@ -6880,7 +6880,7 @@ async function pageTeam(el, teamId) {
   try {
     const [statsD, squadD, seasonPlayers] = await Promise.all([
       af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
-      af('players/squads', {team:teamId}),
+      af('players/squads', {team:teamId, league:LEAGUE, season:SEASON}),
       afAll('players', {team:teamId, season:SEASON}).catch(()=>[])
     ]);
 
@@ -7082,7 +7082,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
       afRaw('teams/statistics', {league:LEAGUE, season:selectedSeason, team:routeTeamId}).catch(() => ({ response: null })),
-      afRaw('players/squads', {team:routeTeamId}).catch(() => ({ response: [] })),
+      afRaw('players/squads', {team:routeTeamId, league:LEAGUE, season:selectedSeason}).catch(() => ({ response: [] })),
       fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
@@ -9000,7 +9000,7 @@ let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
 let statsSelectedTeamId = '';
-const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v4';
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:sportmonks-stats-dataset:v1';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
@@ -9011,7 +9011,7 @@ function statsDatasetCacheKey(season = SEASON){
 }
 
 function statsTeamCacheKey(teamId, leagueId = LEAGUE, season = SEASON){
-  return `stats:${leagueId}:${season}:team:${teamId}`;
+  return `sportmonks:stats:${leagueId}:${season}:team:${teamId}`;
 }
 
 function statsDatasetCacheTtl(season = SEASON){
@@ -9054,12 +9054,12 @@ function clearStatsDatasetCache(season = null){
     if(season) {
       localStorage.removeItem(statsDatasetCacheKey(season));
       Object.keys(localStorage)
-        .filter(key => key.startsWith(`stats:${LEAGUE}:${season}:team:`))
+        .filter(key => key.startsWith(`sportmonks:stats:${LEAGUE}:${season}:team:`))
         .forEach(key => localStorage.removeItem(key));
       return;
     }
     Object.keys(localStorage)
-      .filter(key => key.startsWith(STATS_DATASET_CACHE_PREFIX) || key.startsWith('stats:'))
+      .filter(key => key.startsWith(STATS_DATASET_CACHE_PREFIX) || key.startsWith('sportmonks:stats:') || key.startsWith('stats:'))
       .forEach(key => localStorage.removeItem(key));
   } catch(e) {
     console.warn('[stats-cache] clear failed', e.message);
@@ -9483,7 +9483,7 @@ function combineCachedTeamStats(teams = [], leagueId = LEAGUE, season = SEASON){
 
 function listCachedTeamStatsForLeagueSeason(leagueId = LEAGUE, season = SEASON){
   if(typeof localStorage === 'undefined') return [];
-  const prefix = `stats:${leagueId}:${season}:team:`;
+  const prefix = `sportmonks:stats:${leagueId}:${season}:team:`;
   return Object.keys(localStorage)
     .filter(key => key.startsWith(prefix))
     .map(key => {
