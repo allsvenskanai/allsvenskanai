@@ -7603,6 +7603,62 @@ let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v1';
+const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
+const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
+
+function statsDatasetCacheKey(season = SEASON){
+  return `${STATS_DATASET_CACHE_PREFIX}:${LEAGUE}:${season}`;
+}
+
+function statsDatasetCacheTtl(season = SEASON){
+  return Number(season) === Number(SEASON) ? STATS_CURRENT_SEASON_TTL : STATS_OLDER_SEASON_TTL;
+}
+
+// LocalStorage cache for the heavy statistics player dataset.
+// First load per season may hit every team, but revisits should reuse this dataset.
+function readStatsDatasetCache(season = SEASON){
+  try {
+    const raw = localStorage.getItem(statsDatasetCacheKey(season));
+    if(!raw) return null;
+    const cached = JSON.parse(raw);
+    const age = Date.now() - Number(cached?.createdAt || 0);
+    if(!cached?.data || age < 0 || age > statsDatasetCacheTtl(season)) {
+      localStorage.removeItem(statsDatasetCacheKey(season));
+      return null;
+    }
+    return cached.data;
+  } catch(e) {
+    console.warn('[stats-cache] read failed', e.message);
+    return null;
+  }
+}
+
+function writeStatsDatasetCache(season = SEASON, data = null){
+  if(!data?.players) return;
+  try {
+    localStorage.setItem(statsDatasetCacheKey(season), JSON.stringify({
+      createdAt: Date.now(),
+      data
+    }));
+  } catch(e) {
+    console.warn('[stats-cache] write failed', e.message);
+  }
+}
+
+function clearStatsDatasetCache(season = null){
+  try {
+    if(season) {
+      localStorage.removeItem(statsDatasetCacheKey(season));
+      return;
+    }
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(STATS_DATASET_CACHE_PREFIX))
+      .forEach(key => localStorage.removeItem(key));
+  } catch(e) {
+    console.warn('[stats-cache] clear failed', e.message);
+  }
+}
 
 function toStatNumber(value){
   if(value === null || value === undefined || value === '') return 0;
@@ -7894,10 +7950,23 @@ function setStatsGroup(groupId){
 async function pageStats(el, year=null, force=false) {
   if(year) statsYear = year;
   else statsYear = await getResolvedSeason();
+  await getResolvedSeason();
   document.title = `Statistik ${statsYear} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
     if(force) statsCache = null;
+    if(!force && statsCache?.year === statsYear) {
+      renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
+      return;
+    }
+
+    const cachedStats = !force ? readStatsDatasetCache(statsYear) : null;
+    if(cachedStats?.year === statsYear && Array.isArray(cachedStats.players)) {
+      statsCache = cachedStats;
+      renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
+      return;
+    }
+
     el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar spelare för ${statsYear}…</div>`;
 
     // Get teams from standings for that year
@@ -7940,6 +8009,7 @@ async function pageStats(el, year=null, force=false) {
         fieldCount: PLAYER_STATS_INVENTORY.length,
       }
     };
+    writeStatsDatasetCache(statsYear, statsCache);
     renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
@@ -7990,7 +8060,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
 
   const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
   const yearBtns = years.map(y =>
-    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y},true)">${y}</button>`
+    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${y}</button>`
   ).join('');
   const groupTabs = STAT_GROUPS.map(group => {
     const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
@@ -8033,7 +8103,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="pg-title">Statistik <em>${statsYear}</em></div>
           <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
         </div>
-        <button class="ai-btn" onclick="statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
+        <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Bygg om cache</button>
       </div>
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
       <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
