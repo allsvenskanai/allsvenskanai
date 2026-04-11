@@ -2419,6 +2419,122 @@ main{max-width:1380px;padding-top:1.4rem}
   .start-quick-title,.start-brand-title,.start-mini-title,.start-side-title,.start-highlight-title{font-size:24px}
 }
 
+
+
+/* === GLOBAL DARK OVERHAUL V4 === */
+:root{
+  --gold:#D4AF37;
+  --gold-light:#F0CF67;
+  --gold-dim:rgba(212,175,55,.16);
+  --dark:#05070B;
+  --dark2:#0A0F17;
+  --dark3:#101722;
+  --dark4:#151E2B;
+  --dark5:#1A2433;
+  --border:rgba(255,255,255,.08);
+  --border-hi:rgba(212,175,55,.28);
+  --text:#F8FAFC;
+  --text2:#D5D9E1;
+  --muted:#96A0AF;
+  --red:#D05A5A;
+  --green:#3AAA75;
+  --blue:#7FB4FF;
+}
+html,body{background:
+  radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 34%),
+  radial-gradient(circle at bottom right, rgba(30,96,180,.12), transparent 28%),
+  #05070B !important;color:var(--text)!important;}
+body{background-image:
+  radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 34%),
+  radial-gradient(circle at bottom right, rgba(30,96,180,.12), transparent 28%),
+  url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") !important;}
+header{
+  background:linear-gradient(180deg,rgba(5,7,11,.97),rgba(5,7,11,.93)) !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34) !important;
+}
+.logo,.logo a,.pg-title,.p-body h1,.start-wordmark,.start-highlight-title,.start-ai-title,.start-mini-title,.start-team-name,.start-result-side,.match-detail-team .name,.lineup-head .ln,.transfer-player,.standings-team-name,.pills .pn,.num,.stat-box .value,.tabs .tab.active,.tabs .tab:hover,.np.active,.np:hover{color:var(--text)!important;}
+.logo-tagline,.pg-sub,.p-meta,.p-meta *,.pill .pl,.start-sub,.start-lead,.start-ai-copy,.start-ai-note,.start-mini-sub,.start-proof-pill,.start-highlight-copy,.start-highlight-kicker,.start-section-label,.match-meta-pill,.results-round-label,.pagination-meta,.empty,.loading,.back,.pcell .ps,.lineup-player .pos,.install-banner .ib-sub,.news-card p,.podcast-card p,.podcast-meta,.notif-sub,.stats-helper,.results-round-current,.results-round-select,.transfer-filter,.transfer-filter.search{color:var(--text2)!important;}
+a,span,div,p,td,th,label,strong,small{color:inherit;}
+.install-banner{display:none !important;}
+main{padding-top:1.6rem !important;}
+.profile,.tw,.news-card,.podcast-card,.match-card,.notif-panel,.match-detail-hero,.stat-box,.lineup-card,.start-highlight,.start-ai,.start-mini-card,.start-tcard,.tcard,.transfer-filter,.results-round-select,.results-round-current,.results-round-btn,.pill,.p-img,.p-photo,.share,.header-cta,.ai-btn,.transfer-badge,.match-meta-pill,.live-badge,.pos-tag,.fee-tag{
+  background:linear-gradient(180deg,rgba(12,17,26,.96),rgba(8,12,20,.98)) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.24) !important;
+}
+.start-hero,.match-detail-hero{
+  background:
+   radial-gradient(circle at 18% 18%, rgba(212,175,55,.15), transparent 28%),
+   radial-gradient(circle at 82% 82%, rgba(40,94,180,.14), transparent 30%),
+   linear-gradient(180deg,rgba(10,15,23,.98),rgba(7,10,16,.98)) !important;
+  border:1px solid rgba(212,175,55,.18) !important;
+  box-shadow:0 30px 70px rgba(0,0,0,.35) !important;
+}
+.start-wordmark,.pg-title,.p-body h1{
+  color:#fff !important;
+  text-shadow:0 10px 28px rgba(0,0,0,.52) !important;
+}
+.start-wordmark span,.pg-title em,.logo em,.match-detail-mid .status,.start-proof-pill strong,.start-result-score,.start-points,.standings-points,.stat-box .value,.pill .pn,.transfer-arrow,.live-badge,.start-rank{color:var(--gold) !important;}
+.start-sub,.pg-sub{color:rgba(255,255,255,.82)!important;letter-spacing:1.4px!important;}
+.start-lead,.start-ai-copy{color:rgba(255,255,255,.88)!important;}
+.nav-pills .np,.tab,.header-cta,.share,.ai-btn,.results-round-btn,.results-round-select,.results-round-current,.transfer-filter,.transfer-filter.search,.start-chip,.start-secondary-btn{
+  background:rgba(255,255,255,.04) !important;
+  color:var(--text2) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+}
+.np.active,.tab.active,.header-cta:hover,.share:hover,.ai-btn:hover,.results-round-btn:hover:not(:disabled),.start-chip:hover,.start-secondary-btn:hover{
+  background:rgba(212,175,55,.14) !important;
+  border-color:rgba(212,175,55,.30) !important;
+  color:#fff !important;
+}
+.start-primary-btn,.start-ai-submit{
+  background:linear-gradient(180deg,#DAB84B,#C89E28) !important;
+  color:#111 !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 16px 32px rgba(212,175,55,.24) !important;
+}
+.start-primary-btn:hover,.start-ai-submit:hover{filter:brightness(1.05);}
+.news-card::before,.tcard::before,.start-tcard::before,.start-highlight::before{background:linear-gradient(135deg,rgba(212,175,55,.10),transparent 60%) !important;}
+.tcard:hover,.start-tcard:hover,.news-card:hover,.podcast-card:hover,.start-highlight:hover,.match-card:hover,.lineup-card:hover,.profile:hover,.tw:hover{
+  border-color:rgba(212,175,55,.22) !important;
+  transform:translateY(-2px);
+}
+.tcard .tn,.start-tn,.news-title,.podcast-title,.start-highlight-title,.start-mini-title,.results-round-current,.results-round-select,.transfer-club span,.pcell .pn,.lineup-player .nm,.match-team .name,.match-score .score,.match-score .time,.match-detail-mid .score,.start-result-side,.start-team-name,.start-mini-empty strong,.standings-rank{color:#fff !important;}
+thead, .tw thead, .standings-table thead th, .stats-table thead th, .match-player-table th{background:rgba(255,255,255,.04) !important;color:#C8D0DB !important;border-bottom:1px solid rgba(255,255,255,.08)!important;}
+td,th,.match-player-table td,.match-player-table th{border-bottom:1px solid rgba(255,255,255,.06)!important;}
+tr:hover td,.stats-table tbody tr:hover td,.standings-table tbody tr.link:hover td{background:rgba(255,255,255,.035)!important;}
+tr.total-row td{background:rgba(255,255,255,.04)!important;}
+.start-table-row,.start-result-row,.transfer-row,.lineup-player,.match-player-table tr,.stat-box,.start-mini-card,.start-highlight,.start-ai-result{background-color:transparent !important;}
+.start-table-row,.start-result-row,.transfer-row,.match-player-table tr{border:1px solid transparent;}
+.start-table-row:hover,.start-result-row:hover,.transfer-row:hover{background:rgba(255,255,255,.035)!important;box-shadow:none!important;}
+.transfer-row.is-permanent td{background:rgba(212,175,55,.04)!important;}
+.transfer-badge,.fee-tag,.pos-tag{background:rgba(255,255,255,.05)!important;color:var(--text2)!important;}
+.live-badge{color:#ff8d8d!important;background:rgba(208,90,90,.12)!important;border-color:rgba(208,90,90,.28)!important;}
+.match-score .time,.match-score .time.upcoming{background:rgba(255,255,255,.05)!important;color:#D8DEE7!important;border-color:rgba(255,255,255,.10)!important;}
+.match-score .time.finished{background:rgba(212,175,55,.12)!important;color:var(--gold)!important;border-color:rgba(212,175,55,.26)!important;}
+input,select,textarea,button{color:#fff;}
+.start-ai-input, .transfer-filter.search, .transfer-filter, .results-round-select, .results-round-current{
+  background:rgba(255,255,255,.04)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+}
+.start-ai-input::placeholder,.transfer-filter.search::placeholder{color:#9BA6B6!important;}
+.start-ai-suggestions,.start-ai-result,.notif-panel,.lb-search-results,.lb-sidepanel,.lb-modal-card,.lb-formation-card{
+  background:linear-gradient(180deg,rgba(12,17,26,.98),rgba(8,12,20,.99)) !important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+}
+.mobile-nav{background:rgba(5,7,11,.97)!important;border-top:1px solid rgba(255,255,255,.08)!important;}
+.mnav-btn{color:var(--muted)!important;}
+.mnav-btn.active{color:var(--gold)!important;}
+.start-proof-pill,.start-chip,.start-mini-link,.results-round-btn,.share,.header-cta{backdrop-filter:blur(10px);}
+@media (max-width: 900px){
+  main{padding-top:1rem !important;}
+  .start-wordmark{font-size:clamp(50px,16vw,86px)!important;}
+  .start-sub{font-size:13px!important;}
+}
+
 </style>
 
 </head>
