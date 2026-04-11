@@ -3923,6 +3923,8 @@ async function loadStaticJsonByQuerySafe(ep, p = {}, fallback = { response: [] }
 async function fetchAllPages(ep, p = {}, opts = {}) {
   const pageParam = opts.pageParam || 'page';
   const dedupeKey = opts.dedupeKey || null;
+  const delayMs = Number(opts.delayMs || 0);
+  const stopOnRateLimit = opts.stopOnRateLimit !== false;
   const first = await afRaw(ep, p);
   const firstRows = Array.isArray(first?.response) ? first.response : [];
   const totalPages = Number(first?.paging?.total || first?.pagination?.total || 1);
@@ -3931,11 +3933,16 @@ async function fetchAllPages(ep, p = {}, opts = {}) {
   if(totalPages > 1) {
     for(let page = 2; page <= totalPages; page += 1) {
       try {
+        if(delayMs > 0) await delay(delayMs);
         const next = await afRaw(ep, { ...p, [pageParam]: page });
         const nextRows = Array.isArray(next?.response) ? next.response : [];
         rows.push(...nextRows);
       } catch(e) {
         console.warn('[pagination] page fetch failed', { endpoint: ep, page, params: p, error: e.message });
+        if(stopOnRateLimit && isApiRateLimitError(e)) {
+          if(typeof opts.onRateLimit === 'function') opts.onRateLimit(e, page);
+          break;
+        }
       }
     }
   }
@@ -3982,6 +3989,15 @@ async function fetchAllPagesStatic(ep, p = {}, opts = {}) {
 
 function delay(ms){
   return new Promise(res => setTimeout(res, ms));
+}
+
+function isApiRateLimitError(error){
+  const message = String(error?.message || error || '').toLowerCase();
+  return message.includes('too many requests')
+    || message.includes('rate limit')
+    || message.includes('exceeded the limit')
+    || message.includes('requests per minute')
+    || message.includes('429');
 }
 
 function normalizeText(str){
@@ -8822,6 +8838,7 @@ let statsYear = SEASON; // default to current season
 const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v3';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
+const STATS_PAGE_FETCH_DELAY_MS = 900;
 
 function statsDatasetCacheKey(season = SEASON){
   return `${STATS_DATASET_CACHE_PREFIX}:${getActiveLeagueKey()}:${season}`;
@@ -8833,16 +8850,17 @@ function statsDatasetCacheTtl(season = SEASON){
 
 // LocalStorage cache for the heavy statistics player dataset.
 // First load per season may hit every team, but revisits should reuse this dataset.
-function readStatsDatasetCache(season = SEASON){
+function readStatsDatasetCache(season = SEASON, options = {}){
   try {
     const raw = localStorage.getItem(statsDatasetCacheKey(season));
     if(!raw) return null;
     const cached = JSON.parse(raw);
     const age = Date.now() - Number(cached?.createdAt || 0);
-    if(!cached?.data || age < 0 || age > statsDatasetCacheTtl(season)) {
+    if(!cached?.data || age < 0) {
       localStorage.removeItem(statsDatasetCacheKey(season));
       return null;
     }
+    if(!options.allowExpired && age > statsDatasetCacheTtl(season)) return null;
     return cached.data;
   } catch(e) {
     console.warn('[stats-cache] read failed', e.message);
@@ -9218,47 +9236,63 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     statsCache = cachedStats;
     return statsCache;
   }
+  const staleStats = readStatsDatasetCache(season, { allowExpired:true });
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
-  const standData = await af('standings', {league:league.leagueId, season});
-  const standingGroups = standData[0]?.league?.standings || [];
-  const teams = [...new Map(
-    standingGroups
-      .flat()
-      .map(row => row?.team)
-      .filter(team => team?.id)
-      .map(team => [team.id, team])
-  ).values()];
-  if(!teams.length) throw new Error(`Inga lag hittades för säsong ${season}. API-Football kanske saknar denna säsong.`);
-
-  if(onStatus) onStatus(`Hämtar statistik för ${teams.length} lag…`);
-  const allPlayers = [];
-  const chunks = [];
-  for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
-  for(const chunk of chunks) {
-    await Promise.all(chunk.map(async t => {
-      const arr = await fetchAllPages('players', {league:league.leagueId, season, team:t.id}, {
-        dedupeKey: item => {
-          const playerId = item?.player?.id || '';
-          const matchingStat = (item?.statistics || []).find(stat => {
-            const statLeagueId = Number(stat?.league?.id || 0);
-            const statSeason = Number(stat?.league?.season || 0);
-            const sameLeague = !statLeagueId || statLeagueId === Number(league.leagueId);
-            const sameSeason = !statSeason || statSeason === Number(season);
-            return sameLeague && sameSeason;
-          });
-          const statTeamId = matchingStat?.team?.id || t.id || '';
-          return `${playerId}-${statTeamId}-${league.leagueId}-${season}`;
-        }
-      }).catch(e => {
-        console.warn('[stats] team players fetch failed', { teamId: t.id, teamName: t.name, season, error: e.message });
-        return [];
-      });
-      allPlayers.push(...arr);
-    }));
+  let teams = [];
+  try {
+    const standData = await af('standings', {league:league.leagueId, season});
+    const standingGroups = standData[0]?.league?.standings || [];
+    teams = [...new Map(
+      standingGroups
+        .flat()
+        .map(row => row?.team)
+        .filter(team => team?.id)
+        .map(team => [team.id, team])
+    ).values()];
+  } catch(e) {
+    console.warn('[stats] standings fetch failed', { league:league.key, season, error:e.message });
   }
 
-  const players = buildNormalizedStatsDataset(allPlayers, season, league.leagueId);
+  if(onStatus) onStatus(`Hämtar säsongsstatistik för ${league.name} ${season}…`);
+  let rawPlayers = [];
+  let warning = '';
+  try {
+    rawPlayers = await fetchAllPages('players', { league:league.leagueId, season }, {
+      delayMs: STATS_PAGE_FETCH_DELAY_MS,
+      stopOnRateLimit: true,
+      onRateLimit: () => {
+        warning = 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så tabellen visar den data som hann laddas.';
+      },
+      dedupeKey: item => {
+        const playerId = item?.player?.id || '';
+        const stat = (item?.statistics || []).find(entry => {
+          const statLeagueId = Number(entry?.league?.id || 0);
+          const statSeason = Number(entry?.league?.season || 0);
+          return (!statLeagueId || statLeagueId === Number(league.leagueId)) && (!statSeason || statSeason === Number(season));
+        }) || item?.statistics?.[0] || {};
+        const statTeamId = stat?.team?.id || '';
+        return `${playerId}-${statTeamId}-${league.leagueId}-${season}`;
+      }
+    });
+  } catch(e) {
+    console.warn('[stats] season-wide players fetch failed', { league:league.key, season, error:e.message });
+    if(isApiRateLimitError(e)) warning = 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så vi visar cachead eller delvis tillgänglig data.';
+    else warning = 'Viss statistik uppdateras inom kort.';
+  }
+
+  if(!rawPlayers.length && staleStats?.year === season && staleStats?.leagueKey === league.key && Array.isArray(staleStats.players)) {
+    statsCache = {
+      ...staleStats,
+      meta: {
+        ...(staleStats.meta || {}),
+        warning: warning || 'Viss statistik uppdateras inom kort. Visar senast sparade data.'
+      }
+    };
+    return statsCache;
+  }
+
+  const players = buildNormalizedStatsDataset(rawPlayers, season, league.leagueId);
   statsCache = {
     year: season,
     leagueKey: league.key,
@@ -9266,9 +9300,10 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     players,
     meta: {
       playerCount: players.length,
-      teamCount: teams.length,
+      teamCount: teams.length || new Set(players.map(player => player.teamId).filter(Boolean)).size,
       categoryCount: STAT_CATEGORIES.length,
       fieldCount: PLAYER_STATS_INVENTORY.length,
+      warning: warning || (!players.length ? 'Viss statistik uppdateras inom kort.' : ''),
     }
   };
   writeStatsDatasetCache(season, statsCache);
@@ -9341,6 +9376,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
   }).join('');
 
   const groupMeta = STAT_GROUPS.find(group => group.id === currentStatGroup) || STAT_GROUPS[0];
+  const statsWarning = cache.meta?.warning ? `<div class="err" style="margin:0 0 1rem">${esc(cache.meta.warning)}</div>` : '';
   el.innerHTML = `
     <div class="stats-shell">
       <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -9348,9 +9384,10 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="pg-title">Statistik <em>${statsYear}</em></div>
           <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
         </div>
-        <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Bygg om cache</button>
+        <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Uppdatera statistik</button>
           <button class="ai-btn" onclick="clearPersistedApiCache()">Rensa API-cache</button>
       </div>
+      ${statsWarning}
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
       <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
       <div class="stats-category-panel">
