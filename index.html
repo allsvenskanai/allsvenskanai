@@ -2759,7 +2759,7 @@ const C = {};
 
 // Cache
 const CACHE = {};
-const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v2';
+const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v3';
 const API_PERSIST_DISABLED = false;
 
 function apiCacheKey(ep, p = {}, raw = false){
@@ -3316,6 +3316,45 @@ function formatSvDate(input, opts = { day:'2-digit', month:'short' }){
 }
 function svDate(input){
   return formatSvDate(input);
+}
+
+const DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS = {
+  // Lägg bara in externa fallback-loggor här om API:t saknar både logo och fungerande team-id.
+};
+
+function teamLogoPlaceholder(name = 'Lag'){
+  const cleaned = fixName(name || 'Lag').trim();
+  const initials = cleaned
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0))
+    .join('')
+    .toUpperCase() || 'AI';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+    <rect width="96" height="96" rx="24" fill="#101722"/>
+    <rect x="6" y="6" width="84" height="84" rx="20" fill="none" stroke="#C9A54B" stroke-opacity=".45" stroke-width="2"/>
+    <text x="48" y="57" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="28" font-weight="900" fill="#E6C977">${esc(initials)}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function getTeamLogo(team = {}){
+  const name = fixName(team?.name || team?.team?.name || team?.teamName || '');
+  const directLogo = String(team?.logo || team?.team?.logo || team?.teamLogo || '').trim();
+  if(/^https?:\/\//i.test(directLogo) || directLogo.startsWith('data:image/')) return directLogo;
+  const fallback = DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS[normalizeText(name)];
+  if(fallback) return fallback;
+  const id = team?.id || team?.team?.id || team?.teamId;
+  if(id) return `https://media.api-sports.io/football/teams/${id}.png`;
+  return teamLogoPlaceholder(name);
+}
+
+function handleTeamLogoError(img){
+  if(!img || img.dataset.logoFallbackApplied === '1') return;
+  img.dataset.logoFallbackApplied = '1';
+  img.src = teamLogoPlaceholder(img.alt || img.dataset.teamName || 'Lag');
+  img.style.opacity = '1';
 }
 
 async function af(ep, p={}) {
@@ -4184,7 +4223,7 @@ function lineupBuilderNormalizePlayerRow(item = {}, fallbackTeam = {}){
     photo: player.photo || '',
     teamId: team.id || fallbackTeam.id || 0,
     teamName: fixName(team.name || fallbackTeam.name || ''),
-    teamLogo: team.logo || fallbackTeam.logo || '',
+    teamLogo: getTeamLogo(team.id || team.name || team.logo ? team : fallbackTeam),
     positionCode,
     position,
     detailedPosition: resolveDetailedPosition({ positionCode, position, games, player, statistics }),
@@ -4217,7 +4256,7 @@ async function ensureLineupBuilderTeams(leagueKey = lineupBuilderState.selectedL
   const teams = lineupBuilderSortTeams(rows.map(team => ({
     id: Number(team.id),
     name: fixName(team.name || ''),
-    logo: team.logo || ''
+    logo: getTeamLogo(team)
   })), leagueKey);
   lineupBuilderCache.teamsByLeague[leagueKey] = teams;
   return teams;
@@ -4416,7 +4455,7 @@ function renderLineupBuilderPitch(){
           <span class="lb-slot-meta">
             <span class="lb-slot-name">${esc(displayName)}</span>
             <span class="lb-slot-club">
-              ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+              <img src="${getTeamLogo({ id:player.teamId, name:player.teamName, logo:player.teamLogo })}" alt="${esc(player.teamName || 'Lag')}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="handleTeamLogoError(this)">
               <span>${esc(player.teamName || 'Klubblös')}</span>
             </span>
           </span>
@@ -4496,7 +4535,7 @@ function renderLineupBuilderExportStage(){
                 <span class="export-position">${esc(slot.label)}</span>
               </span>
               <span class="export-player-meta">
-                ${player.teamLogo ? `<img class="export-player-team-logo" src="${player.teamLogo}" alt="${esc(player.teamName)}">` : `<span class="export-player-team-logo"></span>`}
+                <img class="export-player-team-logo" src="${getTeamLogo({ id:player.teamId, name:player.teamName, logo:player.teamLogo })}" alt="${esc(player.teamName || 'Lag')}" onerror="handleTeamLogoError(this)">
                 <span class="export-player-text">
                   <span class="export-player-name">${esc(lineupBuilderExportName(player))}</span>
                 <span class="export-team-pill">
@@ -4570,7 +4609,7 @@ function renderLineupBuilderModal(){
             <span class="lb-result-body">
               <span class="lb-result-name">${esc(displayName)}</span>
               <span class="lb-result-meta">
-                ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+                <img src="${getTeamLogo({ id:entry.player.teamId, name:entry.player.teamName, logo:entry.player.teamLogo })}" alt="${esc(entry.player.teamName || 'Lag')}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="handleTeamLogoError(this)">
                 <span>${esc(entry.player.teamName || lineupBuilderCurrentLeagueConfig().label)}</span>
               </span>
             </span>
@@ -4866,6 +4905,7 @@ function lineupBuilderAssignPlayer(slotId, playerId){
     name: player.name,
     displayName,
     photo: player.photo,
+    teamId: player.teamId,
     teamName: player.teamName,
     teamLogo: player.teamLogo,
     position: player.position
@@ -5234,7 +5274,7 @@ async function pageStart(el) {
 
     const cards = orderedTeams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
-        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <img src="${getTeamLogo(t)}" alt="${esc(t.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
 
@@ -5256,7 +5296,7 @@ async function pageStart(el) {
       <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
         <div class="start-rank">${row.rank}</div>
         <div class="start-team-line">
-          <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <img src="${getTeamLogo(row.team)}" alt="${esc(row.team.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
           <div class="start-team-name">${esc(fixName(row.team.name))}</div>
           <div class="start-team-gd">${gd >= 0 ? '+' : ''}${gd}</div>
         </div>
@@ -5273,12 +5313,12 @@ async function pageStart(el) {
           </div>
           <div class="start-result-teams">
             <div class="start-result-club">
-              <img src="${f.teams?.home?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <img src="${getTeamLogo(f.teams?.home)}" alt="${esc(f.teams?.home?.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
               <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
             </div>
             <div class="start-result-vs">mot</div>
             <div class="start-result-club away">
-              <img src="${f.teams?.away?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <img src="${getTeamLogo(f.teams?.away)}" alt="${esc(f.teams?.away?.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
               <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
             </div>
           </div>
@@ -5953,7 +5993,7 @@ async function pageTeams(el) {
     const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
-        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <img src="${getTeamLogo(t)}" alt="${esc(t.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
@@ -6292,7 +6332,7 @@ async function pageTeam(el, teamId) {
       <div class="pg-header"><div class="pg-title">${esc(team.name)}</div></div>
 
       <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
-        <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
+        <img class="p-img" src="${getTeamLogo(team)}" alt="${esc(team.name || 'Lag')}" onerror="handleTeamLogoError(this)">
         <div class="p-body">
           <div class="p-meta">
             ${venue.name?`<span>ðŸŸ ${esc(venue.name)}</span>`:''}
@@ -6575,7 +6615,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       </div>
       <div class="team-shell">
         <div class="profile"><div class="profile-bg"></div><div class="profile-inner">
-          <img class="p-img" src="${team.logo||''}" onerror="this.style.opacity='.15'">
+          <img class="p-img" src="${getTeamLogo(team)}" alt="${esc(team.name || 'Lag')}" onerror="handleTeamLogoError(this)">
           <div class="p-body team-title-block">
             <div class="team-kicker">Lagöversikt</div>
             <div class="team-title-line"><div class="pg-title">${esc(teamDisplayName)}</div><div class="team-rank-badge">${selectedRank}</div></div>
@@ -6780,13 +6820,13 @@ async function pagePlayer(el, playerId) {
     // Prefer team from URL (where user came from) over API data
     let teamId = urlTeamId || curStats.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE) && entry?.league?.season === selectedAllsvSeason)?.team?.id || profileD[0]?.statistics?.find?.(entry => isAllsvenskanLeague(entry?.league, LEAGUE))?.team?.id || profileD[0]?.statistics?.[0]?.team?.id;
     let teamName = getTeamDisplayName(curStats.team) || '—';
-    let teamLogo = curStats.team?.logo || '';
+    let teamLogo = getTeamLogo(curStats.team || { name: teamName });
 
     // If URL teamId differs from stats teamId, fetch correct team info
     if(urlTeamId && urlTeamId !== curStats.team?.id) {
       try {
         const teamD = await af('teams', {id: urlTeamId});
-        if(teamD[0]) { teamName = getTeamDisplayName(teamD[0].team); teamLogo = teamD[0].team.logo; }
+        if(teamD[0]) { teamName = getTeamDisplayName(teamD[0].team); teamLogo = getTeamLogo(teamD[0].team); }
       } catch(e) {}
     }
 
@@ -6866,7 +6906,7 @@ async function pagePlayer(el, playerId) {
         careerYellow  += y;
         careerRed     += r;
         const isCur = season === curSeasonYear;
-        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: s.team?.logo||'', m, mn, g, a, rt, rtClass, y, r, isCur});
+        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: getTeamLogo(s.team), m, mn, g, a, rt, rtClass, y, r, isCur});
       });
     });
     seasonResults.forEach((data, idx) => {
@@ -6887,7 +6927,7 @@ async function pagePlayer(el, playerId) {
             season,
             league: s.league?.name||'—',
             team: getTeamDisplayName(s.team) || '—',
-            teamLogo: s.team?.logo||'',
+            teamLogo: getTeamLogo(s.team),
             m, mn, g, a, rt, rtClass, y, r
           });
         });
@@ -6915,7 +6955,7 @@ async function pagePlayer(el, playerId) {
       <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
         <td><strong>${s.season}</strong></td>
         <td><div class="player-history-team">
-          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
+          <img src="${s.teamLogo}" alt="${esc(s.team || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span>${esc(s.team)}</span>
         </div></td>
         <td><div class="player-history-league">${esc(s.league)}</div></td>
@@ -6931,7 +6971,7 @@ async function pagePlayer(el, playerId) {
       <tr>
         <td><strong>${s.season}</strong></td>
         <td><div class="player-history-team">
-          <img src="${s.teamLogo}" onerror="this.style.opacity='.15'">
+          <img src="${s.teamLogo}" alt="${esc(s.team || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span>${esc(s.team)}</span>
         </div></td>
         <td><div class="player-history-league">${esc(s.league)}</div></td>
@@ -7069,7 +7109,7 @@ async function pagePlayer(el, playerId) {
             ${p.height?`<span>Längd / vikt: ${p.height} / ${p.weight||'—'}</span>`:''}
           </div>
           ${teamId?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;cursor:pointer" onclick="go('/lag/${teamId}')">
-            <img src="${teamLogo}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.opacity='.15'">
+            <img src="${teamLogo}" alt="${esc(teamName || 'Lag')}" style="width:20px;height:20px;object-fit:contain" onerror="handleTeamLogoError(this)">
             <span style="color:var(--blue);font-size:13px">${esc(teamName)}</span>
           </div>`:''}
           ${seasonSwitcher}
@@ -7271,7 +7311,7 @@ async function pageStandings(el) {
       return `<tr class="link${topClass}" onclick="go('/lag/${t.team.id}')" title="Öppna ${esc(t.team.name)}" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/lag/${t.team.id}')}" aria-label="Öppna ${esc(t.team.name)}">
         <td class="standings-rank">${t.rank}</td>
         <td><div class="standings-team">
-          <img src="${t.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <img src="${getTeamLogo(t.team)}" alt="${esc(t.team.name || 'Lag')}" onerror="handleTeamLogoError(this)" loading="lazy">
           <span class="standings-team-name">${esc(t.team.name)}</span>
         </div></td>
         <td>${t.all.played}</td><td>${t.all.win}</td><td>${t.all.draw}</td><td>${t.all.lose}</td>
@@ -7395,7 +7435,7 @@ function renderEventsList(events){
         <div class="player">${esc(getPlayerDisplayName(ev.player) || 'Okänd spelare')}${(ev.assist?.name || ev.assist?.firstname || ev.assist?.lastname || ev.assist?.fullname) ? ` <span style="color:var(--muted);font-weight:500">â†’ ${esc(getPlayerDisplayName(ev.assist))}</span>` : ''}</div>
       </div>
       <div class="event-team">
-        <img src="${ev.team?.logo||''}" onerror="this.style.opacity='.15'">
+        <img src="${getTeamLogo(ev.team)}" alt="${esc(ev.team?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
         <span>${esc(fixName(ev.team?.name || '—'))}</span>
       </div>
     </div>`;
@@ -7406,7 +7446,7 @@ function renderLineups(lineups){
   return `<div class="lineups-grid">${lineups.map(team => `
     <div class="lineup-card">
       <div class="lineup-head">
-        <img src="${team.team?.logo||''}" onerror="this.style.opacity='.15'">
+        <img src="${getTeamLogo(team.team)}" alt="${esc(team.team?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
         <div class="ln">${esc(fixName(team.team?.name || '—'))}</div>
         <div class="lineup-form">${esc(team.formation || '—')}</div>
       </div>
@@ -7509,7 +7549,7 @@ function buildMatchPlayerRows(playersResponse = []){
       return {
         teamId: team?.id || 0,
         teamName: fixName(team?.name || 'Lag'),
-        teamLogo: team?.logo || '',
+        teamLogo: getTeamLogo(team),
         playerId: player?.id || 0,
         name: getPlayerDisplayName(player) || 'Okänd spelare',
         photo: player?.photo || '',
@@ -7563,7 +7603,7 @@ function renderMatchPlayerStats(playersResponse = []){
     const topRating = (group.rows || []).find(item => item.rating > 0)?.ratingDisplay || '—';
     return `<div class="match-player-card">
       <div class="match-player-card-head">
-        <img src="${group.team?.logo || ''}" onerror="this.style.opacity='.15'">
+        <img src="${getTeamLogo(group.team)}" alt="${esc(group.team?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
         <div>
           <div class="name">${esc(fixName(group.team?.name || 'Lag'))}</div>
           <div class="meta">Topprating: ${esc(String(topRating))} · ${group.rows.length} spelare</div>
@@ -7684,7 +7724,7 @@ async function pageResults(el) {
       const comp = 'Allsvenskan';
       return `<div class="match-card ${matchStatusClass(f)}" onclick="go('/match/${f.fixture?.id}')" role="link" tabindex="0" aria-label="Öppna matchen ${esc(fixName(f.teams?.home?.name || ''))} mot ${esc(fixName(f.teams?.away?.name || ''))}" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/match/${f.fixture?.id}')}">
         <div class="match-team">
-          <img src="${f.teams?.home?.logo||''}" onerror="this.style.opacity='.15'">
+          <img src="${getTeamLogo(f.teams?.home)}" alt="${esc(f.teams?.home?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span class="name">${esc(fixName(f.teams?.home?.name || '—'))}</span>
         </div>
         <div class="match-score">
@@ -7692,7 +7732,7 @@ async function pageResults(el) {
           <div class="time ${matchStatusToneClass(f)}">${esc(matchStatusLabel(f))}</div>
         </div>
         <div class="match-team away">
-          <img src="${f.teams?.away?.logo||''}" onerror="this.style.opacity='.15'">
+          <img src="${getTeamLogo(f.teams?.away)}" alt="${esc(f.teams?.away?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span class="name">${esc(fixName(f.teams?.away?.name || '—'))}</span>
         </div>
         <div class="match-meta-row" style="grid-column:1 / -1">
@@ -7768,7 +7808,7 @@ async function pageMatch(el, fixtureId) {
       <div class="match-detail-hero">
         <div class="match-detail-grid">
           <div class="match-detail-team">
-            <img src="${home.logo||''}" onerror="this.style.opacity='.15'">
+            <img src="${getTeamLogo(home)}" alt="${esc(home.name || 'Lag')}" onerror="handleTeamLogoError(this)">
             <div class="name">${esc(fixName(home.name || '—'))}</div>
           </div>
           <div class="match-detail-mid">
@@ -7776,7 +7816,7 @@ async function pageMatch(el, fixtureId) {
             <div class="status">${esc(status)}</div>
           </div>
           <div class="match-detail-team">
-            <img src="${away.logo||''}" onerror="this.style.opacity='.15'">
+            <img src="${getTeamLogo(away)}" alt="${esc(away.name || 'Lag')}" onerror="handleTeamLogoError(this)">
             <div class="name">${esc(fixName(away.name || '—'))}</div>
           </div>
         </div>
@@ -8171,12 +8211,12 @@ async function pageTransfers(el, page=1) {
       <td colspan="3">
         <div class="transfer-flow">
           <div class="transfer-club">
-            <img src="${tr.teamOut?.logo||''}" onerror="this.style.opacity='.15'">
+            <img src="${getTeamLogo(tr.teamOut)}" alt="${esc(tr.teamOut?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
             <span>${esc(tr.teamOut?.name||'?')}</span>
           </div>
           <span class="transfer-arrow">→</span>
           ${tr.teamIn?.id && tr.teamIn.id !== tr.teamOut?.id ? `<div class="transfer-club">
-            <img src="${tr.teamIn.logo||''}" onerror="this.style.opacity='.15'">
+            <img src="${getTeamLogo(tr.teamIn)}" alt="${esc(tr.teamIn?.name || 'Lag')}" onerror="handleTeamLogoError(this)">
             <span>${esc(tr.teamIn.name||'?')}</span>
           </div>` : '<span style="color:var(--muted)">—</span>'}
         </div>
@@ -8290,7 +8330,7 @@ let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
-const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v1';
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:stats-dataset:v2';
 const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -8378,7 +8418,7 @@ function pct(part, total){
   return total > 0 ? (part / total) * 100 : 0;
 }
 
-function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
+function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId = LEAGUE){
   const byPlayer = new Map();
 
   rawPlayers.forEach(item => {
@@ -8386,8 +8426,11 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
     const playerId = player?.id;
     if(!playerId) return;
 
-    const entries = (item.statistics || []).filter(entry => entry?.league?.season === season);
-    const statEntries = entries.length ? entries : (item.statistics || []);
+    const statEntries = (item.statistics || []).filter(entry => {
+      const sameSeason = Number(entry?.league?.season || 0) === Number(season || 0);
+      const sameLeague = Number(entry?.league?.id || 0) === Number(leagueId || LEAGUE);
+      return sameSeason && sameLeague;
+    });
     if(!statEntries.length) return;
 
     if(!byPlayer.has(playerId)) {
@@ -8439,7 +8482,7 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
         acc.dominantMinutes = minutes;
         acc.teamId = entry?.team?.id || acc.teamId;
         acc.teamName = fixName(entry?.team?.name || acc.teamName || '');
-        acc.teamLogo = entry?.team?.logo || acc.teamLogo;
+        acc.teamLogo = getTeamLogo(entry?.team || { name: acc.teamName, logo: acc.teamLogo });
         acc.position = entry?.games?.position || acc.position;
       }
 
@@ -8548,13 +8591,13 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON){
   });
 }
 
-function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], team = {}, season = SEASON){
-  const normalized = buildNormalizedStatsDataset(rawPlayers, season);
+function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], team = {}, season = SEASON, leagueId = LEAGUE){
+  const normalized = buildNormalizedStatsDataset(rawPlayers, season, leagueId);
   const byPlayer = new Map(normalized.map(player => [player.playerId, {
     ...player,
     teamId: player.teamId || team.id || null,
     teamName: player.teamName || fixName(team.name || ''),
-    teamLogo: player.teamLogo || team.logo || '',
+    teamLogo: getTeamLogo({ id: player.teamId || team.id, name: player.teamName || team.name, logo: player.teamLogo || team.logo }),
   }]));
 
   (squadPlayers || []).forEach(squadPlayer => {
@@ -8569,7 +8612,7 @@ function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], tea
       existing.position = existing.position || squadPlayer.position || '';
       existing.teamId = existing.teamId || team.id || null;
       existing.teamName = existing.teamName || fixName(team.name || '');
-      existing.teamLogo = existing.teamLogo || team.logo || '';
+      existing.teamLogo = getTeamLogo({ id: existing.teamId || team.id, name: existing.teamName || team.name, logo: existing.teamLogo || team.logo });
       return;
     }
 
@@ -8580,7 +8623,7 @@ function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], tea
       lastname: squadPlayer.lastname || '',
       teamId: team.id || null,
       teamName: fixName(team.name || ''),
-      teamLogo: team.logo || '',
+      teamLogo: getTeamLogo(team),
       photo: squadPlayer.photo || '',
       position: squadPlayer.position || '',
       stats: {
@@ -8675,17 +8718,18 @@ function setStatsGroup(groupId){
 async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
   const force = !!options.force;
   const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
+  const league = getActiveLeagueConfig();
   if(force) statsCache = null;
-  if(!force && statsCache?.year === season) return statsCache;
+  if(!force && statsCache?.year === season && statsCache?.leagueKey === league.key) return statsCache;
 
   const cachedStats = !force ? readStatsDatasetCache(season) : null;
-  if(cachedStats?.year === season && Array.isArray(cachedStats.players)) {
+  if(cachedStats?.year === season && cachedStats?.leagueKey === league.key && Array.isArray(cachedStats.players)) {
     statsCache = cachedStats;
     return statsCache;
   }
 
   if(onStatus) onStatus(`Hämtar lag för ${season}…`);
-  const standData = await af('standings', {league:LEAGUE, season});
+  const standData = await af('standings', {league:league.leagueId, season});
   const teams = (standData[0]?.league?.standings?.[0]||[]).map(t=>t.team);
   if(!teams.length) throw new Error(`Inga lag hittades för säsong ${season}. API-Football kanske saknar denna säsong.`);
 
@@ -8695,12 +8739,12 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
   for(let i=0; i<teams.length; i+=3) chunks.push(teams.slice(i,i+3));
   for(const chunk of chunks) {
     await Promise.all(chunk.map(async t => {
-      const arr = await fetchAllPages('players', {league:LEAGUE, season, team:t.id}, {
+      const arr = await fetchAllPages('players', {league:league.leagueId, season, team:t.id}, {
         dedupeKey: item => {
           const playerId = item?.player?.id || '';
-          const statTeamId = item?.statistics?.[0]?.team?.id || t.id || '';
-          const statSeason = item?.statistics?.[0]?.league?.season || season || '';
-          return `${playerId}-${statTeamId}-${statSeason}`;
+          const matchingStat = (item?.statistics || []).find(stat => Number(stat?.league?.id || 0) === Number(league.leagueId) && Number(stat?.league?.season || 0) === Number(season));
+          const statTeamId = matchingStat?.team?.id || t.id || '';
+          return `${playerId}-${statTeamId}-${league.leagueId}-${season}`;
         }
       }).catch(e => {
         console.warn('[stats] team players fetch failed', { teamId: t.id, teamName: t.name, season, error: e.message });
@@ -8710,9 +8754,11 @@ async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
     }));
   }
 
-  const players = buildNormalizedStatsDataset(allPlayers, season);
+  const players = buildNormalizedStatsDataset(allPlayers, season, league.leagueId);
   statsCache = {
     year: season,
+    leagueKey: league.key,
+    leagueId: league.leagueId,
     players,
     meta: {
       playerCount: players.length,
@@ -8780,7 +8826,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="stats-player-meta">
             <div class="stats-player-name">${esc(item.player.playerName)}</div>
             <div class="stats-player-club" onclick="event.stopPropagation();go('/lag/${item.player.teamId||''}')">
-              <img src="${item.player.teamLogo||''}" onerror="this.style.opacity='.15'">
+              <img src="${getTeamLogo({ id:item.player.teamId, name:item.player.teamName, logo:item.player.teamLogo })}" alt="${esc(item.player.teamName || 'Lag')}" onerror="handleTeamLogoError(this)">
               <span>${esc(item.player.teamName||'—')}</span>
             </div>
           </div>
@@ -8989,14 +9035,17 @@ function renderRowsAnswer(result) {
   return renderQuickListAnswer(
     result.title,
     result.subtitle,
-    result.rows.map(row => `
-      <div class="start-table-row" ${row.href ? `onclick="go('${row.href}')"` : ''}>
-        <div class="start-rank">${row.rank}</div>
-        <img src="${row.image || ''}" style="width:24px;height:24px;object-fit:${result.type === 'scorers' ? 'cover' : 'contain'};${result.type === 'scorers' ? 'border-radius:50%;' : ''}" onerror="this.style.opacity='.15'">
-        <div class="start-team-name">${esc(row.label)}</div>
-        <div class="start-team-gd">${esc(row.meta || '')}</div>
-        <div class="start-points">${row.value}</div>
-      </div>`).join('')
+    result.rows.map(row => {
+      const imageError = result.type === 'teams' ? 'handleTeamLogoError(this)' : "this.style.opacity='.15'";
+      return `
+        <div class="start-table-row" ${row.href ? `onclick="go('${row.href}')"` : ''}>
+          <div class="start-rank">${row.rank}</div>
+          <img src="${row.image || ''}" alt="${esc(row.label || 'Lag')}" style="width:24px;height:24px;object-fit:${result.type === 'scorers' ? 'cover' : 'contain'};${result.type === 'scorers' ? 'border-radius:50%;' : ''}" onerror="${imageError}">
+          <div class="start-team-name">${esc(row.label)}</div>
+          <div class="start-team-gd">${esc(row.meta || '')}</div>
+          <div class="start-points">${row.value}</div>
+        </div>`;
+    }).join('')
   );
 }
 
@@ -9037,13 +9086,13 @@ async function getTopScorers({ team, scope }) {
   const scorers = await af('players/topscorers', { league: LEAGUE, season: SEASON }).catch(() => []);
   const rows = scorers.slice(0,5).map((p, index) => ({
     rank: index + 1,
-    image: p.player?.photo || p.statistics?.[0]?.team?.logo || '',
+    image: p.player?.photo || getTeamLogo(p.statistics?.[0]?.team),
     label: getPlayerDisplayName(p.player),
     meta: fixName(p.statistics?.[0]?.team?.name || ''),
     value: p.statistics?.[0]?.goals?.total || 0,
     href: `/spelare/${p.player?.id || ''}`,
   }));
-  return { type: 'scorers', title: 'Flest mål i Allsvenskan', subtitle: 'Skytteligan just nu', rows, scope: 'season', teamName: null };
+  return { type: 'scorers', title: `Flest mål i ${getActiveLeagueConfig().name}`, subtitle: 'Skytteligan just nu', rows, scope: 'season', teamName: null };
 }
 
 async function getLatestMatches({ team }) {
@@ -9058,7 +9107,7 @@ async function getLatestMatches({ team }) {
   return {
     type: 'matches',
     title: team ? `${fixName(team.name)} senaste matcher` : 'Senaste matcher',
-    subtitle: team ? 'Tre senaste resultaten' : 'Senaste resultaten i Allsvenskan',
+    subtitle: team ? 'Tre senaste resultaten' : `Senaste resultaten i ${getActiveLeagueConfig().name}`,
     rows,
     scope: 'season',
     teamName: team ? fixName(team.name) : null,
@@ -9074,7 +9123,7 @@ function getStandingsAnswer({ standings, title = 'Toppen i tabellen', subtitle =
     subtitle,
     rows: rows.slice(0, limit).map((row, index) => ({
       rank: row.rank || index + 1,
-      image: row.team?.logo || '',
+      image: getTeamLogo(row.team),
       label: fixName(row.team?.name || '—'),
       meta: `${row.goalsDiff >= 0 ? '+' : ''}${row.goalsDiff || 0}`,
       value: `${row.points || 0}p`,
@@ -9094,7 +9143,7 @@ function getTeamStandingRow(team, standings, title, subtitle, valueKey = 'points
     subtitle,
     rows: [{
       rank: row.rank || 1,
-      image: row.team?.logo || '',
+      image: getTeamLogo(row.team),
       label: fixName(row.team?.name || '—'),
       meta: metaBuilder(row),
       value: valueBuilder(row),
@@ -9173,7 +9222,7 @@ async function routeQuestion({ intent, team, player, scope, rawQuestion, normali
               .slice(0,5)
               .map((row, index) => ({
                 rank: index + 1,
-                image: row.team?.logo || '',
+                image: getTeamLogo(row.team),
                 label: fixName(row.team?.name || '—'),
                 meta: row.form || '–',
                 value: `${row.points || 0}p`,
@@ -9364,7 +9413,7 @@ function transferDirectionMeta(kind=''){
 function renderTransferClubChip(team, fallback='Okänd klubb'){
   const name = getTeamDisplayName(team) || fallback;
   return `<div class="transfer-club-chip">
-    <img src="${team?.logo || ''}" onerror="this.style.opacity='.18'">
+    <img src="${getTeamLogo(team || { name })}" alt="${esc(name)}" onerror="handleTeamLogoError(this)">
     <span>${esc(name)}</span>
   </div>`;
 }
