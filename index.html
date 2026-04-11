@@ -980,7 +980,7 @@ main > *{animation:fadeUp .3s ease both}
 .start-result-teams{
   display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:.45rem;
 }
-.start-result-side{font-size:13px;font-weight:800;color:var(--text)}
+.start-result-side{font-size:13px;font-weight:800;color:var(--text);line-height:1.2;min-width:0}
 .start-result-side.away{text-align:right}
 .start-result-vs{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
 .start-teams-section{margin-bottom:2rem}
@@ -2392,6 +2392,20 @@ main{max-width:1380px;padding-top:1.4rem}
 }
 .start-brand-stat-num{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;color:#fff;line-height:1}
 .start-brand-stat-label{margin-top:4px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#c9af73;font-weight:800}
+.start-result-teams{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px}
+.start-result-club{display:flex;align-items:center;gap:10px;min-width:0}
+.start-result-club.away{justify-content:flex-end}
+.start-result-club img{width:24px;height:24px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(0,0,0,.2))}
+.start-quick-head,.start-brand-strip{align-items:flex-start}
+.start-quick-head{display:block;margin-bottom:.85rem}
+.start-quick-sub{margin-top:.38rem;max-width:38ch;line-height:1.5;color:rgba(244,239,228,.76)}
+.start-overview-band{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);align-items:stretch}
+.start-quick-strip,.start-brand-strip{min-height:146px}
+.start-brand-title{font-size:24px;line-height:.98;max-width:12ch}
+.start-brand-copy{margin-top:.38rem;max-width:42ch;line-height:1.5;color:rgba(244,239,228,.76)}
+.start-chip-row{margin-top:.85rem}
+.start-chip{min-height:42px;padding:.72rem 1rem}
+.start-proof-pill{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.05)}
 .start-highlight-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 1.25rem}
 .start-highlight{padding:1.3rem 1.15rem 1.2rem;min-height:160px}
 .start-highlight-title{font-size:30px;line-height:.95;margin:.4rem 0 .55rem}
@@ -2416,6 +2430,9 @@ main{max-width:1380px;padding-top:1.4rem}
   .start-lead{font-size:15px}
   .start-highlight-grid,.start-brand-grid,.start-snapshot{grid-template-columns:1fr}
   .start-highlight{min-height:auto}
+  .start-result-club img{width:20px;height:20px}
+  .start-result-club{gap:8px}
+  .start-quick-sub,.start-brand-copy,.start-brand-title{max-width:none}
   .start-quick-title,.start-brand-title,.start-mini-title,.start-side-title,.start-highlight-title{font-size:24px}
 }
 
@@ -5107,9 +5124,15 @@ async function pageStart(el) {
             <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
           </div>
           <div class="start-result-teams">
-            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            <div class="start-result-club">
+              <img src="${f.teams?.home?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            </div>
             <div class="start-result-vs">mot</div>
-            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+            <div class="start-result-club away">
+              <img src="${f.teams?.away?.logo || ''}" onerror="this.style.opacity='.15'" loading="lazy">
+              <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+            </div>
           </div>
         </div>`).join('')
       : `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
