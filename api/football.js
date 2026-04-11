@@ -5,12 +5,14 @@ const resolvedLeagueCache = new Map();
 
 const LEAGUE_CONFIG = {
   113: {
+    key: 'allsvenskan',
     legacyId: 113,
     name: 'Allsvenskan',
     envLeagueId: 'SPORTMONKS_ALLSVENSKAN_LEAGUE_ID',
     envSeasonPrefix: 'SPORTMONKS_ALLSVENSKAN',
   },
   549: {
+    key: 'damallsvenskan',
     legacyId: 549,
     name: 'Damallsvenskan',
     envLeagueId: 'SPORTMONKS_DAMALLSVENSKAN_LEAGUE_ID',
@@ -101,7 +103,7 @@ async function sportmonksPaged(path, params = {}, options = {}) {
     paging = data?.pagination || data?.meta?.pagination || data?.meta || null;
     const current = Number(paging?.current_page || page);
     const total = Number(paging?.total_pages || paging?.last_page || current);
-    hasMore = current < total;
+    hasMore = Boolean(paging?.has_more) || current < total;
     page += 1;
     if (!options.fetchAllPages) break;
   }
@@ -111,12 +113,18 @@ async function sportmonksPaged(path, params = {}, options = {}) {
 
 function getLegacyLeagueConfig(leagueId) {
   return LEAGUE_CONFIG[Number(leagueId)] || {
+    key: String(leagueId || ''),
     legacyId: Number(leagueId),
     name: '',
     sportmonksLeagueId: Number(leagueId),
     envLeagueId: '',
     envSeasonPrefix: '',
   };
+}
+
+function getLeagueConfigByKey(key) {
+  const wanted = String(key || '').toLowerCase();
+  return Object.values(LEAGUE_CONFIG).find(cfg => cfg.key === wanted || String(cfg.legacyId) === wanted || cfg.name.toLowerCase() === wanted) || null;
 }
 
 function pickSeason(seasons = [], year) {
@@ -164,6 +172,64 @@ async function resolveLeagueSeason(legacyLeagueId, year) {
   const resolved = { legacyLeagueId: Number(legacyLeagueId), leagueId: league.id, seasonId: season.id, year:Number(year), name: league.name || cfg.name };
   resolvedLeagueCache.set(cacheKey, resolved);
   return resolved;
+}
+
+async function getSeasonIdForLeague(leagueKey, year = new Date().getFullYear()) {
+  const cfg = getLeagueConfigByKey(leagueKey) || getLegacyLeagueConfig(leagueKey);
+  const resolved = await resolveLeagueSeason(cfg.legacyId || leagueKey, year);
+  return resolved.seasonId;
+}
+
+async function getStandingsForSeason(seasonId, options = {}) {
+  return sportmonks(`standings/seasons/${seasonId}`, {
+    include: 'participant;details.type;form',
+    ...(options.params || {}),
+  }, options);
+}
+
+async function getFixturesForSeason(seasonId, extraFilters = {}, options = {}) {
+  const filters = [`fixtureSeasons:${seasonId}`, extraFilters.filters].filter(Boolean).join(';');
+  return sportmonksPaged('fixtures', {
+    include: extraFilters.include || 'participants;league;season;round;venue;state;scores',
+    filters,
+    per_page: extraFilters.per_page || 50,
+  }, { ...options, fetchAllPages: options.fetchAllPages !== false });
+}
+
+async function getTeamById(teamId, include = [], options = {}) {
+  const includeParam = Array.isArray(include) ? include.filter(Boolean).join(';') : include;
+  return sportmonks(`teams/${teamId}`, includeParam ? { include: includeParam } : {}, options);
+}
+
+async function getTeamSquadBySeason(teamId, seasonId, options = {}) {
+  return sportmonks(`squads/seasons/${seasonId}/teams/${teamId}`, {
+    include: 'player;team;position;details.type',
+  }, options);
+}
+
+async function getTeamSeasonStatistics(teamId, seasonId, options = {}) {
+  return sportmonks(`statistics/seasons/${teamId}/${seasonId}`, {
+    include: 'details.type',
+  }, options);
+}
+
+async function getPlayerById(playerId, include = [], options = {}) {
+  const includeParam = Array.isArray(include) ? include.filter(Boolean).join(';') : include;
+  return sportmonks(`players/${playerId}`, includeParam ? { include: includeParam } : {}, options);
+}
+
+async function getPlayerSeasonStatistics(playerId, seasonId, options = {}) {
+  return sportmonks(`players/${playerId}`, {
+    include: 'statistics.details.type;position;detailedPosition;teams',
+    filters: `playerStatisticSeasons:${seasonId}`,
+  }, options);
+}
+
+async function getFixtureById(fixtureId, include = [], options = {}) {
+  const includeParam = Array.isArray(include) ? include.filter(Boolean).join(';') : include;
+  return sportmonks(`fixtures/${fixtureId}`, {
+    include: includeParam || 'participants;league;season;round;venue;state;scores;events;lineups.details.type;statistics.details.type',
+  }, options);
 }
 
 function logo(entity) {
@@ -237,9 +303,27 @@ function normalizeFixture(fixture = {}) {
   };
 }
 
-function detailValue(details = [], names = []) {
-  const wanted = names.map(name => String(name).toLowerCase());
-  const row = (Array.isArray(details) ? details : []).find(detail => {
+function normalizeStatToken(value = '') {
+  return String(value || '').toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function statValueNumber(value, preferredKey = '') {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'object') {
+    if (preferredKey && value[preferredKey] !== undefined) return statValueNumber(value[preferredKey]);
+    if (value.total !== undefined) return statValueNumber(value.total);
+    if (value.average !== undefined) return statValueNumber(value.average);
+    if (value.goals !== undefined) return statValueNumber(value.goals);
+    if (value.count !== undefined) return statValueNumber(value.count);
+  }
+  const num = Number(String(value).replace(',', '.'));
+  return Number.isFinite(num) ? num : 0;
+}
+
+function detailValue(details = [], names = [], preferredKey = '') {
+  const wanted = names.map(normalizeStatToken);
+  const rows = (Array.isArray(details) ? details : []).filter(detail => {
     const tokens = [
       detail?.type?.code,
       detail?.type?.name,
@@ -247,10 +331,19 @@ function detailValue(details = [], names = []) {
       detail?.name,
       detail?.code,
       detail?.type_id,
-    ].map(value => String(value || '').toLowerCase());
+    ].map(normalizeStatToken);
     return tokens.some(token => wanted.some(want => token === want || token.includes(want)));
   });
-  return Number(row?.value?.total ?? row?.value ?? row?.total ?? row?.count ?? 0);
+  return rows.reduce((sum, row) => sum + statValueNumber(row?.value ?? row?.total ?? row?.count, preferredKey), 0);
+}
+
+function detailSubValue(details = [], names = [], key = '') {
+  const wanted = names.map(normalizeStatToken);
+  const row = (Array.isArray(details) ? details : []).find(detail => {
+    const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeStatToken);
+    return tokens.some(token => wanted.some(want => token === want || token.includes(want)));
+  });
+  return statValueNumber(row?.value, key);
 }
 
 function normalizeStandingRow(row = {}) {
@@ -316,17 +409,20 @@ function normalizeSquadPlayer(item = {}) {
 function normalizePlayerStat(item = {}, team = {}, league = {}, seasonYear = null) {
   const player = item.player || item;
   const stats = Array.isArray(item.statistics) ? item.statistics : (Array.isArray(player.statistics) ? player.statistics : []);
-  const details = stats.flatMap(stat => Array.isArray(stat.details) ? stat.details : []);
+  const details = [
+    ...(Array.isArray(item.details) ? item.details : []),
+    ...stats.flatMap(stat => Array.isArray(stat.details) ? stat.details : [])
+  ];
   const appearances = detailValue(details, ['appearances', 'appearance']);
   const starts = detailValue(details, ['lineups', 'starts', 'starting']);
   const minutes = detailValue(details, ['minutes played', 'minutes']);
   const goals = detailValue(details, ['goals']);
   const assists = detailValue(details, ['assists']);
-  const yellow = detailValue(details, ['yellow cards', 'yellowcards', 'yellow']);
-  const red = detailValue(details, ['red cards', 'redcards', 'red']);
+  const yellow = detailValue(details, ['yellow cards', 'yellowcards', 'yellow card', 'yellow']);
+  const red = detailValue(details, ['red cards', 'redcards', 'red card', 'red']);
   const saves = detailValue(details, ['saves']);
   const conceded = detailValue(details, ['goals conceded', 'conceded']);
-  const rating = detailValue(details, ['rating', 'average rating']);
+  const rating = detailValue(details, ['rating', 'average rating'], 'average');
   const teamEntity = item.team || team || stats.find(stat => stat.team)?.team || {};
   return {
     player: {
@@ -353,7 +449,7 @@ function normalizePlayerStat(item = {}, team = {}, league = {}, seasonYear = nul
         position: normalizePosition(item.position?.name || item.detailedPosition?.name || player.position?.name || ''),
         rating: rating || null,
       },
-      substitutes: { in: detailValue(details, ['substitute in', 'substitutions in']), out: detailValue(details, ['substitute out', 'substitutions out']), bench: detailValue(details, ['bench']) },
+      substitutes: { in: detailSubValue(details, ['substitutions', 'substitution'], 'in'), out: detailSubValue(details, ['substitutions', 'substitution'], 'out'), bench: detailValue(details, ['bench']) },
       shots: { total: detailValue(details, ['shots total', 'shots']), on: detailValue(details, ['shots on target']) },
       goals: { total: goals, conceded, assists, saves },
       passes: { total: detailValue(details, ['passes']), key: detailValue(details, ['key passes']), accuracy: detailValue(details, ['pass accuracy']) },
@@ -393,7 +489,7 @@ function emptyResponse() {
 
 async function handleStandings(params, force) {
   const league = await resolveLeagueSeason(params.league, params.season);
-  const raw = await sportmonks(`standings/seasons/${league.seasonId}`, { include: 'participant;details.type;form' }, { force });
+  const raw = await getStandingsForSeason(league.seasonId, { force });
   const rows = Array.isArray(raw?.data) ? raw.data.map(normalizeStandingRow).sort((a,b) => a.rank - b.rank) : [];
   return { response: [{ league: { id:Number(params.league), name:league.name, season:Number(params.season), standings:[rows] } }] };
 }
@@ -410,17 +506,13 @@ async function handleTeams(params, force) {
 
 async function handleFixtures(params, force) {
   if (params.id) {
-    const raw = await sportmonks(`fixtures/${params.id}`, { include: 'participants;league;season;round;venue;state;scores;events;lineups.details.type;statistics.details.type' }, { force });
+    const raw = await getFixtureById(params.id, 'participants;league;season;round;venue;state;scores;events;lineups.details.type;statistics.details.type', { force });
     return { response: raw?.data ? [normalizeFixture(raw.data)] : [] };
   }
   const league = params.league ? await resolveLeagueSeason(params.league, params.season) : null;
-  const query = {
-    include: 'participants;league;season;round;venue;state;scores',
-    per_page: 50,
-  };
-  if (league?.seasonId) query.filters = `fixtureSeasons:${league.seasonId}`;
-  if (params.team) query.filters = [query.filters, `fixtureTeams:${params.team}`].filter(Boolean).join(';');
-  const raw = await sportmonksPaged('fixtures', query, { force, fetchAllPages:true });
+  const raw = league?.seasonId
+    ? await getFixturesForSeason(league.seasonId, { filters: params.team ? `fixtureTeams:${params.team}` : '' }, { force })
+    : await sportmonksPaged('fixtures', { include: 'participants;league;season;round;venue;state;scores', per_page: 50 }, { force, fetchAllPages:true });
   let fixtures = raw.data.map(normalizeFixture);
   if (params.last) fixtures = fixtures.filter(f => ['FT','AET','PEN'].includes(f.fixture.status.short)).sort((a,b) => String(b.fixture.date).localeCompare(String(a.fixture.date))).slice(0, Number(params.last));
   if (params.next) fixtures = fixtures.filter(f => !['FT','AET','PEN'].includes(f.fixture.status.short)).sort((a,b) => String(a.fixture.date).localeCompare(String(b.fixture.date))).slice(0, Number(params.next));
@@ -431,33 +523,23 @@ async function handleSquad(params, force) {
   const teamId = params.team;
   if (!teamId) return emptyResponse();
   const league = await resolveLeagueSeason(params.league || 113, params.season || new Date().getFullYear());
-  const raw = await sportmonks(`squads/seasons/${league.seasonId}/teams/${teamId}`, { include: 'player;position;detailedPosition' }, { force });
+  const raw = await getTeamSquadBySeason(teamId, league.seasonId, { force });
   return { response: [{ team: { id:Number(teamId) }, players: (raw?.data || []).map(normalizeSquadPlayer) }] };
 }
 
 async function handlePlayers(params, force) {
   const league = await resolveLeagueSeason(params.league || 113, params.season || new Date().getFullYear());
   if (params.id) {
-    const raw = await sportmonks(`players/${params.id}`, { include: 'statistics.details.type;position;detailedPosition;teams', filters: `playerStatisticSeasons:${league.seasonId}` }, { force });
+    const raw = await getPlayerSeasonStatistics(params.id, league.seasonId, { force });
     const player = raw?.data || {};
     const team = Array.isArray(player.teams) ? player.teams[0] : {};
     return { response: player?.id ? [normalizePlayerStat(player, team, league, params.season)] : [], paging: { current:1, total:1 } };
   }
   const teamId = params.team;
   if (teamId) {
-    const teamRaw = await sportmonks(`teams/${teamId}`, {
-      include: 'players.statistics.details.type;players.position;players.detailedPosition',
-      filters: `playerStatisticSeasons:${league.seasonId}`,
-    }, { force }).catch(err => {
-      console.warn('[sportmonks-adapter] rich team players include unavailable, falling back to squad', { teamId, error: err.message });
-      return { data: { id: teamId, players: [] } };
-    });
-    const team = normalizeTeam(teamRaw?.data || { id:teamId });
-    let source = Array.isArray(teamRaw?.data?.players) ? teamRaw.data.players : [];
-    if (!source.length) {
-      const squad = await sportmonks(`squads/seasons/${league.seasonId}/teams/${teamId}`, { include: 'player;position;detailedPosition' }, { force });
-      source = Array.isArray(squad?.data) ? squad.data : [];
-    }
+    const squad = await getTeamSquadBySeason(teamId, league.seasonId, { force });
+    const team = normalizeTeam(squad?.data?.find(item => item?.team)?.team || { id:teamId });
+    const source = Array.isArray(squad?.data) ? squad.data : [];
     return { response: source.map(item => normalizePlayerStat(item, team, league, params.season)), paging: { current:1, total:1 } };
   }
   const raw = await sportmonksPaged('players', {
@@ -479,7 +561,7 @@ async function handlePlayers(params, force) {
 async function handlePlayerProfile(params, force) {
   const playerId = params.player || params.id;
   if (!playerId) return emptyResponse();
-  const raw = await sportmonks(`players/${playerId}`, { include: 'position;detailedPosition;statistics.details.type;teams' }, { force });
+  const raw = await getPlayerById(playerId, 'position;detailedPosition;statistics.details.type;teams', { force });
   const player = raw?.data || {};
   return { response: [{
     player: { id:player.id, name:playerName(player), firstname:player.firstname || '', lastname:player.lastname || '', age:null, photo:logo(player), nationality:player.nationality || '' },
@@ -490,16 +572,32 @@ async function handlePlayerProfile(params, force) {
 
 async function handleTeamStatistics(params, force) {
   const league = await resolveLeagueSeason(params.league, params.season);
-  const standings = await sportmonks(`standings/seasons/${league.seasonId}`, { include: 'participant;details.type' }, { force });
+  const [standings, seasonStats] = await Promise.all([
+    getStandingsForSeason(league.seasonId, { force, params: { include: 'participant;details.type' } }),
+    getTeamSeasonStatistics(params.team, league.seasonId, { force }).catch(err => {
+      console.warn('[sportmonks-adapter] team season statistics unavailable', { teamId: params.team, seasonId: league.seasonId, error: err.message });
+      return { data: [] };
+    })
+  ]);
   const row = (standings?.data || []).find(item => Number(item?.participant?.id) === Number(params.team));
-  return { response: normalizeTeamStatistics({}, row) };
+  const stats = Array.isArray(seasonStats?.data) ? seasonStats.data[0] || {} : seasonStats?.data || {};
+  return { response: normalizeTeamStatistics(stats, row) };
 }
 
 async function handleTopScorers(params, force) {
   const league = await resolveLeagueSeason(params.league || 113, params.season || new Date().getFullYear());
   const raw = await sportmonks(`topscorers/seasons/${league.seasonId}`, { include: 'participant;type;player;team' }, { force });
   const rows = Array.isArray(raw?.data) ? raw.data : [];
-  return { response: rows.map(row => normalizePlayerStat(row.player || row.participant || row, row.team || {}, league, params.season)) };
+  return { response: rows.map(row => {
+    const player = row.player || row.participant || {};
+    const team = row.team || {};
+    const normalized = normalizePlayerStat(player, team, league, params.season);
+    const typeName = normalizeStatToken(row?.type?.name || row?.type?.developer_name || '');
+    if(typeName.includes('assist')) normalized.statistics[0].goals.assists = Number(row.total || 0);
+    else if(typeName.includes('card')) normalized.statistics[0].cards.yellow = Number(row.total || 0);
+    else normalized.statistics[0].goals.total = Number(row.total || 0);
+    return normalized;
+  }) };
 }
 
 async function handleFixtureChild(endpoint, params, force) {
