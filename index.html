@@ -3045,7 +3045,8 @@ async function buildTeamDetailedPositionMap(teamId, season, fixtures = []){
       return started && involvesTeam;
     })
     .map(item => Number(item?.fixture?.id || 0))
-    .filter(Boolean))];
+    .filter(Boolean))]
+    .slice(0, 3);
 
   const promise = (async () => {
     const counts = {};
@@ -4560,7 +4561,7 @@ async function runSearch(q) {
   box.classList.add('open');
   try {
     const [players, teams] = await Promise.all([
-      af('players', {search:q, season:2025}).catch(()=>af('players', {search:q, season:2024}).catch(()=>[])),
+      (async()=>{ const activeSeason = await getResolvedSeason(); return af('players', {search:q, season:activeSeason}).catch(()=>af('players', {search:q, season:Math.max(activeSeason-1, 2018)}).catch(()=>[])); })(),
       af('teams', {search:q}).catch(()=>[])
     ]);
     let html = '';
@@ -4602,10 +4603,8 @@ async function pageStart(el) {
   document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
   try {
-    let data = await af('standings', {league:LEAGUE, season:SEASON});
-    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
-      data = await af('standings', {league:LEAGUE, season:2025});
-    }
+    const activeSeason = await getResolvedSeason();
+    const data = await af('standings', {league:LEAGUE, season:activeSeason});
     const standings = data[0]?.league?.standings?.[0] || [];
     const teams = standings.map(t=>t.team);
     const topThree = standings.slice(0,3);
@@ -5264,10 +5263,8 @@ async function pageTeams(el) {
   document.title = 'Alla lag — AllsvenskanAI';
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    let data = await af('standings', {league:LEAGUE, season:SEASON});
-    if(!data.length || !data[0]?.league?.standings?.[0]?.length) {
-      data = await af('standings', {league:LEAGUE, season:2025});
-    }
+    const activeSeason = await getResolvedSeason();
+    const data = await af('standings', {league:LEAGUE, season:activeSeason});
     const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
       <div class="start-tcard" onclick="go('/lag/${t.id}')">
@@ -5275,7 +5272,7 @@ async function pageTeams(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Lag <em>${SEASON}</em></div><span class="pg-sub">${teams.length} lag</span></div>
+      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${teams.length} lag</span></div>
       <div class="start-tgrid">${cards}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
@@ -5705,12 +5702,9 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
   try {
-    const [teamInfoRaw, standingsRaw, historyStandings, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
+    const [teamInfoRaw, standingsRaw, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
-      Promise.all(TEAM_PAGE_SEASONS.map(async season => {
-        return afRaw('standings', {league:LEAGUE, season}).catch(() => ({ response: [] }));
-      })),
       afRaw('teams/statistics', {league:LEAGUE, season:selectedSeason, team:routeTeamId}).catch(() => ({ response: null })),
       afRaw('players/squads', {team:routeTeamId}).catch(() => ({ response: [] })),
       fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
@@ -5731,6 +5725,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
         return [];
       })
     ]);
+    const historyStandings = [];
 
     const teamInfoD = teamInfoRaw?.response || [];
     const standingsD = standingsRaw?.response || [];
@@ -5834,8 +5829,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
     const seasonButtons = TEAM_PAGE_SEASONS
-      .filter(season => historyMap.has(season) || season === selectedSeason)
-      .map(season => teamSeasonButton(routeTeamId, season, season === selectedSeason, historyMap.has(season)))
+      .map(season => teamSeasonButton(routeTeamId, season, season === selectedSeason, true))
       .join('');
 
     const summaryCards = [
@@ -5871,9 +5865,9 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const minuteCard = (title, rows) => `<div class="tw" style="min-width:0"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">${title}</div><div style="padding:1rem 1.1rem">${rows.length ? rows.map(item => `<div class="team-detail-row" style="padding:.42rem 0;border-bottom:1px solid var(--border)"><span>${esc(item.range)}</span><strong>${item.total}</strong></div>`).join('') : `<div class="team-empty-state">Ingen data ännu.</div>`}</div></div>`;
     const matchRow = (item, isUpcoming = false) => `<div class="team-match-row" onclick="go('/match/${item.id}')"><div class="meta">${esc(item.venueLabel)} • ${esc(formatSvDate(item.date))}</div><div class="teams"><div><strong>${esc(team.name)}</strong> vs ${esc(item.opponentName)}</div><div style="font-size:12px;color:var(--muted)">${isUpcoming ? 'Kommande match' : (item.result === 'W' ? 'Vinst' : item.result === 'D' ? 'Oavgjort' : 'Förlust')}</div></div><div class="score ${isUpcoming ? 'upcoming' : ''}">${isUpcoming ? 'Se match' : `${item.goalsFor}-${item.goalsAgainst}`}</div></div>`;
 
-    const historyRowsHtml = historyRows.map(row => `<tr class="${row.season === selectedSeason ? 'season-row' : ''}"><td>${row.season}</td><td class="num">${row.rank}</td><td class="num">${row.points}</td><td class="num">${row.played}</td><td class="num">${row.wins}-${row.draws}-${row.losses}</td><td class="num">${row.goalsFor}-${row.goalsAgainst}</td><td class="num">${row.goalDiff > 0 ? '+' : ''}${row.goalDiff}</td><td class="num">${row.pointsPerMatch.toFixed(2)}</td></tr>`).join('');
-    const bestSeason = [...historyRows].sort((a,b) => b.pointsPerMatch - a.pointsPerMatch || b.points - a.points)[0];
-    const worstSeason = [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0];
+    const historyRowsHtml = historyRows.length ? historyRows.map(row => `<tr class="${row.season === selectedSeason ? 'season-row' : ''}"><td>${row.season}</td><td class="num">${row.rank}</td><td class="num">${row.points}</td><td class="num">${row.played}</td><td class="num">${row.wins}-${row.draws}-${row.losses}</td><td class="num">${row.goalsFor}-${row.goalsAgainst}</td><td class="num">${row.goalDiff > 0 ? '+' : ''}${row.goalDiff}</td><td class="num">${row.pointsPerMatch.toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="8" class="empty">Säsongshistorik laddas inte automatiskt längre för att spara API-anrop.</td></tr>`;
+    const bestSeason = historyRows.length ? [...historyRows].sort((a,b) => b.pointsPerMatch - a.pointsPerMatch || b.points - a.points)[0] : null;
+    const worstSeason = historyRows.length ? [...historyRows].sort((a,b) => a.pointsPerMatch - b.pointsPerMatch || a.points - b.points)[0] : null;
 
     const posOrder = {Goalkeeper:1,Defender:2,Midfielder:3,Attacker:4};
     const sortedSquad = [...squadPlayers].sort((a,b) => (posOrder[a.position]||5)-(posOrder[b.position]||5));
@@ -7608,7 +7602,7 @@ const STAT_CATEGORIES = [
 let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
-let statsYear = 2026; // default to current season
+let statsYear = SEASON; // default to current season
 
 function toStatNumber(value){
   if(value === null || value === undefined || value === '') return 0;
@@ -7899,6 +7893,7 @@ function setStatsGroup(groupId){
 
 async function pageStats(el, year=null, force=false) {
   if(year) statsYear = year;
+  else statsYear = await getResolvedSeason();
   document.title = `Statistik ${statsYear} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar statistik ${statsYear}…</div>`;
   try {
@@ -8430,8 +8425,8 @@ async function routeQuestion({ intent, team, player, scope, rawQuestion, normali
 async function tryDataAnswer(question) {
   const rawQuestion = String(question || '').trim();
   const normalizedQuestion = normalizeQuestion(rawQuestion);
-  const standData = await af('standings', {league:LEAGUE, season:SEASON}).catch(()=>
-    af('standings', {league:LEAGUE, season:2025}));
+  const activeSeason = await getResolvedSeason();
+  const standData = await af('standings', {league:LEAGUE, season:activeSeason});
   const standings = standData[0]?.league?.standings?.[0] || [];
   const teams = standings.map(t=>t.team) || [];
 
@@ -8644,18 +8639,27 @@ function mdHtml(txt){
 }
 function inl(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
 
+let resolvedSeasonPromise = null;
+
+async function getResolvedSeason(force = false) {
+  if(!force && resolvedSeasonPromise) return resolvedSeasonPromise;
+  resolvedSeasonPromise = (async () => {
+    const preferred = Number(SEASON) || 2026;
+    const fallback = preferred > 2018 ? preferred - 1 : 2025;
+    try {
+      const test = await af('standings', {league:LEAGUE, season:preferred});
+      const rows = test?.[0]?.league?.standings?.[0] || [];
+      if(rows.length) return preferred;
+    } catch(e) {}
+    return fallback;
+  })();
+  const resolved = await resolvedSeasonPromise;
+  SEASON = resolved;
+  return resolved;
+}
+
 async function boot() {
-  // Verify season via standings data instead of teams, so the app keeps the
-  // intended current season when static 2026 data already exists.
-  try {
-    const test = await af('standings', {league:LEAGUE, season:SEASON});
-    const rows = test?.[0]?.league?.standings?.[0] || [];
-    if(!rows.length) {
-      SEASON = 2025;
-    }
-  } catch(e) {
-    SEASON = 2025;
-  }
+  await getResolvedSeason(true);
   route(location.pathname);
 }
 boot();
