@@ -8,9 +8,9 @@ function isCurrentSeason(params) {
 }
 
 function getTTL(endpoint, params = new URLSearchParams()) {
-  // 🔥 SMARTA REGLER
+  // Smarta regler: aktuell spelarstatistik ska hinna ikapp nya matcher snabbt.
   if (endpoint.includes('standings')) return 1000 * 60 * 60 * 6; // 6h
-  if (endpoint.includes('players')) return isCurrentSeason(params) ? 1000 * 60 * 20 : 1000 * 60 * 60 * 12; // 20 min aktiv säsong, 12h historik
+  if (endpoint.includes('players')) return isCurrentSeason(params) ? 1000 * 60 * 10 : 1000 * 60 * 60 * 12; // 10 min aktiv säsong, 12h historik
   if (endpoint.includes('teams/statistics')) return isCurrentSeason(params) ? 1000 * 60 * 10 : 1000 * 60 * 60 * 6;
   if (endpoint.includes('teams')) return 1000 * 60 * 60 * 6;
   if (endpoint.includes('transfers')) return 1000 * 60 * 60 * 24; // 24h
@@ -47,14 +47,12 @@ export default async function handler(req, res) {
   const url = `https://v3.football.api-sports.io/${endpoint}?${params.toString()}`;
   const cacheKey = url;
 
-  // ✅ CACHE HIT
   const cached = cache.get(cacheKey);
   if (!forceRefresh && cached && cached.expiry > Date.now()) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached.data);
   }
 
-  // 🔁 IN-FLIGHT (undvik spam)
   if (!forceRefresh && inFlight.has(cacheKey)) {
     const data = await inFlight.get(cacheKey);
     res.setHeader('X-Cache', 'DEDUPED');
@@ -68,7 +66,6 @@ export default async function handler(req, res) {
       });
 
       const data = await response.json();
-
       const ttl = getTTL(endpoint, params);
 
       cache.set(cacheKey, {
@@ -78,7 +75,6 @@ export default async function handler(req, res) {
 
       return data;
     } catch (err) {
-      // fallback till gammal cache om finns
       if (cached) return cached.data;
       throw err;
     } finally {
