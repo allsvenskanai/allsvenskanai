@@ -4926,7 +4926,79 @@ function route(path) {
   if(tm)                               { pageTeam(el, +tm[1]); return; }
   const pm = path.match(/^\/spelare\/(\d+)/);
   if(pm)                               { pagePlayer(el, +pm[1]); return; }
-  el.innerHTML = `
+  el.innerHTML = `<div class="err">Sidan kunde inte hittas.</div>`;
+}
+
+async function pageStart(el) {
+  document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
+  try {
+    const activeSeason = await getResolvedSeason();
+    const data = await af('standings', {league:LEAGUE, season:activeSeason});
+    const standings = data[0]?.league?.standings?.[0] || [];
+    const teams = standings.map(t=>t.team);
+    const topThree = standings.slice(0,3);
+
+    let recentFixtures = [];
+    try {
+      recentFixtures = await af('fixtures', {league:LEAGUE, season:activeSeason, last:3});
+    } catch(e) {
+      recentFixtures = [];
+    }
+    recentFixtures = [...recentFixtures]
+      .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
+      .slice(0,3);
+
+    const orderedTeams = sortTeamsByOrder(teams);
+
+    const cards = orderedTeams.map(t=>`
+      <div class="start-tcard" onclick="go('/lag/${t.id}')">
+        <img src="${t.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+        <div class="start-tn">${esc(t.name)}</div>
+      </div>`).join('');
+
+    const highlights = [
+      { kicker: 'Snabbt in', title: 'Tabell', copy: 'Se poäng, form och målskillnad för hela ligan.', path: '/tabell' },
+      { kicker: 'Följ nu', title: 'Resultat', copy: 'Kolla senaste matcherna och öppna varje matchrapport.', path: '/resultat' },
+      { kicker: 'Djupdata', title: 'Statistik', copy: 'Jämför spelare och hitta ligans starkaste siffror.', path: '/statistik' },
+      { kicker: 'Skapa nu', title: 'Startelva', copy: 'Bygg din bästa XI och ladda ner en snygg bild direkt.', path: '/lineup-builder' }
+    ].map(item => `
+      <div class="start-highlight" onclick="go('${item.path}')">
+        <div class="start-highlight-kicker">${item.kicker}</div>
+        <div class="start-highlight-title">${item.title}</div>
+        <div class="start-highlight-copy">${item.copy}</div>
+      </div>`).join('');
+
+    const topRows = topThree.map(row => {
+      const gd = row.goalsDiff || 0;
+      return `
+      <div class="start-table-row" onclick="go('/lag/${row.team.id}')">
+        <div class="start-rank">${row.rank}</div>
+        <div class="start-team-line">
+          <img src="${row.team.logo||''}" onerror="this.style.opacity='.15'" loading="lazy">
+          <div class="start-team-name">${esc(fixName(row.team.name))}</div>
+          <div class="start-team-gd">${gd >= 0 ? '+' : ''}${gd}</div>
+        </div>
+        <div class="start-points">${row.points}p</div>
+      </div>`;
+    }).join('');
+
+    const resultRows = recentFixtures.length
+      ? recentFixtures.map(f => `
+        <div class="start-result-row" onclick="go('/match/${f.fixture?.id}')">
+          <div class="start-result-top">
+            <div class="start-result-round">${esc(svOmgang(f.league?.round || 'Allsvenskan'))}</div>
+            <div class="start-result-score">${f.goals?.home ?? '–'}-${f.goals?.away ?? '–'}</div>
+          </div>
+          <div class="start-result-teams">
+            <div class="start-result-side">${esc(fixName(f.teams?.home?.name || '—'))}</div>
+            <div class="start-result-vs">mot</div>
+            <div class="start-result-side away">${esc(fixName(f.teams?.away?.name || '—'))}</div>
+          </div>
+        </div>`).join('')
+      : `<div class="start-ai-empty">Fr&aring;ga om tabellen, ett lag eller en spelkategori s&aring; visar vi ett direkt svar h&auml;r.</div>`;
+
+    el.innerHTML = `
       <div class="start-hero">
         <div class="start-hero-shell">
           <div class="start-hero-left">
