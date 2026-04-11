@@ -3454,11 +3454,42 @@ function lineupBuilderGetInitials(name=''){
     .toUpperCase() || 'AA';
 }
 
-function lineupBuilderExportName(name=''){
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+const LINEUP_BUILDER_NAME_OVERRIDES = {
+  ids: {
+    // Lägg till exakta API-id:n här när ett namn behöver styras manuellt.
+    // Exempel: 12345: 'Rätt Namn'
+  },
+  names: {
+    // Lägg till fler namnfixar med normaliserat fullständigt API-namn som nyckel.
+    'bo kristoffer nordfeldt': 'Kristoffer Nordfeldt'
+  }
+};
+
+function lineupBuilderNameOverrideKey(value=''){
+  return normalizeText(value).replace(/\s+/g, ' ').trim();
+}
+
+function lineupBuilderDisplayName(player){
+  if(!player) return '';
+  const id = player.id ?? player.playerId ?? player.player?.id;
+  const rawName = String(player.name || player.playerName || player.player?.name || player.displayName || '').trim();
+  if(id && LINEUP_BUILDER_NAME_OVERRIDES.ids[id]) return LINEUP_BUILDER_NAME_OVERRIDES.ids[id];
+  const nameKey = lineupBuilderNameOverrideKey(rawName);
+  if(nameKey && LINEUP_BUILDER_NAME_OVERRIDES.names[nameKey]) return LINEUP_BUILDER_NAME_OVERRIDES.names[nameKey];
+  const parts = rawName.split(/\s+/).filter(Boolean);
   if(!parts.length) return '';
   if(parts.length === 1) return parts[0];
-  return `${parts[0]}\n${parts[parts.length - 1]}`;
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+}
+
+function lineupBuilderExportName(playerOrName=null){
+  const displayName = typeof playerOrName === 'string'
+    ? lineupBuilderDisplayName({ name: playerOrName })
+    : lineupBuilderDisplayName(playerOrName);
+  const parts = String(displayName || '').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return '';
+  if(parts.length === 1) return parts[0];
+  return `${parts[0]}\n${parts.slice(1).join(' ')}`;
 }
 
 function lineupBuilderRoleLabel(slot){
@@ -3492,6 +3523,7 @@ function lineupBuilderFitForSlot(slot, player){
 
 function lineupBuilderSearchBlob(player){
   return normalizeText([
+    lineupBuilderDisplayName(player),
     player.name,
     player.teamName,
     player.position,
@@ -3741,7 +3773,8 @@ function renderLineupBuilderPitch(){
     </svg>
     ${lineupBuilderSlots().map(slot => {
       const player = lineupBuilderState.slots?.[slot.id] || null;
-      const label = player ? `${player.name} (${slot.label})` : `Välj spelare för ${slot.label}`;
+      const displayName = lineupBuilderDisplayName(player);
+      const label = player ? `${displayName} (${slot.label})` : `Välj spelare för ${slot.label}`;
       const coords = lineupBuilderRenderCoords(slot);
       if(!player) {
         return `
@@ -3760,12 +3793,12 @@ function renderLineupBuilderPitch(){
       return `
         <button class="lb-slot" style="left:${coords.x}%;top:${coords.y}%;" onclick="lineupBuilderOpenSlot('${slot.id}')" aria-label="${esc(label)}">
           <span class="lb-slot-core">
-            ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(player.name)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
-            <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
+            ${player.photo ? `<img class="lb-slot-photo" src="${player.photo}" alt="${esc(displayName || 'Spelare')}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+            <span class="lb-slot-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(displayName))}</span>
             <span class="lb-slot-pos">${esc(slot.label)}</span>
           </span>
           <span class="lb-slot-meta">
-            <span class="lb-slot-name">${esc(player.name)}</span>
+            <span class="lb-slot-name">${esc(displayName)}</span>
             <span class="lb-slot-club">
               ${player.teamLogo ? `<img src="${player.teamLogo}" alt="${esc(player.teamName)}" loading="eager" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
               <span>${esc(player.teamName || 'Klubblös')}</span>
@@ -3824,6 +3857,7 @@ function renderLineupBuilderExportStage(){
         ${lineupBuilderSlots().map(slot => {
           const player = lineupBuilderState.slots?.[slot.id] || null;
           const coords = exportPositions[slot.id] || lineupBuilderRenderCoords(slot, 'export');
+          const displayName = lineupBuilderDisplayName(player);
           if(!player) {
             return `
               <div class="export-player empty" style="left:${coords.x}%;top:${coords.y}%;">
@@ -3841,14 +3875,14 @@ function renderLineupBuilderExportStage(){
           return `
             <div class="export-player" style="left:${coords.x}%;top:${coords.y}%;">
               <span class="export-avatar">
-                ${player.photo ? `<img src="${player.photo}" alt="${esc(player.name)}">` : ''}
-                <span class="export-avatar-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(player.name))}</span>
+                ${player.photo ? `<img src="${player.photo}" alt="${esc(displayName || 'Spelare')}">` : ''}
+                <span class="export-avatar-fallback" style="${player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(displayName))}</span>
                 <span class="export-position">${esc(slot.label)}</span>
               </span>
               <span class="export-player-meta">
                 ${player.teamLogo ? `<img class="export-player-team-logo" src="${player.teamLogo}" alt="${esc(player.teamName)}">` : `<span class="export-player-team-logo"></span>`}
                 <span class="export-player-text">
-                  <span class="export-player-name">${esc(lineupBuilderExportName(player.name))}</span>
+                  <span class="export-player-name">${esc(lineupBuilderExportName(player))}</span>
                 <span class="export-team-pill">
                   <span>${esc((player.teamName || 'Klubblös').toUpperCase())}</span>
                 </span>
@@ -3898,7 +3932,7 @@ function renderLineupBuilderModal(){
           <span class="lb-guidance-pill">${esc(lineupBuilderCurrentLeagueConfig().label)}</span>
           <span class="lb-guidance-pill">${esc(lineupBuilderTeamOptionLabel(lineupBuilderState.selectedTeamId))}</span>
           <span class="lb-guidance-pill">Formation ${esc(lineupBuilderState.formation)}</span>
-          ${currentPlayer ? `<span class="lb-guidance-pill">Nuvarande: ${esc(currentPlayer.name)}</span>` : ''}
+          ${currentPlayer ? `<span class="lb-guidance-pill">Nuvarande: ${esc(lineupBuilderDisplayName(currentPlayer))}</span>` : ''}
         </div>
         <div class="lb-toolbar">
           ${currentPlayer ? `<button class="lb-button warn" type="button" onclick="lineupBuilderRemovePlayer('${slot.id}')">Ta bort spelare</button>` : ''}
@@ -3909,14 +3943,16 @@ function renderLineupBuilderModal(){
         ${lineupBuilderState.searchLoading ? `<div class="lb-empty"><strong>Hämtar spelare...</strong><br>${esc(lineupBuilderState.searchHint || 'Vi laddar bara den data som behövs för det val du gjort.')}</div>` : ''}
         ${!lineupBuilderState.searchLoading && lineupBuilderState.searchError ? `<div class="lb-empty"><strong>Kunde inte läsa in spelare.</strong><br>${esc(lineupBuilderState.searchError)}</div>` : ''}
         ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError && !results.length ? `<div class="lb-empty"><strong>${esc(lineupBuilderState.searchScope || 'Inga träffar ännu.')}</strong><br>${esc(lineupBuilderState.searchHint || 'Testa ett spelarnamn eller välj ett specifikt lag för snabbare listning.')}</div>` : ''}
-        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError ? results.map(entry => `
+        ${!lineupBuilderState.searchLoading && !lineupBuilderState.searchError ? results.map(entry => {
+          const displayName = lineupBuilderDisplayName(entry.player);
+          return `
           <button class="lb-result" type="button" onclick="lineupBuilderAssignPlayer('${slot?.id || ''}', ${entry.player.id})">
             <span class="lb-result-media">
-              ${entry.player.photo ? `<img src="${entry.player.photo}" alt="${esc(entry.player.name)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
-              <span style="${entry.player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(entry.player.name))}</span>
+              ${entry.player.photo ? `<img src="${entry.player.photo}" alt="${esc(displayName || 'Spelare')}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` : ''}
+              <span style="${entry.player.photo ? 'display:none' : 'display:grid'}">${esc(lineupBuilderGetInitials(displayName))}</span>
             </span>
             <span class="lb-result-body">
-              <span class="lb-result-name">${esc(entry.player.name)}</span>
+              <span class="lb-result-name">${esc(displayName)}</span>
               <span class="lb-result-meta">
                 ${entry.player.teamLogo ? `<img src="${entry.player.teamLogo}" alt="${esc(entry.player.teamName)}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
                 <span>${esc(entry.player.teamName || lineupBuilderCurrentLeagueConfig().label)}</span>
@@ -3927,7 +3963,8 @@ function renderLineupBuilderModal(){
               <span class="lb-tag ${entry.fit === 'ideal' ? 'fit' : entry.fit === 'soft' ? 'soft' : ''}">${entry.fit === 'ideal' ? 'Bra match' : entry.fit === 'soft' ? 'Flexibel' : 'Fri roll'}</span>
             </span>
           </button>
-        `).join('') : ''}
+        `;
+        }).join('') : ''}
       </div>
     </div>
   `;
@@ -4200,9 +4237,11 @@ function lineupBuilderFindPlayerInCaches(playerId){
 function lineupBuilderAssignPlayer(slotId, playerId){
   const player = lineupBuilderFindPlayerInCaches(playerId);
   if(!player) return;
+  const displayName = lineupBuilderDisplayName(player);
   lineupBuilderState.slots[slotId] = {
     id: player.id,
     name: player.name,
+    displayName,
     photo: player.photo,
     teamName: player.teamName,
     teamLogo: player.teamLogo,
@@ -4212,7 +4251,7 @@ function lineupBuilderAssignPlayer(slotId, playerId){
   renderLineupBuilderSummary();
   renderLineupBuilderPitch();
   lineupBuilderCloseModal();
-  lineupBuilderSetStatus(`${player.name} lades till i elvan.`, 'success');
+  lineupBuilderSetStatus(`${displayName || player.name || 'Spelaren'} lades till i elvan.`, 'success');
 }
 
 function lineupBuilderRemovePlayer(slotId){
