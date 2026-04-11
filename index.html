@@ -2226,6 +2226,76 @@ const C = {};
 
 // Cache
 const CACHE = {};
+const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v2';
+const API_PERSIST_DISABLED = false;
+
+function apiCacheKey(ep, p = {}, raw = false){
+  return `${API_PERSIST_CACHE_PREFIX}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
+}
+
+function apiCacheTtl(ep, p = {}, raw = false){
+  const season = Number(p?.season || SEASON || 0);
+  const currentSeason = Number(SEASON || 0);
+  const isCurrentSeason = season && currentSeason ? season === currentSeason : true;
+
+  if(ep === 'teams') return 30 * 24 * 60 * 60 * 1000;
+  if(ep === 'players/profiles') return 14 * 24 * 60 * 60 * 1000;
+  if(ep === 'standings') return isCurrentSeason ? 15 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  if(ep === 'fixtures') {
+    if(p?.live || p?.next || p?.last) return 3 * 60 * 1000;
+    return isCurrentSeason ? 20 * 60 * 1000 : 3 * 24 * 60 * 60 * 1000;
+  }
+  if(ep === 'players') return isCurrentSeason ? 12 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+  if(ep === 'transfers') return isCurrentSeason ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  if(ep === 'players/squads') return 12 * 60 * 60 * 1000;
+  if(ep === 'teams/statistics') return isCurrentSeason ? 2 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+  return raw ? 30 * 60 * 1000 : 60 * 60 * 1000;
+}
+
+function canPersistApiCache(ep, p = {}, raw = false){
+  if(API_PERSIST_DISABLED) return false;
+  if(!ep) return false;
+  if(typeof localStorage === 'undefined') return false;
+  if(p?.cacheBust) return false;
+  return true;
+}
+
+function readPersistedApiCache(ep, p = {}, raw = false){
+  if(!canPersistApiCache(ep, p, raw)) return null;
+  try {
+    const stored = localStorage.getItem(apiCacheKey(ep, p, raw));
+    if(!stored) return null;
+    const parsed = JSON.parse(stored);
+    const ttl = apiCacheTtl(ep, p, raw);
+    const age = Date.now() - Number(parsed?.createdAt || 0);
+    if(!parsed || !('data' in parsed) || age < 0 || age > ttl) {
+      localStorage.removeItem(apiCacheKey(ep, p, raw));
+      return null;
+    }
+    return parsed.data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function writePersistedApiCache(ep, p = {}, data = null, raw = false){
+  if(!canPersistApiCache(ep, p, raw) || data === null || data === undefined) return;
+  try {
+    localStorage.setItem(apiCacheKey(ep, p, raw), JSON.stringify({
+      createdAt: Date.now(),
+      data
+    }));
+  } catch(e) {}
+}
+
+function clearPersistedApiCache(prefix = API_PERSIST_CACHE_PREFIX){
+  if(typeof localStorage === 'undefined') return;
+  try {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(prefix))
+      .forEach(key => localStorage.removeItem(key));
+  } catch(e) {}
+}
 
 // Name corrections — API-Football 2026 strips Swedish/special chars
 const NAME_FIX = {
@@ -2718,21 +2788,33 @@ function svDate(input){
 async function af(ep, p={}) {
   const key = ep + JSON.stringify(p);
   if(CACHE[key]) return CACHE[key];
+
+  const persisted = readPersistedApiCache(ep, p, false);
+  if(Array.isArray(persisted)) {
+    CACHE[key] = persisted;
+    return CACHE[key];
+  }
+
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetch(`${AF}?${q}`);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
   CACHE[key] = d.response || [];
+  writePersistedApiCache(ep, p, CACHE[key], false);
   return CACHE[key];
 }
 
 async function afRaw(ep, p={}) {
+  const persisted = readPersistedApiCache(ep, p, true);
+  if(persisted && typeof persisted === 'object') return persisted;
+
   const q = new URLSearchParams({_endpoint:ep,...p});
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
+  writePersistedApiCache(ep, p, d, true);
   return d;
 }
 
@@ -3461,9 +3543,7 @@ const LINEUP_BUILDER_NAME_OVERRIDES = {
   },
   names: {
     // Lägg till fler namnfixar med normaliserat fullständigt API-namn som nyckel.
-    'bo kristoffer nordfeldt': 'Kristoffer Nordfeldt',
-    'kenneth viktor isak bjerkebo': 'Isak Bjerkebo',
-    'erik hampus skoglund': 'Hampus Skoglund'
+    'bo kristoffer nordfeldt': 'Kristoffer Nordfeldt'
   }
 };
 
@@ -4652,7 +4732,7 @@ async function pageStart(el) {
 
     let recentFixtures = [];
     try {
-      recentFixtures = await af('fixtures', {league:LEAGUE, season:SEASON, last:3});
+      recentFixtures = await af('fixtures', {league:LEAGUE, season:activeSeason, last:3});
     } catch(e) {
       recentFixtures = [];
     }
@@ -4736,13 +4816,30 @@ async function pageStart(el) {
           <div class="start-sub">S&ouml;k Allsvenskan med AI</div>
           <div class="start-lead">Hitta resultat, statistik och spelardata direkt.</div>
           <div class="start-proof">
-            <div class="start-proof-pill">16 lag</div>
-            <div class="start-proof-pill">240 matcher</div>
-            <div class="start-proof-pill">Live & statistik</div>
+            <div class="start-proof-pill">${standings.length || 16} lag</div>
+            <div class="start-proof-pill">${standings.length ? standings.length * 15 : 240} matcher</div>
+            <div class="start-proof-pill">Live, statistik & transfers</div>
           </div>
           <div class="start-hero-actions">
             <button class="start-primary-btn" onclick="document.getElementById('startAiInput')?.focus()">B&ouml;rja s&ouml;ka</button>
             <button class="start-secondary-btn" onclick="go('/tabell')">Se tabellen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="start-snapshot" style="margin-top:-.45rem;margin-bottom:1rem">
+        <div class="start-mini-card">
+          <div class="start-mini-head">
+            <div>
+              <div class="start-mini-title">Just nu</div>
+              <div class="start-mini-sub">Snabbaste vägen in i sajten</div>
+            </div>
+          </div>
+          <div class="start-chip-row" style="margin-top:.2rem">
+            <button class="start-chip" onclick="go('/resultat')" type="button">Senaste resultat</button>
+            <button class="start-chip" onclick="go('/statistik')" type="button">Topplistor</button>
+            <button class="start-chip" onclick="go('/overgangar')" type="button">Övergångar</button>
+            <button class="start-chip" onclick="go('/lineup-builder')" type="button">Bygg XI</button>
           </div>
         </div>
       </div>
@@ -8145,6 +8242,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
           <div class="pg-sub">Komplett spelarunderlag med pagination, fullständiga namn och beräknade nyckeltal.</div>
         </div>
         <button class="ai-btn" onclick="clearStatsDatasetCache(statsYear);statsCache=null;pageStats(document.getElementById('mc'),statsYear,true)">Bygg om cache</button>
+          <button class="ai-btn" onclick="clearPersistedApiCache()">Rensa API-cache</button>
       </div>
       <div><div class="section-label">Säsong</div><div class="stat-tabs">${yearBtns}</div></div>
       <div><div class="section-label">Statistikgrupper</div><div class="stats-group-tabs">${groupTabs}</div></div>
@@ -8159,6 +8257,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
             <span class="stats-category-badge">${activeCategory.col}</span>
             <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
+            <span class="stats-category-badge">cachead databas i webbläsaren</span>
           </div>
         </div>
         <div class="section-label" style="margin-top:1rem">Kategori</div>
