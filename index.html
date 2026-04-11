@@ -108,6 +108,25 @@ header{
   box-shadow:0 12px 22px rgba(36,28,18,.11);
   border-color:rgba(201,165,75,.24);
 }
+.league-switcher{
+  display:flex;align-items:center;gap:4px;margin-left:8px;
+  padding:4px;border:1px solid rgba(255,255,255,.09);border-radius:999px;
+  background:rgba(255,255,255,.04);backdrop-filter:blur(12px);
+}
+.league-switcher button{
+  min-height:30px;padding:0 12px;border:1px solid transparent;border-radius:999px;
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
+  transition:background .18s,border-color .18s,color .18s,transform .18s;
+}
+.league-switcher button:hover{
+  color:#fff;border-color:rgba(212,175,55,.22);background:rgba(212,175,55,.08);
+}
+.league-switcher button.active{
+  color:#0b0f16;background:linear-gradient(180deg,#E6C977,#C9A54B);
+  border-color:rgba(230,201,119,.42);box-shadow:0 8px 18px rgba(0,0,0,.22);
+}
 
 /* MAIN */
 main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
@@ -1724,6 +1743,8 @@ main > *{animation:fadeUp .3s ease both}
   .logo{font-size:17px}
   .logo-tagline,.header-cta{display:none}
   .nav-pills{display:none}
+  .league-switcher{margin-left:auto}
+  .league-switcher button{min-height:28px;padding:0 8px;font-size:10px;letter-spacing:.7px}
   main{padding:1rem 1rem 72px}
   .pg-title{font-size:28px}
   .tgrid{grid-template-columns:repeat(3,1fr);gap:2px}
@@ -2612,7 +2633,7 @@ input,select,textarea,button{color:#fff;}
     <span class="logo" onclick="go('/')">
       Allsvenskan<em>AI</em>
     </span>
-    <div class="logo-tagline">Allt om Allsvenskan. Sök, jämför och analysera.</div>
+    <div id="activeLeagueTagline" class="logo-tagline">Allt om Allsvenskan. Sök, jämför och analysera.</div>
   </div>
   <nav class="nav-pills">
     <button class="np" onclick="go('/')">Start</button>
@@ -2623,6 +2644,10 @@ input,select,textarea,button{color:#fff;}
     <button class="np" onclick="go('/lineup-builder')">Startelva</button>
     <button class="np" onclick="go('/statistik')">Statistik</button>
   </nav>
+  <div class="league-switcher" aria-label="Välj liga">
+    <button type="button" data-league-key="allsvenskan" onclick="setActiveLeagueKey('allsvenskan')">Allsvenskan</button>
+    <button type="button" data-league-key="damallsvenskan" onclick="setActiveLeagueKey('damallsvenskan')">Damallsvenskan</button>
+  </div>
   <button class="header-cta" onclick="go('/statistik')">Utforska statistik</button>
 </header>
 
@@ -2665,8 +2690,70 @@ input,select,textarea,button{color:#fff;}
 <script>
 
 // â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const LEAGUE = 113;
-let SEASON = 2026; // auto-detects current season
+const LEAGUES = {
+  allsvenskan: {
+    key: 'allsvenskan',
+    name: 'Allsvenskan',
+    season: 2026,
+    leagueId: 113
+  },
+  damallsvenskan: {
+    key: 'damallsvenskan',
+    name: 'Damallsvenskan',
+    season: 2026,
+    leagueId: 549
+  }
+};
+const ACTIVE_LEAGUE_STORAGE_KEY = 'allsvenskanai:active-league';
+
+function getActiveLeagueKey(){
+  try {
+    const stored = localStorage.getItem(ACTIVE_LEAGUE_STORAGE_KEY);
+    if(stored && LEAGUES[stored]) return stored;
+  } catch(e) {}
+  return 'allsvenskan';
+}
+
+function getActiveLeagueConfig(){
+  return LEAGUES[getActiveLeagueKey()] || LEAGUES.allsvenskan;
+}
+
+function updateLeagueSwitcherUI(){
+  const league = getActiveLeagueConfig();
+  document.querySelectorAll('[data-league-key]').forEach(button => {
+    button.classList.toggle('active', button.dataset.leagueKey === league.key);
+  });
+  const tagline = document.getElementById('activeLeagueTagline');
+  if(tagline) tagline.textContent = `Allt om ${league.name}. Sök, jämför och analysera.`;
+}
+
+function setActiveLeagueKey(key){
+  if(!LEAGUES[key]) return;
+  const previous = getActiveLeagueKey();
+  try { localStorage.setItem(ACTIVE_LEAGUE_STORAGE_KEY, key); } catch(e) {}
+  const league = getActiveLeagueConfig();
+  LEAGUE = league.leagueId;
+  SEASON = league.season;
+  resolvedSeasonPromise = null;
+  if(typeof statsYear !== 'undefined') statsYear = league.season;
+  if(typeof statsCache !== 'undefined') statsCache = null;
+  if(typeof transfersCache !== 'undefined') transfersCache = null;
+  if(typeof transfersLeagueTeams !== 'undefined') transfersLeagueTeams = [];
+  if(typeof lineupBuilderState !== 'undefined' && previous !== key) {
+    lineupBuilderState.selectedLeagueKey = key;
+    lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
+    lineupBuilderState.availableTeams = [];
+    lineupBuilderState.searchResults = [];
+    lineupBuilderState.searchQuery = '';
+  }
+  updateLeagueSwitcherUI();
+  updateNav(location.pathname);
+  route(location.pathname || '/');
+}
+
+const initialLeagueConfig = getActiveLeagueConfig();
+let LEAGUE = initialLeagueConfig.leagueId;
+let SEASON = initialLeagueConfig.season; // auto-detects current season per selected league
 const AF = '/api/football';
 const C = {};
 
@@ -2676,7 +2763,7 @@ const API_PERSIST_CACHE_PREFIX = 'aai:api-cache:v2';
 const API_PERSIST_DISABLED = false;
 
 function apiCacheKey(ep, p = {}, raw = false){
-  return `${API_PERSIST_CACHE_PREFIX}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
+  return `${API_PERSIST_CACHE_PREFIX}:${getActiveLeagueKey()}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
 }
 
 function apiCacheTtl(ep, p = {}, raw = false){
@@ -3232,7 +3319,7 @@ function svDate(input){
 }
 
 async function af(ep, p={}) {
-  const key = ep + JSON.stringify(p);
+  const key = `${getActiveLeagueKey()}:${ep}:${JSON.stringify(p)}`;
   if(CACHE[key]) return CACHE[key];
 
   const persisted = readPersistedApiCache(ep, p, false);
@@ -3777,7 +3864,8 @@ let lineupBuilderStatusTimer = null;
 let lineupBuilderTeamsRequestId = 0;
 let lineupBuilderSearchRequestId = 0;
 const LINEUP_BUILDER_LEAGUES = [
-  { key:'allsvenskan-men', id:LEAGUE, label:'Allsvenskan Herr', season:2026, teamOrder:true }
+  { key:'allsvenskan', id:LEAGUES.allsvenskan.leagueId, label:LEAGUES.allsvenskan.name, season:LEAGUES.allsvenskan.season, teamOrder:true },
+  { key:'damallsvenskan', id:LEAGUES.damallsvenskan.leagueId, label:LEAGUES.damallsvenskan.name, season:LEAGUES.damallsvenskan.season, teamOrder:false }
 ];
 const LINEUP_BUILDER_LEAGUE_MAP = Object.fromEntries(LINEUP_BUILDER_LEAGUES.map(league => [league.key, league]));
 const lineupBuilderCache = {
@@ -3790,7 +3878,7 @@ const lineupBuilderState = {
   formation: '4-3-3',
   title: 'Omgångens elva',
   subtitle: '',
-  selectedLeagueKey: LINEUP_BUILDER_LEAGUES[0].key,
+  selectedLeagueKey: getActiveLeagueKey(),
   selectedTeamId: LINEUP_BUILDER_ALL_TEAMS,
   availableTeams: [],
   teamsLoading: false,
@@ -3821,7 +3909,7 @@ function createLineupBuilderPersistedState(){
 }
 
 function lineupBuilderCurrentLeagueConfig(){
-  return LINEUP_BUILDER_LEAGUE_MAP[lineupBuilderState.selectedLeagueKey] || LINEUP_BUILDER_LEAGUES[0];
+  return LINEUP_BUILDER_LEAGUE_MAP[lineupBuilderState.selectedLeagueKey] || LINEUP_BUILDER_LEAGUE_MAP[getActiveLeagueKey()] || LINEUP_BUILDER_LEAGUES[0];
 }
 
 function lineupBuilderLeagueSeason(leagueConfig = lineupBuilderCurrentLeagueConfig()){
@@ -4110,7 +4198,7 @@ async function resolveLineupBuilderLeagueMeta(leagueKey = lineupBuilderState.sel
   const meta = {
     key: leagueConfig.key,
     id: Number(leagueConfig.id || LEAGUE),
-    name: fixName(leagueConfig.label || 'Allsvenskan Herr'),
+    name: fixName(leagueConfig.label || getActiveLeagueConfig().name),
     season: lineupBuilderLeagueSeason(leagueConfig)
   };
   lineupBuilderCache.leagueMeta[leagueKey] = meta;
@@ -4596,6 +4684,13 @@ function renderLineupBuilderPage(root){
 }
 
 function pageLineupBuilder(el){
+  if(LINEUP_BUILDER_LEAGUE_MAP[getActiveLeagueKey()] && lineupBuilderState.selectedLeagueKey !== getActiveLeagueKey()){
+    lineupBuilderState.selectedLeagueKey = getActiveLeagueKey();
+    lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
+    lineupBuilderState.availableTeams = [];
+    lineupBuilderState.searchResults = [];
+    lineupBuilderState.searchQuery = '';
+  }
   renderLineupBuilderPage(el);
   lineupBuilderBootstrapLeagueTeams();
 }
@@ -5067,6 +5162,7 @@ function go(path, push=true) {
   route(path);
 }
 function updateNav(path) {
+  updateLeagueSwitcherUI();
   document.querySelectorAll('.np').forEach(b => {
     const p = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
     b.classList.toggle('active', p===path || (path==='/'&&p==='/') || (isLineupBuilderRoute(path) && p === '/lineup-builder'));
@@ -5114,7 +5210,8 @@ function route(path) {
 }
 
 async function pageStart(el) {
-  document.title = 'AllsvenskanAI — Allsvenskan statistik, spelare & övergångar';
+  const league = getActiveLeagueConfig();
+  document.title = `AllsvenskanAI — ${league.name} statistik, spelare & övergångar`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
   try {
     const activeSeason = await getResolvedSeason();
@@ -5193,8 +5290,8 @@ async function pageStart(el) {
         <div class="start-hero-shell">
           <div class="start-hero-left">
             <div class="start-hero-kicker">Matchdag • Statistik • Transfers</div>
-            <div class="start-wordmark">Allsvenskan<span>AI</span><small>Live data för svensk fotboll</small></div>
-            <div class="start-lead">Resultat, tabell, spelarsidor och startelvor på ett sätt som känns mer sportmedia än stel databas. Snabbt in, enkelt att dela, byggt för fans.</div>
+            <div class="start-wordmark">Allsvenskan<span>AI</span><small>${esc(league.name)} ${activeSeason}</small></div>
+            <div class="start-lead">Resultat, tabell, spelarsidor och startelvor för ${esc(league.name)} på ett sätt som känns mer sportmedia än stel databas. Snabbt in, enkelt att dela, byggt för fans.</div>
             <div class="start-proof">
               <div class="start-proof-pill">${standings.length || 16} lag</div>
               <div class="start-proof-pill">${standings.length ? standings.length * 15 : 240} matcher</div>
@@ -5248,7 +5345,7 @@ async function pageStart(el) {
         </div>
         <div class="best-players">
           <h3>🔥 Bäst just nu</h3>
-          <p>Högst snittbetyg i Allsvenskan</p>
+          <p>Högst snittbetyg i ${esc(league.name)}</p>
           <div id="bestPlayersList"></div>
         </div>
       </div>
@@ -5289,7 +5386,7 @@ async function pageStart(el) {
         <div class="start-mini-card">
           <div class="start-mini-head">
             <div>
-              <div class="start-mini-title">Toppen Herr</div>
+              <div class="start-mini-title">Toppen ${esc(league.name)}</div>
               <div class="start-mini-sub">Målskillnad och poäng</div>
             </div>
             <button class="start-mini-link" onclick="go('/tabell')">Hela tabellen</button>
@@ -5299,21 +5396,21 @@ async function pageStart(el) {
         <div class="start-mini-card placeholder">
           <div class="start-mini-head">
             <div>
-              <div class="start-mini-title">Toppen Dam</div>
-              <div class="start-mini-sub">Målskillnad och poäng</div>
+              <div class="start-mini-title">Aktiv liga</div>
+              <div class="start-mini-sub">${esc(league.name)} ${activeSeason}</div>
             </div>
           </div>
           <div class="start-mini-empty">
             <div>
-              <strong>Kommer snart</strong>
-              <span>Damallsvenskan är på väg</span>
+              <strong>${esc(league.name)}</strong>
+              <span>Byt liga i toppmenyn när du vill.</span>
             </div>
           </div>
         </div>
       </div>
 
       <div class="start-teams-section">
-        <div class="start-section-label">Alla lag i Allsvenskan ${SEASON}</div>
+        <div class="start-section-label">Alla lag i ${esc(league.name)} ${activeSeason}</div>
         <div class="start-tgrid">${cards}</div>
       </div>
 
@@ -5847,7 +5944,8 @@ function renderPodcastsEmpty(el, message = PODCAST_EMPTY_MESSAGE){
 
 // â”€â”€â”€ TEAMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageTeams(el) {
-  document.title = 'Alla lag — AllsvenskanAI';
+  const league = getActiveLeagueConfig();
+  document.title = `Alla lag — ${league.name} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
     const activeSeason = await getResolvedSeason();
@@ -5859,8 +5957,8 @@ async function pageTeams(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${teams.length} lag</span></div>
-      <div class="start-tgrid">${cards}</div>`;
+      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${esc(league.name)} · ${teams.length} lag</span></div>
+      <div class="start-tgrid">${cards || '<div class="tw"><div class="empty">Ingen data tillgänglig just nu</div></div>'}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
   }
@@ -6809,7 +6907,7 @@ async function pagePlayer(el, playerId) {
       <div style="margin:.7rem 0 1rem">
         <div class="section-label" style="margin-bottom:.45rem">Allsvenskan-år</div>
         <div class="team-season-switcher">
-          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${season === curSeasonYear ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">Allsvenskan ${season}</button>`).join('')}
+          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${season === curSeasonYear ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">${esc(getActiveLeagueConfig().name)} ${season}</button>`).join('')}
         </div>
       </div>` : '';
 
@@ -7155,7 +7253,8 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
 
 // â”€â”€â”€ STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function pageStandings(el) {
-  document.title = 'Tabell — AllsvenskanAI';
+  const league = getActiveLeagueConfig();
+  document.title = `Tabell — ${league.name} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
   try {
     const data = await af('standings', {league:LEAGUE, season:SEASON});
@@ -7182,7 +7281,7 @@ async function pageStandings(el) {
         <td><div class="form-row standings-form" title="Senaste fem: ${formLabel || '–'}">${form}</div></td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Tabell <em>${SEASON}</em></div></div>
+      <div class="pg-header"><div class="pg-title">Tabell <em>${SEASON}</em></div><span class="pg-sub">${esc(league.name)}</span></div>
       <div class="tw"><div class="standings-wrap"><table class="standings-table">
         <thead><tr><th title="Placering">#</th><th title="Lag">Lag</th><th title="Matcher spelade">MP</th><th title="Vinster">V</th><th title="Oavgjorda">O</th><th title="Förluster">F</th><th title="Gjorda mål">GM</th><th title="Insläppta mål">GI</th><th title="Målskillnad">GS</th><th title="Poäng">P</th><th title="Senaste fem matcher">Form</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="11" class="empty">Ingen data</td></tr>'}</tbody>
@@ -7565,7 +7664,8 @@ function setResultsRound(roundKey){
 }
 
 async function pageResults(el) {
-  document.title = 'Resultat — AllsvenskanAI';
+  const league = getActiveLeagueConfig();
+  document.title = `Resultat — ${league.name} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar matcher…</div>`;
   try {
     const data = await af('fixtures', {league:LEAGUE, season:SEASON});
@@ -7616,7 +7716,7 @@ async function pageResults(el) {
         </div>
       </div>` : '';
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Resultat</div><span class="pg-sub">Klicka på en match för statistik, händelser och laguppställningar</span></div>
+      <div class="pg-header"><div class="pg-title">Resultat</div><span class="pg-sub">${esc(league.name)} · klicka på en match för statistik, händelser och laguppställningar</span></div>
       ${toolbar}
       <div class="matches-grid">${cards || '<div class="tw"><div class="empty">Inga matcher</div></div>'}</div>`;
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
@@ -8195,7 +8295,7 @@ const STATS_CURRENT_SEASON_TTL = 12 * 60 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 
 function statsDatasetCacheKey(season = SEASON){
-  return `${STATS_DATASET_CACHE_PREFIX}:${LEAGUE}:${season}`;
+  return `${STATS_DATASET_CACHE_PREFIX}:${getActiveLeagueKey()}:${season}`;
 }
 
 function statsDatasetCacheTtl(season = SEASON){
@@ -9326,6 +9426,7 @@ async function getResolvedSeason(force = false) {
 }
 
 async function boot() {
+  updateLeagueSwitcherUI();
   await getResolvedSeason(true);
   route(location.pathname);
 }
