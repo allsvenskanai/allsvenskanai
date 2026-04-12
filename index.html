@@ -3995,6 +3995,54 @@ function filterPlayerLeagueRows(rows = [], leagueId = LEAGUE){
     }))
     .filter(item => (item?.statistics || []).length);
 }
+
+function isGoalkeeperStatEntry(entry = {}, fallback = ''){
+  const raw = [
+    fallback,
+    entry?.games?.position,
+    entry?.position,
+    entry?.position?.name,
+    entry?.detailedPosition?.name,
+  ].filter(Boolean).join(' ');
+  const normalized = normalizePositionCompactKey(raw);
+  return ['goalkeeper', 'keeper', 'gk', 'mv', 'malvakt', 'målvakt'].some(token => normalized === token || normalized.includes(token));
+}
+
+function playerGoalsConcededValue(entry = {}){
+  return toStatNumber(
+    entry?.goals?.conceded ??
+    entry?.goals?.against ??
+    entry?.goals?.allowed ??
+    entry?.goalsConceded ??
+    entry?.goals_against
+  );
+}
+
+function playerScoredGoalsValue(entry = {}){
+  const explicitScored = entry?.goals?.scored ?? entry?.goals?.for ?? entry?.goals_scored;
+  if(explicitScored !== undefined && explicitScored !== null && explicitScored !== '') {
+    return toStatNumber(explicitScored);
+  }
+  const total = toStatNumber(entry?.goals?.total);
+  const conceded = playerGoalsConcededValue(entry);
+  const shots = toStatNumber(entry?.shots?.total) + toStatNumber(entry?.shots?.on);
+  const penaltiesScored = toStatNumber(entry?.penalty?.scored);
+  if(isGoalkeeperStatEntry(entry) && conceded > 0 && total === conceded && !shots && !penaltiesScored) {
+    return 0;
+  }
+  return total;
+}
+
+function playerCleanSheetsValue(entry = {}){
+  return toStatNumber(
+    entry?.goals?.clean_sheets ??
+    entry?.goals?.cleanSheets ??
+    entry?.clean_sheets ??
+    entry?.cleanSheets ??
+    entry?.clean_sheet
+  );
+}
+
 function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const leagueId = opts.leagueId ? Number(opts.leagueId) : null;
   const seasonStats = rows?.[0]?.statistics || [];
@@ -4006,7 +4054,7 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const minutes = sum(entry => entry.games?.minutes);
   const appearances = sum(entry => entry.games?.appearences);
   const starts = sum(entry => entry.games?.lineups);
-  const goals = sum(entry => entry.goals?.total);
+  const goals = sum(playerScoredGoalsValue);
   const assists = sum(entry => entry.goals?.assists);
   const shots = sum(entry => entry.shots?.total);
   const shotsOn = sum(entry => entry.shots?.on);
@@ -4024,7 +4072,8 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const yellow = sum(entry => entry.cards?.yellow);
   const red = sum(entry => entry.cards?.red);
   const saves = sum(entry => entry.goals?.saves);
-  const goalsConceded = sum(entry => entry.goals?.conceded);
+  const goalsConceded = sum(playerGoalsConcededValue);
+  const cleanSheets = sum(playerCleanSheetsValue);
   const penaltiesSaved = sum(entry => entry.penalty?.saved);
   const penaltiesScored = sum(entry => entry.penalty?.scored);
   const penaltiesMissed = sum(entry => entry.penalty?.missed);
@@ -4061,6 +4110,7 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
       total: goals,
       assists,
       conceded: goalsConceded,
+      cleanSheets,
       saves,
     },
     cards: { yellow, red },
@@ -7440,7 +7490,41 @@ function canonicalNumber(value){
   return Number.isFinite(num) ? num : 0;
 }
 
+function sanitizeCachedPlayerGoalFields(player = {}){
+  const stats = player.stats || {};
+  const rawGoals = canonicalNumber(stats.goals ?? player.goals);
+  const assists = canonicalNumber(stats.assists ?? player.assists);
+  const goalsConceded = canonicalNumber(stats.goalsConceded);
+  const shots = canonicalNumber(stats.shots ?? player.shots);
+  const shotsOn = canonicalNumber(stats.shotsOn ?? player.shotsOnTarget);
+  const isGoalkeeper = Boolean(player.flags?.goalkeeper || isGoalkeeperStatEntry({ games:{ position:player.position }, goals:{ conceded:goalsConceded } }, player.position || ''));
+  const goals = isGoalkeeper && goalsConceded > 0 && rawGoals === goalsConceded && !(shots + shotsOn)
+    ? 0
+    : rawGoals;
+  const minutes = canonicalNumber(stats.minutes ?? player.minutes);
+  const goalContributions = goals + assists;
+  return {
+    ...player,
+    goals,
+    assists,
+    stats:{ ...stats, goals, assists, goalsConceded },
+    derived:{
+      ...(player.derived || {}),
+      goalContributions,
+      goalsPer90:minutes > 0 ? (goals / minutes) * 90 : 0,
+      assistsPer90:minutes > 0 ? (assists / minutes) * 90 : 0,
+      pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
+      conversionRate:shots > 0 ? (goals / shots) * 100 : 0,
+      shotsPerGoal:goals > 0 ? shots / goals : 0,
+      minutesPerGoal:goals > 0 ? minutes / goals : 0,
+      minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
+    },
+    flags:{ ...(player.flags || {}), goalkeeper:isGoalkeeper },
+  };
+}
+
 function canonicalCachedTeamPlayer(player = {}, teamId){
+  player = sanitizeCachedPlayerGoalFields(player);
   const currentTeamId = Number(teamId || 0);
   const playerTeamId = Number(player.teamId || 0);
   if(!player?.playerId || !currentTeamId || playerTeamId !== currentTeamId) return null;
@@ -7452,11 +7536,16 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
   if(player.season && Number(player.season) !== activeSeasonLabel && Number(player.season) !== activeSeasonId) return null;
   const stats = player.stats || {};
   const derived = player.derived || {};
-  const goals = canonicalNumber(stats.goals ?? player.goals);
+  const rawGoals = canonicalNumber(stats.goals ?? player.goals);
   const assists = canonicalNumber(stats.assists ?? player.assists);
   const minutes = canonicalNumber(stats.minutes ?? player.minutes);
   const shots = canonicalNumber(stats.shots ?? player.shots);
   const shotsOn = canonicalNumber(stats.shotsOn ?? player.shotsOnTarget);
+  const goalsConceded = canonicalNumber(stats.goalsConceded);
+  const isGoalkeeper = Boolean(player.flags?.goalkeeper || isGoalkeeperStatEntry({ games:{ position:player.position }, goals:{ conceded:goalsConceded } }, player.position || ''));
+  const goals = isGoalkeeper && goalsConceded > 0 && rawGoals === goalsConceded && !(shots + shotsOn)
+    ? 0
+    : rawGoals;
   const goalContributions = canonicalNumber(derived.goalContributions || (goals + assists));
   return {
     ...player,
@@ -7500,7 +7589,8 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
       red:canonicalNumber(stats.red),
       offsides:canonicalNumber(stats.offsides),
       saves:canonicalNumber(stats.saves),
-      goalsConceded:canonicalNumber(stats.goalsConceded),
+      goalsConceded,
+      cleanSheets:canonicalNumber(stats.cleanSheets),
       penaltiesSaved:canonicalNumber(stats.penaltiesSaved),
       penaltiesScored:canonicalNumber(stats.penaltiesScored),
       penaltiesMissed:canonicalNumber(stats.penaltiesMissed),
@@ -7524,7 +7614,7 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
     },
     flags:{
       ...(player.flags || {}),
-      goalkeeper:Boolean(player.flags?.goalkeeper),
+      goalkeeper:isGoalkeeper,
     },
   };
 }
@@ -8286,7 +8376,7 @@ async function pagePlayer(el, playerId) {
     const curSeasonYear = selectedAllsvSeason;
     const curStats = aggregatePlayerSeasonStats(selectedAllsvRows) || {
       games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
-      goals: { total:0, assists:0, conceded:0, saves:0 },
+      goals: { total:0, assists:0, conceded:0, cleanSheets:0, saves:0 },
       cards: { yellow:0, red:0 },
       shots: { total:0, on:0 },
       passes: { total:0, key:0, accuracy:0 },
@@ -8349,6 +8439,7 @@ async function pagePlayer(el, playerId) {
     const curOffsides = curStats.offsides||0;
     const curSaves = curStats.goals?.saves||0;
     const curGoalsConceded = curStats.goals?.conceded||0;
+    const curCleanSheets = curStats.goals?.cleanSheets||0;
     const curPenaltySaved = curStats.penalty?.saved||0;
     const curPenaltyScored = curStats.penalty?.scored||0;
     const curSubApps = curStats.derived?.subApps||0;
@@ -8382,7 +8473,7 @@ async function pagePlayer(el, playerId) {
       if(!data.length) return;
       data[0].statistics?.forEach(s => {
         if(!s || !s.league) return; // skip empty stats objects
-        const g  = s.goals?.total||0;
+        const g  = playerScoredGoalsValue(s);
         const a  = s.goals?.assists||0;
         const m  = s.games?.appearences||0;
         const mn = s.games?.minutes||0;
@@ -8397,7 +8488,9 @@ async function pagePlayer(el, playerId) {
         careerYellow  += y;
         careerRed     += r;
         const isCur = season === curSeasonYear;
-        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: getTeamLogo(s.team), m, mn, g, a, rt, rtClass, y, r, isCur});
+        const gc = playerGoalsConcededValue(s);
+        const cs = playerCleanSheetsValue(s);
+        seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: getTeamLogo(s.team), m, mn, g, a, gc, cs, rt, rtClass, y, r, isCur});
       });
     });
     seasonResults.forEach((data, idx) => {
@@ -8406,7 +8499,7 @@ async function pagePlayer(el, playerId) {
       data.forEach(item => {
         (item.statistics || []).forEach(s => {
           if(!s || !s.league || !s.team || isNationalTeamStat(s)) return;
-          const g  = s.goals?.total||0;
+          const g  = playerScoredGoalsValue(s);
           const a  = s.goals?.assists||0;
           const m  = s.games?.appearences||0;
           const mn = s.games?.minutes||0;
@@ -8419,7 +8512,7 @@ async function pagePlayer(el, playerId) {
             league: s.league?.name||'—',
             team: getTeamDisplayName(s.team) || '—',
             teamLogo: getTeamLogo(s.team),
-            m, mn, g, a, rt, rtClass, y, r
+            m, mn, g, a, gc:playerGoalsConcededValue(s), cs:playerCleanSheetsValue(s), rt, rtClass, y, r
           });
         });
       });
@@ -8481,18 +8574,26 @@ async function pagePlayer(el, playerId) {
       const out = digits > 0 ? numeric.toFixed(digits) : Math.round(numeric).toLocaleString('sv-SE');
       return `${out}${suffix}`;
     };
-    const summaryCards = [
-      { label:'Poäng', value: curGoalContrib, copy:'Mål + assist i ligaspel' },
-      { label:'Mål /90', value: formatMetric(curGoalsPer90, 2), copy:`${curGoals} mål totalt` },
-      { label:'Assist /90', value: formatMetric(curAssistsPer90, 2), copy:`${curAssists} assist totalt` },
-      { label:'Poäng /90', value: formatMetric(curPointsPer90, 2), copy:`${curGoalContrib} poäng totalt` }
-    ].map(card => `
+    const isGoalkeeperProfile = isGoalkeeperStatEntry({ games:{ position:curStats.games?.position }, goals:curStats.goals }, p.position || '');
+    const summaryCardData = isGoalkeeperProfile
+      ? [
+          { label:'Räddningar', value: curSaves, copy:'Separeras från offensiva mål' },
+          { label:'Hållna nollor', value: curCleanSheets, copy:'Målvaktsstatistik' },
+          { label:'Insläppta mål', value: curGoalsConceded, copy:`${formatMetric(curGoalsConcededPerMatch, 2)} per match` },
+          { label:'Räddnings%', value: curSaves ? formatMetric(curSavePct, 1, '%') : '—', copy:'Räddningar av skott på mål' }
+        ]
+      : [
+          { label:'Poäng', value: curGoalContrib, copy:'Mål + assist i ligaspel' },
+          { label:'Mål /90', value: formatMetric(curGoalsPer90, 2), copy:`${curGoals} mål totalt` },
+          { label:'Assist /90', value: formatMetric(curAssistsPer90, 2), copy:`${curAssists} assist totalt` },
+          { label:'Poäng /90', value: formatMetric(curPointsPer90, 2), copy:`${curGoalContrib} poäng totalt` }
+        ];
+    const summaryCards = summaryCardData.map(card => `
       <div class="player-detail-chip">
         <div class="label">${card.label}</div>
         <div class="value">${card.value}</div>
         <div class="copy">${card.copy}</div>
       </div>`).join('');
-    const isGoalkeeperProfile = /goalkeeper|målvakt/i.test(String(curStats.games?.position || p.position || ''));
     const detailSections = [
       {
         kicker:'Offensiv',
@@ -8565,6 +8666,7 @@ async function pagePlayer(el, playerId) {
         rows:[
           ['Räddningar', curSaves],
           ['Räddningsprocent', curSaves ? formatMetric(curSavePct, 1, '%') : '—'],
+          ['Hållna nollor', curCleanSheets],
           ['Insläppta mål', curGoalsConceded],
           ['Insläppta / match', curGoalsConceded ? formatMetric(curGoalsConcededPerMatch, 2) : '—'],
           ['Straffmål', curPenaltyScored],
@@ -10002,7 +10104,7 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
           goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
           tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
           foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
-          saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
+          saves: 0, goalsConceded: 0, cleanSheets: 0, penaltiesSaved: 0, penaltiesScored: 0,
           penaltiesMissed: 0, penaltiesWon: 0, penaltiesCommitted: 0,
         }
       });
@@ -10036,9 +10138,10 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
       acc.stats.subOuts += toStatNumber(entry?.substitutes?.out);
       acc.stats.bench += toStatNumber(entry?.substitutes?.bench);
       acc.stats.minutes += minutes;
-      acc.stats.goals += toStatNumber(entry?.goals?.total);
+      acc.stats.goals += playerScoredGoalsValue(entry);
       acc.stats.assists += toStatNumber(entry?.goals?.assists);
-      acc.stats.goalsConceded += toStatNumber(entry?.goals?.conceded);
+      acc.stats.goalsConceded += playerGoalsConcededValue(entry);
+      acc.stats.cleanSheets += playerCleanSheetsValue(entry);
       acc.stats.saves += toStatNumber(entry?.goals?.saves);
       acc.stats.shots += toStatNumber(entry?.shots?.total);
       acc.stats.shotsOn += toStatNumber(entry?.shots?.on);
@@ -10387,8 +10490,10 @@ async function loadPublicStatsDataset(season = SEASON){
   const response = await fetch(`/api/admin?action=public-stats&league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(season)}`);
   const data = await response.json().catch(() => ({}));
   if(data?.ok && data?.response?.players) {
+    const players = (data.response.players || []).map(sanitizeCachedPlayerGoalFields);
     return {
       ...data.response,
+      players,
       loadedAt:Date.now(),
       leagueKey:league.key,
       leagueId:league.leagueId,
@@ -10424,16 +10529,19 @@ async function loadPublicTeamStatsDataset(teamId, season = SEASON){
   const data = await response.json().catch(() => ({}));
   if(data?.ok && data?.response?.players) {
     const teamPayload = data.response;
+    const players = (teamPayload.players || []).map(sanitizeCachedPlayerGoalFields);
+    const squad = (teamPayload.squad || []).map(sanitizeCachedPlayerGoalFields);
     return {
       year:season,
       loadedAt:Date.now(),
       leagueKey:league.key,
       leagueId:league.leagueId,
       teams:teamPayload.team ? [teamPayload.team] : [],
-      players:teamPayload.players || [],
-      teamStats:[teamPayload],
+      players,
+      squad,
+      teamStats:[{ ...teamPayload, players, squad }],
       meta:{
-        playerCount:teamPayload.players?.length || 0,
+        playerCount:players.length || 0,
         teamCount:1,
         cachedTeamCount:1,
         publicUpdatedAt:data.updatedAt || teamPayload.updatedAt || null,
