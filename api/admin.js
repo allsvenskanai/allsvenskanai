@@ -254,6 +254,19 @@ function detailValueFiltered(details = [], names = [], excludedNames = [], prefe
     .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
 }
 
+function detailValueStrict(details = [], names = [], excludedNames = [], preferredKey = ''){
+  const wanted = names.map(normalizeToken);
+  const excluded = excludedNames.map(normalizeToken);
+  return (Array.isArray(details) ? details : [])
+    .filter(detail => {
+      const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeToken);
+      const matchesWanted = tokens.some(token => wanted.includes(token));
+      const matchesExcluded = tokens.some(token => excluded.includes(token));
+      return matchesWanted && !matchesExcluded;
+    })
+    .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
+}
+
 function detailSubValue(details = [], names = [], key = ''){
   const wanted = names.map(normalizeToken);
   const row = (Array.isArray(details) ? details : []).find(detail => {
@@ -365,6 +378,34 @@ function playerHasUsefulStats(player = {}){
   ].some(value => Number(value || 0) > 0);
 }
 
+function sanitizeCachedPlayerGoals(player = {}){
+  const stats = player.stats || {};
+  const rawGoals = valueNumber(stats.goals ?? player.goals);
+  const assists = valueNumber(stats.assists ?? player.assists);
+  const conceded = valueNumber(stats.goalsConceded);
+  const shots = valueNumber(stats.shots ?? player.shots) + valueNumber(stats.shotsOn ?? player.shotsOnTarget);
+  const isGoalkeeper = Boolean(player.flags?.goalkeeper || normalizeToken(player.position).includes('goalkeeper') || normalizeToken(player.position).includes('malvakt') || conceded > 0 || valueNumber(stats.saves) > 0);
+  const goals = isGoalkeeper && conceded > 0 && rawGoals === conceded && !shots ? 0 : rawGoals;
+  const minutes = valueNumber(stats.minutes ?? player.minutes);
+  const goalContributions = goals + assists;
+  return {
+    ...player,
+    goals,
+    assists,
+    stats:{ ...stats, goals, assists, goalsConceded:conceded },
+    derived:{
+      ...(player.derived || {}),
+      goalContributions,
+      goalsPer90:minutes > 0 ? (goals / minutes) * 90 : 0,
+      assistsPer90:minutes > 0 ? (assists / minutes) * 90 : 0,
+      pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
+      minutesPerGoal:goals > 0 ? minutes / goals : 0,
+      minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
+    },
+    flags:{ ...(player.flags || {}), goalkeeper:isGoalkeeper },
+  };
+}
+
 function playerStatScore(player = {}){
   const stats = player.stats || {};
   return [
@@ -399,7 +440,7 @@ function sanitizeTeamPayload(league, payload = {}){
   const invalidOversizedTeamCache = originalPlayers.length > 100;
   const players = invalidOversizedTeamCache
     ? []
-    : dedupePlayers(originalPlayers.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)));
+    : dedupePlayers(originalPlayers.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)).map(sanitizeCachedPlayerGoals));
   const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
   return {
     ...payload,
@@ -448,13 +489,14 @@ function normalizePlayerStat(item = {}, team = {}){
   const appearances = detailValue(details, ['appearances', 'appearance']);
   const starts = detailValue(details, ['lineups', 'starts', 'starting']);
   const minutes = detailValue(details, ['minutes played', 'minutes']);
-  const goals = detailValueFiltered(details, ['goals', 'goal'], ['goals conceded', 'conceded', 'against', 'own goal', 'own goals', 'penalty', 'penalties']);
+  const goals = detailValueStrict(details, ['goals', 'goal', 'goals scored', 'scored goals', 'total goals'], ['goals conceded', 'conceded goals', 'conceded', 'against', 'goals against', 'goals allowed', 'own goal', 'own goals', 'penalty', 'penalties']);
   const assists = detailValueFiltered(details, ['assists', 'assist'], ['expected assists']);
   const shots = detailValue(details, ['shots total', 'shots']);
   const passes = detailValue(details, ['passes']);
   const passAccuracy = detailValue(details, ['pass accuracy'], 'average');
   const saves = detailValue(details, ['saves']);
-  const goalsConceded = detailValue(details, ['goals conceded', 'conceded']);
+  const goalsConceded = detailValueStrict(details, ['goals conceded', 'conceded goals', 'conceded', 'goals against', 'against', 'goals allowed']);
+  const cleanSheets = detailValueStrict(details, ['clean sheets', 'cleansheets', 'clean sheet']);
   const position = item.position?.name || item.detailedPosition?.name || player.position?.name || '';
   const rating = detailValue(details, ['rating', 'average rating'], 'average');
   const goalContributions = goals + assists;
@@ -491,7 +533,7 @@ function normalizePlayerStat(item = {}, team = {}){
       tackles, interceptions, blocks, duelsWon, duelsTotal,
       foulsCommitted:detailValue(details, ['fouls committed']), foulsDrawn:detailValue(details, ['fouls drawn']),
       yellow:detailValue(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']), red:detailValue(details, ['red cards', 'red card', 'redcards', 'red']),
-      offsides:detailValue(details, ['offsides']), saves, goalsConceded,
+      offsides:detailValue(details, ['offsides']), saves, goalsConceded, cleanSheets,
       penaltiesSaved:detailValue(details, ['penalty saved']), penaltiesScored:detailValue(details, ['penalty scored']),
       penaltiesMissed:detailValue(details, ['penalty missed']), penaltiesWon:detailValue(details, ['penalty won']),
       penaltiesCommitted:detailValue(details, ['penalty committed']), rating,
