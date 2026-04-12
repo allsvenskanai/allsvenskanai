@@ -158,13 +158,38 @@ async function getSeasonIdForLeague(leagueKey) {
 
 async function getStandingsForSeason(seasonId, options = {}) {
   return sportmonks(`standings/seasons/${seasonId}`, {
-    include: 'participant;details.type;form',
+    include: 'participant;details.type;form;stage',
     ...(options.params || {}),
   }, options);
 }
 
+async function getRegularSeasonStage(seasonId, options = {}) {
+  const raw = await sportmonks(`seasons/${seasonId}`, { include: 'stages' }, options);
+  const stages = Array.isArray(raw?.data?.stages) ? raw.data.stages : [];
+  const regular = stages.find(stage => normalizeStatToken(stage?.type?.name || stage?.type || stage?.type_name) === 'league')
+    || stages.find(stage => normalizeStatToken(stage?.name).includes('regular season'))
+    || stages.find(stage => normalizeStatToken(stage?.type?.name || stage?.type || stage?.type_name).includes('league'))
+    || stages[0]
+    || null;
+  if(!regular?.id) console.warn('[sportmonks-adapter] regular season stage missing', { seasonId, stageCount: stages.length });
+  return regular;
+}
+
+async function getRegularSeasonStandings(seasonId, options = {}) {
+  const [stage, raw] = await Promise.all([
+    getRegularSeasonStage(seasonId, options),
+    getStandingsForSeason(seasonId, options)
+  ]);
+  const stageId = Number(stage?.id || 0);
+  const rows = Array.isArray(raw?.data) ? raw.data : [];
+  const filtered = stageId
+    ? rows.filter(row => Number(row?.stage_id || row?.stage?.id || row?.stage?.data?.id || 0) === stageId)
+    : rows;
+  return { raw, stage, rows: filtered.length ? filtered : rows };
+}
+
 async function getFixturesForSeason(seasonId, extraFilters = {}, options = {}) {
-  const filters = [`fixtureSeasons:${seasonId}`, extraFilters.filters].filter(Boolean).join(';');
+  const filters = [`fixtureSeasons:${seasonId}`, extraFilters.stageId ? `fixtureStages:${extraFilters.stageId}` : '', extraFilters.filters].filter(Boolean).join(';');
   return sportmonksPaged('fixtures', {
     include: extraFilters.include || 'participants;league;season;round;venue;state;scores',
     filters,
@@ -355,6 +380,38 @@ function normalizeStandingRow(row = {}) {
   };
 }
 
+function fixtureFinished(fixture = {}) {
+  const state = normalizeStatToken(fixture.state?.short_name || fixture.state?.name || fixture.fixture?.status?.short || '');
+  return Boolean(fixture.result_info)
+    || ['ft', 'aet', 'pen', 'finished', 'after extra time'].some(token => state.includes(token));
+}
+
+function applyFixturePlayedCountsToStandings(rows = [], fixtures = []) {
+  const counts = new Map();
+  fixtures.filter(fixtureFinished).forEach(fixture => {
+    const parts = Array.isArray(fixture.participants) ? fixture.participants : [];
+    parts.forEach(team => {
+      if(!team?.id) return;
+      counts.set(Number(team.id), (counts.get(Number(team.id)) || 0) + 1);
+    });
+  });
+  return rows.map(row => {
+    const teamId = Number(row?.team?.id || 0);
+    const fixturePlayed = counts.get(teamId);
+    if(!fixturePlayed || fixturePlayed === row?.all?.played) return row;
+    const updated = {
+      ...row,
+      all: {
+        ...row.all,
+        played: fixturePlayed,
+      },
+      _fixturePlayedOverride: true,
+    };
+    console.warn('[sportmonks-adapter] standings MP adjusted from fixtures', { teamId, standingsPlayed: row?.all?.played, fixturePlayed });
+    return updated;
+  });
+}
+
 function normalizePosition(value = '') {
   const raw = String(value || '').toLowerCase();
   if (raw.includes('goal')) return 'Goalkeeper';
@@ -465,9 +522,16 @@ function emptyResponse() {
 
 async function handleStandings(params, force) {
   const league = await resolveLeagueSeason(params.league, requestSeasonId(params));
-  const raw = await getStandingsForSeason(league.seasonId, { force });
-  const rows = Array.isArray(raw?.data) ? raw.data.map(normalizeStandingRow).sort((a,b) => a.rank - b.rank) : [];
-  return { response: [{ league: { id:Number(params.league), season_id:league.seasonId, name:league.name, season:league.seasonId, standings:[rows] } }] };
+  const standings = await getRegularSeasonStandings(league.seasonId, { force });
+  const fixtureData = await getFixturesForSeason(league.seasonId, { stageId: standings.stage?.id || null }, { force, fetchAllPages:true }).catch(err => {
+    console.warn('[sportmonks-adapter] standings fixture MP crosscheck unavailable', { seasonId: league.seasonId, stageId: standings.stage?.id, error: err.message });
+    return { data: [] };
+  });
+  const rows = applyFixturePlayedCountsToStandings(
+    standings.rows.map(normalizeStandingRow).sort((a,b) => a.rank - b.rank),
+    fixtureData.data || []
+  );
+  return { response: [{ league: { id:Number(params.league), season_id:league.seasonId, stage_id:standings.stage?.id || null, name:league.name, season:league.seasonId, standings:[rows] } }] };
 }
 
 async function handleTeams(params, force) {
@@ -486,8 +550,9 @@ async function handleFixtures(params, force) {
     return { response: raw?.data ? [normalizeFixture(raw.data)] : [] };
   }
   const league = params.league ? await resolveLeagueSeason(params.league, requestSeasonId(params)) : null;
+  const stage = league?.seasonId ? await getRegularSeasonStage(league.seasonId, { force }).catch(() => null) : null;
   const raw = league?.seasonId
-    ? await getFixturesForSeason(league.seasonId, { filters: params.team ? `fixtureTeams:${params.team}` : '' }, { force })
+    ? await getFixturesForSeason(league.seasonId, { stageId: stage?.id || null, filters: params.team ? `fixtureTeams:${params.team}` : '' }, { force })
     : await sportmonksPaged('fixtures', { include: 'participants;league;season;round;venue;state;scores', per_page: 50 }, { force, fetchAllPages:true });
   let fixtures = raw.data.map(normalizeFixture);
   if (params.last) fixtures = fixtures.filter(f => ['FT','AET','PEN'].includes(f.fixture.status.short)).sort((a,b) => String(b.fixture.date).localeCompare(String(a.fixture.date))).slice(0, Number(params.last));
@@ -549,13 +614,13 @@ async function handlePlayerProfile(params, force) {
 async function handleTeamStatistics(params, force) {
   const league = await resolveLeagueSeason(params.league, requestSeasonId(params));
   const [standings, seasonStats] = await Promise.all([
-    getStandingsForSeason(league.seasonId, { force, params: { include: 'participant;details.type' } }),
+    getRegularSeasonStandings(league.seasonId, { force, params: { include: 'participant;details.type;stage' } }),
     getTeamSeasonStatistics(params.team, league.seasonId, { force }).catch(err => {
       console.warn('[sportmonks-adapter] team season statistics unavailable', { teamId: params.team, seasonId: league.seasonId, error: err.message });
       return { data: [] };
     })
   ]);
-  const row = (standings?.data || []).find(item => Number(item?.participant?.id) === Number(params.team));
+  const row = (standings?.rows || []).find(item => Number(item?.participant?.id) === Number(params.team));
   const stats = Array.isArray(seasonStats?.data) ? seasonStats.data[0] || {} : seasonStats?.data || {};
   return { response: normalizeTeamStatistics(stats, row) };
 }
