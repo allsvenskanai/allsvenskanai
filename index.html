@@ -144,6 +144,15 @@ main{flex:1;max-width:1280px;width:100%;margin:0 auto;padding:2.25rem 2rem 4rem}
   color:var(--text);line-height:1;
 }
 .pg-title em{color:var(--gold);font-style:normal}
+.league-title{
+  color:#fff;
+  font-weight:800;
+  letter-spacing:1px;
+}
+.league-title .league-type{
+  color:#C9A54B;
+  text-shadow:0 0 10px rgba(201,165,75,.4);
+}
 .pg-sub{font-size:13px;color:var(--muted);font-weight:400;letter-spacing:.5px}
 .back{
   background:none;border:none;color:var(--muted);cursor:pointer;
@@ -8047,9 +8056,15 @@ function renderFormLabel(form){
   return normalizeFormTokens(form).map(token => map[token] || token).join(' ');
 }
 
+function renderLeagueTableTitle(league = getActiveLeagueConfig()){
+  const type = league?.key === 'damallsvenskan' ? 'Dam' : 'Herr';
+  return `Allsvenskan <span class="league-type">${type}</span>`;
+}
+
 async function pageStandings(el) {
   const league = getActiveLeagueConfig();
-  document.title = `Tabell — ${league.name} — AllsvenskanAI`;
+  const tableTitleText = `Allsvenskan ${league.key === 'damallsvenskan' ? 'Dam' : 'Herr'}`;
+  document.title = `${tableTitleText} — AllsvenskanAI`;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar tabell…</div>`;
   try {
     const data = await af('standings', {league:LEAGUE, season:SEASON});
@@ -8072,7 +8087,7 @@ async function pageStandings(el) {
         <td><div class="form-row standings-form" title="Senaste fem: ${formLabel || '–'}">${form}</div></td>
       </tr>`;}).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Tabell <em>${SEASON}</em></div><span class="pg-sub">${esc(league.name)}</span></div>
+      <div class="pg-header"><div class="pg-title league-title">${renderLeagueTableTitle(league)}</div><span class="pg-sub">${esc(getSeasonLabel(SEASON))}</span></div>
       <div class="tw"><div class="standings-wrap"><table class="standings-table">
         <thead><tr><th title="Placering">#</th><th title="Lag">Lag</th><th title="Matcher spelade">MP</th><th title="Vinster">V</th><th title="Oavgjorda">O</th><th title="Förluster">F</th><th title="Gjorda mål">GM</th><th title="Insläppta mål">GI</th><th title="Målskillnad">GS</th><th title="Poäng">P</th><th title="Senaste fem matcher">Form</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="11" class="empty">Ingen data</td></tr>'}</tbody>
