@@ -3180,14 +3180,16 @@ const LEAGUES = {
   allsvenskan: {
     key: 'allsvenskan',
     name: 'Allsvenskan',
-    season: 2026,
-    leagueId: 113
+    season: 26806,
+    seasonLabel: 2026,
+    leagueId: 573
   },
   damallsvenskan: {
     key: 'damallsvenskan',
     name: 'Damallsvenskan',
-    season: 2026,
-    leagueId: 549
+    season: 26782,
+    seasonLabel: 2026,
+    leagueId: 576
   }
 };
 const ACTIVE_LEAGUE_STORAGE_KEY = 'allsvenskanai:active-league';
@@ -3202,6 +3204,13 @@ function getActiveLeagueKey(){
 
 function getActiveLeagueConfig(){
   return LEAGUES[getActiveLeagueKey()] || LEAGUES.allsvenskan;
+}
+
+function getSeasonLabel(seasonId = SEASON){
+  const league = getActiveLeagueConfig();
+  if(Number(seasonId) === Number(league.season)) return league.seasonLabel || seasonId;
+  const match = Object.values(LEAGUES).find(item => Number(item.season) === Number(seasonId));
+  return match?.seasonLabel || seasonId;
 }
 
 function updateLeagueSwitcherUI(){
@@ -3266,11 +3275,20 @@ function invalidateLegacyFootballCachesOnce(){
 invalidateLegacyFootballCachesOnce();
 
 function apiCacheKey(ep, p = {}, raw = false){
-  return `${API_PERSIST_CACHE_PREFIX}:${getActiveLeagueKey()}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(p || {})}`;
+  return `${API_PERSIST_CACHE_PREFIX}:${getActiveLeagueKey()}:${raw ? 'raw' : 'data'}:${ep}:${JSON.stringify(normalizeSportmonksRequestParams(p) || {})}`;
+}
+
+function normalizeSportmonksRequestParams(p = {}){
+  const params = { ...(p || {}) };
+  if(params.season !== undefined && params.season_id === undefined) {
+    params.season_id = params.season;
+    delete params.season;
+  }
+  return params;
 }
 
 function apiCacheTtl(ep, p = {}, raw = false){
-  const season = Number(p?.season || SEASON || 0);
+  const season = Number(p?.season_id || p?.season || SEASON || 0);
   const currentSeason = Number(SEASON || 0);
   const isCurrentSeason = season && currentSeason ? season === currentSeason : true;
 
@@ -3333,7 +3351,7 @@ function clearPersistedApiCache(prefix = API_PERSIST_CACHE_PREFIX){
   } catch(e) {}
 }
 
-// Name corrections — API-Football 2026 strips Swedish/special chars
+// Name corrections for upstream football data that strips Swedish/special chars
 const NAME_FIX = {
   'IFK Goteborg': 'IFK Göteborg',
   'Djurgardens IF': 'Djurgårdens IF',
@@ -3511,8 +3529,8 @@ function renderNationalityDisplay(...sources){
     <span>${esc(nameSv)}</span>
   </span>`;
 }
-const PLAYER_DEFAULT_SEASON = 2026;
-const PLAYER_HISTORY_SEASONS = Array.from({length: 22}, (_, index) => PLAYER_DEFAULT_SEASON - index);
+const PLAYER_DEFAULT_SEASON = SEASON;
+const PLAYER_HISTORY_SEASONS = [SEASON];
 const STATIC_DATA_BASE = '/data/static';
 const STATIC_MANIFEST_PATH = `${STATIC_DATA_BASE}/manifest.json`;
 let STATIC_MANIFEST_PROMISE = null;
@@ -3851,8 +3869,6 @@ function getTeamLogo(team = {}){
   if(!invalidLogo && (/^https?:\/\//i.test(directLogo) || directLogo.startsWith('data:image/'))) return directLogo;
   const fallback = TEAM_LOGO_FALLBACKS[normalizeText(name)] || DAMALLSVENSKAN_TEAM_LOGO_FALLBACKS[normalizeText(name)];
   if(fallback) return fallback;
-  const id = team?.id || team?.team?.id || team?.teamId;
-  if(id) return `https://media.api-sports.io/football/teams/${id}.png`;
   return teamLogoPlaceholder(name);
 }
 
@@ -3864,37 +3880,39 @@ function handleTeamLogoError(img){
 }
 
 async function af(ep, p={}) {
-  const key = `${getActiveLeagueKey()}:${ep}:${JSON.stringify(p)}`;
+  const requestParams = normalizeSportmonksRequestParams(p);
+  const key = `${getActiveLeagueKey()}:${ep}:${JSON.stringify(requestParams)}`;
   if(CACHE[key]) return CACHE[key];
 
-  const persisted = readPersistedApiCache(ep, p, false);
+  const persisted = readPersistedApiCache(ep, requestParams, false);
   if(Array.isArray(persisted)) {
     CACHE[key] = persisted;
     return CACHE[key];
   }
 
-  const q = new URLSearchParams({_endpoint:ep,...p});
+  const q = new URLSearchParams({_endpoint:ep,...requestParams});
   const r = await fetch(`${AF}?${q}`);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
   CACHE[key] = d.response || [];
-  writePersistedApiCache(ep, p, CACHE[key], false);
+  writePersistedApiCache(ep, requestParams, CACHE[key], false);
   return CACHE[key];
 }
 
 async function afRaw(ep, p={}, opts = {}) {
+  const requestParams = normalizeSportmonksRequestParams(p);
   const force = Boolean(opts.force);
-  const persisted = force ? null : readPersistedApiCache(ep, p, true);
+  const persisted = force ? null : readPersistedApiCache(ep, requestParams, true);
   if(persisted && typeof persisted === 'object') return persisted;
 
-  const q = new URLSearchParams({_endpoint:ep,...p});
+  const q = new URLSearchParams({_endpoint:ep,...requestParams});
   if(force) q.set('_force', '1');
   const r = await fetchWithTimeout(`${AF}?${q}`, 12000);
   if(!r.ok) throw new Error('HTTP '+r.status);
   const d = await r.json();
   if(d.errors && Object.keys(d.errors).length) throw new Error(Object.values(d.errors).join(', '));
-  writePersistedApiCache(ep, p, d, true);
+  writePersistedApiCache(ep, requestParams, d, true);
   return d;
 }
 
@@ -6530,7 +6548,7 @@ async function pageTeams(el) {
 }
 
 // â”€â”€â”€ TEAM PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const TEAM_PAGE_SEASONS = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
+const TEAM_PAGE_SEASONS = [SEASON];
 let currentTeamPlayerStatGroup = 'offense';
 let currentTeamPlayerStatCategory = 'goals';
 let currentTeamStatsSeason = SEASON;
@@ -6550,7 +6568,7 @@ function setTeamSeason(teamId, season){
 
 function teamSeasonButton(teamId, season, active, available){
   const className = `team-season-btn ${active ? 'active' : ''} ${available ? '' : 'muted'}`.trim();
-  return `<button class="${className}" onclick="setTeamSeason(${teamId},${season})">${season}</button>`;
+  return `<button class="${className}" onclick="setTeamSeason(${teamId},${season})">${getSeasonLabel(season)}</button>`;
 }
 function pickResolvedTeam(...candidates){
   for(const candidate of candidates){
@@ -6897,7 +6915,7 @@ async function pageTeam(el, teamId) {
     const [statsD, squadD, seasonPlayers] = await Promise.all([
       af('teams/statistics', {league:LEAGUE, season:SEASON, team:teamId}),
       af('players/squads', {team:teamId, league:LEAGUE, season:SEASON}),
-      afAll('players', {team:teamId, season:SEASON}).catch(()=>[])
+      afAll('players', {league:LEAGUE, team:teamId, season:SEASON}).catch(()=>[])
     ]);
 
     const stats = Array.isArray(statsD) ? statsD[0] : statsD;
@@ -8597,7 +8615,7 @@ async function getPlayerProfileDisplayName(playerId){
     console.warn('[player-name] profile lookup failed', { playerId, error: e.message });
   }
 
-  const seasonsToTry = [SEASON, 2025, 2024, 2023];
+  const seasonsToTry = [SEASON];
   for(const season of seasonsToTry){
     try {
       const data = await withTimeout(
@@ -9717,9 +9735,9 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
   const limit = Math.max(10, activeCategory.limit || 10);
   const displayRows = getStatsLeaderboardRows(cache.players || [], activeCategory.id, limit);
 
-  const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018];
+  const years = [SEASON];
   const yearBtns = years.map(y =>
-    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${y}</button>`
+    `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${getSeasonLabel(y)}</button>`
   ).join('');
   const groupTabs = STAT_GROUPS.map(group => {
     const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
@@ -10392,14 +10410,13 @@ let resolvedSeasonPromise = null;
 async function getResolvedSeason(force = false) {
   if(!force && resolvedSeasonPromise) return resolvedSeasonPromise;
   resolvedSeasonPromise = (async () => {
-    const preferred = Number(SEASON) || 2026;
-    const fallback = preferred > 2018 ? preferred - 1 : 2025;
+    const preferred = Number(SEASON) || getActiveLeagueConfig().season;
     try {
-      const test = await af('standings', {league:LEAGUE, season:preferred});
+      const test = await af('standings', {league:LEAGUE, season_id:preferred});
       const rows = test?.[0]?.league?.standings?.[0] || [];
       if(rows.length) return preferred;
     } catch(e) {}
-    return fallback;
+    return preferred;
   })();
   const resolved = await resolvedSeasonPromise;
   SEASON = resolved;
