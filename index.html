@@ -5879,7 +5879,7 @@ function adminLog(message, meta = {}){
 
 async function adminApi(action, payload = {}){
   const token = getAdminToken();
-  const response = await fetch(`/api/admin/stats/${action}`, {
+  const response = await fetch(`/api/admin?action=${encodeURIComponent(action)}`, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'X-Admin-Token':token },
     body:JSON.stringify({ ...payload, token }),
@@ -10001,7 +10001,7 @@ function statsLeagueTitle(league = getActiveLeagueConfig()){
 
 async function loadPublicStatsDataset(season = SEASON){
   const league = getActiveLeagueConfig();
-  const response = await fetch(`/api/stats/public?league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(season)}`);
+  const response = await fetch(`/api/stats?league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(season)}`);
   const data = await response.json().catch(() => ({}));
   if(data?.ok && data?.response?.players) {
     return {
