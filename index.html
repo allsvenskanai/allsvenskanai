@@ -3213,6 +3213,21 @@ function getSeasonLabel(seasonId = SEASON){
   return match?.seasonLabel || seasonId;
 }
 
+function syncResolvedSeasonState(resolvedSeasonId, seasonLabel = null){
+  const league = getActiveLeagueConfig();
+  const numericSeasonId = Number(resolvedSeasonId || league.season || SEASON || 0);
+  if(!numericSeasonId) return numericSeasonId;
+  league.season = numericSeasonId;
+  if(seasonLabel) league.seasonLabel = Number(seasonLabel) || seasonLabel;
+  SEASON = numericSeasonId;
+  PLAYER_DEFAULT_SEASON = numericSeasonId;
+  PLAYER_HISTORY_SEASONS.splice(0, PLAYER_HISTORY_SEASONS.length, numericSeasonId);
+  TEAM_PAGE_SEASONS.splice(0, TEAM_PAGE_SEASONS.length, numericSeasonId);
+  if(typeof statsYear !== 'undefined') statsYear = numericSeasonId;
+  if(typeof currentTeamStatsSeason !== 'undefined') currentTeamStatsSeason = numericSeasonId;
+  return numericSeasonId;
+}
+
 function updateLeagueSwitcherUI(){
   const league = getActiveLeagueConfig();
   document.querySelectorAll('[data-league-key]').forEach(button => {
@@ -3228,9 +3243,8 @@ function setActiveLeagueKey(key){
   try { localStorage.setItem(ACTIVE_LEAGUE_STORAGE_KEY, key); } catch(e) {}
   const league = getActiveLeagueConfig();
   LEAGUE = league.leagueId;
-  SEASON = league.season;
   resolvedSeasonPromise = null;
-  if(typeof statsYear !== 'undefined') statsYear = league.season;
+  syncResolvedSeasonState(league.season, league.seasonLabel);
   if(typeof statsCache !== 'undefined') statsCache = null;
   if(typeof statsSelectedTeamId !== 'undefined') statsSelectedTeamId = '';
   if(typeof transfersCache !== 'undefined') transfersCache = null;
@@ -3255,8 +3269,8 @@ const C = {};
 
 // Cache
 const CACHE = {};
-const API_PERSIST_CACHE_PREFIX = 'aai:sportmonks-cache:v1';
-const SPORTMONKS_CACHE_MIGRATION_KEY = 'aai:sportmonks-cache-migrated:v1';
+const API_PERSIST_CACHE_PREFIX = 'aai:sportmonks-cache:v2';
+const SPORTMONKS_CACHE_MIGRATION_KEY = 'aai:sportmonks-cache-migrated:v2';
 const API_PERSIST_DISABLED = false;
 
 function invalidateLegacyFootballCachesOnce(){
@@ -3529,7 +3543,7 @@ function renderNationalityDisplay(...sources){
     <span>${esc(nameSv)}</span>
   </span>`;
 }
-const PLAYER_DEFAULT_SEASON = SEASON;
+let PLAYER_DEFAULT_SEASON = SEASON;
 const PLAYER_HISTORY_SEASONS = [SEASON];
 const STATIC_DATA_BASE = '/data/static';
 const STATIC_MANIFEST_PATH = `${STATIC_DATA_BASE}/manifest.json`;
@@ -10410,17 +10424,20 @@ let resolvedSeasonPromise = null;
 async function getResolvedSeason(force = false) {
   if(!force && resolvedSeasonPromise) return resolvedSeasonPromise;
   resolvedSeasonPromise = (async () => {
-    const preferred = Number(SEASON) || getActiveLeagueConfig().season;
+    const league = getActiveLeagueConfig();
+    const fallbackSeason = Number(league.season || SEASON || 0);
     try {
-      const test = await af('standings', {league:LEAGUE, season_id:preferred});
-      const rows = test?.[0]?.league?.standings?.[0] || [];
-      if(rows.length) return preferred;
-    } catch(e) {}
-    return preferred;
+      const raw = await afRaw('standings', { league: LEAGUE }, { force:true });
+      const leagueData = raw?.response?.[0]?.league || {};
+      const resolvedSeasonId = Number(leagueData?.season_id || leagueData?.season || fallbackSeason || 0);
+      const resolvedLabel = Number(leagueData?.season_label || league.seasonLabel || 0) || leagueData?.season_label || league.seasonLabel || null;
+      if(resolvedSeasonId) return syncResolvedSeasonState(resolvedSeasonId, resolvedLabel);
+    } catch(e) {
+      console.warn('[season] automatic season detection failed', { league: league.key, error: e.message });
+    }
+    return syncResolvedSeasonState(fallbackSeason, league.seasonLabel || null);
   })();
-  const resolved = await resolvedSeasonPromise;
-  SEASON = resolved;
-  return resolved;
+  return resolvedSeasonPromise;
 }
 
 async function boot() {
