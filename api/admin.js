@@ -241,6 +241,19 @@ function detailValue(details = [], names = [], preferredKey = ''){
     .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
 }
 
+function detailValueFiltered(details = [], names = [], excludedNames = [], preferredKey = ''){
+  const wanted = names.map(normalizeToken);
+  const excluded = excludedNames.map(normalizeToken);
+  return (Array.isArray(details) ? details : [])
+    .filter(detail => {
+      const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeToken);
+      const matchesWanted = tokens.some(token => wanted.some(want => token === want || token.includes(want)));
+      const matchesExcluded = tokens.some(token => excluded.some(skip => token === skip || token.includes(skip)));
+      return matchesWanted && !matchesExcluded;
+    })
+    .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
+}
+
 function detailSubValue(details = [], names = [], key = ''){
   const wanted = names.map(normalizeToken);
   const row = (Array.isArray(details) ? details : []).find(detail => {
@@ -277,6 +290,13 @@ function statSeasonId(stat = {}){
   );
 }
 
+function statLeagueId(stat = {}){
+  return entityId(
+    stat.league_id ?? stat.league?.id ?? stat.player_statistic?.league_id ??
+    stat.meta?.league_id ?? stat.fixture?.league_id
+  );
+}
+
 function getPlayerStatistics(item = {}){
   const player = item.player || item;
   return Array.isArray(item.statistics) ? item.statistics : (Array.isArray(player.statistics) ? player.statistics : []);
@@ -288,17 +308,19 @@ function itemDirectlyMatchesTeamSeason(item = {}, teamId, seasonId){
   return Boolean(directTeamId && String(directTeamId) === String(teamId) && (!directSeasonId || String(directSeasonId) === String(seasonId)));
 }
 
-function statMatchesTeamSeason(stat = {}, teamId, seasonId){
+function statMatchesTeamSeason(stat = {}, teamId, seasonId, leagueId = null){
   const sid = statSeasonId(stat);
   const tid = statTeamId(stat);
+  const lid = statLeagueId(stat);
   const seasonOk = !sid || String(sid) === String(seasonId);
+  const leagueOk = !lid || !leagueId || String(lid) === String(leagueId);
   const teamOk = tid && String(tid) === String(teamId);
-  return Boolean(seasonOk && teamOk);
+  return Boolean(seasonOk && leagueOk && teamOk);
 }
 
-function itemMatchesTeamSeason(item = {}, teamId, seasonId){
+function itemMatchesTeamSeason(item = {}, teamId, seasonId, leagueId = null){
   const stats = getPlayerStatistics(item);
-  if(stats.some(stat => statMatchesTeamSeason(stat, teamId, seasonId))) return true;
+  if(stats.some(stat => statMatchesTeamSeason(stat, teamId, seasonId, leagueId))) return true;
   return itemDirectlyMatchesTeamSeason(item, teamId, seasonId);
 }
 
@@ -306,10 +328,11 @@ function filterPlayerItemForTeamSeason(item = {}, team = {}, league = {}){
   const player = item.player || item;
   const directMatch = itemDirectlyMatchesTeamSeason(item, team.id, league.seasonId);
   const stats = getPlayerStatistics(item).filter(stat => {
-    if(statMatchesTeamSeason(stat, team.id, league.seasonId)) return true;
+    if(statMatchesTeamSeason(stat, team.id, league.seasonId, league.leagueId)) return true;
     const sid = statSeasonId(stat);
     const tid = statTeamId(stat);
-    return directMatch && !tid && (!sid || String(sid) === String(league.seasonId));
+    const lid = statLeagueId(stat);
+    return directMatch && !tid && (!sid || String(sid) === String(league.seasonId)) && (!lid || String(lid) === String(league.leagueId));
   });
   return {
     ...item,
@@ -361,7 +384,10 @@ function dedupePlayers(players = []){
 function sanitizeTeamPayload(league, payload = {}){
   if(!payload?.teamId) return payload;
   const originalPlayers = Array.isArray(payload.players) ? payload.players : [];
-  const players = dedupePlayers(originalPlayers.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)));
+  const invalidOversizedTeamCache = originalPlayers.length > 100;
+  const players = invalidOversizedTeamCache
+    ? []
+    : dedupePlayers(originalPlayers.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)));
   const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
   return {
     ...payload,
@@ -373,7 +399,10 @@ function sanitizeTeamPayload(league, payload = {}){
       ...(payload.debug || {}),
       sanitizedOriginalPlayers:originalPlayers.length,
       sanitizedPlayers:players.length,
+      playersWithGoals:players.filter(player => Number(player.stats?.goals || 0) > 0).length,
+      invalidOversizedTeamCache,
     },
+    warning:invalidOversizedTeamCache ? 'Ogiltig gammal team-cache: for manga spelare. Refresha laget i admin.' : (payload.warning || ''),
   };
 }
 
@@ -388,8 +417,8 @@ function normalizePlayerStat(item = {}, team = {}){
   const appearances = detailValue(details, ['appearances', 'appearance']);
   const starts = detailValue(details, ['lineups', 'starts', 'starting']);
   const minutes = detailValue(details, ['minutes played', 'minutes']);
-  const goals = detailValue(details, ['goals']);
-  const assists = detailValue(details, ['assists']);
+  const goals = detailValueFiltered(details, ['goals', 'goal'], ['goals conceded', 'conceded', 'against', 'own goal', 'own goals', 'penalty', 'penalties']);
+  const assists = detailValueFiltered(details, ['assists', 'assist'], ['expected assists']);
   const shots = detailValue(details, ['shots total', 'shots']);
   const passes = detailValue(details, ['passes']);
   const passAccuracy = detailValue(details, ['pass accuracy'], 'average');
@@ -416,6 +445,12 @@ function normalizePlayerStat(item = {}, team = {}){
     teamLogo: logo(teamEntity) || logo(team),
     photo: logo(player),
     position,
+    minutes,
+    goals,
+    assists,
+    shots,
+    shotsOnTarget:shotsOn,
+    keyPasses:detailValue(details, ['key passes']),
     stats: {
       appearances, starts, subIns:detailSubValue(details, ['substitutions', 'substitution'], 'in'), subOuts:detailSubValue(details, ['substitutions', 'substitution'], 'out'),
       bench:detailValue(details, ['bench']), minutes, goals, assists, shots, shotsOn, passes, keyPasses:detailValue(details, ['key passes']),
@@ -457,7 +492,7 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
   }, { ...options, fetchAllPages:true });
   const rawRowsFetched = playersResult.rows.length;
   let teamSeasonRows = playersResult.rows
-    .filter(item => itemMatchesTeamSeason(item, team.id, league.seasonId))
+    .filter(item => itemMatchesTeamSeason(item, team.id, league.seasonId, league.leagueId))
     .map(item => filterPlayerItemForTeamSeason(item, team, league));
   const usedTrustedSmallResponseFallback = !teamSeasonRows.length && rawRowsFetched > 0 && rawRowsFetched <= 100;
   if(usedTrustedSmallResponseFallback) {
@@ -466,7 +501,13 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
     teamSeasonRows = playersResult.rows.map(item => filterPlayerItemForTeamSeason({ ...item, team_id:team.id, team }, team, league));
   }
   const normalizedPlayers = teamSeasonRows
-    .map(item => normalizePlayerStat(item, team))
+    .map(item => ({
+      ...normalizePlayerStat(item, team),
+      leagueId:league.leagueId,
+      leagueKey:league.key,
+      season:league.seasonLabel,
+      seasonId:league.seasonId,
+    }))
     .filter(player => player.playerId && String(player.teamId || team.id) === String(team.id));
   const players = dedupePlayers(normalizedPlayers);
   const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
@@ -478,6 +519,7 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
     afterDedupe:players.length,
     usefulPlayerCount,
     emptyStatsCount:Math.max(players.length - usefulPlayerCount, 0),
+    playersWithGoals:players.filter(player => Number(player.stats?.goals || 0) > 0).length,
     usedTrustedSmallResponseFallback,
     filters:`playerStatisticSeasons:${league.seasonId};playerStatisticTeams:${teamId}`,
   };
