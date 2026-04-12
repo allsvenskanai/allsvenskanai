@@ -516,6 +516,54 @@ function normalizePlayerStat(item = {}, team = {}){
   };
 }
 
+function compactTeam(team = {}){
+  if(!team) return null;
+  return {
+    id:Number(team.id || team.team_id || 0) || null,
+    name:team.name || team.display_name || team.short_code || '',
+    logo:team.image_path || team.logo_path || team.logo || '',
+  };
+}
+
+function normalizeTransferRow(row = {}, league){
+  const player = row.player || row.playerData || row.participant || {};
+  const fromTeam = row.fromTeam || row.from_team || row.teamOut || row.teams?.out || row.from || {};
+  const toTeam = row.toTeam || row.to_team || row.teamIn || row.teams?.in || row.to || {};
+  const type = row.type?.name || row.transferType?.name || row.type || row.transfer_type || row.status || 'Okänd';
+  const date = row.date || row.transfer_date || row.start_date || row.created_at || '';
+  return {
+    id:row.id || `${player.id || row.player_id || ''}-${date}-${compactTeam(toTeam)?.id || ''}`,
+    date:String(date || '').slice(0, 10),
+    type:String(type || 'Okänd'),
+    playerId:Number(player.id || row.player_id || 0) || null,
+    playerName:player.display_name || player.name || row.player_name || 'Okänd spelare',
+    teamIn:compactTeam(toTeam),
+    teamOut:compactTeam(fromTeam),
+    league:league.key,
+    leagueId:league.leagueId,
+    season:league.seasonLabel,
+    seasonId:league.seasonId,
+  };
+}
+
+function normalizeStoredTransfers(rows = [], league){
+  const seen = new Set();
+  return (rows || [])
+    .map(row => normalizeTransferRow(row, league))
+    .filter(row => row.playerId || row.playerName)
+    .filter(row => {
+      const year = Number(String(row.date || '').slice(0, 4));
+      return !row.date || !year || year >= Number(league.seasonLabel) - 1;
+    })
+    .filter(row => {
+      const key = `${row.playerId || row.playerName}:${row.date}:${row.teamIn?.id || ''}:${row.teamOut?.id || ''}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')));
+}
+
 async function refreshStoredTeamStats(teamId, league, options = {}){
   const teamsResult = await getAdminTeams(league, options);
   const team = teamsResult.teams.find(item => String(item.id) === String(teamId)) || { id:Number(teamId), name:`Lag ${teamId}`, logo:'' };
@@ -835,6 +883,91 @@ async function rebuildPlayerStatsAction(body){
   };
 }
 
+async function publicTransfersAction(req){
+  const query = req.query || {};
+  const league = getLeagueConfig(query.league || query.leagueKey || query.leagueId || 'allsvenskan');
+  const stored = await readStatsStore(league, 'transfers');
+  const data = stored?.data || null;
+  if(!data) {
+    return {
+      ok:false,
+      transfers:[],
+      teams:[],
+      meta:{ publicMissing:true, league:league.key, season:league.seasonLabel, updatedAt:null, teamCount:0 },
+      message:'Övergångar är inte uppdaterade ännu.',
+    };
+  }
+  return {
+    ok:true,
+    transfers:Array.isArray(data.transfers) ? data.transfers : [],
+    teams:Array.isArray(data.teams) ? data.teams : [],
+    meta:{
+      ...(data.meta || {}),
+      league:league.key,
+      season:league.seasonLabel,
+      updatedAt:stored.updatedAt || data.updatedAt || null,
+      teamCount:Number(data.meta?.teamCount || data.teams?.length || 0),
+    },
+  };
+}
+
+async function refreshTransfersAction(body){
+  const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
+  const teamsResult = await getAdminTeams(league, { force:Boolean(body.forceTeams) });
+  let rows = [];
+  let apiCalls = teamsResult.apiCalls;
+  let staleFallback = teamsResult.staleFallback;
+  let warning = '';
+  try {
+    // Sportmonks transfer availability differs by plan. Keep this admin-only and
+    // store an empty, safe payload if the endpoint/include is unavailable.
+    const transferResult = await sportmonksAdminPaged('transfers', {
+      include:'player;fromTeam;toTeam;type',
+      filters:`seasons:${league.seasonId}`,
+      per_page:50,
+    }, { force:Boolean(body.force), fetchAllPages:true, ttl:30 * 60 * 1000 });
+    rows = transferResult.rows;
+    apiCalls += transferResult.apiCalls;
+    staleFallback = staleFallback || transferResult.staleFallback;
+  } catch(error) {
+    warning = `Sportmonks transfers kunde inte hämtas: ${error.message}`;
+    console.warn('[admin-transfers] refresh failed', { league:league.key, error:error.message });
+  }
+  const transfers = normalizeStoredTransfers(rows, league);
+  const stored = await writeStatsStore(league, 'transfers', {
+    transfers,
+    teams:teamsResult.teams,
+    updatedAt:Date.now(),
+    meta:{
+      league:league.key,
+      season:league.seasonLabel,
+      seasonId:league.seasonId,
+      transferCount:transfers.length,
+      rawRowsFetched:rows.length,
+      teamCount:teamsResult.teams.length,
+      warning,
+    },
+  });
+  return {
+    ok:true,
+    action:'refresh-transfers',
+    league,
+    transferCount:transfers.length,
+    rawRowsFetched:rows.length,
+    teamCount:teamsResult.teams.length,
+    warning,
+    apiCalls,
+    staleFallback,
+    updatedAt:stored.updatedAt,
+  };
+}
+
+async function clearTransfersAction(body){
+  const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
+  await clearStatsStore(league, 'transfers');
+  return { ok:true, action:'clear-transfers', league, cleared:true };
+}
+
 async function clearAction(body){
   const scope = body.scope || 'all';
   const clearedMemory = clearAdminCache(scope);
@@ -924,6 +1057,12 @@ export default async function handler(req, res){
       res.setHeader('Cache-Control', payload.ok ? 'public, max-age=120, s-maxage=300, stale-while-revalidate=600' : 'public, max-age=60, s-maxage=60');
       return res.status(200).json(payload);
     }
+    if(action === 'public-transfers'){
+      if(req.method !== 'GET') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
+      const payload = await publicTransfersAction(req);
+      res.setHeader('Cache-Control', payload.ok ? 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800' : 'public, max-age=60, s-maxage=120');
+      return res.status(200).json(payload);
+    }
     if(!requireAdmin(req, res, body)) return;
     if(req.method !== 'POST' && action !== 'status') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
     const payload =
@@ -933,6 +1072,8 @@ export default async function handler(req, res){
       action === 'refresh-recent' ? await refreshRecentAction(body) :
       action === 'rebuild-leaderboards' ? await rebuildLeaderboardsAction(body) :
       action === 'rebuild-player-stats' ? await rebuildPlayerStatsAction(body) :
+      action === 'refresh-transfers' ? await refreshTransfersAction(body) :
+      action === 'clear-transfers' ? await clearTransfersAction(body) :
       action === 'clear' ? await clearAction(body) :
       { ok:false, error:`Unknown admin action: ${action || '(missing)'}` };
     return sendJson(res, payload.ok === false ? 400 : 200, payload);
