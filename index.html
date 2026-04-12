@@ -321,9 +321,16 @@ tr.season-row td{border-left:2px solid var(--gold)}
   padding:6px 14px;border-left:none!important;
   border-bottom:1px solid var(--border)!important;
 }
-.form-row{display:flex;gap:3px}
-.fd{width:8px;height:8px;border-radius:50%}
-.fw{background:var(--green)}.fd-d{background:#333}.fl{background:var(--red)}
+.form-row{display:flex;align-items:center;gap:5px}
+.fd{
+  width:14px;height:14px;border-radius:50%;display:inline-block;flex:0 0 14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 4px 10px rgba(0,0,0,.22);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.fd:hover{transform:scale(1.12);box-shadow:0 0 0 1px rgba(255,255,255,.16),0 6px 14px rgba(0,0,0,.28)}
+.fd.win,.fw{background:#2ecc71}
+.fd.draw,.fd-d{background:#888}
+.fd.loss,.fl{background:#e74c3c}
 .standings-wrap{overflow-x:auto;overflow-y:auto;max-width:100%}
 .standings-table thead th{
   position:sticky;top:0;z-index:2;
@@ -6948,7 +6955,7 @@ async function pageTeam(el, teamId) {
     const cs = stats?.clean_sheet?.total||0;
     const failedToScore = stats?.failed_to_score?.total || 0;
     const form = stats?.fixtures?.form||'';
-    const formDots = form.slice(-10).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
+    const formDots = renderForm(form);
 
     const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || 0;
     const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || 0;
@@ -8009,6 +8016,37 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
 }
 
 // â”€â”€â”€ STANDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function normalizeFormTokens(form){
+  if(!form) return [];
+  const arr = Array.isArray(form)
+    ? form.flatMap(item => {
+        if(typeof item === 'string') return item.split('');
+        const value = item?.form || item?.result || item?.value || item?.code || item?.name || '';
+        return String(value).split('');
+      })
+    : String(form).split('');
+  return arr
+    .map(token => String(token || '').trim().charAt(0).toUpperCase())
+    .filter(token => ['W', 'D', 'L'].includes(token))
+    .slice(-5);
+}
+
+function renderForm(form) {
+  const arr = normalizeFormTokens(form);
+  if(!arr.length) return '';
+
+  return arr.map(token => {
+    if(token === 'W') return '<span class="fd win" aria-label="Vinst"></span>';
+    if(token === 'L') return '<span class="fd loss" aria-label="Förlust"></span>';
+    return '<span class="fd draw" aria-label="Oavgjort"></span>';
+  }).join('');
+}
+
+function renderFormLabel(form){
+  const map = { W:'V', D:'O', L:'F' };
+  return normalizeFormTokens(form).map(token => map[token] || token).join(' ');
+}
+
 async function pageStandings(el) {
   const league = getActiveLeagueConfig();
   document.title = `Tabell — ${league.name} — AllsvenskanAI`;
@@ -8018,12 +8056,8 @@ async function pageStandings(el) {
     const st = data[0]?.league?.standings?.[0]||[];
     const rows = st.map(t => {
       const gd = t.goalsDiff;
-      const form = (t.form||'').slice(-5).split('').map(c=>`<div class="fd ${c==='W'?'fw':c==='D'?'fd-d':'fl'}"></div>`).join('');
-      const formLabel = (t.form || '')
-        .slice(-5)
-        .split('')
-        .map(token => token === 'W' ? 'V' : token === 'D' ? 'O' : token === 'L' ? 'F' : token)
-        .join(' ');
+      const form = renderForm(t.form);
+      const formLabel = renderFormLabel(t.form);
       const topClass = t.rank <= 3 ? ` rank-top rank-top-${t.rank}` : '';
       return `<tr class="link${topClass}" onclick="go('/lag/${t.team.id}')" title="Öppna ${esc(t.team.name)}" role="link" tabindex="0" onkeydown="if(event.key==='Enter' || event.key===' '){event.preventDefault();go('/lag/${t.team.id}')}" aria-label="Öppna ${esc(t.team.name)}">
         <td class="standings-rank">${t.rank}</td>
