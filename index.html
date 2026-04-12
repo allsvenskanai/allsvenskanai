@@ -3382,6 +3382,42 @@ img{
   box-shadow:0 18px 42px rgba(0,0,0,.28);
   outline:none;
 }
+.team-shell .pill,
+.team-shell .stat-card,
+.team-shell .metric-card,
+.team-shell .summary-card,
+.team-shell .info-card,
+.team-shell .tag,
+.team-info-pill,
+.player-shell .pill,
+.player-shell .stat-card,
+.player-shell .summary-card,
+.stats-shell .stat-card,
+.stats-shell .summary-card,
+.stats-shell .filter-chip,
+.stats-toolbar,
+.team-player-stats,
+.team-squad-card{
+  background:linear-gradient(180deg,rgba(15,18,25,.96),rgba(7,11,18,.98)) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  color:#fff !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 14px 34px rgba(0,0,0,.22) !important;
+}
+.team-shell .stat-card strong,
+.team-shell .metric-card strong,
+.team-shell .summary-card strong,
+.player-shell .stat-card strong,
+.stats-shell .stat-card strong{
+  color:#E6C977 !important;
+}
+.team-shell .muted,
+.player-shell .muted,
+.stats-shell .muted,
+.team-shell small,
+.player-shell small,
+.stats-shell small{
+  color:#AEB5C1 !important;
+}
 @media(max-width:680px){
   .lb-slot{width:104px !important;min-height:126px !important}
   .lb-slot-core{width:60px !important;height:60px !important}
@@ -4043,6 +4079,36 @@ function playerCleanSheetsValue(entry = {}){
   );
 }
 
+function playerPassTotalValue(entry = {}){
+  return toStatNumber(entry?.passes?.total ?? entry?.passesTotal ?? entry?.passes_total);
+}
+
+function playerAccuratePassesValue(entry = {}){
+  return toStatNumber(
+    entry?.passes?.accurate ??
+    entry?.passes?.completed ??
+    entry?.passes?.successful ??
+    entry?.accuratePasses ??
+    entry?.passes_accurate
+  );
+}
+
+function playerKeyPassesValue(entry = {}){
+  return toStatNumber(entry?.passes?.key ?? entry?.keyPasses ?? entry?.passes_key);
+}
+
+function playerPassAccuracyValue(entry = {}){
+  const total = playerPassTotalValue(entry);
+  const accurate = playerAccuratePassesValue(entry);
+  if(total > 0 && accurate > 0) return (accurate / total) * 100;
+  return toStatNumber(
+    entry?.passes?.accuracy ??
+    entry?.passes?.percentage ??
+    entry?.passAccuracy ??
+    entry?.passingAccuracy
+  );
+}
+
 function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const leagueId = opts.leagueId ? Number(opts.leagueId) : null;
   const seasonStats = rows?.[0]?.statistics || [];
@@ -4058,8 +4124,9 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
   const assists = sum(entry => entry.goals?.assists);
   const shots = sum(entry => entry.shots?.total);
   const shotsOn = sum(entry => entry.shots?.on);
-  const passes = sum(entry => entry.passes?.total);
-  const keyPasses = sum(entry => entry.passes?.key);
+  const passes = sum(playerPassTotalValue);
+  const accuratePassesDirect = sum(playerAccuratePassesValue);
+  const keyPasses = sum(playerKeyPassesValue);
   const tackles = sum(entry => entry.tackles?.total);
   const interceptions = sum(entry => entry.tackles?.interceptions);
   const blocks = sum(entry => entry.tackles?.blocks);
@@ -4087,14 +4154,16 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
     }))
     .filter(entry => entry.rating > 0);
   const passAccuracyEntries = comps.map(entry => ({
-    accuracy: toStatNumber(entry.passes?.accuracy),
-    passes: toStatNumber(entry.passes?.total),
+    accuracy: playerPassAccuracyValue(entry),
+    passes: playerPassTotalValue(entry),
   })).filter(entry => entry.accuracy > 0);
   const ratingWeight = ratingEntries.reduce((total, entry) => total + entry.appearances, 0);
   const rating = ratingEntries.length
     ? ratingEntries.reduce((total, entry) => total + (entry.rating * entry.appearances), 0) / (ratingWeight || ratingEntries.length)
     : 0;
-  const accuratePasses = Math.round(passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0));
+  const accuratePasses = accuratePassesDirect > 0
+    ? accuratePassesDirect
+    : Math.round(passAccuracyEntries.reduce((total, entry) => total + (entry.passes * (entry.accuracy / 100)), 0));
   const passAccuracy = passes > 0 ? pct(accuratePasses, passes) : (passAccuracyEntries[0]?.accuracy || 0);
   const team = comps[0]?.team || rows?.[0]?.statistics?.[0]?.team || null;
   const position = comps[0]?.games?.position || '';
@@ -4115,7 +4184,7 @@ function aggregatePlayerSeasonStats(rows = [], opts = {}){
     },
     cards: { yellow, red },
     shots: { total: shots, on: shotsOn },
-    passes: { total: passes, key: keyPasses, accuracy: passAccuracy },
+    passes: { total: passes, accurate: accuratePasses, key: keyPasses, accuracy: passAccuracy },
     tackles: { total: tackles, interceptions, blocks },
     dribbles: { success: dribbles },
     duels: { won: duelsWon, total: duelsTotal },
@@ -7475,6 +7544,7 @@ function getTeamPlayerLeader(players, categoryId){
     return category.sort === 'asc' ? value >= min : value >= min;
   };
   const baseRows = (players || [])
+    .map(player => normalizeCanonicalPlayerStats(player))
     .filter(player => !category.playerFilter || category.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, category) }))
     .filter(item => Number.isFinite(item.value));
@@ -7491,40 +7561,11 @@ function canonicalNumber(value){
 }
 
 function sanitizeCachedPlayerGoalFields(player = {}){
-  const stats = player.stats || {};
-  const rawGoals = canonicalNumber(stats.goals ?? player.goals);
-  const assists = canonicalNumber(stats.assists ?? player.assists);
-  const goalsConceded = canonicalNumber(stats.goalsConceded);
-  const shots = canonicalNumber(stats.shots ?? player.shots);
-  const shotsOn = canonicalNumber(stats.shotsOn ?? player.shotsOnTarget);
-  const isGoalkeeper = Boolean(player.flags?.goalkeeper || isGoalkeeperStatEntry({ games:{ position:player.position }, goals:{ conceded:goalsConceded } }, player.position || ''));
-  const goals = isGoalkeeper && goalsConceded > 0 && rawGoals === goalsConceded && !(shots + shotsOn)
-    ? 0
-    : rawGoals;
-  const minutes = canonicalNumber(stats.minutes ?? player.minutes);
-  const goalContributions = goals + assists;
-  return {
-    ...player,
-    goals,
-    assists,
-    stats:{ ...stats, goals, assists, goalsConceded },
-    derived:{
-      ...(player.derived || {}),
-      goalContributions,
-      goalsPer90:minutes > 0 ? (goals / minutes) * 90 : 0,
-      assistsPer90:minutes > 0 ? (assists / minutes) * 90 : 0,
-      pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
-      conversionRate:shots > 0 ? (goals / shots) * 100 : 0,
-      shotsPerGoal:goals > 0 ? shots / goals : 0,
-      minutesPerGoal:goals > 0 ? minutes / goals : 0,
-      minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
-    },
-    flags:{ ...(player.flags || {}), goalkeeper:isGoalkeeper },
-  };
+  return normalizeCanonicalPlayerStats(player);
 }
 
 function canonicalCachedTeamPlayer(player = {}, teamId){
-  player = sanitizeCachedPlayerGoalFields(player);
+  player = normalizeCanonicalPlayerStats(player);
   const currentTeamId = Number(teamId || 0);
   const playerTeamId = Number(player.teamId || 0);
   if(!player?.playerId || !currentTeamId || playerTeamId !== currentTeamId) return null;
@@ -7541,13 +7582,18 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
   const minutes = canonicalNumber(stats.minutes ?? player.minutes);
   const shots = canonicalNumber(stats.shots ?? player.shots);
   const shotsOn = canonicalNumber(stats.shotsOn ?? player.shotsOnTarget);
+  const passes = canonicalNumber(stats.passes);
+  const accuratePasses = canonicalNumber(stats.accuratePasses ?? derived.accuratePasses);
+  const passAccuracy = passes > 0 && accuratePasses > 0
+    ? (accuratePasses / passes) * 100
+    : canonicalNumber(derived.passAccuracy ?? stats.passAccuracy);
   const goalsConceded = canonicalNumber(stats.goalsConceded);
   const isGoalkeeper = Boolean(player.flags?.goalkeeper || isGoalkeeperStatEntry({ games:{ position:player.position }, goals:{ conceded:goalsConceded } }, player.position || ''));
   const goals = isGoalkeeper && goalsConceded > 0 && rawGoals === goalsConceded && !(shots + shotsOn)
     ? 0
     : rawGoals;
   const goalContributions = canonicalNumber(derived.goalContributions || (goals + assists));
-  return {
+  return normalizeCanonicalPlayerStats({
     ...player,
     playerId:player.playerId,
     playerName:player.playerName || player.name || '',
@@ -7576,7 +7622,8 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
       assists,
       shots,
       shotsOn,
-      passes:canonicalNumber(stats.passes),
+      passes,
+      accuratePasses,
       keyPasses:canonicalNumber(stats.keyPasses),
       tackles:canonicalNumber(stats.tackles),
       interceptions:canonicalNumber(stats.interceptions),
@@ -7606,6 +7653,9 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
       pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
       shotsPer90:minutes > 0 ? (shots / minutes) * 90 : 0,
       keyPassesPer90:minutes > 0 ? (canonicalNumber(stats.keyPasses) / minutes) * 90 : 0,
+      passAccuracy,
+      accuratePasses,
+      passesPer90:minutes > 0 ? (passes / minutes) * 90 : 0,
       conversionRate:shots > 0 ? (goals / shots) * 100 : 0,
       shotsPerGoal:goals > 0 ? shots / goals : 0,
       shotAccuracy:shots > 0 ? (shotsOn / shots) * 100 : 0,
@@ -7616,7 +7666,7 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
       ...(player.flags || {}),
       goalkeeper:isGoalkeeper,
     },
-  };
+  });
 }
 
 function dedupeCanonicalTeamPlayers(players = [], teamId){
@@ -7940,7 +7990,7 @@ async function legacyPageTeamDeprecated(el, teamId) {
         </div>
       </div></div>
 
-      <div class="section-label">Säsongsstatistik ${SEASON}</div>
+      <div class="section-label">Säsongsstatistik ${esc(getSeasonLabel(SEASON))}</div>
       <div class="pills team-stat-pills" style="margin-bottom:1rem">${statCards}</div>
 
       <div class="team-overview-grid" style="display:grid;grid-template-columns:1.25fr .9fr;gap:12px;margin-bottom:1rem">
@@ -8373,7 +8423,8 @@ async function pagePlayer(el, playerId) {
       : (allsvSeasonYears.includes(PLAYER_DEFAULT_SEASON) ? PLAYER_DEFAULT_SEASON : (allsvSeasonYears[0] || PLAYER_DEFAULT_SEASON));
     const selectedSeasonIndex = PLAYER_HISTORY_SEASONS.indexOf(selectedAllsvSeason);
     const selectedAllsvRows = selectedSeasonIndex >= 0 ? allsvSeasonResults[selectedSeasonIndex] : [];
-    const curSeasonYear = selectedAllsvSeason;
+    const curSeasonId = selectedAllsvSeason;
+    const curSeasonYear = getSeasonLabel(selectedAllsvSeason);
     const curStats = aggregatePlayerSeasonStats(selectedAllsvRows) || {
       games: { appearences:0, minutes:0, rating:null, position:'', lineups:0 },
       goals: { total:0, assists:0, conceded:0, cleanSheets:0, saves:0 },
@@ -8487,7 +8538,7 @@ async function pagePlayer(el, playerId) {
         careerMins    += mn;
         careerYellow  += y;
         careerRed     += r;
-        const isCur = season === curSeasonYear;
+        const isCur = Number(season) === Number(curSeasonId);
         const gc = playerGoalsConcededValue(s);
         const cs = playerCleanSheetsValue(s);
         seasonRows.push({season, league: s.league?.name||'—', team: getTeamDisplayName(s.team) || '—', teamLogo: getTeamLogo(s.team), m, mn, g, a, gc, cs, rt, rtClass, y, r, isCur});
@@ -8531,13 +8582,13 @@ async function pagePlayer(el, playerId) {
       <div style="margin:.7rem 0 1rem">
         <div class="section-label" style="margin-bottom:.45rem">Allsvenskan-år</div>
         <div class="team-season-switcher">
-          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${season === curSeasonYear ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">${esc(getActiveLeagueConfig().name)} ${season}</button>`).join('')}
+          ${allsvSeasonYears.map(season => `<button class="team-season-btn ${Number(season) === Number(curSeasonId) ? 'active' : ''}" onclick="go('${playerSeasonHref(season)}')">${esc(getActiveLeagueConfig().name)} ${esc(getSeasonLabel(season))}</button>`).join('')}
         </div>
       </div>` : '';
 
     const sTableRows = seasonRows.map(s => `
       <tr class="${s.isCur?'season-row':''}" style="${s.isCur?'font-weight:500':''}">
-        <td><strong>${s.season}</strong></td>
+        <td><strong>${esc(getSeasonLabel(s.season))}</strong></td>
         <td><div class="player-history-team">
           <img src="${s.teamLogo}" alt="${esc(s.team || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span>${esc(s.team)}</span>
@@ -8553,7 +8604,7 @@ async function pagePlayer(el, playerId) {
       </tr>`).join('');
     const clubCareerTableRows = clubCareerRows.map(s => `
       <tr>
-        <td><strong>${s.season}</strong></td>
+        <td><strong>${esc(getSeasonLabel(s.season))}</strong></td>
         <td><div class="player-history-team">
           <img src="${s.teamLogo}" alt="${esc(s.team || 'Lag')}" onerror="handleTeamLogoError(this)">
           <span>${esc(s.team)}</span>
@@ -9866,7 +9917,7 @@ const STAT_CATEGORIES = [
   { id:'penaltiesScored', label:'Straffmål', title:'Gjorda straffmål', group:'offense', type:'direct', source:'stats.penaltiesScored', col:'Straffmål', description:'Straffmål när datan finns i Sportmonks-cachen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.goals || 0)} mål totalt` },
   { id:'penaltiesMissed', label:'Missade straffar', title:'Missade straffar', group:'offense', type:'direct', source:'stats.penaltiesMissed', col:'Missade', description:'Missade straffar i tillgänglig spelarstatistik.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.penaltiesScored || 0)} målade straffar` },
   { id:'passes', label:'Passningar', title:'Flest passningar', group:'passing', type:'direct', source:'stats.passes', col:'Pass', description:'Spelare som sätter tempot i possession-spelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
-  { id:'accuratePasses', label:'Lyckade pass', title:'Lyckade passningar', group:'passing', type:'derived', compute:p => p.derived.accuratePasses, col:'Lyckade', description:'Beräknas från total passvolym och passningsprocent.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.passes || 0)} totalt` },
+  { id:'accuratePasses', label:'Lyckade pass', title:'Lyckade passningar', group:'passing', type:'derived', compute:p => p.derived.accuratePasses || p.stats.accuratePasses, col:'Lyckade', description:'Lyckade passningar från Sportmonks när fältet finns, annars beräknat från passningsprocent.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.passes || 0)} totalt` },
   { id:'passAccuracy', label:'Passnings%', title:'Passningsprocent', group:'passing', type:'derived', compute:p => p.derived.passAccuracy, col:'Pass %', description:'Passningssäkerhet över hela säsongen.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:50, secondary:p => `${Math.round(p.stats.passes || 0)} pass`, playerFilter:p => p.stats.passes >= 10 },
   { id:'passesPer90', label:'Pass /90', title:'Passningar per 90', group:'passing', type:'derived', compute:p => p.derived.passesPer90, col:'Pass /90', description:'Hur mycket en spelare är involverad per full match.', formatter:v => formatStatValue(v, 1), minValue:5, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
   { id:'keyPassesPer90', label:'Nyckelpass /90', title:'Nyckelpass per 90', group:'passing', type:'derived', compute:p => p.derived.keyPassesPer90, col:'KP /90', description:'Kreativ output relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.keyPasses || 0)} totalt` },
@@ -9887,8 +9938,9 @@ const STAT_CATEGORIES = [
   { id:'penaltiesCommitted', label:'Orsakade straffar', title:'Orsakade straffar', group:'discipline', type:'direct', source:'stats.penaltiesCommitted', col:'Orsakade', description:'Straffar orsakade av spelaren när datan finns.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsCommitted || 0)} fouls` },
   { id:'saves', label:'Räddningar', title:'Flest räddningar', group:'goalkeeping', type:'direct', source:'stats.saves', col:'Räddningar', description:'Målvakter med flest räddningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.savePercentage, 1)}% räddnings%`, playerFilter:p => p.flags.goalkeeper },
   { id:'savePercentage', label:'Räddnings%', title:'Räddningsprocent', group:'goalkeeping', type:'derived', compute:p => p.derived.savePercentage, col:'Räddnings%', description:'Andel räddade avslut av saves + insläppta mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper && (p.stats.saves + p.stats.goalsConceded) > 0 },
-  { id:'goalsConceded', label:'Insläppta', title:'Minst insläppta mål', group:'goalkeeping', type:'direct', source:'stats.goalsConceded', col:'Insläppta', description:'Målvakter med lägst insläppta mål över säsongen.', formatter:v => Math.round(v), sort:'asc', minValue:-1, secondary:p => `${formatStatValue(p.derived.goalsConcededPerMatch, 2)} /match`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances > 0 },
-  { id:'goalsConcededPerMatch', label:'Insläppta / match', title:'Insläppta mål per match', group:'goalkeeping', type:'derived', compute:p => p.derived.goalsConcededPerMatch, col:'GA /match', description:'Insäppta mål justerat för spelade matcher.', formatter:v => formatStatValue(v, 2), sort:'asc', minValue:-1, secondary:p => `${Math.round(p.stats.goalsConceded || 0)} totalt`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances >= 1 },
+  { id:'cleanSheets', label:'Hållna nollor', title:'Hållna nollor', group:'goalkeeping', type:'direct', source:'stats.cleanSheets', col:'Nollor', description:'Matcher utan insläppta mål när målvaktsdatan finns i cache.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.goalsConceded || 0)} insläppta`, playerFilter:p => p.flags.goalkeeper },
+  { id:'goalsConceded', label:'Insläppta', title:'Minst insläppta mål', group:'goalkeeping', type:'direct', source:'stats.goalsConceded', col:'Insläppta', description:'Målvakter med lägst insläppta mål över säsongen.', formatter:v => Math.round(v), sort:'asc', minValue:-1, secondary:p => `${formatStatValue(p.derived.goalsConcededPer90, 2)} /90`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances > 0 },
+  { id:'goalsConcededPerMatch', label:'Insläppta /90', title:'Insläppta mål per 90', group:'goalkeeping', type:'derived', compute:p => p.derived.goalsConcededPer90, col:'GA /90', description:'Insläppta mål justerat för speltid.', formatter:v => formatStatValue(v, 2), sort:'asc', minValue:-1, secondary:p => `${Math.round(p.stats.goalsConceded || 0)} totalt`, playerFilter:p => p.flags.goalkeeper && p.stats.minutes > 0 },
   { id:'penaltiesSaved', label:'Straffräddningar', title:'Straffräddningar', group:'goalkeeping', type:'direct', source:'stats.penaltiesSaved', col:'Straffrädd.', description:'Räddade straffar bland målvakter.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper },
   { id:'minutes', label:'Minuter', title:'Mest spelade minuter', group:'playingTime', type:'direct', source:'stats.minutes', col:'Minuter', description:'Vilka som burit mest belastning.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
   { id:'appearances', label:'Matcher', title:'Flest matcher', group:'playingTime', type:'direct', source:'stats.appearances', col:'Matcher', description:'Totalt antal framträdanden.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.starts || 0)} starter` },
@@ -9905,13 +9957,68 @@ const STAT_CATEGORIES = [
   { id:'minutesPerContribution', label:'Min / poäng', title:'Minuter per poäng', group:'advanced', type:'derived', compute:p => p.derived.minutesPerContribution, col:'Min/poäng', description:'Hur ofta mål eller assist kommer över tid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.derived.goalContributions || 0)} poäng`, playerFilter:p => p.derived.goalContributions > 0 },
 ];
 
+const STAT_CATEGORY_EXACT_GETTERS = {
+  goals:{ value:statField('goals'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.goalsPer90, 2)} /90` },
+  assists:{ value:statField('assists'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.assistsPer90, 2)} /90` },
+  goalContributions:{ value:statField('goalContributions'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.goalContributionsPer90, 2)} /90` },
+  shots:{ value:statField('shots'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.shotsOnTarget || 0)} på mål` },
+  shotsOn:{ value:statField('shotsOnTarget'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.shotAccuracyPct, 1)}% träff` },
+  keyPasses:{ value:statField('keyPasses'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.keyPassesPer90, 2)} /90` },
+  goalsPer90:{ value:statField('goalsPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goals || 0)} mål` },
+  assistsPer90:{ value:statField('assistsPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.assists || 0)} assist` },
+  pointsPer90:{ value:statField('goalContributionsPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goalContributions || 0)} totalt` },
+  conversionRate:{ value:statField('shotConversionPct'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.shotsPerGoal, 1)} skott/mål` },
+  shotsPerGoal:{ value:statField('shotsPerGoal'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goals || 0)} mål` },
+  penaltiesScored:{ value:statField('penaltiesScored'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goals || 0)} mål totalt` },
+  penaltiesMissed:{ value:statField('penaltiesMissed'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.penaltiesScored || 0)} gjorda straffar` },
+  passes:{ value:statField('passesTotal'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.passAccuracyPct, 1)}% precision` },
+  accuratePasses:{ value:statField('passesAccurate'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.passesTotal || 0)} totalt` },
+  passAccuracy:{ value:statField('passAccuracyPct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.passesTotal || 0)} pass` },
+  passesPer90:{ value:statField('passesPer90'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.passAccuracyPct, 1)}% precision` },
+  keyPassesPer90:{ value:statField('keyPassesPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.keyPasses || 0)} totalt` },
+  tackles:{ value:statField('tackles'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.tacklesPer90, 2)} /90` },
+  interceptions:{ value:statField('interceptions'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.interceptionsPer90, 2)} /90` },
+  blocks:{ value:statField('blocks'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.blocksPer90, 2)} /90` },
+  duelsWon:{ value:statField('duelsWon'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.duelWinPct, 1)}% vinst` },
+  duelsTotal:{ value:statField('duelsTotal'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.duelsWon || 0)} vunna` },
+  duelWinRate:{ value:statField('duelWinPct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.duelsWon || 0)} vunna` },
+  defActions:{ value:statField('defensiveActions'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.defensiveActionsPer90, 2)} /90` },
+  defActionsPer90:{ value:statField('defensiveActionsPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.defensiveActions || 0)} totalt` },
+  yellow:{ value:statField('yellowCards'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.redCards || 0)} röda` },
+  red:{ value:statField('redCards'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.yellowCards || 0)} gula` },
+  foulsCommitted:{ value:statField('foulsCommitted'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.foulsPer90, 2)} /90` },
+  foulsDrawn:{ value:statField('foulsDrawn'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.foulsCommitted || 0)} orsakade` },
+  offsides:{ value:statField('offsides'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.shots || 0)} skott` },
+  penaltiesWon:{ value:statField('penaltiesWon'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.foulsDrawn || 0)} foulade` },
+  penaltiesCommitted:{ value:statField('penaltiesCommitted'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.foulsCommitted || 0)} fouls` },
+  saves:{ value:statField('saves'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.savePct, 1)}% räddnings%` },
+  savePercentage:{ value:statField('savePct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.saves || 0)} räddningar` },
+  cleanSheets:{ value:statField('cleanSheets'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goalsConceded || 0)} insläppta` },
+  goalsConceded:{ value:statField('goalsConceded'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.goalsConcededPer90, 2)} /90` },
+  goalsConcededPerMatch:{ value:statField('goalsConcededPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goalsConceded || 0)} totalt` },
+  penaltiesSaved:{ value:statField('penaltiesSaved'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.saves || 0)} räddningar` },
+  minutes:{ value:statField('minutes'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.appearances || 0)} matcher` },
+  appearances:{ value:statField('appearances'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.starts || 0)} starter` },
+  starts:{ value:statField('starts'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).derived.subApps || 0)} inhopp` },
+  subIns:{ value:statField('subIns'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.subOuts || 0)} utbytt` },
+  subOuts:{ value:statField('subOuts'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.starts || 0)} starter` },
+  bench:{ value:statField('bench'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.appearances || 0)} matcher` },
+  subApps:{ value:p => normalizeCanonicalPlayerStats(p).derived.subApps || 0, secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.appearances || 0)} matcher` },
+  minutesPerMatch:{ value:statField('minutesPerMatch'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.minutes || 0)} min totalt` },
+  rating:{ value:statField('rating'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.minutes || 0)} min` },
+  shotsPer90:{ value:statField('shotsPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.shots || 0)} skott` },
+  shotAccuracy:{ value:statField('shotAccuracyPct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.shotsOnTarget || 0)} på mål` },
+  minutesPerGoal:{ value:statField('minutesPerGoal'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goals || 0)} mål` },
+  minutesPerContribution:{ value:statField('minutesPerContribution'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goalContributions || 0)} poäng` },
+};
+
 let statsCache = null;
 let currentStatCategory = 'goals';
 let currentStatGroup = 'offense';
 let statsYear = SEASON; // default to current season
 let statsSelectedTeamId = '';
-const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:sportmonks-stats-dataset:v2';
-const STATS_TEAM_CACHE_PREFIX = 'sportmonks:stats:v2';
+const STATS_DATASET_CACHE_PREFIX = 'allsvenskanai:sportmonks-stats-dataset:v3';
+const STATS_TEAM_CACHE_PREFIX = 'sportmonks:stats:v3';
 const STATS_CURRENT_SEASON_TTL = 30 * 60 * 1000;
 const STATS_OLDER_SEASON_TTL = 30 * 24 * 60 * 60 * 1000;
 const STATS_PAGE_FETCH_DELAY_MS = 900;
@@ -10046,6 +10153,195 @@ function formatStatValue(value, decimals = 1){
     maximumFractionDigits: decimals
   });
 }
+
+function statSafePer90(value, minutes){
+  const mins = canonicalNumber(minutes);
+  return mins > 0 ? (canonicalNumber(value) / mins) * 90 : 0;
+}
+
+function statSafePct(part, total){
+  const denominator = canonicalNumber(total);
+  return denominator > 0 ? (canonicalNumber(part) / denominator) * 100 : 0;
+}
+
+function normalizeCanonicalPlayerStats(player = {}){
+  const sourceStats = player.stats || {};
+  const sourceDerived = player.derived || {};
+  const rawGoals = canonicalNumber(sourceStats.goals ?? player.goals);
+  const assists = canonicalNumber(sourceStats.assists ?? player.assists);
+  const goalsConceded = canonicalNumber(sourceStats.goalsConceded ?? player.goalsConceded);
+  const saves = canonicalNumber(sourceStats.saves ?? player.saves);
+  const shots = canonicalNumber(sourceStats.shots ?? player.shots);
+  const shotsOnTarget = canonicalNumber(sourceStats.shotsOn ?? player.shotsOnTarget);
+  const isGoalkeeper = Boolean(player.flags?.goalkeeper || isGoalkeeperStatEntry({ games:{ position:player.position }, goals:{ conceded:goalsConceded, saves } }, player.position || ''));
+  const goals = isGoalkeeper && goalsConceded > 0 && rawGoals === goalsConceded && !(shots + shotsOnTarget)
+    ? 0
+    : rawGoals;
+  const minutes = canonicalNumber(sourceStats.minutes ?? player.minutes);
+  const appearances = canonicalNumber(sourceStats.appearances ?? player.appearances);
+  const starts = canonicalNumber(sourceStats.starts);
+  const passesTotal = canonicalNumber(sourceStats.passes ?? player.passesTotal);
+  const passesAccurate = canonicalNumber(sourceStats.accuratePasses ?? sourceDerived.accuratePasses ?? player.passesAccurate);
+  const keyPasses = canonicalNumber(sourceStats.keyPasses ?? player.keyPasses);
+  const tackles = canonicalNumber(sourceStats.tackles);
+  const interceptions = canonicalNumber(sourceStats.interceptions);
+  const blocks = canonicalNumber(sourceStats.blocks);
+  const duelsWon = canonicalNumber(sourceStats.duelsWon);
+  const duelsTotal = canonicalNumber(sourceStats.duelsTotal);
+  const foulsCommitted = canonicalNumber(sourceStats.foulsCommitted);
+  const foulsDrawn = canonicalNumber(sourceStats.foulsDrawn);
+  const yellowCards = canonicalNumber(sourceStats.yellow);
+  const redCards = canonicalNumber(sourceStats.red);
+  const goalContributions = goals + assists;
+  const defensiveActions = tackles + interceptions + blocks;
+  const cleanSheets = canonicalNumber(sourceStats.cleanSheets);
+  const canonical = {
+    playerId: player.playerId || player.id || null,
+    playerName: player.playerName || player.name || '',
+    teamId: player.teamId || null,
+    teamName: player.teamName || '',
+    season: player.season,
+    seasonId: player.seasonId,
+    league: player.leagueKey || player.league,
+    leagueId: player.leagueId,
+    position: player.position || '',
+    photo: player.photo || '',
+    appearances,
+    starts,
+    minutes,
+    rating: canonicalNumber(sourceStats.rating),
+    goals,
+    assists,
+    goalContributions,
+    shots,
+    shotsOnTarget,
+    shotAccuracyPct: statSafePct(shotsOnTarget, shots),
+    shotConversionPct: statSafePct(goals, shots),
+    shotsPerGoal: goals > 0 ? shots / goals : 0,
+    shotsPer90: statSafePer90(shots, minutes),
+    shotsOnTargetPer90: statSafePer90(shotsOnTarget, minutes),
+    keyPasses,
+    keyPassesPer90: statSafePer90(keyPasses, minutes),
+    passesTotal,
+    passesAccurate,
+    passAccuracyPct: passesTotal > 0 ? statSafePct(passesAccurate, passesTotal) : canonicalNumber(sourceDerived.passAccuracy ?? sourceStats.passAccuracy),
+    passesPer90: statSafePer90(passesTotal, minutes),
+    tackles,
+    tacklesPer90: statSafePer90(tackles, minutes),
+    interceptions,
+    interceptionsPer90: statSafePer90(interceptions, minutes),
+    blocks,
+    blocksPer90: statSafePer90(blocks, minutes),
+    duelsWon,
+    duelsTotal,
+    duelWinPct: statSafePct(duelsWon, duelsTotal),
+    defensiveActions,
+    defensiveActionsPer90: statSafePer90(defensiveActions, minutes),
+    foulsCommitted,
+    foulsDrawn,
+    yellowCards,
+    redCards,
+    cardsPer90: statSafePer90(yellowCards + redCards, minutes),
+    foulsPer90: statSafePer90(foulsCommitted, minutes),
+    saves,
+    savePct: statSafePct(saves, saves + goalsConceded),
+    cleanSheets,
+    goalsConceded,
+    goalsConcededPer90: statSafePer90(goalsConceded, minutes),
+    goalsConcededPerMatch: appearances > 0 ? goalsConceded / appearances : 0,
+    penaltiesSaved: canonicalNumber(sourceStats.penaltiesSaved),
+    penaltiesScored: canonicalNumber(sourceStats.penaltiesScored),
+    penaltiesMissed: canonicalNumber(sourceStats.penaltiesMissed),
+    penaltiesWon: canonicalNumber(sourceStats.penaltiesWon),
+    penaltiesCommitted: canonicalNumber(sourceStats.penaltiesCommitted),
+    subIns: canonicalNumber(sourceStats.subIns),
+    subOuts: canonicalNumber(sourceStats.subOuts),
+    bench: canonicalNumber(sourceStats.bench),
+    offsides: canonicalNumber(sourceStats.offsides),
+    minutesPerMatch: appearances > 0 ? minutes / appearances : 0,
+    goalsPer90: statSafePer90(goals, minutes),
+    assistsPer90: statSafePer90(assists, minutes),
+    goalContributionsPer90: statSafePer90(goalContributions, minutes),
+    minutesPerGoal: goals > 0 ? minutes / goals : 0,
+    minutesPerContribution: goalContributions > 0 ? minutes / goalContributions : 0,
+    xg: canonicalNumber(sourceStats.xg ?? sourceDerived.xg),
+    xa: canonicalNumber(sourceStats.xa ?? sourceDerived.xa),
+    progressivePasses: canonicalNumber(sourceStats.progressivePasses ?? sourceDerived.progressivePasses),
+    progressiveRuns: canonicalNumber(sourceStats.progressiveRuns ?? sourceDerived.progressiveRuns),
+  };
+  canonical.xgPer90 = statSafePer90(canonical.xg, minutes);
+  canonical.xaPer90 = statSafePer90(canonical.xa, minutes);
+  const normalizedStats = {
+    ...sourceStats,
+    appearances,
+    starts,
+    minutes,
+    goals,
+    assists,
+    shots,
+    shotsOn:shotsOnTarget,
+    passes:passesTotal,
+    accuratePasses:passesAccurate,
+    keyPasses,
+    tackles,
+    interceptions,
+    blocks,
+    duelsWon,
+    duelsTotal,
+    foulsCommitted,
+    foulsDrawn,
+    yellow:yellowCards,
+    red:redCards,
+    saves,
+    cleanSheets,
+    goalsConceded,
+  };
+  const normalizedDerived = {
+    ...sourceDerived,
+    goalContributions,
+    goalsPer90:canonical.goalsPer90,
+    assistsPer90:canonical.assistsPer90,
+    pointsPer90:canonical.goalContributionsPer90,
+    shotsPer90:canonical.shotsPer90,
+    shotsOnTargetPer90:canonical.shotsOnTargetPer90,
+    keyPassesPer90:canonical.keyPassesPer90,
+    conversionRate:canonical.shotConversionPct,
+    shotsPerGoal:canonical.shotsPerGoal,
+    shotAccuracy:canonical.shotAccuracyPct,
+    passAccuracy:canonical.passAccuracyPct,
+    accuratePasses:passesAccurate,
+    passesPer90:canonical.passesPer90,
+    defActions:defensiveActions,
+    defActionsPer90:canonical.defensiveActionsPer90,
+    duelWinRate:canonical.duelWinPct,
+    savePercentage:canonical.savePct,
+    goalsConcededPerMatch:canonical.goalsConcededPerMatch,
+    goalsConcededPer90:canonical.goalsConcededPer90,
+    minutesPerMatch:canonical.minutesPerMatch,
+    subApps:Math.max(canonical.subIns || (appearances - starts), 0),
+    minutesPerGoal:canonical.minutesPerGoal,
+    minutesPerContribution:canonical.minutesPerContribution,
+    cardsPer90:canonical.cardsPer90,
+    foulsPer90:canonical.foulsPer90,
+  };
+  return {
+    ...player,
+    goals,
+    assists,
+    minutes,
+    shots,
+    shotsOnTarget,
+    keyPasses,
+    stats:normalizedStats,
+    derived:normalizedDerived,
+    canonical,
+    flags:{ ...(player.flags || {}), goalkeeper:isGoalkeeper },
+  };
+}
+
+function statField(field){
+  return player => normalizeCanonicalPlayerStats(player).canonical[field] || 0;
+}
 function ratingCls(value){
   const rating = parseFloat(value || 0) || 0;
   if(rating >= 7.5) return 'rg';
@@ -10101,7 +10397,7 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
         passAccuracyFallbackCount: 0,
         stats: {
           appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
-          goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+          goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, accuratePasses: 0, keyPasses: 0,
           tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
           foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
           saves: 0, goalsConceded: 0, cleanSheets: 0, penaltiesSaved: 0, penaltiesScored: 0,
@@ -10120,9 +10416,10 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
       const minutes = toStatNumber(entry?.games?.minutes);
       const appearances = toStatNumber(entry?.games?.appearences);
       const starts = toStatNumber(entry?.games?.lineups);
-      const passes = toStatNumber(entry?.passes?.total);
+      const passes = playerPassTotalValue(entry);
+      const accuratePasses = playerAccuratePassesValue(entry);
       const rating = toStatNumber(entry?.games?.rating);
-      const passAccuracy = toStatNumber(entry?.passes?.accuracy);
+      const passAccuracy = playerPassAccuracyValue(entry);
 
       if(minutes > acc.dominantMinutes){
         acc.dominantMinutes = minutes;
@@ -10146,7 +10443,8 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
       acc.stats.shots += toStatNumber(entry?.shots?.total);
       acc.stats.shotsOn += toStatNumber(entry?.shots?.on);
       acc.stats.passes += passes;
-      acc.stats.keyPasses += toStatNumber(entry?.passes?.key);
+      acc.stats.accuratePasses += accuratePasses;
+      acc.stats.keyPasses += playerKeyPassesValue(entry);
       acc.stats.tackles += toStatNumber(entry?.tackles?.total);
       acc.stats.interceptions += toStatNumber(entry?.tackles?.interceptions);
       acc.stats.blocks += toStatNumber(entry?.tackles?.blocks);
@@ -10188,16 +10486,18 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
     const assists = acc.stats.assists;
     const shots = acc.stats.shots;
     const passes = acc.stats.passes;
+    const accuratePasses = acc.stats.accuratePasses > 0
+      ? acc.stats.accuratePasses
+      : (acc.passAccuracyWeight > 0 || acc.passAccuracyFallbackCount > 0 ? passes * ((acc.passAccuracyWeight > 0 ? acc.passAccuracyWeighted / acc.passAccuracyWeight : acc.passAccuracyFallbackTotal / acc.passAccuracyFallbackCount) / 100) : 0);
     const saves = acc.stats.saves;
     const goalsConceded = acc.stats.goalsConceded;
     const rating = acc.ratingWeight > 0 ? acc.ratingWeighted / acc.ratingWeight : (acc.ratingFallbackCount > 0 ? acc.ratingFallbackTotal / acc.ratingFallbackCount : 0);
-    const passAccuracy = acc.passAccuracyWeight > 0 ? acc.passAccuracyWeighted / acc.passAccuracyWeight : (acc.passAccuracyFallbackCount > 0 ? acc.passAccuracyFallbackTotal / acc.passAccuracyFallbackCount : 0);
-    const accuratePasses = passes * (passAccuracy / 100);
+    const passAccuracy = passes > 0 ? pct(accuratePasses, passes) : (acc.passAccuracyWeight > 0 ? acc.passAccuracyWeighted / acc.passAccuracyWeight : (acc.passAccuracyFallbackCount > 0 ? acc.passAccuracyFallbackTotal / acc.passAccuracyFallbackCount : 0));
     const goalContributions = goals + assists;
     const defActions = acc.stats.tackles + acc.stats.interceptions + acc.stats.blocks;
     const subApps = Math.max(acc.stats.subIns || (appearances - acc.stats.starts), 0);
 
-    return {
+    return normalizeCanonicalPlayerStats({
       playerId: acc.playerId,
       playerName: acc.playerName,
       firstname: acc.firstname,
@@ -10234,7 +10534,7 @@ function buildNormalizedStatsDataset(rawPlayers = [], season = SEASON, leagueId 
       flags: {
         goalkeeper: String(acc.position || '').toLowerCase().includes('goalkeeper') || saves > 0 || goalsConceded > 0,
       }
-    };
+    });
   });
 }
 
@@ -10275,7 +10575,7 @@ function buildCompleteTeamPlayersDataset(squadPlayers = [], rawPlayers = [], tea
       position: squadPlayer.position || '',
       stats: {
         appearances: 0, starts: 0, subIns: 0, subOuts: 0, bench: 0, minutes: 0,
-        goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, keyPasses: 0,
+        goals: 0, assists: 0, shots: 0, shotsOn: 0, passes: 0, accuratePasses: 0, keyPasses: 0,
         tackles: 0, interceptions: 0, blocks: 0, duelsWon: 0, duelsTotal: 0,
         foulsCommitted: 0, foulsDrawn: 0, yellow: 0, red: 0, offsides: 0,
         saves: 0, goalsConceded: 0, penaltiesSaved: 0, penaltiesScored: 0,
@@ -10409,6 +10709,7 @@ function listCachedTeamStatsForLeagueSeason(leagueId = LEAGUE, season = SEASON){
 }
 
 function hasLeaderboardStatValue(player = {}){
+  player = normalizeCanonicalPlayerStats(player);
   const stats = player.stats || {};
   return [
     stats.appearances, stats.starts, stats.minutes, stats.goals, stats.assists,
@@ -10422,13 +10723,17 @@ function countUsefulCachedPlayers(cache = {}){
 }
 
 function getCategoryValue(player, category){
+  player = normalizeCanonicalPlayerStats(player);
+  const exact = STAT_CATEGORY_EXACT_GETTERS[category.id];
+  if(typeof exact?.value === 'function') return exact.value(player);
   if(category.type === 'derived' && typeof category.compute === 'function') return category.compute(player);
   return getNestedVal(player, category.source || '') || 0;
 }
 
 function getCategorySorter(category){
-  if(category.sort === 'asc') return (a,b) => a.value - b.value || b.player.stats.minutes - a.player.stats.minutes;
-  return (a,b) => b.value - a.value || b.player.stats.minutes - a.player.stats.minutes;
+  const minutesOf = item => normalizeCanonicalPlayerStats(item.player || {}).canonical.minutes || 0;
+  if(category.sort === 'asc') return (a,b) => a.value - b.value || minutesOf(b) - minutesOf(a);
+  return (a,b) => b.value - a.value || minutesOf(b) - minutesOf(a);
 }
 
 function getCategoryDisplayValue(category, player, value){
@@ -10436,23 +10741,28 @@ function getCategoryDisplayValue(category, player, value){
 }
 
 function getCategorySecondary(category, player){
+  player = normalizeCanonicalPlayerStats(player);
+  const exact = STAT_CATEGORY_EXACT_GETTERS[category.id];
+  if(typeof exact?.secondary === 'function') return exact.secondary(player);
   return typeof category.secondary === 'function' ? category.secondary(player) : '';
 }
 
 function getStatsLeaderboardRows(players = [], categoryId = currentStatCategory, limit = 10){
   const activeCategory = STAT_CATEGORIES.find(category => category.id === categoryId) || STAT_CATEGORIES[0];
   const eligibleRows = (players || [])
-    .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
     .map(player => {
-      const rawValue = getCategoryValue(player, activeCategory);
+      const normalizedPlayer = normalizeCanonicalPlayerStats(player);
+      if(activeCategory.playerFilter && !activeCategory.playerFilter(normalizedPlayer)) return null;
+      const rawValue = getCategoryValue(normalizedPlayer, activeCategory);
       const hasValue = Number.isFinite(rawValue);
       return {
-        player,
+        player:normalizedPlayer,
         value: hasValue ? rawValue : null,
         hasValue,
         qualifies: hasValue && rawValue > (activeCategory.minValue ?? 0)
       };
-    });
+    })
+    .filter(Boolean);
 
   const sorter = getCategorySorter(activeCategory);
   const qualifiedRows = eligibleRows.filter(item => item.qualifies).sort(sorter);
@@ -10464,6 +10774,16 @@ function getStatsLeaderboardRows(players = [], categoryId = currentStatCategory,
       if(!a.hasValue && !b.hasValue) return String(a.player?.playerName || '').localeCompare(String(b.player?.playerName || ''));
       return sorter(a,b);
     });
+
+  if(typeof localStorage !== 'undefined' && localStorage.getItem('allsvenskanai:stats-debug') === '1') {
+    console.debug('[stats-engine] category render', {
+      category:activeCategory.id,
+      totalPlayers:(players || []).length,
+      eligible:eligibleRows.length,
+      qualified:qualifiedRows.length,
+      sample:qualifiedRows[0]?.player?.canonical || eligibleRows[0]?.player?.canonical || null
+    });
+  }
 
   const sorted = [];
   const seen = new Set();
