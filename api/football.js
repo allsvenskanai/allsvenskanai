@@ -1,5 +1,5 @@
 const SPORTMONKS_BASE_URL = 'https://api.sportmonks.com/v3/football';
-const CACHE_VERSION = 'sportmonks-adapter:v3';
+const CACHE_VERSION = 'sportmonks-adapter:v4';
 const cache = new Map();
 const inFlight = new Map();
 const resolvedSeasonCache = new Map();
@@ -351,6 +351,14 @@ async function getTeamSquadBySeason(teamId, seasonId, options = {}){
   return sportmonks(`squads/seasons/${seasonId}/teams/${teamId}`, { include:'player;team;position;details.type' }, options);
 }
 
+async function getTeamPlayersBySeasonStatistics(teamId, seasonId, options = {}){
+  return sportmonksPaged('players', {
+    include:'statistics.details.type;position;detailedPosition',
+    filters:`playerStatisticSeasons:${seasonId};playerStatisticTeams:${teamId}`,
+    per_page:50,
+  }, { ...options, fetchAllPages: options.fetchAllPages !== false });
+}
+
 async function getTeamSeasonStatistics(teamId, seasonId, options = {}){
   // This endpoint may depend on plan/coverage. Callers fall back to standings if unavailable.
   return sportmonks(`statistics/seasons/${teamId}/${seasonId}`, { include:'details.type' }, options);
@@ -556,9 +564,33 @@ async function handlePlayers(params, force){
     return { response: player?.id ? [normalizePlayerStat(player, team, league, league.seasonId)] : [], paging:{ current:1, total:1 } };
   }
   if(params.team){
-    const squad = await getTeamSquadBySeason(params.team, league.seasonId, { force });
+    const squad = await getTeamSquadBySeason(params.team, league.seasonId, { force }).catch(err => {
+      console.warn('[sportmonks-adapter] squad fallback unavailable', { teamId:params.team, seasonId:league.seasonId, error:err.message });
+      return { data: [] };
+    });
     const team = normalizeTeam(squad?.data?.find(item => item?.team)?.team || { id:params.team });
-    return { response:(squad?.data || []).map(item => normalizePlayerStat(item, team, league, league.seasonId)), paging:{ current:1, total:1 } };
+    const squadByPlayer = new Map((squad?.data || []).map(item => [Number(item?.player?.id || item?.player_id || item?.id || 0), item]));
+    const statRows = await getTeamPlayersBySeasonStatistics(params.team, league.seasonId, { force }).catch(err => {
+      console.warn('[sportmonks-adapter] team player statistics unavailable; squad fallback used', { teamId:params.team, seasonId:league.seasonId, error:err.message });
+      return { data: [] };
+    });
+    const byPlayer = new Map();
+    (statRows?.data || []).forEach(item => {
+      const playerId = Number(item?.id || item?.player?.id || item?.player_id || 0);
+      if(!playerId) return;
+      const squadItem = squadByPlayer.get(playerId) || {};
+      byPlayer.set(playerId, normalizePlayerStat({
+        ...item,
+        jersey_number: squadItem?.jersey_number || squadItem?.shirt_number || item?.jersey_number,
+        team,
+      }, team, league, league.seasonId));
+    });
+    (squad?.data || []).forEach(item => {
+      const playerId = Number(item?.player?.id || item?.player_id || item?.id || 0);
+      if(!playerId || byPlayer.has(playerId)) return;
+      byPlayer.set(playerId, normalizePlayerStat(item, team, league, league.seasonId));
+    });
+    return { response:[...byPlayer.values()], paging:{ current:1, total:1 } };
   }
   const raw = await sportmonksPaged('players', {
     include:'statistics.details.type;position;detailedPosition',
