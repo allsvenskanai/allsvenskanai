@@ -7267,7 +7267,8 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
     </div>`;
 }
 
-async function pageTeam(el, teamId) {
+async function legacyPageTeamDeprecated(el, teamId) {
+  return pageTeam(el, teamId);
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
     const [statsD, squadD, seasonPlayers] = await Promise.all([
@@ -7468,116 +7469,101 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   const routeTeamId = Number(teamId) || 0;
   const selectedSeason = getTeamPageSeason(explicitSeason);
   currentTeamStatsSeason = selectedSeason;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lagstatistik ${selectedSeason}…</div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const [teamInfoRaw, standingsRaw, statsRaw, squadRaw, seasonPlayers, fixturesSeason] = await Promise.all([
+    const [teamInfoRaw, standingsRaw, fixturesSeason, publicStats] = await Promise.all([
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
-      afRaw('teams/statistics', {league:LEAGUE, season:selectedSeason, team:routeTeamId}).catch(() => ({ response: null })),
-      afRaw('players/squads', {team:routeTeamId, league:LEAGUE, season:selectedSeason}).catch(() => ({ response: [] })),
-      fetchAllPages('players', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
-        dedupeKey: item => {
-          const playerId = item?.player?.id || '';
-          const statTeamId = item?.statistics?.[0]?.team?.id || routeTeamId || '';
-          const statSeason = item?.statistics?.[0]?.league?.season || selectedSeason || '';
-          return `${playerId}-${statTeamId}-${statSeason}`;
-        }
-      }).catch(e => {
-        console.warn('[team-page] season players missing', { teamId: routeTeamId, selectedSeason, error: e.message });
-        return [];
-      }),
       fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
         dedupeKey: item => item?.fixture?.id || ''
       }).catch(e => {
         console.warn('[team-page] fixtures missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
-      })
+      }),
+      loadPublicTeamStatsDataset(routeTeamId, selectedSeason).catch(e => {
+        console.warn('[team-page] public stats cache missing', { teamId: routeTeamId, selectedSeason, error: e.message });
+        return { players:[], teams:[], meta:{ publicMissing:true, warning:'Statistik är inte uppdaterad ännu.' } };
+      }),
     ]);
     const historyStandings = [];
 
     const teamInfoD = teamInfoRaw?.response || [];
     const standingsD = standingsRaw?.response || [];
     const standingRows = standingsD?.[0]?.league?.standings?.[0] || [];
-    const statsD = statsRaw?.response || null;
-    const squadD = squadRaw?.response || [];
-    const stats = statsD?.league ? statsD : (Array.isArray(statsD) ? statsD[0] : statsD);
     const selectedStanding = standingRows.find(row => Number(row?.team?.id || 0) === routeTeamId) || null;
     const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || null;
+    const cachedTeamStats = (publicStats?.teamStats || []).find(item => Number(item?.teamId || item?.team?.id || 0) === routeTeamId) || null;
+    const cachedTeam = (publicStats?.teams || []).find(item => Number(item?.id || 0) === routeTeamId) || cachedTeamStats?.team || null;
     const team = pickResolvedTeam(
-      stats?.team,
+      cachedTeamStats?.team,
+      cachedTeam,
       teamInfo,
       selectedStanding?.team,
       {id:routeTeamId, name:'Lag', logo:''}
     );
     const teamDisplayName = getTeamDisplayName(team);
-    const venue = stats?.venue || teamInfoD?.[0]?.venue || {};
+    const venue = cachedTeamStats?.venue || teamInfoD?.[0]?.venue || {};
     console.debug('[team-page] route resolution', {
       routeTeamId,
       selectedSeason,
-      statsTeamId: stats?.team?.id || null,
+      statsTeamId: cachedTeamStats?.team?.id || cachedTeam?.id || null,
       teamInfoId: teamInfo?.id || null,
       standingTeamId: selectedStanding?.team?.id || null,
       resolvedTeamId: team?.id || null,
       resolvedTeamName: teamDisplayName,
     });
-    const squadPlayers = (squadD?.[0]?.players || []).length ? (squadD?.[0]?.players || []) : (seasonPlayers || []).map(item => ({
-      id: item?.player?.id,
-      name: item?.player?.name || '',
-      firstname: item?.player?.firstname || '',
-      lastname: item?.player?.lastname || '',
-      age: item?.player?.age || null,
-      number: item?.statistics?.[0]?.games?.number || null,
-      positionCode: item?.player?.pos || item?.statistics?.[0]?.games?.positionCode || '',
-      position: item?.statistics?.[0]?.games?.position || '',
-      photo: item?.player?.photo || '',
+    const teamPlayers = (publicStats?.players || []).filter(player => Number(player?.teamId || 0) === routeTeamId);
+    const squadPlayers = teamPlayers.map(player => ({
+      id: player.playerId,
+      name: player.playerName || '',
+      firstname: player.firstname || '',
+      lastname: player.lastname || '',
+      age: null,
+      number: player.stats?.number || null,
+      position: player.position || '',
+      photo: player.photo || '',
       injured: false,
-    })).filter(player => player?.id);
-    const playerInfoById = Object.fromEntries((seasonPlayers || []).map(item => [item.player?.id, item.player || {}]));
-    const detailedPositionsByPlayerId = await buildTeamDetailedPositionMap(routeTeamId, selectedSeason, fixturesSeason);
-    squadPlayers.forEach(player => {
-      const detailedPosition = detailedPositionsByPlayerId[String(player.id)] || '';
-      if(detailedPosition) player.detailedPosition = detailedPosition;
-    });
-    Object.keys(playerInfoById).forEach(playerId => {
-      const detailedPosition = detailedPositionsByPlayerId[String(playerId)] || '';
-      if(detailedPosition && playerInfoById[playerId]) {
-        playerInfoById[playerId].detailedPosition = detailedPosition;
-      }
-    });
-    await enrichSquadNationalities(squadPlayers, playerInfoById);
+    }));
+    const playerInfoById = Object.fromEntries(teamPlayers.map(player => [player.playerId, {
+      id: player.playerId,
+      name: player.playerName,
+      firstname: player.firstname || '',
+      lastname: player.lastname || '',
+      photo: player.photo || '',
+      position: player.position || '',
+      teamId: player.teamId,
+    }]));
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
     const historyMap = new Map(historyRows.map(row => [row.season, row]));
     const seasonRow = historyMap.get(selectedSeason) || null;
 
-    const w = stats?.fixtures?.wins?.total || seasonRow?.wins || 0;
-    const d = stats?.fixtures?.draws?.total || seasonRow?.draws || 0;
-    const l = stats?.fixtures?.loses?.total || seasonRow?.losses || 0;
-    const played = stats?.fixtures?.played?.total || seasonRow?.played || (w + d + l);
-    const points = seasonRow?.points ?? (w * 3 + d);
-    const gf = stats?.goals?.for?.total?.total || seasonRow?.goalsFor || 0;
-    const ga = stats?.goals?.against?.total?.total || seasonRow?.goalsAgainst || 0;
+    const w = selectedStanding?.all?.win || seasonRow?.wins || 0;
+    const d = selectedStanding?.all?.draw || seasonRow?.draws || 0;
+    const l = selectedStanding?.all?.lose || seasonRow?.losses || 0;
+    const played = selectedStanding?.all?.played || seasonRow?.played || (w + d + l);
+    const points = selectedStanding?.points ?? seasonRow?.points ?? (w * 3 + d);
+    const gf = selectedStanding?.all?.goals?.for || seasonRow?.goalsFor || 0;
+    const ga = selectedStanding?.all?.goals?.against || seasonRow?.goalsAgainst || 0;
     const goalDiff = seasonRow?.goalDiff ?? (gf - ga);
-    const cs = stats?.clean_sheet?.total || 0;
-    const failedToScore = stats?.failed_to_score?.total || 0;
-    const avgFor = parseFloat(stats?.goals?.for?.average?.total || 0) || (played ? gf / played : 0);
-    const avgAgainst = parseFloat(stats?.goals?.against?.average?.total || 0) || (played ? ga / played : 0);
+    const avgFor = played ? gf / played : 0;
+    const avgAgainst = played ? ga / played : 0;
     const pointsPerMatch = played ? points / played : 0;
     const pointsPct = played ? Math.round((points / (played * 3)) * 100) : 0;
     const winPct = played ? Math.round((w / played) * 100) : 0;
     const selectedRank = seasonRow?.rank || selectedStanding?.rank || '—';
 
-    const homeW = stats?.fixtures?.wins?.home || 0;
-    const awayW = stats?.fixtures?.wins?.away || 0;
-    const homeD = stats?.fixtures?.draws?.home || 0;
-    const awayD = stats?.fixtures?.draws?.away || 0;
-    const homeL = stats?.fixtures?.loses?.home || 0;
-    const awayL = stats?.fixtures?.loses?.away || 0;
-    const homePlayed = stats?.fixtures?.played?.home || 0;
-    const awayPlayed = stats?.fixtures?.played?.away || 0;
-    const homeGF = stats?.goals?.for?.total?.home || 0;
-    const awayGF = stats?.goals?.for?.total?.away || 0;
-    const homeGA = stats?.goals?.against?.total?.home || 0;
-    const awayGA = stats?.goals?.against?.total?.away || 0;
+    const homeW = selectedStanding?.home?.win || 0;
+    const awayW = selectedStanding?.away?.win || 0;
+    const homeD = selectedStanding?.home?.draw || 0;
+    const awayD = selectedStanding?.away?.draw || 0;
+    const homeL = selectedStanding?.home?.lose || 0;
+    const awayL = selectedStanding?.away?.lose || 0;
+    const homePlayed = selectedStanding?.home?.played || 0;
+    const awayPlayed = selectedStanding?.away?.played || 0;
+    const homeGF = selectedStanding?.home?.goals?.for || 0;
+    const awayGF = selectedStanding?.away?.goals?.for || 0;
+    const homeGA = selectedStanding?.home?.goals?.against || 0;
+    const awayGA = selectedStanding?.away?.goals?.against || 0;
     const homePoints = homeW * 3 + homeD;
     const awayPoints = awayW * 3 + awayD;
     const homeWinPct = homePlayed ? Math.round((homeW / homePlayed) * 100) : 0;
@@ -7588,30 +7574,13 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const recentTen = calculateRecentForm(normalizedFixtures, 10);
     const latestPlayed = [...normalizedFixtures].filter(item => item.started).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 5);
     const upcoming = [...normalizedFixtures].filter(item => !item.started).sort((a,b) => String(a.date || '').localeCompare(String(b.date || ''))).slice(0, 3);
+    const cs = normalizedFixtures.filter(item => item.started && item.goalsAgainst === 0).length;
+    const failedToScore = normalizedFixtures.filter(item => item.started && item.goalsFor === 0).length;
 
-    const scoredMin = Object.entries(stats?.goals?.for?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
-    const concededMin = Object.entries(stats?.goals?.against?.minute || {}).map(([range, val]) => ({range, total: val?.total || 0})).filter(item => item.total > 0).sort((a,b) => b.total - a.total).slice(0, 4);
-
-    const teamPlayers = buildCompleteTeamPlayersDataset(squadPlayers, seasonPlayers, team, selectedSeason, LEAGUE);
+    const scoredMin = [];
+    const concededMin = [];
     window.__teamPlayerStatsData = { players: teamPlayers };
-    if(typeof writeCachedTeamStats === 'function' && teamPlayers.length) {
-      writeCachedTeamStats(routeTeamId, LEAGUE, selectedSeason, buildTeamStatsCachePayload({
-        teamId:routeTeamId,
-        leagueId:LEAGUE,
-        season:selectedSeason,
-        team,
-        venue,
-        stats,
-        seasonRow,
-        selectedStanding,
-        fixturesSeason,
-        players:teamPlayers,
-        rawPlayers:seasonPlayers,
-        squadPlayers,
-        warning:''
-      }));
-      if(statsCache?.leagueId === LEAGUE && Number(statsCache?.year) === Number(selectedSeason)) statsCache = null;
-    }
+    const publicStatsMissing = !teamPlayers.length;
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
     const seasonButtons = TEAM_PAGE_SEASONS
@@ -7626,7 +7595,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     ].map(card => `<div class="team-summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div><div class="copy">${card.copy}</div></div>`).join('');
 
     const heroStats = [
-      { label:'Placering', value:selectedRank, sub:`Allsvenskan ${selectedSeason}` },
+      { label:'Placering', value:selectedRank, sub:`${getActiveLeagueConfig().name} ${getSeasonLabel(selectedSeason)}` },
       { label:'Poängsnitt', value:pointsPerMatch.toFixed(2), sub:`${pointsPct}% av maxpoängen` },
       { label:'Mål per match', value:avgFor.toFixed(2), sub:`${gf} mål totalt` },
       { label:'Insläppta / match', value:avgAgainst.toFixed(2), sub:`${ga} mål totalt` },
@@ -7684,7 +7653,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="team-subline">${venue.name ? `<span class="team-subpill">${esc(venue.name)}</span>` : ''}${venue.city ? `<span class="team-subpill">${esc(venue.city)}</span>` : ''}${venue.capacity ? `<span class="team-subpill">${(+venue.capacity).toLocaleString('sv-SE')} platser</span>` : ''}<span class="team-subpill">${selectedSeason} års säsong</span></div>
             <div><div class="section-label">Säsonger</div><div class="team-season-switcher">${seasonButtons || teamSeasonButton(teamId, selectedSeason, true, false)}</div></div>
           </div>
-          <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${stats?.fixtures?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${stats.fixtures.form.slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
+          <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${selectedStanding?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${String(selectedStanding.form).slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
         </div></div>
 
         <div class="tabs">
@@ -7740,7 +7709,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
               <div class="team-detail-row"><span>Bästa målskytt</span><strong>${topScorer ? `${topScorer.player.playerName} (${Math.round(topScorer.value)} mål)` : 'Ingen data'}</strong></div>
               <div class="team-detail-row"><span>Poäng senaste 10</span><strong>${recentTen.points} av ${recentTen.recent.length * 3 || 0}</strong></div>
               <div class="team-detail-row"><span>Form senaste 10</span><strong>${recentTen.formTokens.length ? recentTen.formTokens.join(' ') : 'Ingen formdata ännu'}</strong></div>
-              <div class="team-note">Spelarstatistiken nedan använder samma kategorier och beräknade värden som hela statistiksidan, men filtrerat till ${esc(team.name)}.</div>
+              <div class="team-note">${publicStatsMissing ? 'Statistik är inte uppdaterad ännu. Administratör uppdaterar spelarstatistiken från adminpanelen.' : `Spelarstatistiken nedan kommer från den sparade public stats-cachen och filtreras till ${esc(team.name)}.`}</div>
             </div></div>
           </div>
 
@@ -10012,6 +9981,48 @@ async function loadPublicStatsDataset(season = SEASON){
       meta:{
         ...(data.response.meta || {}),
         publicUpdatedAt:data.updatedAt || data.response.meta?.updatedAt || null,
+        publicStatic:true,
+      }
+    };
+  }
+  return {
+    year:season,
+    loadedAt:Date.now(),
+    leagueKey:league.key,
+    leagueId:league.leagueId,
+    teams:[],
+    players:[],
+    teamStats:[],
+    meta:{
+      playerCount:0,
+      teamCount:0,
+      cachedTeamCount:0,
+      publicStatic:true,
+      publicMissing:true,
+      warning:data?.message || 'Statistik är inte uppdaterad ännu.',
+    }
+  };
+}
+
+async function loadPublicTeamStatsDataset(teamId, season = SEASON){
+  const league = getActiveLeagueConfig();
+  const response = await fetch(`/api/stats?league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(season)}&team=${encodeURIComponent(teamId)}`);
+  const data = await response.json().catch(() => ({}));
+  if(data?.ok && data?.response?.players) {
+    const teamPayload = data.response;
+    return {
+      year:season,
+      loadedAt:Date.now(),
+      leagueKey:league.key,
+      leagueId:league.leagueId,
+      teams:teamPayload.team ? [teamPayload.team] : [],
+      players:teamPayload.players || [],
+      teamStats:[teamPayload],
+      meta:{
+        playerCount:teamPayload.players?.length || 0,
+        teamCount:1,
+        cachedTeamCount:1,
+        publicUpdatedAt:data.updatedAt || teamPayload.updatedAt || null,
         publicStatic:true,
       }
     };
