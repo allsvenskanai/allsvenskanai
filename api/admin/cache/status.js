@@ -1,4 +1,4 @@
-import { ADMIN_LEAGUES, getAdminTeams, requireAdmin, readJsonBody, sendJson } from './_shared.js';
+import { ADMIN_LEAGUES, getAdminTeams, getStoredTeamStatus, readStatsStore, requireAdmin, readJsonBody, sendJson } from './_shared.js';
 
 export default async function handler(req, res){
   const body = await readJsonBody(req);
@@ -9,7 +9,15 @@ export default async function handler(req, res){
     let staleFallback = false;
     for(const league of Object.values(ADMIN_LEAGUES)){
       const result = await getAdminTeams(league);
-      leagues[league.key] = { ...league, teams:result.teams };
+      const dataset = await readStatsStore(league, 'dataset');
+      const teams = [];
+      for(const team of result.teams) teams.push(await getStoredTeamStatus(team, league));
+      leagues[league.key] = {
+        ...league,
+        teams,
+        datasetMeta:dataset?.data?.meta || null,
+        updatedAt:dataset?.updatedAt || dataset?.data?.meta?.updatedAt || null,
+      };
       apiCalls += result.apiCalls;
       staleFallback = staleFallback || result.staleFallback;
     }
