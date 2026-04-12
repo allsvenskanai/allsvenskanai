@@ -6002,12 +6002,13 @@ function renderAdminDashboard(el = document.getElementById('mc')){
     const rawRows = Number(debug.rawRowsFetched || 0);
     const filteredRows = Number(debug.afterTeamSeasonFilter || 0);
     const dedupedRows = Number(debug.afterDedupe || status.playerCount || 0);
+    const playersWithGoals = Number(debug.playersWithGoals || 0);
     return `<tr>
       <td><div class="standings-team"><img src="${getTeamLogo(team)}" alt="${esc(team.name || 'Lag')}" onerror="handleTeamLogoError(this)"><span class="standings-team-name">${esc(fixName(team.name || 'Lag'))}</span></div></td>
       <td><span class="admin-status-pill ${statusClass}">${statusText}</span><div class="admin-mini">${esc(status.cacheKey || '')}</div></td>
       <td>${esc(updated)}</td>
       <td><strong>${status.playerCount}</strong><div class="admin-mini">raw ${rawRows} · filter ${filteredRows} · dedupe ${dedupedRows}</div></td>
-      <td>${status.usefulPlayerCount}<div class="admin-mini">tom ${Math.max(status.playerCount - status.usefulPlayerCount, 0)}</div></td>
+      <td>${status.usefulPlayerCount}<div class="admin-mini">mål ${playersWithGoals} · tom ${Math.max(status.playerCount - status.usefulPlayerCount, 0)}</div></td>
       <td>${status.emptyStats ? 'Ja' : 'Nej'}</td>
       <td><button class="ai-btn" onclick="adminRefreshTeam('${team.id}')">Refresh</button></td>
     </tr>`;
@@ -7179,8 +7180,112 @@ function getTeamPlayerLeader(players, categoryId){
   return rows[0] || null;
 }
 
+function canonicalNumber(value){
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function canonicalCachedTeamPlayer(player = {}, teamId){
+  const currentTeamId = Number(teamId || 0);
+  const playerTeamId = Number(player.teamId || 0);
+  if(!player?.playerId || !currentTeamId || playerTeamId !== currentTeamId) return null;
+  const league = getActiveLeagueConfig();
+  if(player.leagueId && Number(player.leagueId) !== Number(league.leagueId)) return null;
+  if(player.season && Number(player.season) !== Number(currentTeamStatsSeason || SEASON)) return null;
+  const stats = player.stats || {};
+  const derived = player.derived || {};
+  const goals = canonicalNumber(stats.goals ?? player.goals);
+  const assists = canonicalNumber(stats.assists ?? player.assists);
+  const minutes = canonicalNumber(stats.minutes ?? player.minutes);
+  const shots = canonicalNumber(stats.shots ?? player.shots);
+  const shotsOn = canonicalNumber(stats.shotsOn ?? player.shotsOnTarget);
+  const goalContributions = canonicalNumber(derived.goalContributions || (goals + assists));
+  return {
+    ...player,
+    playerId:player.playerId,
+    playerName:player.playerName || player.name || '',
+    teamId:playerTeamId,
+    leagueId:player.leagueId || league.leagueId,
+    leagueKey:player.leagueKey || league.key,
+    season:player.season || currentTeamStatsSeason || SEASON,
+    seasonId:player.seasonId || league.seasonId,
+    minutes,
+    goals,
+    assists,
+    shots,
+    shotsOnTarget:shotsOn,
+    keyPasses:canonicalNumber(stats.keyPasses),
+    stats:{
+      appearances:canonicalNumber(stats.appearances),
+      starts:canonicalNumber(stats.starts),
+      subIns:canonicalNumber(stats.subIns),
+      subOuts:canonicalNumber(stats.subOuts),
+      bench:canonicalNumber(stats.bench),
+      minutes,
+      goals,
+      assists,
+      shots,
+      shotsOn,
+      passes:canonicalNumber(stats.passes),
+      keyPasses:canonicalNumber(stats.keyPasses),
+      tackles:canonicalNumber(stats.tackles),
+      interceptions:canonicalNumber(stats.interceptions),
+      blocks:canonicalNumber(stats.blocks),
+      duelsWon:canonicalNumber(stats.duelsWon),
+      duelsTotal:canonicalNumber(stats.duelsTotal),
+      foulsCommitted:canonicalNumber(stats.foulsCommitted),
+      foulsDrawn:canonicalNumber(stats.foulsDrawn),
+      yellow:canonicalNumber(stats.yellow),
+      red:canonicalNumber(stats.red),
+      offsides:canonicalNumber(stats.offsides),
+      saves:canonicalNumber(stats.saves),
+      goalsConceded:canonicalNumber(stats.goalsConceded),
+      penaltiesSaved:canonicalNumber(stats.penaltiesSaved),
+      penaltiesScored:canonicalNumber(stats.penaltiesScored),
+      penaltiesMissed:canonicalNumber(stats.penaltiesMissed),
+      penaltiesWon:canonicalNumber(stats.penaltiesWon),
+      penaltiesCommitted:canonicalNumber(stats.penaltiesCommitted),
+      rating:canonicalNumber(stats.rating),
+    },
+    derived:{
+      ...derived,
+      goalContributions,
+      goalsPer90:minutes > 0 ? (goals / minutes) * 90 : 0,
+      assistsPer90:minutes > 0 ? (assists / minutes) * 90 : 0,
+      pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
+      shotsPer90:minutes > 0 ? (shots / minutes) * 90 : 0,
+      shotAccuracy:shots > 0 ? (shotsOn / shots) * 100 : 0,
+      minutesPerGoal:goals > 0 ? minutes / goals : 0,
+      minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
+    },
+    flags:{
+      ...(player.flags || {}),
+      goalkeeper:Boolean(player.flags?.goalkeeper),
+    },
+  };
+}
+
+function dedupeCanonicalTeamPlayers(players = [], teamId){
+  const byPlayer = new Map();
+  players.map(player => canonicalCachedTeamPlayer(player, teamId)).filter(Boolean).forEach(player => {
+    const key = String(player.playerId);
+    const current = byPlayer.get(key);
+    if(!current) { byPlayer.set(key, player); return; }
+    const currentScore = [
+      current.stats.appearances, current.stats.minutes, current.stats.goals, current.stats.assists, current.stats.rating,
+    ].filter(value => Number(value || 0) > 0).length;
+    const nextScore = [
+      player.stats.appearances, player.stats.minutes, player.stats.goals, player.stats.assists, player.stats.rating,
+    ].filter(value => Number(value || 0) > 0).length;
+    byPlayer.set(key, nextScore > currentScore || (nextScore === currentScore && player.stats.minutes >= current.stats.minutes) ? player : current);
+  });
+  return [...byPlayer.values()];
+}
+
 function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStatGroup, catId = currentTeamPlayerStatCategory){
   if(!el) return;
+  const activeTeamId = Number(window.__teamPlayerStatsData?.teamId || 0);
+  const scopedPlayers = activeTeamId ? dedupeCanonicalTeamPlayers(players, activeTeamId) : (players || []);
   const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
   const categories = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
   const activeCategory = categories.find(category => category.id === catId) || categories[0] || STAT_CATEGORIES[0];
@@ -7198,7 +7303,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
     { kicker:'Flest minuter', category:'minutes' },
     { kicker:'Bäst rating', category:'rating' },
   ].map(item => {
-    const leader = getTeamPlayerLeader(players, item.category);
+    const leader = getTeamPlayerLeader(scopedPlayers, item.category);
     const category = STAT_CATEGORIES.find(cat => cat.id === item.category);
     if(!leader || !category) return null;
     return `<div class="team-player-highlight">
@@ -7209,7 +7314,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
     </div>`;
   }).filter(Boolean).join('');
 
-  const baseRows = (players || [])
+  const baseRows = (scopedPlayers || [])
     .filter(player => !activeCategory.playerFilter || activeCategory.playerFilter(player))
     .map(player => ({ player, value: getCategoryValue(player, activeCategory) }))
     .filter(item => Number.isFinite(item.value));
@@ -7260,7 +7365,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
             <div class="stats-category-copy">${activeCategory.description} Filtrerat till det valda lagets spelare.</div>
           </div>
           <div class="stats-category-badges">
-            <span class="stats-category-badge">${players.length} spelare</span>
+            <span class="stats-category-badge">${scopedPlayers.length} spelare</span>
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
           </div>
         </div>
@@ -7521,7 +7626,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       resolvedTeamId: team?.id || null,
       resolvedTeamName: teamDisplayName,
     });
-    const teamPlayers = (publicStats?.players || []).filter(player => Number(player?.teamId || 0) === routeTeamId);
+    const teamPlayers = dedupeCanonicalTeamPlayers(publicStats?.players || [], routeTeamId);
     const squadPlayers = teamPlayers.map(player => ({
       id: player.playerId,
       name: player.playerName || '',
@@ -7588,7 +7693,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
 
     const scoredMin = [];
     const concededMin = [];
-    window.__teamPlayerStatsData = { players: teamPlayers };
+    window.__teamPlayerStatsData = { teamId: routeTeamId, players: teamPlayers };
     const publicStatsMissing = !teamPlayers.length;
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
