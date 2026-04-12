@@ -239,6 +239,19 @@ function normalizePosition(value = ''){
   return value || '';
 }
 
+function normalizeStandingForm(form){
+  if(!form) return '';
+  const values = Array.isArray(form) ? form : [form];
+  return values.flatMap(item => {
+    if(typeof item === 'string') return item.split('');
+    const value = item?.form || item?.result || item?.value || item?.code || item?.name || '';
+    return String(value).split('');
+  })
+    .map(token => String(token || '').trim().charAt(0).toUpperCase())
+    .filter(token => ['W', 'D', 'L'].includes(token))
+    .join('');
+}
+
 function scoreValue(scores = [], participantId, description = 'CURRENT'){
   const rows = Array.isArray(scores) ? scores : [];
   const exact = rows.find(score => Number(score?.participant_id) === Number(participantId) && String(score?.description || '').toUpperCase() === description);
@@ -378,7 +391,7 @@ function normalizeStandingRow(row = {}){
     points,
     goalsDiff: Number(row.goal_difference ?? row.goalsDiff ?? (goalsFor - goalsAgainst)),
     group: row.group?.name || '',
-    form: String(row.form || ''),
+    form: normalizeStandingForm(row.form),
     status: row.result || '',
     description: row.description || '',
     all: { played, win, draw, lose, goals:{ for:goalsFor, against:goalsAgainst } },
