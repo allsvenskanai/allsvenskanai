@@ -3184,6 +3184,107 @@ img{
   overscroll-behavior:contain;
 }
 
+/* Premium team page and lineup polish */
+.team-hero-stats,
+.team-summary-card,
+.team-metric-card,
+.team-player-highlight{
+  background:
+    radial-gradient(circle at 18% 12%, rgba(201,165,75,.13), transparent 34%),
+    linear-gradient(180deg, rgba(13,19,30,.98), rgba(6,10,17,.98)) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  box-shadow:0 18px 42px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+.team-hero-stat{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+    rgba(8,13,22,.94) !important;
+  border:1px solid rgba(255,255,255,.085) !important;
+  border-radius:16px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 26px rgba(0,0,0,.22) !important;
+}
+.team-hero-stat .value,
+.team-metric-card .value{
+  color:#E6C977 !important;
+  text-shadow:0 0 18px rgba(230,201,119,.18);
+}
+.team-hero-stat .label,
+.team-summary-card .label,
+.team-metric-card .label,
+.team-player-highlight .kicker{
+  color:#C9A54B !important;
+}
+.team-hero-stat .sub,
+.team-summary-card .copy,
+.team-metric-card .sub,
+.team-player-highlight .meta{
+  color:#AEB6C2 !important;
+}
+.team-detail-row{
+  padding:.58rem 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.team-detail-row:last-child{border-bottom:none}
+.lb-capture-shell{
+  box-shadow:0 28px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+.lb-pitch{
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.12), rgba(87,191,122,.10) 28%, transparent 47%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 10%, rgba(0,0,0,.05) 10% 20%),
+    linear-gradient(180deg,#23804A,#0F5A35) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04), inset 0 -80px 120px rgba(0,0,0,.22), 0 24px 70px rgba(0,0,0,.28) !important;
+}
+.lb-slot{
+  width:138px !important;
+  min-height:144px !important;
+  filter:drop-shadow(0 14px 20px rgba(0,0,0,.24));
+}
+.lb-slot-core{
+  width:76px !important;
+  height:76px !important;
+  border:3px solid rgba(255,255,255,.88) !important;
+  box-shadow:0 12px 26px rgba(0,0,0,.30), 0 0 20px rgba(255,255,255,.08) !important;
+}
+.lb-slot-pos{
+  top:-18px !important;
+  height:26px !important;
+  min-width:42px !important;
+  background:rgba(3,8,13,.96) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+}
+.lb-slot-meta{
+  margin-top:8px !important;
+  padding:6px 7px 7px !important;
+  background:rgba(4,12,18,.54) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 10px 22px rgba(0,0,0,.18) !important;
+  backdrop-filter:blur(10px);
+}
+.lb-slot-name{
+  font-size:14px !important;
+  color:#fff !important;
+  text-shadow:0 1px 12px rgba(0,0,0,.35);
+}
+.lb-slot-placeholder{
+  min-height:24px !important;
+  background:rgba(255,255,255,.10) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:#fff !important;
+}
+.lb-slot-hint{background:rgba(255,255,255,.07) !important;color:#CAD3DF !important}
+.lb-slot-club{
+  background:rgba(5,24,19,.82) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 0 18px rgba(26,145,88,.13) !important;
+}
+@media(max-width:680px){
+  .lb-slot{width:104px !important;min-height:126px !important}
+  .lb-slot-core{width:60px !important;height:60px !important}
+  .lb-slot-meta{max-width:104px !important}
+}
+
 </style>
 
 </head>
@@ -7191,7 +7292,10 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
   if(!player?.playerId || !currentTeamId || playerTeamId !== currentTeamId) return null;
   const league = getActiveLeagueConfig();
   if(player.leagueId && Number(player.leagueId) !== Number(league.leagueId)) return null;
-  if(player.season && Number(player.season) !== Number(currentTeamStatsSeason || SEASON)) return null;
+  const activeSeasonId = Number(currentTeamStatsSeason || SEASON);
+  const activeSeasonLabel = Number(getSeasonLabel(activeSeasonId) || activeSeasonId);
+  if(player.seasonId && Number(player.seasonId) !== activeSeasonId) return null;
+  if(player.season && Number(player.season) !== activeSeasonLabel && Number(player.season) !== activeSeasonId) return null;
   const stats = player.stats || {};
   const derived = player.derived || {};
   const goals = canonicalNumber(stats.goals ?? player.goals);
@@ -7204,6 +7308,9 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
     ...player,
     playerId:player.playerId,
     playerName:player.playerName || player.name || '',
+    age:player.age ?? null,
+    nationality:player.nationality || player.country || '',
+    country:player.country || player.nationality || '',
     teamId:playerTeamId,
     leagueId:player.leagueId || league.leagueId,
     leagueKey:player.leagueKey || league.key,
@@ -7713,15 +7820,31 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       cachedTeamStats?.players?.length ? cachedTeamStats.players : (publicStats?.players || []),
       resolvedCachedTeamId
     );
-    const squadPlayers = teamPlayers.map(player => ({
+    const cachedSquad = Array.isArray(cachedTeamStats?.squad) ? cachedTeamStats.squad : [];
+    const squadSource = cachedSquad.length ? cachedSquad : teamPlayers;
+    const squadPlayers = dedupeCanonicalTeamPlayers(
+      squadSource.map(player => ({
+        ...player,
+        playerId:player.playerId || player.id,
+        playerName:player.playerName || player.name,
+        teamId:player.teamId || resolvedCachedTeamId,
+        leagueId:player.leagueId || getActiveLeagueConfig().leagueId,
+        season:player.season || getSeasonLabel(selectedSeason),
+        seasonId:player.seasonId || selectedSeason,
+        stats:player.stats || {},
+      })),
+      resolvedCachedTeamId
+    ).map(player => ({
       id: player.playerId,
       name: player.playerName || '',
       firstname: player.firstname || '',
       lastname: player.lastname || '',
-      age: null,
-      number: player.stats?.number || null,
+      age: player.age ?? null,
+      number: player.stats?.number || player.number || null,
       position: player.position || '',
       photo: player.photo || '',
+      nationality:player.nationality || player.country || '',
+      country:player.country || player.nationality || '',
       injured: false,
     }));
     const playerInfoById = Object.fromEntries(teamPlayers.map(player => [player.playerId, {
@@ -7731,6 +7854,9 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       lastname: player.lastname || '',
       photo: player.photo || '',
       position: player.position || '',
+      age: player.age ?? null,
+      nationality:player.nationality || player.country || '',
+      country:player.country || player.nationality || '',
       teamId: player.teamId,
     }]));
     const historyRows = buildTeamHistoryRows(historyStandings, routeTeamId);
