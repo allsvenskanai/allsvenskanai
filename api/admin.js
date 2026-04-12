@@ -9,7 +9,7 @@ const ADMIN_LEAGUES = {
 };
 const adminMemoryCache = globalThis.__ALLSVENSKANAI_ADMIN_CACHE__ || new Map();
 globalThis.__ALLSVENSKANAI_ADMIN_CACHE__ = adminMemoryCache;
-const STATS_STORE_VERSION = 'v1';
+const STATS_STORE_VERSION = 'v2';
 const STATS_STORE_DIR = process.env.STATS_CACHE_DIR || path.join(os.tmpdir(), 'allsvenskanai-stats-cache');
 
 async function readJsonBody(req){
@@ -267,6 +267,19 @@ function detailValueStrict(details = [], names = [], excludedNames = [], preferr
     .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
 }
 
+function detailValueByType(details = [], names = [], excludedNames = [], preferredKey = ''){
+  const wanted = names.map(normalizeToken);
+  const excluded = excludedNames.map(normalizeToken);
+  return (Array.isArray(details) ? details : [])
+    .filter(detail => {
+      const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeToken);
+      const matchesWanted = tokens.some(token => wanted.some(want => token === want || token.includes(want)));
+      const matchesExcluded = tokens.some(token => excluded.some(skip => token === skip || token.includes(skip)));
+      return matchesWanted && !matchesExcluded;
+    })
+    .reduce((sum, detail) => sum + valueNumber(detail?.value ?? detail?.total ?? detail?.count, preferredKey), 0);
+}
+
 function detailSubValue(details = [], names = [], key = ''){
   const wanted = names.map(normalizeToken);
   const row = (Array.isArray(details) ? details : []).find(detail => {
@@ -382,6 +395,11 @@ function sanitizeCachedPlayerGoals(player = {}){
   const stats = player.stats || {};
   const rawGoals = valueNumber(stats.goals ?? player.goals);
   const assists = valueNumber(stats.assists ?? player.assists);
+  const passes = valueNumber(stats.passes);
+  const accuratePasses = valueNumber(stats.accuratePasses ?? player.derived?.accuratePasses);
+  const passAccuracy = passes > 0 && accuratePasses > 0
+    ? (accuratePasses / passes) * 100
+    : valueNumber(player.derived?.passAccuracy ?? stats.passAccuracy);
   const conceded = valueNumber(stats.goalsConceded);
   const shots = valueNumber(stats.shots ?? player.shots) + valueNumber(stats.shotsOn ?? player.shotsOnTarget);
   const isGoalkeeper = Boolean(player.flags?.goalkeeper || normalizeToken(player.position).includes('goalkeeper') || normalizeToken(player.position).includes('malvakt') || conceded > 0 || valueNumber(stats.saves) > 0);
@@ -392,7 +410,7 @@ function sanitizeCachedPlayerGoals(player = {}){
     ...player,
     goals,
     assists,
-    stats:{ ...stats, goals, assists, goalsConceded:conceded },
+    stats:{ ...stats, goals, assists, goalsConceded:conceded, passes, accuratePasses },
     derived:{
       ...(player.derived || {}),
       goalContributions,
@@ -401,6 +419,12 @@ function sanitizeCachedPlayerGoals(player = {}){
       pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
       minutesPerGoal:goals > 0 ? minutes / goals : 0,
       minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
+      passAccuracy,
+      accuratePasses,
+      passesPer90:minutes > 0 ? (passes / minutes) * 90 : 0,
+      cardsPer90:minutes > 0 ? ((valueNumber(stats.yellow) + valueNumber(stats.red)) / minutes) * 90 : 0,
+      foulsPer90:minutes > 0 ? (valueNumber(stats.foulsCommitted) / minutes) * 90 : 0,
+      goalsConcededPer90:minutes > 0 ? (conceded / minutes) * 90 : 0,
     },
     flags:{ ...(player.flags || {}), goalkeeper:isGoalkeeper },
   };
@@ -486,28 +510,31 @@ function normalizePlayerStat(item = {}, team = {}){
     ...stats.flatMap(stat => Array.isArray(stat.details) ? stat.details : []),
   ];
   const teamEntity = item.team || team || stats.find(stat => stat.team)?.team || {};
-  const appearances = detailValue(details, ['appearances', 'appearance']);
-  const starts = detailValue(details, ['lineups', 'starts', 'starting']);
-  const minutes = detailValue(details, ['minutes played', 'minutes']);
+  const appearances = detailValueStrict(details, ['appearances', 'appearance']);
+  const starts = detailValueStrict(details, ['lineups', 'starts', 'starting']);
+  const minutes = detailValueStrict(details, ['minutes played', 'minutes']);
   const goals = detailValueStrict(details, ['goals', 'goal', 'goals scored', 'scored goals', 'total goals'], ['goals conceded', 'conceded goals', 'conceded', 'against', 'goals against', 'goals allowed', 'own goal', 'own goals', 'penalty', 'penalties']);
   const assists = detailValueFiltered(details, ['assists', 'assist'], ['expected assists']);
-  const shots = detailValue(details, ['shots total', 'shots']);
-  const passes = detailValue(details, ['passes']);
-  const passAccuracy = detailValue(details, ['pass accuracy'], 'average');
-  const saves = detailValue(details, ['saves']);
+  const shots = detailValueStrict(details, ['shots total', 'total shots', 'shots'], ['shots on target', 'on target', 'blocked shots']);
+  const passes = detailValueStrict(details, ['passes', 'total passes', 'passes total'], ['accurate passes', 'successful passes', 'completed passes', 'key passes', 'pass accuracy', 'passes accuracy', 'percentage', 'percent']);
+  const accuratePasses = detailValueStrict(details, ['accurate passes', 'passes accurate', 'successful passes', 'completed passes'], ['percentage', 'percent', 'accuracy']);
+  const keyPasses = detailValueStrict(details, ['key passes', 'passes key', 'key pass']);
+  const rawPassAccuracy = detailValueStrict(details, ['pass accuracy', 'passes accuracy', 'passing accuracy', 'pass percentage'], [], 'average');
+  const passAccuracy = passes > 0 && accuratePasses > 0 ? (accuratePasses / passes) * 100 : rawPassAccuracy;
+  const saves = detailValueStrict(details, ['saves']);
   const goalsConceded = detailValueStrict(details, ['goals conceded', 'conceded goals', 'conceded', 'goals against', 'against', 'goals allowed']);
   const cleanSheets = detailValueStrict(details, ['clean sheets', 'cleansheets', 'clean sheet']);
   const position = item.position?.name || item.detailedPosition?.name || player.position?.name || '';
-  const rating = detailValue(details, ['rating', 'average rating'], 'average');
+  const rating = detailValueStrict(details, ['rating', 'average rating'], [], 'average');
   const goalContributions = goals + assists;
   const per90 = value => minutes > 0 ? (value / minutes) * 90 : 0;
   const pct = (part, total) => total > 0 ? (part / total) * 100 : 0;
-  const tackles = detailValue(details, ['tackles']);
-  const interceptions = detailValue(details, ['interceptions']);
-  const blocks = detailValue(details, ['blocks']);
-  const duelsWon = detailValue(details, ['duels won']);
-  const duelsTotal = detailValue(details, ['duels total', 'duels']);
-  const shotsOn = detailValue(details, ['shots on target']);
+  const tackles = detailValueStrict(details, ['tackles', 'total tackles']);
+  const interceptions = detailValueStrict(details, ['interceptions']);
+  const blocks = detailValueStrict(details, ['blocks', 'blocked shots']);
+  const duelsWon = detailValueStrict(details, ['duels won', 'won duels']);
+  const duelsTotal = detailValueStrict(details, ['duels total', 'total duels', 'duels'], ['duels won', 'won duels', 'duels lost', 'lost duels']);
+  const shotsOn = detailValueStrict(details, ['shots on target', 'on target']);
   return {
     playerId: player.id || item.player_id,
     playerName: playerName(player),
@@ -526,31 +553,34 @@ function normalizePlayerStat(item = {}, team = {}){
     assists,
     shots,
     shotsOnTarget:shotsOn,
-    keyPasses:detailValue(details, ['key passes']),
+    keyPasses,
     stats: {
       appearances, starts, subIns:detailSubValue(details, ['substitutions', 'substitution'], 'in'), subOuts:detailSubValue(details, ['substitutions', 'substitution'], 'out'),
-      bench:detailValue(details, ['bench']), minutes, goals, assists, shots, shotsOn, passes, keyPasses:detailValue(details, ['key passes']),
+      bench:detailValueStrict(details, ['bench']), minutes, goals, assists, shots, shotsOn, passes, accuratePasses, keyPasses,
       tackles, interceptions, blocks, duelsWon, duelsTotal,
-      foulsCommitted:detailValue(details, ['fouls committed']), foulsDrawn:detailValue(details, ['fouls drawn']),
-      yellow:detailValue(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']), red:detailValue(details, ['red cards', 'red card', 'redcards', 'red']),
-      offsides:detailValue(details, ['offsides']), saves, goalsConceded, cleanSheets,
-      penaltiesSaved:detailValue(details, ['penalty saved']), penaltiesScored:detailValue(details, ['penalty scored']),
-      penaltiesMissed:detailValue(details, ['penalty missed']), penaltiesWon:detailValue(details, ['penalty won']),
-      penaltiesCommitted:detailValue(details, ['penalty committed']), rating,
+      foulsCommitted:detailValueStrict(details, ['fouls committed']), foulsDrawn:detailValueStrict(details, ['fouls drawn']),
+      yellow:detailValueStrict(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']), red:detailValueStrict(details, ['red cards', 'red card', 'redcards', 'red']),
+      offsides:detailValueStrict(details, ['offsides']), saves, goalsConceded, cleanSheets,
+      penaltiesSaved:detailValueStrict(details, ['penalty saved']), penaltiesScored:detailValueStrict(details, ['penalty scored']),
+      penaltiesMissed:detailValueStrict(details, ['penalty missed']), penaltiesWon:detailValueStrict(details, ['penalty won']),
+      penaltiesCommitted:detailValueStrict(details, ['penalty committed']), rating,
     },
     derived: {
       goalContributions,
       goalsPer90:per90(goals), assistsPer90:per90(assists), pointsPer90:per90(goalContributions),
-      shotsPer90:per90(shots), keyPassesPer90:per90(detailValue(details, ['key passes'])),
+      shotsPer90:per90(shots), keyPassesPer90:per90(keyPasses),
       conversionRate:pct(goals, shots), shotsPerGoal:goals > 0 ? shots / goals : 0, shotAccuracy:pct(shotsOn, shots),
-      passAccuracy, accuratePasses:passes * (passAccuracy / 100), passesPer90:per90(passes),
+      passAccuracy, accuratePasses, passesPer90:per90(passes),
       defActions:tackles + interceptions + blocks, defActionsPer90:per90(tackles + interceptions + blocks),
       duelWinRate:pct(duelsWon, duelsTotal), savePercentage:pct(saves, saves + goalsConceded),
       goalsConcededPerMatch:appearances > 0 ? goalsConceded / appearances : 0,
+      goalsConcededPer90:per90(goalsConceded),
       minutesPerMatch:appearances > 0 ? minutes / appearances : 0,
       subApps:Math.max(detailSubValue(details, ['substitutions', 'substitution'], 'in') || (appearances - starts), 0),
       minutesPerGoal:goals > 0 ? minutes / goals : 0,
       minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
+      cardsPer90:per90(detailValueStrict(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']) + detailValueStrict(details, ['red cards', 'red card', 'redcards', 'red'])),
+      foulsPer90:per90(detailValueStrict(details, ['fouls committed'])),
     },
     flags: {
       goalkeeper: normalizeToken(position).includes('goalkeeper') || saves > 0 || goalsConceded > 0,
