@@ -7254,6 +7254,9 @@ function canonicalCachedTeamPlayer(player = {}, teamId){
       assistsPer90:minutes > 0 ? (assists / minutes) * 90 : 0,
       pointsPer90:minutes > 0 ? (goalContributions / minutes) * 90 : 0,
       shotsPer90:minutes > 0 ? (shots / minutes) * 90 : 0,
+      keyPassesPer90:minutes > 0 ? (canonicalNumber(stats.keyPasses) / minutes) * 90 : 0,
+      conversionRate:shots > 0 ? (goals / shots) * 100 : 0,
+      shotsPerGoal:goals > 0 ? shots / goals : 0,
       shotAccuracy:shots > 0 ? (shotsOn / shots) * 100 : 0,
       minutesPerGoal:goals > 0 ? minutes / goals : 0,
       minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
@@ -7280,6 +7283,83 @@ function dedupeCanonicalTeamPlayers(players = [], teamId){
     byPlayer.set(key, nextScore > currentScore || (nextScore === currentScore && player.stats.minutes >= current.stats.minutes) ? player : current);
   });
   return [...byPlayer.values()];
+}
+
+function findCachedTeamPayloadForTeamPage(publicStats = {}, routeTeamId = 0, candidateTeams = []){
+  const teamStats = Array.isArray(publicStats?.teamStats) ? publicStats.teamStats : [];
+  const teams = Array.isArray(publicStats?.teams) ? publicStats.teams : [];
+  const exactPayload = teamStats.find(item => Number(item?.teamId || item?.team?.id || 0) === Number(routeTeamId));
+  if(exactPayload) return exactPayload;
+  const exactTeam = teams.find(item => Number(item?.id || 0) === Number(routeTeamId));
+  if(exactTeam) {
+    const byExactTeam = teamStats.find(item => Number(item?.teamId || item?.team?.id || 0) === Number(exactTeam.id));
+    if(byExactTeam) return byExactTeam;
+  }
+  const candidateNames = candidateTeams
+    .map(team => normalizeText(getTeamDisplayName(team) || team?.name || ''))
+    .filter(Boolean);
+  if(candidateNames.length){
+    return teamStats.find(item => {
+      const names = [
+        item?.team?.name,
+        item?.team?.short_code,
+        teams.find(team => Number(team?.id || 0) === Number(item?.teamId || item?.team?.id || 0))?.name,
+      ].map(name => normalizeText(name || '')).filter(Boolean);
+      return names.some(name => candidateNames.includes(name));
+    }) || null;
+  }
+  return null;
+}
+
+async function loadTeamPagePublicStats(routeTeamId, season, candidateTeams = []){
+  const teamCache = await loadPublicTeamStatsDataset(routeTeamId, season).catch(error => {
+    console.warn('[team-page] team cache read failed', { routeTeamId, season, error:error.message });
+    return null;
+  });
+  if(teamCache?.players?.length) {
+    console.debug('[team-page] public team cache hit', {
+      routeTeamId,
+      cacheKey:teamCache.meta?.cacheKey || teamCache.teamStats?.[0]?.cacheKey || '',
+      cachedPlayers:teamCache.players.length,
+      afterTeamFilter:dedupeCanonicalTeamPlayers(teamCache.players, routeTeamId).length,
+    });
+    return teamCache;
+  }
+
+  const aggregate = await loadPublicStatsDataset(season).catch(error => {
+    console.warn('[team-page] aggregate public stats read failed', { routeTeamId, season, error:error.message });
+    return null;
+  });
+  const payload = findCachedTeamPayloadForTeamPage(aggregate, routeTeamId, candidateTeams);
+  const resolvedTeamId = Number(payload?.teamId || payload?.team?.id || routeTeamId);
+  const players = dedupeCanonicalTeamPlayers(
+    payload?.players?.length ? payload.players : (aggregate?.players || []),
+    resolvedTeamId
+  );
+  console.debug('[team-page] public aggregate cache fallback', {
+    routeTeamId,
+    resolvedTeamId,
+    cacheKey:payload?.cacheKey || '',
+    aggregatePlayers:aggregate?.players?.length || 0,
+    cachedPlayers:payload?.players?.length || 0,
+    afterTeamFilter:players.length,
+  });
+  if(payload || players.length) {
+    return {
+      ...(aggregate || {}),
+      teams:payload?.team ? [payload.team] : (aggregate?.teams || []).filter(team => Number(team?.id || 0) === resolvedTeamId),
+      players,
+      teamStats:payload ? [payload] : [],
+      meta:{
+        ...(aggregate?.meta || {}),
+        teamResolvedFromAggregate:true,
+        routeTeamId,
+        resolvedTeamId,
+        cacheKey:payload?.cacheKey || '',
+      },
+    };
+  }
+  return teamCache || aggregate || { players:[], teams:[], teamStats:[], meta:{ publicMissing:true, warning:'Statistik är inte uppdaterad ännu.' } };
 }
 
 function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStatGroup, catId = currentTeamPlayerStatCategory){
@@ -7585,7 +7665,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
   currentTeamStatsSeason = selectedSeason;
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
-    const [teamInfoRaw, standingsRaw, fixturesSeason, publicStats] = await Promise.all([
+    const [teamInfoRaw, standingsRaw, fixturesSeason] = await Promise.all([
       afRaw('teams', {id:routeTeamId}),
       afRaw('standings', {league:LEAGUE, season:selectedSeason}),
       fetchAllPages('fixtures', {league:LEAGUE, season:selectedSeason, team:routeTeamId}, {
@@ -7593,10 +7673,6 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       }).catch(e => {
         console.warn('[team-page] fixtures missing', { teamId: routeTeamId, selectedSeason, error: e.message });
         return [];
-      }),
-      loadPublicTeamStatsDataset(routeTeamId, selectedSeason).catch(e => {
-        console.warn('[team-page] public stats cache missing', { teamId: routeTeamId, selectedSeason, error: e.message });
-        return { players:[], teams:[], meta:{ publicMissing:true, warning:'Statistik är inte uppdaterad ännu.' } };
       }),
     ]);
     const historyStandings = [];
@@ -7606,8 +7682,11 @@ async function pageTeam(el, teamId, explicitSeason = null) {
     const standingRows = standingsD?.[0]?.league?.standings?.[0] || [];
     const selectedStanding = standingRows.find(row => Number(row?.team?.id || 0) === routeTeamId) || null;
     const teamInfo = teamInfoD?.[0]?.team || teamInfoD?.team || null;
-    const cachedTeamStats = (publicStats?.teamStats || []).find(item => Number(item?.teamId || item?.team?.id || 0) === routeTeamId) || null;
-    const cachedTeam = (publicStats?.teams || []).find(item => Number(item?.id || 0) === routeTeamId) || cachedTeamStats?.team || null;
+    const publicStats = await loadTeamPagePublicStats(routeTeamId, selectedSeason, [teamInfo, selectedStanding?.team].filter(Boolean));
+    const cachedTeamStats = findCachedTeamPayloadForTeamPage(publicStats, routeTeamId, [teamInfo, selectedStanding?.team].filter(Boolean))
+      || null;
+    const resolvedCachedTeamId = Number(cachedTeamStats?.teamId || cachedTeamStats?.team?.id || routeTeamId);
+    const cachedTeam = (publicStats?.teams || []).find(item => Number(item?.id || 0) === resolvedCachedTeamId || Number(item?.id || 0) === routeTeamId) || cachedTeamStats?.team || null;
     const team = pickResolvedTeam(
       cachedTeamStats?.team,
       cachedTeam,
@@ -7621,12 +7700,19 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       routeTeamId,
       selectedSeason,
       statsTeamId: cachedTeamStats?.team?.id || cachedTeam?.id || null,
+      statsPayloadTeamId: cachedTeamStats?.teamId || null,
+      statsCacheKey: cachedTeamStats?.cacheKey || publicStats?.meta?.cacheKey || '',
+      cachedPlayersLoaded: publicStats?.players?.length || 0,
+      cachedPlayersAfterTeamFilter: dedupeCanonicalTeamPlayers(publicStats?.players || [], resolvedCachedTeamId).length,
       teamInfoId: teamInfo?.id || null,
       standingTeamId: selectedStanding?.team?.id || null,
       resolvedTeamId: team?.id || null,
       resolvedTeamName: teamDisplayName,
     });
-    const teamPlayers = dedupeCanonicalTeamPlayers(publicStats?.players || [], routeTeamId);
+    const teamPlayers = dedupeCanonicalTeamPlayers(
+      cachedTeamStats?.players?.length ? cachedTeamStats.players : (publicStats?.players || []),
+      resolvedCachedTeamId
+    );
     const squadPlayers = teamPlayers.map(player => ({
       id: player.playerId,
       name: player.playerName || '',
@@ -7693,7 +7779,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
 
     const scoredMin = [];
     const concededMin = [];
-    window.__teamPlayerStatsData = { teamId: routeTeamId, players: teamPlayers };
+    window.__teamPlayerStatsData = { teamId: resolvedCachedTeamId, routeTeamId, players: teamPlayers };
     const publicStatsMissing = !teamPlayers.length;
 
     const topScorer = getTeamPlayerLeader(teamPlayers, 'goals');
@@ -10138,6 +10224,7 @@ async function loadPublicTeamStatsDataset(teamId, season = SEASON){
         cachedTeamCount:1,
         publicUpdatedAt:data.updatedAt || teamPayload.updatedAt || null,
         publicStatic:true,
+        cacheKey:data.keys?.team || teamPayload.cacheKey || '',
       }
     };
   }
