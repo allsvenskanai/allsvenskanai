@@ -1,4 +1,4 @@
-import { getLeagueConfig, requireAdmin, readJsonBody, sendJson } from './_shared.js';
+import { getLeagueConfig, refreshStoredTeamStats, requireAdmin, readJsonBody, sendJson } from './_shared.js';
 
 export default async function handler(req, res){
   const body = await readJsonBody(req);
@@ -8,15 +8,20 @@ export default async function handler(req, res){
     const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
     const teamId = Number(body.teamId || body.team || 0);
     if(!teamId) return sendJson(res, 400, { ok:false, error:'teamId saknas' });
+    const result = await refreshStoredTeamStats(teamId, league, { force:Boolean(body.force) });
     return sendJson(res, 200, {
       ok:true,
       action:'refresh-team',
       league,
       teamId,
-      apiCalls:0,
-      staleFallback:false,
-      cacheReused:true,
-      note:'Auktoriserad team-refresh. Frontend uppdaterar browser-cachen via befintligt statistikflöde.',
+      players:result.payload.players,
+      playerCount:result.payload.playerCount,
+      usefulPlayerCount:result.payload.usefulPlayerCount,
+      updatedAt:result.payload.updatedAt,
+      apiCalls:result.apiCalls,
+      staleFallback:result.staleFallback,
+      cacheReused:false,
+      note:'Lagstatistik hamtad fran Sportmonks och sparad for publik statistikvy.',
     });
   } catch(error) {
     console.error('[admin-refresh-team]', error);
