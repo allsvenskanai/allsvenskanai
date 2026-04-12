@@ -134,9 +134,14 @@ function statsStoreKeys(league){
   const key = storeLeagueKey(league);
   return {
     teams:`stats:${key}:${league.seasonLabel}:teams`,
+    teamPattern:`stats:${key}:${league.seasonLabel}:teams:<teamId>`,
     players:`stats:${key}:${league.seasonLabel}:players`,
     leaderboards:`stats:${key}:${league.seasonLabel}:leaderboards`,
   };
+}
+
+function teamStatsStoreKey(league, teamId){
+  return `stats:${storeLeagueKey(league)}:${league.seasonLabel}:teams:${teamId}`;
 }
 
 async function ensureStatsStoreDir(){
@@ -174,6 +179,23 @@ async function writeStatsStore(league, part, data){
   };
   await writeFile(statsStoreFile(league, part), JSON.stringify(payload), 'utf8');
   return payload;
+}
+
+async function listStoredTeamPayloads(league){
+  await ensureStatsStoreDir();
+  const prefix = `${STATS_STORE_VERSION}-${safeFilePart(league.key)}-${safeFilePart(league.seasonLabel)}-team-`;
+  const files = await readdir(STATS_STORE_DIR).catch(() => []);
+  const payloads = [];
+  for(const file of files.filter(item => item.startsWith(prefix) && item.endsWith('.json'))){
+    try {
+      const raw = await readFile(path.join(STATS_STORE_DIR, file), 'utf8');
+      const parsed = JSON.parse(raw);
+      if(parsed?.data?.teamId) payloads.push(sanitizeTeamPayload(league, parsed.data));
+    } catch(error) {
+      console.warn('[stats-store] team payload read failed', { league:league.key, file, error:error.message });
+    }
+  }
+  return payloads;
 }
 
 async function clearStatsStore(league = null, part = ''){
@@ -232,6 +254,127 @@ function logo(entity = {}){ return entity.image_path || entity.logo_path || enti
 
 function playerName(player = {}){
   return player.display_name || player.common_name || player.name || [player.firstname, player.lastname].filter(Boolean).join(' ') || `Spelare ${player.id || ''}`.trim();
+}
+
+function entityId(value){
+  if(value === null || value === undefined || value === '') return null;
+  if(typeof value === 'object') return entityId(value.id ?? value.team_id ?? value.season_id ?? value.player_id);
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function statTeamId(stat = {}){
+  return entityId(
+    stat.team_id ?? stat.team?.id ?? stat.participant_id ?? stat.participant?.id ??
+    stat.player_statistic?.team_id ?? stat.meta?.team_id
+  );
+}
+
+function statSeasonId(stat = {}){
+  return entityId(
+    stat.season_id ?? stat.season?.id ?? stat.player_statistic?.season_id ??
+    stat.meta?.season_id ?? stat.fixture?.season_id
+  );
+}
+
+function getPlayerStatistics(item = {}){
+  const player = item.player || item;
+  return Array.isArray(item.statistics) ? item.statistics : (Array.isArray(player.statistics) ? player.statistics : []);
+}
+
+function itemDirectlyMatchesTeamSeason(item = {}, teamId, seasonId){
+  const directTeamId = entityId(item.team_id ?? item.team?.id ?? item.current_team_id ?? item.currentTeam?.id);
+  const directSeasonId = entityId(item.season_id ?? item.season?.id);
+  return Boolean(directTeamId && String(directTeamId) === String(teamId) && (!directSeasonId || String(directSeasonId) === String(seasonId)));
+}
+
+function statMatchesTeamSeason(stat = {}, teamId, seasonId){
+  const sid = statSeasonId(stat);
+  const tid = statTeamId(stat);
+  const seasonOk = !sid || String(sid) === String(seasonId);
+  const teamOk = tid && String(tid) === String(teamId);
+  return Boolean(seasonOk && teamOk);
+}
+
+function itemMatchesTeamSeason(item = {}, teamId, seasonId){
+  const stats = getPlayerStatistics(item);
+  if(stats.some(stat => statMatchesTeamSeason(stat, teamId, seasonId))) return true;
+  return itemDirectlyMatchesTeamSeason(item, teamId, seasonId);
+}
+
+function filterPlayerItemForTeamSeason(item = {}, team = {}, league = {}){
+  const player = item.player || item;
+  const directMatch = itemDirectlyMatchesTeamSeason(item, team.id, league.seasonId);
+  const stats = getPlayerStatistics(item).filter(stat => {
+    if(statMatchesTeamSeason(stat, team.id, league.seasonId)) return true;
+    const sid = statSeasonId(stat);
+    const tid = statTeamId(stat);
+    return directMatch && !tid && (!sid || String(sid) === String(league.seasonId));
+  });
+  return {
+    ...item,
+    player:{
+      ...player,
+      statistics:stats,
+    },
+    statistics:stats,
+    team,
+  };
+}
+
+function playerHasUsefulStats(player = {}){
+  const stats = player.stats || {};
+  return [
+    stats.appearances, stats.minutes, stats.goals, stats.assists,
+    stats.yellow, stats.red, stats.rating, stats.starts,
+  ].some(value => Number(value || 0) > 0);
+}
+
+function playerStatScore(player = {}){
+  const stats = player.stats || {};
+  return [
+    stats.appearances, stats.minutes, stats.goals, stats.assists, stats.rating,
+    stats.yellow, stats.red, stats.shots, stats.passes, stats.saves,
+  ].reduce((sum, value) => sum + (Number(value || 0) > 0 ? 1 : 0), 0);
+}
+
+function chooseBetterPlayerStat(current, next){
+  if(!current) return next;
+  if(!next) return current;
+  const currentScore = playerStatScore(current);
+  const nextScore = playerStatScore(next);
+  if(nextScore > currentScore) return next;
+  if(nextScore < currentScore) return current;
+  return Number(next.stats?.minutes || 0) >= Number(current.stats?.minutes || 0) ? next : current;
+}
+
+function dedupePlayers(players = []){
+  const byPlayer = new Map();
+  for(const player of players){
+    const key = `${player.teamId || 'team'}:${player.playerId || ''}`;
+    if(!player.playerId || byPlayer.has(key) && !playerHasUsefulStats(player) && playerHasUsefulStats(byPlayer.get(key))) continue;
+    byPlayer.set(key, chooseBetterPlayerStat(byPlayer.get(key), player));
+  }
+  return [...byPlayer.values()];
+}
+
+function sanitizeTeamPayload(league, payload = {}){
+  if(!payload?.teamId) return payload;
+  const originalPlayers = Array.isArray(payload.players) ? payload.players : [];
+  const players = dedupePlayers(originalPlayers.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)));
+  const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
+  return {
+    ...payload,
+    cacheKey:payload.cacheKey || teamStatsStoreKey(league, payload.teamId),
+    players,
+    playerCount:players.length,
+    usefulPlayerCount,
+    debug:{
+      ...(payload.debug || {}),
+      sanitizedOriginalPlayers:originalPlayers.length,
+      sanitizedPlayers:players.length,
+    },
+  };
 }
 
 function normalizePlayerStat(item = {}, team = {}){
@@ -312,21 +455,44 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
     filters:`playerStatisticSeasons:${league.seasonId};playerStatisticTeams:${teamId}`,
     per_page:50,
   }, { ...options, fetchAllPages:true });
-  const players = playersResult.rows.map(item => normalizePlayerStat(item, team)).filter(player => player.playerId);
-  const usefulPlayerCount = players.filter(player => [
-    player.stats.appearances, player.stats.minutes, player.stats.goals, player.stats.assists,
-    player.stats.yellow, player.stats.red, player.stats.rating
-  ].some(value => Number(value || 0) > 0)).length;
+  const rawRowsFetched = playersResult.rows.length;
+  let teamSeasonRows = playersResult.rows
+    .filter(item => itemMatchesTeamSeason(item, team.id, league.seasonId))
+    .map(item => filterPlayerItemForTeamSeason(item, team, league));
+  const usedTrustedSmallResponseFallback = !teamSeasonRows.length && rawRowsFetched > 0 && rawRowsFetched <= 100;
+  if(usedTrustedSmallResponseFallback) {
+    // Some Sportmonks plans omit team_id in included player statistics even when the endpoint
+    // filter is honored. Trust only small filtered responses; never trust huge league/global sets.
+    teamSeasonRows = playersResult.rows.map(item => filterPlayerItemForTeamSeason({ ...item, team_id:team.id, team }, team, league));
+  }
+  const normalizedPlayers = teamSeasonRows
+    .map(item => normalizePlayerStat(item, team))
+    .filter(player => player.playerId && String(player.teamId || team.id) === String(team.id));
+  const players = dedupePlayers(normalizedPlayers);
+  const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
+  const debug = {
+    cacheKey:teamStatsStoreKey(league, teamId),
+    rawRowsFetched,
+    afterTeamSeasonFilter:teamSeasonRows.length,
+    afterNormalize:normalizedPlayers.length,
+    afterDedupe:players.length,
+    usefulPlayerCount,
+    emptyStatsCount:Math.max(players.length - usefulPlayerCount, 0),
+    usedTrustedSmallResponseFallback,
+    filters:`playerStatisticSeasons:${league.seasonId};playerStatisticTeams:${teamId}`,
+  };
   const payload = {
     teamId:Number(teamId),
     leagueId:league.leagueId,
     season:league.seasonLabel,
     seasonId:league.seasonId,
+    cacheKey:teamStatsStoreKey(league, teamId),
     team,
     players,
     playerCount:players.length,
     usefulPlayerCount,
     updatedAt:Date.now(),
+    debug,
     warning:players.length ? '' : 'Sportmonks returnerade inga spelarstats for laget.',
   };
   await writeStatsStore(league, `team-${teamId}`, payload);
@@ -340,38 +506,39 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
 
 async function getStoredTeamStatus(team, league){
   const stored = await readStatsStore(league, `team-${team.id}`);
-  const data = stored?.data || null;
+  const data = stored?.data ? sanitizeTeamPayload(league, stored.data) : null;
+  const players = Array.isArray(data?.players) ? data.players : [];
+  const usefulPlayerCount = players.filter(playerHasUsefulStats).length;
   return {
     ...team,
     cache:{
       cached:Boolean(data),
+      cacheKey:teamStatsStoreKey(league, team.id),
       updatedAt:data?.updatedAt || stored?.updatedAt || null,
-      playerCount:Number(data?.playerCount || data?.players?.length || 0),
-      usefulPlayerCount:Number(data?.usefulPlayerCount || 0),
-      emptyStats:Boolean(data && !Number(data?.usefulPlayerCount || 0)),
+      playerCount:Number(data?.playerCount || players.length || 0),
+      usefulPlayerCount:Number(data?.usefulPlayerCount || usefulPlayerCount || 0),
+      emptyStats:Boolean(data && !Number(data?.usefulPlayerCount || usefulPlayerCount || 0)),
+      debug:data?.debug || null,
       warning:data?.warning || '',
     }
   };
 }
 
-async function rebuildStoredLeagueDataset(league){
-  const teamsResult = await getAdminTeams(league);
-  const teams = teamsResult.teams;
-  const teamPayloads = [];
-  for(const team of teams){
-    const stored = await readStatsStore(league, `team-${team.id}`);
-    if(stored?.data) teamPayloads.push(stored.data);
-  }
-  const players = teamPayloads.flatMap(item => item.players || []);
+function buildStoredLeagueDataset(league, teams = [], teamPayloads = []){
+  const players = dedupePlayers(teamPayloads.flatMap(item => item.players || []));
   const teamStats = teamPayloads.map(item => ({
     teamId:item.teamId,
     leagueId:item.leagueId,
     season:item.season,
     team:item.team,
+    playerCount:Number(item.playerCount || item.players?.length || 0),
+    usefulPlayerCount:Number(item.usefulPlayerCount || (item.players || []).filter(playerHasUsefulStats).length || 0),
     updatedAt:item.updatedAt,
+    cacheKey:item.cacheKey || teamStatsStoreKey(league, item.teamId),
+    debug:item.debug || null,
     warning:item.warning || '',
   }));
-  const dataset = {
+  return {
     year:league.seasonLabel,
     leagueKey:league.key,
     leagueId:league.leagueId,
@@ -389,9 +556,18 @@ async function rebuildStoredLeagueDataset(league){
       warning:players.length ? '' : 'Statistik ar inte uppdaterad annu.',
     }
   };
+}
+
+async function rebuildStoredLeagueDataset(league){
+  const teamsResult = await getAdminTeams(league);
+  const teams = teamsResult.teams;
+  const configuredTeamIds = new Set(teams.map(team => String(team.id)));
+  const allTeamPayloads = await listStoredTeamPayloads(league);
+  const teamPayloads = allTeamPayloads.filter(item => configuredTeamIds.has(String(item.teamId)));
+  const dataset = buildStoredLeagueDataset(league, teams, teamPayloads);
   await writeStatsStore(league, 'teams', teams);
-  await writeStatsStore(league, 'players', players);
-  await writeStatsStore(league, 'leaderboards', { players, teamStats, meta:dataset.meta });
+  await writeStatsStore(league, 'players', dataset.players);
+  await writeStatsStore(league, 'leaderboards', { players:dataset.players, teamStats:dataset.teamStats, meta:dataset.meta });
   await writeStatsStore(league, 'dataset', dataset);
   return { dataset, apiCalls:teamsResult.apiCalls, staleFallback:teamsResult.staleFallback };
 }
@@ -436,6 +612,8 @@ async function refreshTeamAction(body){
     players:result.payload.players,
     playerCount:result.payload.playerCount,
     usefulPlayerCount:result.payload.usefulPlayerCount,
+    debug:result.payload.debug,
+    cacheKey:result.payload.cacheKey,
     updatedAt:result.payload.updatedAt,
     apiCalls:result.apiCalls,
     staleFallback:result.staleFallback,
@@ -457,7 +635,7 @@ async function refreshLeagueAction(body){
       const result = await refreshStoredTeamStats(team.id, league, { force:Boolean(body.force), skipRebuild:true });
       apiCalls += result.apiCalls;
       staleFallback = staleFallback || result.staleFallback;
-      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount, usefulPlayerCount:result.payload.usefulPlayerCount });
+      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount, usefulPlayerCount:result.payload.usefulPlayerCount, debug:result.payload.debug });
     } catch(error) {
       console.warn('[admin-refresh-league] team failed', { league:league.key, teamId:team.id, error:error.message });
       results.push({ teamId:team.id, ok:false, error:error.message });
@@ -493,7 +671,7 @@ async function refreshRecentAction(body){
       const result = await refreshStoredTeamStats(team.id, league, { force:Boolean(body.force), skipRebuild:true });
       apiCalls += result.apiCalls;
       staleFallback = staleFallback || result.staleFallback;
-      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount });
+      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount, usefulPlayerCount:result.payload.usefulPlayerCount, debug:result.payload.debug });
     } catch(error) {
       console.warn('[admin-refresh-recent] team failed', { league:league.key, teamId:team.id, error:error.message });
       results.push({ teamId:team.id, ok:false, error:error.message });
@@ -540,7 +718,7 @@ async function rebuildPlayerStatsAction(body){
       const result = await refreshStoredTeamStats(team.id, league, { force:Boolean(body.force), skipRebuild:true });
       apiCalls += result.apiCalls;
       staleFallback = staleFallback || result.staleFallback;
-      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount, usefulPlayerCount:result.payload.usefulPlayerCount });
+      results.push({ teamId:team.id, ok:true, playerCount:result.payload.playerCount, usefulPlayerCount:result.payload.usefulPlayerCount, debug:result.payload.debug });
     } catch(error) {
       console.warn('[admin-rebuild-player-stats] team failed', { league:league.key, teamId:team.id, error:error.message });
       results.push({ teamId:team.id, ok:false, error:error.message });
@@ -570,11 +748,85 @@ async function clearAction(body){
   return { ok:true, action:'clear', scope, cleared:{ memory:clearedMemory, store:clearedStore } };
 }
 
+async function publicStatsAction(req){
+  const query = req.query || {};
+  const league = getLeagueConfig(query.league || query.leagueKey || query.leagueId || 'allsvenskan');
+  const teamId = Number(query.team || query.teamId || 0);
+  if(teamId){
+    const stored = await readStatsStore(league, `team-${teamId}`);
+    if(!stored?.data) {
+      return {
+        ok:false,
+        response:null,
+        message:'Statistik ar inte uppdaterad annu.',
+        league,
+        teamId,
+        keys:{ ...statsStoreKeys(league), team:teamStatsStoreKey(league, teamId) },
+      };
+    }
+    const teamPayload = sanitizeTeamPayload(league, stored.data);
+    return {
+      ok:true,
+      response:teamPayload,
+      updatedAt:stored.updatedAt || teamPayload?.updatedAt || null,
+      league,
+      teamId,
+      keys:{ ...statsStoreKeys(league), team:teamStatsStoreKey(league, teamId) },
+    };
+  }
+
+  const stored = await readStatsStore(league, 'dataset');
+  const teamPayloads = await listStoredTeamPayloads(league);
+  if(teamPayloads.length) {
+    const storedTeams = Array.isArray(stored?.data?.teams) ? stored.data.teams : [];
+    const payloadTeams = teamPayloads.map(item => item.team).filter(team => team?.id);
+    const teams = storedTeams.length ? storedTeams : payloadTeams;
+    const dataset = buildStoredLeagueDataset(league, teams, teamPayloads);
+    return {
+      ok:true,
+      response:dataset,
+      updatedAt:dataset.meta.updatedAt,
+      league,
+      teamId:null,
+      keys:statsStoreKeys(league),
+      aggregatedFromTeamCaches:true,
+    };
+  }
+
+  // Public reads must never call Sportmonks. The stored aggregate is only a fallback;
+  // fresh public output is normally assembled from admin-written team cache files.
+  if(stored?.data?.players?.length || stored?.data?.teamStats?.length) {
+    return {
+      ok:true,
+      response:stored.data,
+      updatedAt:stored.updatedAt || stored.data?.meta?.updatedAt || null,
+      league,
+      teamId:null,
+      keys:statsStoreKeys(league),
+    };
+  }
+
+  return {
+    ok:false,
+    response:null,
+    message:'Statistik ar inte uppdaterad annu.',
+    league,
+    teamId:null,
+    keys:statsStoreKeys(league),
+  };
+}
+
 export default async function handler(req, res){
   const body = await readJsonBody(req);
-  if(!requireAdmin(req, res, body)) return;
   const action = String(req.query?.action || body.action || '').trim();
   try {
+    if(action === 'public-stats'){
+      if(req.method !== 'GET') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
+      const payload = await publicStatsAction(req);
+      res.setHeader('Cache-Control', payload.ok ? 'public, max-age=120, s-maxage=300, stale-while-revalidate=600' : 'public, max-age=60, s-maxage=60');
+      return res.status(200).json(payload);
+    }
+    if(!requireAdmin(req, res, body)) return;
     if(req.method !== 'POST' && action !== 'status') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
     const payload =
       action === 'status' ? await statusAction(body) :
