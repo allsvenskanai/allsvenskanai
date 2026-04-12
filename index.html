@@ -3279,10 +3279,114 @@ img{
   border:1px solid rgba(255,255,255,.12) !important;
   box-shadow:0 0 18px rgba(26,145,88,.13) !important;
 }
+.start-league-stats-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.start-league-stat{
+  min-height:86px;
+  padding:12px;
+  border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.start-league-stat span{
+  display:block;
+  color:#C9A54B;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.1px;
+  text-transform:uppercase;
+}
+.start-league-stat strong{
+  display:block;
+  margin-top:6px;
+  color:#fff;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px;
+  line-height:.95;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.start-league-stat small{
+  display:block;
+  margin-top:7px;
+  color:#9CA3AF;
+  font-size:11px;
+  line-height:1.25;
+}
+.team-subpill,
+.team-rank-badge,
+.team-season-btn,
+.team-form-pill,
+.team-note,
+.team-detail-row,
+.team-match-row,
+.transfer-club-chip,
+.transfer-type-badge,
+.transfer-date{
+  background:linear-gradient(180deg,rgba(15,18,25,.94),rgba(7,11,18,.96)) !important;
+  border-color:rgba(255,255,255,.10) !important;
+  color:#F8F2E8 !important;
+}
+.team-subpill,
+.team-rank-badge,
+.team-season-btn{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 24px rgba(0,0,0,.18);
+}
+.team-season-btn.active,
+.team-rank-badge{
+  color:#E6C977 !important;
+  border-color:rgba(230,201,119,.30) !important;
+}
+.team-note,
+.team-detail-row span,
+.transfer-date span{
+  color:#AEB5C1 !important;
+}
+.lb-slot-meta{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  gap:5px !important;
+}
+.lb-slot-name{
+  max-width:148px !important;
+  padding:0 !important;
+  text-shadow:0 3px 12px rgba(0,0,0,.78),0 0 12px rgba(255,255,255,.10) !important;
+}
+.lb-slot-placeholder{
+  background:rgba(4,17,13,.34) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  box-shadow:0 8px 20px rgba(0,0,0,.14) !important;
+}
+.lb-slot-hint{
+  background:rgba(4,17,13,.22) !important;
+  border-color:rgba(255,255,255,.10) !important;
+}
+.lb-slot-club{
+  background:rgba(5,24,19,.72) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  box-shadow:0 10px 22px rgba(0,0,0,.18),0 0 16px rgba(26,145,88,.13) !important;
+}
+.match-card:hover,
+.match-card:focus-visible{
+  transform:translateY(-2px);
+  border-color:rgba(230,201,119,.32);
+  box-shadow:0 18px 42px rgba(0,0,0,.28);
+  outline:none;
+}
 @media(max-width:680px){
   .lb-slot{width:104px !important;min-height:126px !important}
   .lb-slot-core{width:60px !important;height:60px !important}
   .lb-slot-meta{max-width:104px !important}
+  .start-league-stats-grid{grid-template-columns:1fr}
 }
 
 </style>
@@ -3388,6 +3492,12 @@ function getSeasonLabel(seasonId = SEASON){
   return match?.seasonLabel || seasonId;
 }
 
+function leagueSeasonDisplay(league = getActiveLeagueConfig(), seasonId = SEASON){
+  const label = getSeasonLabel(seasonId);
+  const name = league.key === 'damallsvenskan' ? 'Damallsvenskan' : 'Allsvenskan';
+  return `${name} ${label}`;
+}
+
 function syncResolvedSeasonState(resolvedSeasonId, seasonLabel = null){
   const league = getActiveLeagueConfig();
   const numericSeasonId = Number(resolvedSeasonId || league.season || SEASON || 0);
@@ -3424,6 +3534,8 @@ function setActiveLeagueKey(key){
   if(typeof statsSelectedTeamId !== 'undefined') statsSelectedTeamId = '';
   if(typeof transfersCache !== 'undefined') transfersCache = null;
   if(typeof transfersLeagueTeams !== 'undefined') transfersLeagueTeams = [];
+  if(typeof resultsRoundTouched !== 'undefined') resultsRoundTouched = false;
+  if(typeof resultsSelectedRound !== 'undefined') resultsSelectedRound = '';
   if(typeof lineupBuilderState !== 'undefined' && previous !== key) {
     lineupBuilderState.selectedLeagueKey = key;
     lineupBuilderState.selectedTeamId = LINEUP_BUILDER_ALL_TEAMS;
@@ -6138,6 +6250,8 @@ function renderAdminDashboard(el = document.getElementById('mc')){
           <button class="ai-btn" onclick="adminClearAllStats()">Clear all statistics cache</button>
           <button class="ai-btn" onclick="adminRebuildLeaderboards()">Rebuild aggregated leaderboards</button>
           <button class="ai-btn" onclick="adminRebuildPlayerStats()">Rebuild player stats cache</button>
+          <button class="ai-btn" onclick="adminRefreshTransfers()">Refresh transfers cache</button>
+          <button class="ai-btn" onclick="adminClearTransfers()">Clear transfers cache</button>
         </div>
       </div>
       <div class="admin-panel">
@@ -6241,6 +6355,22 @@ async function adminRebuildPlayerStats(){
   renderAdminDashboard();
 }
 
+async function adminRefreshTransfers(){
+  const league = adminCurrentLeague();
+  const auth = await adminApi('refresh-transfers', { league:league.key, force:true });
+  transfersCache = null;
+  adminLog('Övergångscache uppdaterad', { apiCalls:auth.apiCalls || 0, transfers:auth.transferCount || 0, warning:auth.warning || '' });
+  renderAdminDashboard();
+}
+
+async function adminClearTransfers(){
+  const league = adminCurrentLeague();
+  await adminApi('clear-transfers', { league:league.key });
+  transfersCache = null;
+  adminLog('Övergångscache rensad', { league:league.key });
+  renderAdminDashboard();
+}
+
 function route(path) {
   updateRouteChrome(path);
   const el = document.getElementById('mc');
@@ -6271,20 +6401,46 @@ async function pageStart(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar…</div>`;
   try {
     const activeSeason = await getResolvedSeason();
+    const seasonLabel = getSeasonLabel(activeSeason);
+    const leagueSeasonName = leagueSeasonDisplay(league, activeSeason);
     const data = await af('standings', {league:LEAGUE, season:activeSeason});
     const standings = data[0]?.league?.standings?.[0] || [];
     const teams = standings.map(t=>t.team);
     const topThree = standings.slice(0,3);
 
-    let recentFixtures = [];
-    try {
-      recentFixtures = await af('fixtures', {league:LEAGUE, season:activeSeason, last:3});
-    } catch(e) {
-      recentFixtures = [];
-    }
-    recentFixtures = [...recentFixtures]
+    const seasonFixtures = await af('fixtures', {league:LEAGUE, season:activeSeason}).catch(() => []);
+    const completedSeasonFixtures = (seasonFixtures || []).filter(fixtureHasStarted);
+    let recentFixtures = [...completedSeasonFixtures]
       .sort((a,b) => new Date(b.fixture?.date||0) - new Date(a.fixture?.date||0))
       .slice(0,3);
+    const fixtureGoals = completedSeasonFixtures.reduce((sum, f) => sum + Number(f.goals?.home || 0) + Number(f.goals?.away || 0), 0);
+    const goalsAvg = completedSeasonFixtures.length ? fixtureGoals / completedSeasonFixtures.length : 0;
+    const standingMetric = (row, path, fallback = 0) => {
+      const value = path.split('.').reduce((acc, key) => acc?.[key], row);
+      const num = Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    };
+    const bestAttack = [...standings].sort((a,b) => standingMetric(b, 'all.goals.for') - standingMetric(a, 'all.goals.for'))[0];
+    const bestDefense = [...standings]
+      .filter(row => standingMetric(row, 'all.played') > 0)
+      .sort((a,b) => standingMetric(a, 'all.goals.against') - standingMetric(b, 'all.goals.against'))[0];
+    const mostWins = [...standings].sort((a,b) => standingMetric(b, 'all.win') - standingMetric(a, 'all.win'))[0];
+    const formPoints = form => normalizeFormTokens(form).slice(-5).reduce((sum, token) => sum + (token === 'W' ? 3 : token === 'D' ? 1 : 0), 0);
+    const bestForm = [...standings].sort((a,b) => formPoints(b.form) - formPoints(a.form))[0];
+    const leagueHighlights = [
+      { label:'Spelade matcher', value:completedSeasonFixtures.length || '—', copy:`av ${standings.length ? standings.length * (standings.length - 1) : 'säsongens'} matcher` },
+      { label:'Totalt antal mål', value:fixtureGoals || '—', copy:goalsAvg ? `${goalsAvg.toFixed(2).replace('.', ',')} mål/match` : 'målstatistik inväntas' },
+      { label:'Bästa anfall', value:bestAttack?.team?.name ? fixName(bestAttack.team.name) : '—', copy:bestAttack ? `${standingMetric(bestAttack, 'all.goals.for')} mål` : 'ingen data ännu' },
+      { label:'Bästa försvar', value:bestDefense?.team?.name ? fixName(bestDefense.team.name) : '—', copy:bestDefense ? `${standingMetric(bestDefense, 'all.goals.against')} insläppta` : 'ingen data ännu' },
+      { label:'Flest vinster', value:mostWins?.team?.name ? fixName(mostWins.team.name) : '—', copy:mostWins ? `${standingMetric(mostWins, 'all.win')} segrar` : 'ingen data ännu' },
+      { label:'Formstarkast', value:bestForm?.team?.name ? fixName(bestForm.team.name) : '—', copy:bestForm?.form ? renderFormLabel(bestForm.form) : 'form byggs på resultat' },
+    ];
+    const leagueHighlightCards = leagueHighlights.map(item => `
+      <div class="start-league-stat">
+        <span>${esc(item.label)}</span>
+        <strong>${esc(item.value)}</strong>
+        <small>${esc(item.copy)}</small>
+      </div>`).join('');
 
     const orderedTeams = sortTeamsByOrder(teams);
 
@@ -6346,11 +6502,11 @@ async function pageStart(el) {
         <div class="start-hero-shell">
           <div class="start-hero-left">
             <div class="start-hero-kicker">Matchdag • Statistik • Transfers</div>
-            <div class="start-wordmark">Allsvenskan<span>AI</span><small>${esc(league.name)} ${activeSeason}</small></div>
+            <div class="start-wordmark">Allsvenskan<span>AI</span><small>${esc(leagueSeasonName)}</small></div>
             <div class="start-lead">Resultat, tabell, spelarsidor och startelvor för ${esc(league.name)} på ett sätt som känns mer sportmedia än stel databas. Snabbt in, enkelt att dela, byggt för fans.</div>
             <div class="start-proof">
               <div class="start-proof-pill">${standings.length || 16} lag</div>
-              <div class="start-proof-pill">${standings.length ? standings.length * 15 : 240} matcher</div>
+              <div class="start-proof-pill">${seasonFixtures.length || 'Säsongens'} matcher</div>
               <div class="start-proof-pill">AI-sök • live • transfers</div>
             </div>
             <div class="start-hero-actions">
@@ -6453,20 +6609,17 @@ async function pageStart(el) {
           <div class="start-mini-head">
             <div>
               <div class="start-mini-title">Aktiv liga</div>
-              <div class="start-mini-sub">${esc(league.name)} ${activeSeason}</div>
+              <div class="start-mini-sub">${esc(leagueSeasonName)}</div>
             </div>
           </div>
-          <div class="start-mini-empty">
-            <div>
-              <strong>${esc(league.name)}</strong>
-              <span>Byt liga i toppmenyn när du vill.</span>
-            </div>
+          <div class="start-league-stats-grid">
+            ${leagueHighlightCards}
           </div>
         </div>
       </div>
 
       <div class="start-teams-section">
-        <div class="start-section-label">Alla lag i ${esc(league.name)} ${activeSeason}</div>
+        <div class="start-section-label">Alla lag i ${esc(leagueSeasonName)}</div>
         <div class="start-tgrid">${cards}</div>
       </div>
 
@@ -7001,6 +7154,7 @@ async function pageTeams(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag…</div>`;
   try {
     const activeSeason = await getResolvedSeason();
+    const leagueSeasonName = leagueSeasonDisplay(league, activeSeason);
     const data = await af('standings', {league:LEAGUE, season:activeSeason});
     const teams = sortTeamsByOrder((data[0]?.league?.standings?.[0]||[]).map(t=>t.team));
     const cards = teams.map(t=>`
@@ -7009,7 +7163,7 @@ async function pageTeams(el) {
         <div class="start-tn">${esc(t.name)}</div>
       </div>`).join('');
     el.innerHTML = `
-      <div class="pg-header"><div class="pg-title">Lag <em>${activeSeason}</em></div><span class="pg-sub">${esc(league.name)} · ${teams.length} lag</span></div>
+      <div class="pg-header"><div class="pg-title">Lag <em>${esc(getSeasonLabel(activeSeason))}</em></div><span class="pg-sub">${esc(leagueSeasonName)} · ${teams.length} lag</span></div>
       <div class="start-tgrid">${cards || '<div class="tw"><div class="empty">Ingen data tillgänglig just nu</div></div>'}</div>`;
   } catch(e) {
     el.innerHTML = `<div class="err">âš ï¸ ${esc(e.message)}</div>`;
@@ -7563,7 +7717,7 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
       </div>
       <div class="tw"><div><table class="stats-table">
         <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="3" class="empty">Ingen spelardata tillgänglig för ${currentTeamStatsSeason}</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="3" class="empty">Ingen spelardata tillgänglig för ${getSeasonLabel(currentTeamStatsSeason)}</td></tr>`}</tbody>
       </table></div></div>
     </div>`;
 }
@@ -7963,7 +8117,8 @@ async function pageTeam(el, teamId, explicitSeason = null) {
       return sep + `<tr class="link" onclick="go('/spelare/${player.id}?team=${routeTeamId}')"><td><div class="pcell"><img src="${player.photo||info.photo||''}" onerror="this.style.opacity='.15'" loading="lazy"><div><div class="pn">${esc(getPlayerDisplayName(info, player))}</div><div class="ps">${player.number ? '#'+player.number : ''}</div></div></div></td><td><span class="pos-tag">${esc(pos)}</span></td><td>${player.age||info.age||'—'} år</td><td>${nationalityDisplay}</td><td style="color:var(--muted);font-size:12px">${player.injured ? 'Skadad' : ''}</td></tr>`;
     }).join('');
 
-    document.title = `${teamDisplayName} ${selectedSeason} — lagstatistik, trupp & historik | AllsvenskanAI`;
+    const selectedSeasonLabel = getSeasonLabel(selectedSeason);
+    document.title = `${teamDisplayName} ${selectedSeasonLabel} — lagstatistik, trupp & historik | AllsvenskanAI`;
     el.innerHTML = `
       <div class="entity-topbar" style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
         <button class="back" onclick="go('/lag-lista')">← Alla lag</button>
@@ -7976,7 +8131,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
             <div class="team-kicker">Lagöversikt</div>
             <div class="team-title-line"><div class="pg-title">${esc(teamDisplayName)}</div><div class="team-rank-badge">${selectedRank}</div></div>
             <div class="pg-sub">En rikare lagöversikt med säsongsstatistik, historik, form och intern spelarstatistik för ${esc(teamDisplayName)}.</div>
-            <div class="team-subline">${venue.name ? `<span class="team-subpill">${esc(venue.name)}</span>` : ''}${venue.city ? `<span class="team-subpill">${esc(venue.city)}</span>` : ''}${venue.capacity ? `<span class="team-subpill">${(+venue.capacity).toLocaleString('sv-SE')} platser</span>` : ''}<span class="team-subpill">${selectedSeason} års säsong</span></div>
+            <div class="team-subline">${venue.name ? `<span class="team-subpill">${esc(venue.name)}</span>` : ''}${venue.city ? `<span class="team-subpill">${esc(venue.city)}</span>` : ''}${venue.capacity ? `<span class="team-subpill">${(+venue.capacity).toLocaleString('sv-SE')} platser</span>` : ''}<span class="team-subpill">${selectedSeasonLabel} års säsong</span></div>
             <div><div class="section-label">Säsonger</div><div class="team-season-switcher">${seasonButtons || teamSeasonButton(teamId, selectedSeason, true, false)}</div></div>
           </div>
           <div class="team-hero-side"><div class="team-hero-stats">${heroStats}</div>${selectedStanding?.form ? `<div><div class="season-label">Form senaste matcher</div><div class="team-form-strip">${String(selectedStanding.form).slice(-10).split('').map(char => `<span class="team-form-pill ${char === 'W' ? 'win' : char === 'D' ? 'draw' : 'loss'}">${char}</span>`).join('')}</div></div>` : ''}</div>
@@ -8025,7 +8180,7 @@ async function pageTeam(el, teamId, explicitSeason = null) {
           <div class="team-dual-grid">${minuteCard('Farligaste målperioder', scoredMin)}${minuteCard('Mest insläppta målperioder', concededMin)}</div>
 
           <div class="team-dual-grid">
-            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Senaste matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${latestPlayed.length ? latestPlayed.map(item => matchRow(item)).join('') : `<div class="team-empty-state">Inga spelade matcher för ${selectedSeason} ännu.</div>`}</div></div></div>
+            <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Senaste matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${latestPlayed.length ? latestPlayed.map(item => matchRow(item)).join('') : `<div class="team-empty-state">Inga spelade matcher för ${selectedSeasonLabel} ännu.</div>`}</div></div></div>
             <div class="tw"><div style="padding:1rem 1.1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase">Kommande matcher</div><div style="padding:1rem 1.1rem"><div class="team-match-list">${upcoming.length ? upcoming.map(item => matchRow(item, true)).join('') : `<div class="team-empty-state">Inga kommande matcher i datan just nu.</div>`}</div></div></div>
           </div>
 
@@ -8060,38 +8215,18 @@ async function loadTeamAI(tabId, teamId) {
   const el = document.getElementById(tabId);
   if(!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar…</div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Läser sparade övergångar…</div>`;
   try {
-    const data = await af('transfers', {team: teamId});
-    const all = [];
-    data.forEach(tr => {
-      (tr.transfers||[]).forEach(x => {
-        const year = parseInt((x.date||'').slice(0,4));
-        if(year >= 2024 && (x.date||'').match(/^\d{4}-\d{2}-\d{2}/)) {
-          const type = x.type || '';
-          const teamIn = x.teams?.in;
-          const teamOut = x.teams?.out;
-          const isInternal = type === 'Raise' || type === 'Loan Return' ||
-            (teamIn?.id && teamOut?.id && teamIn.id === teamOut.id);
-          if(type === '-' && !teamIn && !teamOut) return;
-          const resolvedTeam = teamIn || teamOut || null;
-          all.push({
-            date: x.date,
-            type: isInternal ? 'Uppflyttad' : (type === '-' ? 'Okänd' : type),
-            playerName: getPlayerDisplayName(tr.player),
-            playerId: tr.player?.id,
-            teamIn: isInternal ? resolvedTeam : teamIn,
-            teamOut: isInternal ? resolvedTeam : teamOut,
-            isInternal,
-          });
-        }
-      });
-    });
+    if(!transfersCache) {
+      const loaded = await loadTransfersCache();
+      transfersCache = loaded.transfers;
+      transfersLoadMeta = loaded.meta;
+    }
+    const all = (transfersCache || []).filter(tr => Number(tr.teamIn?.id || 0) === Number(teamId) || Number(tr.teamOut?.id || 0) === Number(teamId));
     all.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    await enrichTransferPlayerNames(all);
 
     if(!all.length) {
-      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+      el.innerHTML = `<div class="tw"><div class="empty">Inga sparade övergångar hittades för laget ännu.</div></div>`;
       return;
     }
 
@@ -8115,7 +8250,7 @@ async function loadTeamAI(tabId, teamId) {
     <tbody>${rows}</tbody>
     </table></div></div>`;
   } catch(e) {
-    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+    el.innerHTML = `<div class="err">Övergångar är inte uppdaterade ännu.</div>`;
   }
 }
 
@@ -8611,17 +8746,18 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
   const el = document.getElementById(tabId);
   if(!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
-  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="spinner" style="width:14px;height:14px"></div> Hämtar övergångar…</div></div>`;
+  el.innerHTML = `<div class="tw"><div style="padding:1rem;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px"><div class="spinner" style="width:14px;height:14px"></div> Läser sparade övergångar…</div></div>`;
   try {
-    const data = await af('transfers', {player: playerId});
-    if(!data.length) {
-      el.innerHTML = `<div class="tw"><div class="empty">Inga övergångar hittades</div></div>`;
+    if(!transfersCache) {
+      const loaded = await loadTransfersCache();
+      transfersCache = loaded.transfers;
+      transfersLoadMeta = loaded.meta;
+    }
+    const transfers = (transfersCache || []).filter(tr => Number(tr.playerId || 0) === Number(playerId));
+    if(!transfers.length) {
+      el.innerHTML = `<div class="tw"><div class="empty">Inga sparade övergångar hittades för spelaren ännu.</div></div>`;
       return;
     }
-    const transfers = [];
-    data.forEach(tr => (tr.transfers||[]).forEach(x => transfers.push({
-      date: x.date, type: x.type, teamIn: x.teams?.in, teamOut: x.teams?.out,
-    })));
     transfers.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const rows = transfers.map(tr => {
       const outClub = renderTransferClubChip(tr.teamOut, 'Klubb saknas');
@@ -8643,7 +8779,7 @@ async function loadPlayerTransfers(tab, playerId, tabId) {
       <tbody>${rows}</tbody>
     </table></div></div>`;
   } catch(e) {
-    el.innerHTML = `<div class="err">Fel: ${esc(e.message)}</div>`;
+    el.innerHTML = `<div class="err">Övergångar är inte uppdaterade ännu.</div>`;
   }
 }
 
@@ -9048,6 +9184,7 @@ function renderMatchPlayerStats(playersResponse = []){
 }
 
 let resultsSelectedRound = '';
+let resultsRoundTouched = false;
 
 function getFixtureRoundInfo(f){
   const raw = String(f?.league?.round || '').trim();
@@ -9089,6 +9226,7 @@ function getDefaultResultsRound(fixtures, rounds){
 
 function setResultsRound(roundKey){
   resultsSelectedRound = roundKey || '';
+  resultsRoundTouched = true;
   pageResults(document.getElementById('mc'));
 }
 
@@ -9099,7 +9237,7 @@ async function pageResults(el) {
   try {
     const data = await af('fixtures', {league:LEAGUE, season:SEASON});
     const rounds = getResultsRounds(data);
-    if(rounds.length && !rounds.some(r => r.key === resultsSelectedRound)) {
+    if(rounds.length && (!resultsRoundTouched || !rounds.some(r => r.key === resultsSelectedRound))) {
       resultsSelectedRound = getDefaultResultsRound(data, rounds);
     }
     const activeRound = rounds.find(r => r.key === resultsSelectedRound) || null;
@@ -9267,10 +9405,17 @@ function setTransfersFilter(key, value=''){
 }
 
 function getAllsvenskanTeams(){
-  return sortTeamsByOrder(transfersLeagueTeams || []).map(team => ({
+  const fromTransfers = (transfersCache || []).flatMap(tr => [tr.teamIn, tr.teamOut]).filter(Boolean);
+  const source = (transfersLeagueTeams && transfersLeagueTeams.length) ? transfersLeagueTeams : fromTransfers;
+  const seen = new Set();
+  return sortTeamsByOrder(source || []).map(team => ({
     id: team?.id || null,
     name: fixName(team?.name || '')
-  })).filter(team => team.name);
+  })).filter(team => {
+    if(!team.name || seen.has(team.name)) return false;
+    seen.add(team.name);
+    return true;
+  });
 }
 
 async function getPlayerProfileDisplayName(playerId){
@@ -9428,94 +9573,27 @@ function buildTransferEntries(rows = [], fallbackTeam = null){
   return all;
 }
 
-async function fetchTransfersSafe(team){
-  console.info('[transfers] team request start', { teamId: team.id, teamName: team.name });
-  try {
-    const rows = await withTimeout(
-      af('transfers', {team:team.id}),
-      12000,
-      `Transfers ${team.name || team.id}`
-    );
-    console.info('[transfers] team request success', { teamId: team.id, teamName: team.name, rows: rows.length || 0 });
-    return {
-      ok: true,
-      team,
-      transfers: buildTransferEntries(rows, team)
-    };
-  } catch(e) {
-    console.warn('[transfers] team request failure', { teamId: team.id, teamName: team.name, error: e.message });
-    return {
-      ok: false,
-      team,
-      error: e
-    };
-  }
-}
-
 async function loadTransfersCache(el){
-  console.info('[transfers] standings request start', { season: SEASON });
-  const standData = await withTimeout(
-    af('standings', {league:LEAGUE, season:SEASON}),
-    12000,
-    'Standings'
-  );
-  console.info('[transfers] standings request success');
-
-  const teams = standData[0]?.league?.standings?.[0]?.map(t=>t.team)||[];
-  transfersLeagueTeams = [...teams];
-  const batchSize = 3;
-  const batchDelay = 1300;
-  const all = [];
-  let successCount = 0;
-  let failedCount = 0;
-
-  for(let i = 0; i < teams.length; i += batchSize){
-    const batch = teams.slice(i, i + batchSize);
-    if(el) {
-      el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar övergångar för ${teams.length} lag… ${Math.min(i + batch.length, teams.length)}/${teams.length}</div>`;
-    }
-
-    const results = await Promise.all(batch.map(team => fetchTransfersSafe(team)));
-    results.forEach(result => {
-      if(result.ok) {
-        successCount += 1;
-        all.push(...result.transfers);
-      } else {
-        failedCount += 1;
-      }
-    });
-
-    console.info('[transfers] batch complete', {
-      batchStart: i,
-      batchSize: batch.length,
-      successCount,
-      failedCount
-    });
-
-    if(i + batchSize < teams.length) {
-      await delay(batchDelay);
-    }
+  const league = getActiveLeagueConfig();
+  if(el) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Läser sparade övergångar…</div>`;
   }
-
-  const seen = new Set();
-  const unique = all.filter(t => {
-    const key = t.playerId+'-'+t.date+'-'+(t.teamIn?.id||'');
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-
-  console.info('[transfers] request summary', { successCount, failedCount, totalTeams: teams.length });
-
+  const response = await fetch(`/api/admin?action=public-transfers&league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(getSeasonLabel(SEASON))}`);
+  const payload = await response.json().catch(() => ({}));
+  const transfers = Array.isArray(payload.transfers) ? payload.transfers : [];
+  const teams = Array.isArray(payload.teams) ? payload.teams : [];
+  transfersLeagueTeams = sortTeamsByOrder(teams);
   return {
-    transfers: unique,
+    transfers: transfers.sort((a,b)=>(b.date||'').localeCompare(a.date||'')),
     meta: {
-      successCount,
-      failedCount,
-      totalTeams: teams.length,
-      partial: failedCount > 0 && successCount > 0,
-      empty: !unique.length,
-      failed: successCount === 0 && failedCount > 0
+      successCount: payload.ok && transfers.length ? 1 : 0,
+      failedCount: payload.ok ? 0 : 1,
+      totalTeams: Number(payload.meta?.teamCount || teams.length || 0),
+      partial: Boolean(payload.meta?.partial),
+      empty: !transfers.length,
+      failed: !payload.ok,
+      updatedAt: payload.meta?.updatedAt || null,
+      publicMissing: Boolean(payload.meta?.publicMissing)
     }
   };
 }
@@ -9525,7 +9603,7 @@ async function pageTransfers(el, page=1) {
   const PER_PAGE = 50;
 
   if(!transfersCache) {
-    el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar lag...</div>`;
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Läser sparade övergångar…</div>`;
     try {
       const loaded = await loadTransfersCache(el);
       transfersCache = loaded.transfers;
@@ -9574,7 +9652,6 @@ async function pageTransfers(el, page=1) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const safePage = Math.min(Math.max(1, page), totalPages);
   const slice = filtered.slice((safePage-1)*PER_PAGE, safePage*PER_PAGE);
-  await enrichTransferPlayerNames(slice);
   const teamOptions = getAllsvenskanTeams().map(team => team.name);
   const filters = `
     <div class="transfer-filters">
@@ -9621,16 +9698,18 @@ async function pageTransfers(el, page=1) {
   if(safePage < totalPages) pageBtns.push(`<button class="page-btn" onclick="go('/overgangar/${safePage+1}')">Nästa sida →</button>`);
 
   const noResultsMessage = transfersLoadMeta?.failed && !unique.length
-    ? 'Kunde inte hämta övergångar just nu.'
+    ? 'Övergångar är inte uppdaterade ännu.'
     : filtered.length === 0 && unique.length > 0
       ? 'Inga övergångar matchar filtren.'
-      : 'Inga övergångar';
+      : 'Övergångar är inte uppdaterade ännu.';
 
   const loadNote = transfersLoadMeta?.failed
-    ? `<div class="feed-note">Kunde inte hämta övergångar just nu.</div>`
+    ? `<div class="feed-note">Övergångar uppdateras av administratör och visas här när cache finns.</div>`
     : transfersLoadMeta?.partial
       ? `<div class="feed-note">Visar tillgängliga övergångar just nu. ${transfersLoadMeta.successCount} lag laddade, ${transfersLoadMeta.failedCount} misslyckades.</div>`
-      : '';
+      : transfersLoadMeta?.updatedAt
+        ? `<div class="feed-note">Sparad övergångsdata uppdaterad ${esc(new Date(transfersLoadMeta.updatedAt).toLocaleString('sv-SE'))}.</div>`
+        : '';
 
   el.innerHTML = `
     <div class="pg-header"><div class="pg-title">Övergångar</div><span class="pg-sub">${filtered.length} övergångar · sida ${safePage} av ${totalPages}</span></div>
@@ -9682,6 +9761,8 @@ const STAT_CATEGORIES = [
   { id:'pointsPer90', label:'Poäng /90', title:'Poäng per 90', group:'offense', type:'derived', compute:p => p.derived.pointsPer90, col:'Poäng /90', description:'Mål + assist relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.15, secondary:p => `${Math.round(p.derived.goalContributions || 0)} totalt` },
   { id:'conversionRate', label:'Avslut %', title:'Avslutseffektivitet', group:'offense', type:'derived', compute:p => p.derived.conversionRate, col:'Avslut %', description:'Hur stor andel av skotten som blir mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${formatStatValue(p.derived.shotsPerGoal, 1)} skott/mål`, playerFilter:p => p.stats.shots >= 1 },
   { id:'shotsPerGoal', label:'Skott / mål', title:'Skott per mål', group:'offense', type:'derived', compute:p => p.derived.shotsPerGoal, col:'Skott/mål', description:'Lägre värde betyder högre effektivitet.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:0.1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 && p.stats.shots >= 1 },
+  { id:'penaltiesScored', label:'Straffmål', title:'Gjorda straffmål', group:'offense', type:'direct', source:'stats.penaltiesScored', col:'Straffmål', description:'Straffmål när datan finns i Sportmonks-cachen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.goals || 0)} mål totalt` },
+  { id:'penaltiesMissed', label:'Missade straffar', title:'Missade straffar', group:'offense', type:'direct', source:'stats.penaltiesMissed', col:'Missade', description:'Missade straffar i tillgänglig spelarstatistik.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.penaltiesScored || 0)} målade straffar` },
   { id:'passes', label:'Passningar', title:'Flest passningar', group:'passing', type:'direct', source:'stats.passes', col:'Pass', description:'Spelare som sätter tempot i possession-spelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
   { id:'accuratePasses', label:'Lyckade pass', title:'Lyckade passningar', group:'passing', type:'derived', compute:p => p.derived.accuratePasses, col:'Lyckade', description:'Beräknas från total passvolym och passningsprocent.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.passes || 0)} totalt` },
   { id:'passAccuracy', label:'Passnings%', title:'Passningsprocent', group:'passing', type:'derived', compute:p => p.derived.passAccuracy, col:'Pass %', description:'Passningssäkerhet över hela säsongen.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:50, secondary:p => `${Math.round(p.stats.passes || 0)} pass`, playerFilter:p => p.stats.passes >= 10 },
@@ -9691,13 +9772,17 @@ const STAT_CATEGORIES = [
   { id:'interceptions', label:'Interceptions', title:'Flest brytningar', group:'defense', type:'direct', source:'stats.interceptions', col:'Brytningar', description:'Läser spelet och bryter passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.blocks || 0)} blockar` },
   { id:'blocks', label:'Blockar', title:'Flest blockar', group:'defense', type:'direct', source:'stats.blocks', col:'Blockar', description:'Skott- och passblockeringar över säsongen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.tackles || 0)} tacklingar` },
   { id:'duelsWon', label:'Vunna dueller', title:'Vunna dueller', group:'defense', type:'direct', source:'stats.duelsWon', col:'Dueller', description:'Total mängd vunna dueller.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.duelWinRate, 1)}% vinst` },
+  { id:'duelsTotal', label:'Dueller totalt', title:'Flest dueller', group:'defense', type:'direct', source:'stats.duelsTotal', col:'Dueller', description:'Total duellvolym när fältet finns i cache.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.duelsWon || 0)} vunna` },
   { id:'duelWinRate', label:'Duellvinst %', title:'Duellvinstprocent', group:'defense', type:'derived', compute:p => p.derived.duelWinRate, col:'Vinst %', description:'Vem som vinner störst andel av sina dueller.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:40, secondary:p => `${Math.round(p.stats.duelsWon || 0)} vunna`, playerFilter:p => p.stats.duelsTotal >= 1 },
+  { id:'defActions', label:'Def aktioner', title:'Defensiva aktioner', group:'defense', type:'derived', compute:p => p.derived.defActions, col:'Aktioner', description:'Tacklingar, brytningar och blockar summerat.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.defActionsPer90, 2)} /90` },
   { id:'defActionsPer90', label:'Def aktioner /90', title:'Defensiva aktioner per 90', group:'defense', type:'derived', compute:p => p.derived.defActionsPer90, col:'Aktioner /90', description:'Tacklingar, brytningar och blockar per full match.', formatter:v => formatStatValue(v, 2), minValue:0.2, secondary:p => `${Math.round(p.derived.defActions || 0)} totalt` },
   { id:'yellow', label:'Gula kort', title:'Mest varnade', group:'discipline', type:'direct', source:'stats.yellow', col:'Gula', description:'Spelare som samlat flest gula kort.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.red || 0)} röda` },
   { id:'red', label:'Röda kort', title:'Mest utvisade', group:'discipline', type:'direct', source:'stats.red', col:'Röda', description:'Röda kort i ligaspelet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.yellow || 0)} gula` },
   { id:'foulsCommitted', label:'Fouls', title:'Mest foulande', group:'discipline', type:'direct', source:'stats.foulsCommitted', col:'Fouls', description:'Vilka som drar på sig flest frisparkar emot.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsDrawn || 0)} foulade` },
   { id:'foulsDrawn', label:'Foulade', title:'Mest foulade', group:'discipline', type:'direct', source:'stats.foulsDrawn', col:'Foulad', description:'Spelare som oftast drar fouls till sitt lag.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsCommitted || 0)} commits` },
   { id:'offsides', label:'Offside', title:'Flest offsides', group:'discipline', type:'direct', source:'stats.offsides', col:'Offside', description:'Anfallare som oftast går för tidigt.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.shots || 0)} skott` },
+  { id:'penaltiesWon', label:'Vunna straffar', title:'Vunna straffar', group:'discipline', type:'direct', source:'stats.penaltiesWon', col:'Vunna', description:'Spelare som vunnit straffar när datan finns.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsDrawn || 0)} foulade` },
+  { id:'penaltiesCommitted', label:'Orsakade straffar', title:'Orsakade straffar', group:'discipline', type:'direct', source:'stats.penaltiesCommitted', col:'Orsakade', description:'Straffar orsakade av spelaren när datan finns.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.foulsCommitted || 0)} fouls` },
   { id:'saves', label:'Räddningar', title:'Flest räddningar', group:'goalkeeping', type:'direct', source:'stats.saves', col:'Räddningar', description:'Målvakter med flest räddningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(p.derived.savePercentage, 1)}% räddnings%`, playerFilter:p => p.flags.goalkeeper },
   { id:'savePercentage', label:'Räddnings%', title:'Räddningsprocent', group:'goalkeeping', type:'derived', compute:p => p.derived.savePercentage, col:'Räddnings%', description:'Andel räddade avslut av saves + insläppta mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.saves || 0)} räddningar`, playerFilter:p => p.flags.goalkeeper && (p.stats.saves + p.stats.goalsConceded) > 0 },
   { id:'goalsConceded', label:'Insläppta', title:'Minst insläppta mål', group:'goalkeeping', type:'direct', source:'stats.goalsConceded', col:'Insläppta', description:'Målvakter med lägst insläppta mål över säsongen.', formatter:v => Math.round(v), sort:'asc', minValue:-1, secondary:p => `${formatStatValue(p.derived.goalsConcededPerMatch, 2)} /match`, playerFilter:p => p.flags.goalkeeper && p.stats.appearances > 0 },
@@ -9706,6 +9791,9 @@ const STAT_CATEGORIES = [
   { id:'minutes', label:'Minuter', title:'Mest spelade minuter', group:'playingTime', type:'direct', source:'stats.minutes', col:'Minuter', description:'Vilka som burit mest belastning.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
   { id:'appearances', label:'Matcher', title:'Flest matcher', group:'playingTime', type:'direct', source:'stats.appearances', col:'Matcher', description:'Totalt antal framträdanden.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.starts || 0)} starter` },
   { id:'starts', label:'Starter', title:'Flest starter', group:'playingTime', type:'direct', source:'stats.starts', col:'Starter', description:'Spelare som startat flest matcher.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.derived.subApps || 0)} inhopp` },
+  { id:'subIns', label:'Inbytt', title:'Flest inbyten', group:'playingTime', type:'direct', source:'stats.subIns', col:'Inbytt', description:'Antal gånger spelaren bytts in.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.subOuts || 0)} utbytt` },
+  { id:'subOuts', label:'Utbytt', title:'Flest utbyten', group:'playingTime', type:'direct', source:'stats.subOuts', col:'Utbytt', description:'Antal gånger spelaren bytts ut.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.starts || 0)} starter` },
+  { id:'bench', label:'Bänk', title:'Flest gånger på bänken', group:'playingTime', type:'direct', source:'stats.bench', col:'Bänk', description:'Bänknoteringar när Sportmonks levererar fältet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
   { id:'subApps', label:'Inhopp', title:'Flest inhopp', group:'playingTime', type:'derived', compute:p => p.derived.subApps, col:'Inhopp', description:'Matcher från bänken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.appearances || 0)} matcher` },
   { id:'minutesPerMatch', label:'Min / match', title:'Minuter per match', group:'playingTime', type:'derived', compute:p => p.derived.minutesPerMatch, col:'Min/match', description:'Genomsnittlig speltid per framträdande.', formatter:v => formatStatValue(v, 1), minValue:1, secondary:p => `${Math.round(p.stats.minutes || 0)} min totalt` },
   { id:'rating', label:'Rating', title:'Bäst rating', group:'advanced', type:'direct', source:'stats.rating', col:'Rating', description:'Viktad snittrating över säsongen.', formatter:v => formatStatValue(v, 2), minValue:0.1, secondary:p => `${Math.round(p.stats.minutes || 0)} min`, ratingClass:true, playerFilter:p => p.stats.appearances >= 1 },
