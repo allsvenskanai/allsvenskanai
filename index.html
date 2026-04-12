@@ -1215,6 +1215,45 @@ main > *{animation:fadeUp .3s ease both}
 .stats-table tbody td{padding:14px 14px}
 .stats-table thead th{padding:12px 14px}
 .stats-shell{display:grid;gap:1rem}
+.admin-shell{display:grid;gap:16px}
+.admin-panel{
+  background:linear-gradient(180deg,#0B0F16,#0A0D14);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 18px 44px rgba(0,0,0,.24);
+  overflow:hidden;
+}
+.admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.admin-field{display:grid;gap:6px}
+.admin-field label{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.admin-table-wrap{overflow:auto;max-height:560px;border-radius:14px;border:1px solid rgba(255,255,255,.06)}
+.admin-cache-table{min-width:920px}
+.admin-cache-table th{background:#0B0F16}
+.admin-status-pill{
+  display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 9px;
+  border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:.9px;text-transform:uppercase;border:1px solid rgba(255,255,255,.08);
+}
+.admin-status-pill.good{color:#7EE1A2;background:rgba(46,204,113,.10);border-color:rgba(46,204,113,.18)}
+.admin-status-pill.warn{color:#E6C977;background:rgba(230,201,119,.10);border-color:rgba(230,201,119,.2)}
+.admin-status-pill.bad{color:#E07070;background:rgba(224,112,112,.10);border-color:rgba(224,112,112,.18)}
+.admin-log{
+  min-height:180px;max-height:300px;overflow:auto;border-radius:14px;
+  background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.07);
+  padding:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.6;color:#D6DCE7;
+}
+.admin-log-line{border-bottom:1px solid rgba(255,255,255,.05);padding:4px 0}
+.admin-log-line:last-child{border-bottom:none}
+@media(max-width:900px){
+  .admin-grid{grid-template-columns:1fr}
+  .admin-actions{align-items:stretch}
+  .admin-actions .ai-btn{flex:1 1 100%;justify-content:center}
+}
 .stats-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .stats-overview-card{
   background:linear-gradient(145deg,rgba(212,175,55,.08),rgba(255,255,255,.02)),var(--dark2);
@@ -3124,6 +3163,24 @@ th,
   background:rgba(80,24,24,.22) !important;
   color:#FFD8D8 !important;
   border-color:rgba(182,81,81,.28) !important;
+}
+
+*,*::before,*::after{
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+img{
+  display:block;
+  max-width:100%;
+}
+.tw,.profile,.match-card,.stats-shell,.admin-shell,.admin-panel,.lb-page,.lb-preview-wrap,.start-hero,.best-players{
+  isolation:isolate;
+}
+.tw,.match-card,.admin-panel,.lb-preview-wrap,.best-players{
+  overflow:hidden;
+}
+.standings-wrap,.admin-table-wrap{
+  overscroll-behavior:contain;
 }
 
 </style>
@@ -5799,10 +5856,297 @@ function updateRouteChrome(path){
   if(topAdWrap) topAdWrap.classList.toggle('route-hidden', !isHome && window.innerWidth <= 900);
 }
 
+const ADMIN_TOKEN_STORAGE_KEY = 'allsvenskanai:admin-token';
+let adminDashboardState = { status:null, leagueKey:'allsvenskan', teamId:'', logs:[] };
+
+function getAdminToken(){
+  try { return sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || ''; }
+  catch(e) { return ''; }
+}
+
+function setAdminToken(token){
+  try { sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token || ''); }
+  catch(e) {}
+}
+
+function adminLog(message, meta = {}){
+  const time = new Date().toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  adminDashboardState.logs.unshift({ time, message, meta });
+  adminDashboardState.logs = adminDashboardState.logs.slice(0, 80);
+  const log = document.getElementById('adminLog');
+  if(log) log.innerHTML = adminDashboardState.logs.map(item => `<div class="admin-log-line"><strong>${esc(item.time)}</strong> ${esc(item.message)}${Object.keys(item.meta || {}).length ? ` <span style="color:var(--muted)">${esc(JSON.stringify(item.meta))}</span>` : ''}</div>`).join('');
+}
+
+async function adminApi(action, payload = {}){
+  const token = getAdminToken();
+  const response = await fetch(`/api/admin/cache/${action}`, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'X-Admin-Token':token },
+    body:JSON.stringify({ ...payload, token }),
+  });
+  if(response.status === 401) throw new Error('Fel admin-token.');
+  const data = await response.json().catch(() => ({}));
+  if(!data.ok) throw new Error(data.error || 'Adminåtgärden misslyckades.');
+  return data;
+}
+
+function adminCurrentLeague(){
+  return LEAGUES[adminDashboardState.leagueKey] || LEAGUES.allsvenskan;
+}
+
+function adminCurrentTeams(){
+  const statusLeague = adminDashboardState.status?.leagues?.[adminDashboardState.leagueKey];
+  return statusLeague?.teams || [];
+}
+
+function adminTeamCacheStatus(team, league = adminCurrentLeague()){
+  const cache = getCachedTeamStats(team.id, league.leagueId, league.season, { allowExpired:true });
+  const useful = countUsefulCachedPlayers(cache || {});
+  return {
+    cache,
+    cached:Boolean(cache?.players?.length),
+    expired:Boolean(cache?._cacheExpired),
+    updatedAt:cache?._cacheCreatedAt || cache?.updatedAt || null,
+    playerCount:Number(cache?.players?.length || 0),
+    usefulPlayerCount:useful,
+    emptyStats: Boolean(cache?.players?.length && useful === 0),
+  };
+}
+
+function renderAdminLogin(el){
+  document.title = 'Admin — AllsvenskanAI';
+  el.innerHTML = `
+    <div class="admin-shell">
+      <div class="pg-header"><div class="pg-title">Privat <em>admin</em></div><span class="pg-sub">Token krävs för cache- och dataåtgärder.</span></div>
+      <div class="admin-panel" style="max-width:520px">
+        <form onsubmit="event.preventDefault(); adminLogin(this.adminToken.value)">
+          <div class="admin-field">
+            <label>Admin-token</label>
+            <input name="adminToken" type="password" autocomplete="current-password" placeholder="ADMIN_SECRET" autofocus>
+          </div>
+          <div style="height:12px"></div>
+          <button class="ai-btn" type="submit">Öppna admin</button>
+        </form>
+      </div>
+    </div>`;
+}
+
+async function adminLogin(token){
+  setAdminToken(token);
+  await pageAdmin(document.getElementById('mc'), true);
+}
+
+function adminLogout(){
+  setAdminToken('');
+  adminDashboardState.status = null;
+  renderAdminLogin(document.getElementById('mc'));
+}
+
+async function pageAdmin(el, force = false){
+  if(!getAdminToken()) { renderAdminLogin(el); return; }
+  document.title = 'Admin — AllsvenskanAI';
+  el.innerHTML = `<div class="loading"><div class="spinner"></div>Laddar privat admin…</div>`;
+  try {
+    if(force || !adminDashboardState.status) {
+      adminDashboardState.status = await adminApi('status');
+      adminLog('Adminstatus laddad', adminDashboardState.status.meta || {});
+    }
+    renderAdminDashboard(el);
+  } catch(error) {
+    setAdminToken('');
+    el.innerHTML = `<div class="err">${esc(error.message)}</div>`;
+  }
+}
+
+function renderAdminDashboard(el = document.getElementById('mc')){
+  const league = adminCurrentLeague();
+  const teams = adminCurrentTeams();
+  if(teams.length && !teams.some(team => String(team.id) === String(adminDashboardState.teamId))) {
+    adminDashboardState.teamId = String(teams[0].id);
+  }
+  const leagueOptions = Object.values(LEAGUES).map(item => `<option value="${item.key}" ${item.key === adminDashboardState.leagueKey ? 'selected' : ''}>${esc(item.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr')}</option>`).join('');
+  const teamOptions = teams.map(team => `<option value="${team.id}" ${String(team.id) === String(adminDashboardState.teamId) ? 'selected' : ''}>${esc(fixName(team.name || 'Lag'))}</option>`).join('');
+  const leagueSummary = Object.values(LEAGUES).map(item => {
+    const statusTeams = adminDashboardState.status?.leagues?.[item.key]?.teams || [];
+    const cached = statusTeams.filter(team => adminTeamCacheStatus(team, item).cached).length;
+    const empty = statusTeams.filter(team => adminTeamCacheStatus(team, item).emptyStats).length;
+    const stale = statusTeams.filter(team => adminTeamCacheStatus(team, item).expired).length;
+    return `<div class="stats-overview-card">
+      <div class="stats-overview-label">${esc(item.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr')}</div>
+      <div class="stats-overview-value">${cached}/${statusTeams.length || 0}</div>
+      <div class="stats-overview-copy">${stale} stale · ${empty} tom stats</div>
+    </div>`;
+  }).join('');
+  const rows = teams.map(team => {
+    const status = adminTeamCacheStatus(team, league);
+    const statusClass = !status.cached ? 'bad' : status.emptyStats || status.expired ? 'warn' : 'good';
+    const statusText = !status.cached ? 'Ej cachead' : status.emptyStats ? 'Tom stats' : status.expired ? 'Stale' : 'Cachead';
+    const updated = status.updatedAt ? new Date(status.updatedAt).toLocaleString('sv-SE') : '—';
+    return `<tr>
+      <td><div class="standings-team"><img src="${getTeamLogo(team)}" alt="${esc(team.name || 'Lag')}" onerror="handleTeamLogoError(this)"><span class="standings-team-name">${esc(fixName(team.name || 'Lag'))}</span></div></td>
+      <td><span class="admin-status-pill ${statusClass}">${statusText}</span></td>
+      <td>${esc(updated)}</td>
+      <td>${status.playerCount}</td>
+      <td>${status.usefulPlayerCount}</td>
+      <td>${status.emptyStats ? 'Ja' : 'Nej'}</td>
+      <td><button class="ai-btn" onclick="adminRefreshTeam('${team.id}')">Refresh</button></td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="admin-shell">
+      <div class="pg-header" style="justify-content:space-between;align-items:center;gap:12px">
+        <div><div class="pg-title">Privat <em>admin</em></div><span class="pg-sub">Cache, statistik och Sportmonks-refresh.</span></div>
+        <button class="ai-btn" onclick="adminLogout()">Logga ut</button>
+      </div>
+      <div class="admin-panel">
+        <div class="stats-overview-grid" style="margin-bottom:14px">${leagueSummary}</div>
+        <div class="admin-grid">
+          <div class="admin-field"><label>Liga</label><select onchange="adminSetLeague(this.value)">${leagueOptions}</select></div>
+          <div class="admin-field"><label>Säsong</label><input value="${esc(getSeasonLabel(league.season))}" readonly></div>
+          <div class="admin-field"><label>Lag</label><select onchange="adminDashboardState.teamId=this.value">${teamOptions}</select></div>
+        </div>
+        <div style="height:14px"></div>
+        <div class="admin-actions">
+          <button class="ai-btn" onclick="adminRefreshSelectedTeam()">Refresh selected team</button>
+          <button class="ai-btn" onclick="adminRefreshLeague('allsvenskan')">Refresh all Herr</button>
+          <button class="ai-btn" onclick="adminRefreshLeague('damallsvenskan')">Refresh all Dam</button>
+          <button class="ai-btn" onclick="adminRefreshRecent()">Refresh recently/stale</button>
+          <button class="ai-btn" onclick="adminClearSelectedTeam()">Clear selected team</button>
+          <button class="ai-btn" onclick="adminClearLeague()">Clear league cache</button>
+          <button class="ai-btn" onclick="adminClearAllStats()">Clear all statistics cache</button>
+          <button class="ai-btn" onclick="adminRebuildLeaderboards()">Rebuild aggregated leaderboards</button>
+          <button class="ai-btn" onclick="adminRebuildPlayerStats()">Rebuild player stats cache</button>
+        </div>
+      </div>
+      <div class="admin-panel">
+        <div class="section-label">Cache status · ${esc(league.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr')}</div>
+        <div class="admin-table-wrap">
+          <table class="admin-cache-table"><thead><tr><th>Lag</th><th>Status</th><th>Senast uppdaterad</th><th>Spelare cacheade</th><th>Med stats</th><th>Tom stats</th><th>Åtgärd</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="empty">Ingen data</td></tr>'}</tbody></table>
+        </div>
+      </div>
+      <div class="admin-panel">
+        <div class="section-label">Logg</div>
+        <div id="adminLog" class="admin-log">${adminDashboardState.logs.map(item => `<div class="admin-log-line"><strong>${esc(item.time)}</strong> ${esc(item.message)}</div>`).join('')}</div>
+      </div>
+    </div>`;
+}
+
+function adminSetLeague(key){
+  adminDashboardState.leagueKey = key;
+  adminDashboardState.teamId = '';
+  renderAdminDashboard();
+}
+
+async function adminRefreshTeam(teamId, options = {}){
+  const league = adminCurrentLeague();
+  const team = adminCurrentTeams().find(item => String(item.id) === String(teamId));
+  adminLog(`Startar refresh för ${fixName(team?.name || teamId)}…`);
+  const auth = await adminApi('refresh-team', { league:league.key, teamId, force:Boolean(options.force) });
+  const data = await refreshTeamStats(teamId, league.leagueId, league.season, { force:Boolean(options.force), light:!options.deep });
+  statsCache = null;
+  adminLog(`Refresh klar för ${fixName(data.team?.name || team?.name || teamId)}`, { apiCalls:auth.apiCalls || 0, players:data.players?.length || 0, staleFallback:auth.staleFallback || false });
+  renderAdminDashboard();
+}
+
+async function adminRefreshSelectedTeam(){
+  if(!adminDashboardState.teamId) return adminLog('Välj ett lag först.');
+  await adminRefreshTeam(adminDashboardState.teamId, { force:true, deep:true });
+}
+
+async function adminRefreshLeague(key){
+  adminDashboardState.leagueKey = key;
+  renderAdminDashboard();
+  const league = adminCurrentLeague();
+  const teams = adminCurrentTeams();
+  const auth = await adminApi('refresh-league', { league:league.key, limit:teams.length });
+  adminLog(`Auktoriserad ligarefresh för ${league.name}`, { apiCalls:auth.apiCalls || 0, teams:teams.length });
+  for(const [index, team] of teams.entries()){
+    try {
+      adminLog(`Refresh ${index + 1}/${teams.length}: ${fixName(team.name)}`);
+      await refreshTeamStats(team.id, league.leagueId, league.season, { force:true, light:true });
+      if(index + 1 < teams.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
+    } catch(error) {
+      adminLog(`Misslyckades: ${fixName(team.name)}`, { error:error.message });
+      if(isApiRateLimitError(error)) break;
+    }
+  }
+  statsCache = null;
+  await ensureStatsDatasetForSeason(league.season);
+  renderAdminDashboard();
+}
+
+async function adminRefreshRecent(){
+  const league = adminCurrentLeague();
+  await adminApi('refresh-recent', { league:league.key });
+  const teams = adminCurrentTeams().filter(team => {
+    const status = adminTeamCacheStatus(team, league);
+    return !status.cached || status.expired || status.emptyStats;
+  });
+  adminLog(`Refresh recent/stale: ${teams.length} lag`);
+  for(const [index, team] of teams.entries()){
+    try {
+      await adminRefreshTeam(team.id, { force:false, deep:false });
+      if(index + 1 < teams.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
+    } catch(error) {
+      adminLog(`Recent refresh stoppad för ${fixName(team.name)}`, { error:error.message });
+      if(isApiRateLimitError(error)) break;
+    }
+  }
+  renderAdminDashboard();
+}
+
+function adminClearSelectedTeam(){
+  const league = adminCurrentLeague();
+  if(!adminDashboardState.teamId) return;
+  localStorage.removeItem(statsTeamCacheKey(adminDashboardState.teamId, league.leagueId, league.season));
+  statsCache = null;
+  adminLog('Valt lag rensat från browser-cache', { teamId:adminDashboardState.teamId });
+  renderAdminDashboard();
+}
+
+async function adminClearLeague(){
+  const league = adminCurrentLeague();
+  localStorage.removeItem(`${STATS_DATASET_CACHE_PREFIX}:${league.key}:${league.season}`);
+  Object.keys(localStorage)
+    .filter(key => key.startsWith(`${STATS_TEAM_CACHE_PREFIX}:${league.leagueId}:${league.season}:team:`))
+    .forEach(key => localStorage.removeItem(key));
+  await adminApi('clear', { scope:'league', league:league.key });
+  statsCache = null;
+  adminLog('Ligacache rensad', { league:league.key });
+  renderAdminDashboard();
+}
+
+async function adminClearAllStats(){
+  clearStatsDatasetCache(null);
+  clearPersistedApiCache();
+  await adminApi('clear', { scope:'all' });
+  statsCache = null;
+  adminLog('All statistikcache rensad');
+  renderAdminDashboard();
+}
+
+async function adminRebuildLeaderboards(){
+  const league = adminCurrentLeague();
+  const combined = combineCachedTeamStats(adminCurrentTeams(), league.leagueId, league.season);
+  const payload = { year:league.season, leagueKey:league.key, leagueId:league.leagueId, teams:adminCurrentTeams(), players:combined.players, teamStats:combined.teamStats, meta:{ playerCount:combined.players.length, cachedTeamCount:combined.teamCaches.length, warning:'' } };
+  localStorage.setItem(`${STATS_DATASET_CACHE_PREFIX}:${league.key}:${league.season}`, JSON.stringify({ createdAt:Date.now(), data:payload }));
+  await adminApi('rebuild-leaderboards', { league:league.key });
+  statsCache = payload;
+  adminLog('Aggregerade leaderboards byggda från cache', { players:combined.players.length, teams:combined.teamCaches.length });
+  renderAdminDashboard();
+}
+
+async function adminRebuildPlayerStats(){
+  const league = adminCurrentLeague();
+  await adminApi('rebuild-player-stats', { league:league.key });
+  await adminRefreshLeague(league.key);
+}
+
 function route(path) {
   updateRouteChrome(path);
   const el = document.getElementById('mc');
   if(path==='/'||path==='')            { pageStart(el); return; }
+  if(path==='/admin')                  { pageAdmin(el); return; }
   if(isLineupBuilderRoute(path))       { pageLineupBuilder(el); return; }
   if(path==='/lag-lista')              { pageTeams(el); return; }
   if(path==='/tabell')                 { pageStandings(el); return; }
