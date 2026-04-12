@@ -270,7 +270,14 @@ async function getStandingsForSeason(seasonId, options = {}){
   const rows = Array.isArray(raw?.data) ? raw.data : [];
   const stageId = Number(stage?.id || 0);
   const filtered = stageId ? rows.filter(row => Number(row?.stage_id || row?.stage?.id || row?.stage?.data?.id || 0) === stageId) : rows;
-  return { raw, stage, rows: filtered.length ? filtered : rows };
+  if(stageId && !filtered.length && rows.length){
+    console.warn('[sportmonks-adapter] no standings rows matched regular season stage; returning empty table to avoid mixed-stage standings', {
+      seasonId,
+      stageId,
+      rowStages:[...new Set(rows.map(row => row?.stage_id || row?.stage?.id || row?.stage?.data?.id || 'unknown'))],
+    });
+  }
+  return { raw, stage, rows: stageId ? filtered : rows };
 }
 
 async function getFixturesForSeason(seasonId, extraFilters = {}, options = {}){
@@ -445,6 +452,8 @@ async function safeEndpoint(name, fn, fallback = emptyResponse()){
 async function handleStandings(params, force){
   const league = await resolveLeagueSeason(params.league, params.season_id || params.season);
   const standings = await getStandingsForSeason(league.seasonId, { force });
+  // Important: do not patch played matches from fixtures here. The entire row must
+  // come from the same Sportmonks standings source/stage to avoid inconsistent tables.
   const rows = standings.rows.map(normalizeStandingRow).sort((a, b) => a.rank - b.rank);
   return {
     response: [{
