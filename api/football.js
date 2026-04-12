@@ -173,6 +173,45 @@ function detailSubValue(details = [], names = [], key = ''){
   return valueNumber(row?.value, key);
 }
 
+function hasStatValue(value){
+  return value !== undefined && value !== null && value !== '';
+}
+
+function firstStatNumber(...values){
+  const value = values.find(hasStatValue);
+  return hasStatValue(value) ? valueNumber(value) : 0;
+}
+
+function standingDetailValue(details = [], names = [], preferredKey = ''){
+  const rows = Array.isArray(details) ? details : [];
+  const wanted = names.map(normalizeToken).filter(Boolean);
+  const getTokens = detail => [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id]
+    .map(normalizeToken)
+    .filter(Boolean);
+  const getValue = detail => detail?.value ?? detail?.total ?? detail?.count;
+  const usable = rows.filter(detail => hasStatValue(getValue(detail)));
+
+  // Standings values are already totals. Pick one best matching detail row; never sum duplicates.
+  const exact = usable.find(detail => getTokens(detail).some(token => wanted.includes(token)));
+  if(exact) return valueNumber(getValue(exact), preferredKey);
+
+  const overall = usable.find(detail => {
+    const tokens = getTokens(detail);
+    return tokens.some(token => token.includes('overall')) && tokens.some(token => wanted.some(want => token.includes(want)));
+  });
+  if(overall) return valueNumber(getValue(overall), preferredKey);
+
+  const nonSplit = usable.find(detail => {
+    const tokens = getTokens(detail);
+    return tokens.some(token => wanted.some(want => token.includes(want)))
+      && !tokens.some(token => token.includes('home') || token.includes('away'));
+  });
+  if(nonSplit) return valueNumber(getValue(nonSplit), preferredKey);
+
+  const fallback = usable.find(detail => getTokens(detail).some(token => wanted.some(want => token.includes(want))));
+  return fallback ? valueNumber(getValue(fallback), preferredKey) : undefined;
+}
+
 function logo(entity = {}){ return entity.image_path || entity.logo_path || entity.logo || ''; }
 
 function normalizeTeam(team = {}){
@@ -326,13 +365,13 @@ async function getFixtureById(fixtureId, include = [], options = {}){
 function normalizeStandingRow(row = {}){
   const team = row.participant || row.team || {};
   const details = row.details || [];
-  const played = detailValue(details, ['played', 'matches played']) || valueNumber(row.overall?.games_played || row.all?.played);
-  const win = detailValue(details, ['won', 'wins']) || valueNumber(row.overall?.won || row.all?.win);
-  const draw = detailValue(details, ['draw', 'draws']) || valueNumber(row.overall?.draw || row.all?.draw);
-  const lose = detailValue(details, ['lost', 'losses']) || valueNumber(row.overall?.lost || row.all?.lose);
-  const goalsFor = detailValue(details, ['goals for', 'goals scored', 'goals_scored']) || valueNumber(row.overall?.goals_scored || row.all?.goals?.for);
-  const goalsAgainst = detailValue(details, ['goals against', 'goals conceded', 'goals_conceded']) || valueNumber(row.overall?.goals_against || row.all?.goals?.against);
-  const points = detailValue(details, ['points']) || valueNumber(row.points);
+  const played = firstStatNumber(row.overall?.games_played, row.all?.played, standingDetailValue(details, ['played', 'matches played', 'overall matches played']));
+  const win = firstStatNumber(row.overall?.won, row.all?.win, standingDetailValue(details, ['won', 'wins', 'overall won', 'overall wins']));
+  const draw = firstStatNumber(row.overall?.draw, row.all?.draw, standingDetailValue(details, ['draw', 'draws', 'overall draw', 'overall draws']));
+  const lose = firstStatNumber(row.overall?.lost, row.all?.lose, standingDetailValue(details, ['lost', 'losses', 'overall lost', 'overall losses']));
+  const goalsFor = firstStatNumber(row.overall?.goals_scored, row.all?.goals?.for, standingDetailValue(details, ['goals for', 'goals scored', 'overall goals for', 'overall goals scored']));
+  const goalsAgainst = firstStatNumber(row.overall?.goals_against, row.all?.goals?.against, standingDetailValue(details, ['goals against', 'goals conceded', 'overall goals against', 'overall goals conceded']));
+  const points = firstStatNumber(row.points, standingDetailValue(details, ['points', 'overall points']));
   return {
     rank: Number(row.position || row.rank || 0),
     team: normalizeTeam(team),
