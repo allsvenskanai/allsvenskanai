@@ -5879,7 +5879,7 @@ function adminLog(message, meta = {}){
 
 async function adminApi(action, payload = {}){
   const token = getAdminToken();
-  const response = await fetch(`/api/admin/cache/${action}`, {
+  const response = await fetch(`/api/admin/stats/${action}`, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'X-Admin-Token':token },
     body:JSON.stringify({ ...payload, token }),
@@ -5900,6 +5900,17 @@ function adminCurrentTeams(){
 }
 
 function adminTeamCacheStatus(team, league = adminCurrentLeague()){
+  if(team?.cache){
+    return {
+      cache:team.cache,
+      cached:Boolean(team.cache.cached),
+      updatedAt:team.cache.updatedAt || null,
+      playerCount:Number(team.cache.playerCount || 0),
+      usefulPlayerCount:Number(team.cache.usefulPlayerCount || 0),
+      emptyStats:Boolean(team.cache.emptyStats),
+      expired:false,
+    };
+  }
   const cache = getCachedTeamStats(team.id, league.leagueId, league.season, { allowExpired:true });
   const useful = countUsefulCachedPlayers(cache || {});
   return {
@@ -6042,9 +6053,9 @@ async function adminRefreshTeam(teamId, options = {}){
   const team = adminCurrentTeams().find(item => String(item.id) === String(teamId));
   adminLog(`Startar refresh för ${fixName(team?.name || teamId)}…`);
   const auth = await adminApi('refresh-team', { league:league.key, teamId, force:Boolean(options.force) });
-  const data = await refreshTeamStats(teamId, league.leagueId, league.season, { force:Boolean(options.force), light:!options.deep });
   statsCache = null;
-  adminLog(`Refresh klar för ${fixName(data.team?.name || team?.name || teamId)}`, { apiCalls:auth.apiCalls || 0, players:data.players?.length || 0, staleFallback:auth.staleFallback || false });
+  adminDashboardState.status = await adminApi('status');
+  adminLog(`Refresh klar för ${fixName(team?.name || teamId)}`, { apiCalls:auth.apiCalls || 0, players:auth.playerCount || 0, useful:auth.usefulPlayerCount || 0, staleFallback:auth.staleFallback || false });
   renderAdminDashboard();
 }
 
@@ -6059,87 +6070,64 @@ async function adminRefreshLeague(key){
   const league = adminCurrentLeague();
   const teams = adminCurrentTeams();
   const auth = await adminApi('refresh-league', { league:league.key, limit:teams.length });
-  adminLog(`Auktoriserad ligarefresh för ${league.name}`, { apiCalls:auth.apiCalls || 0, teams:teams.length });
-  for(const [index, team] of teams.entries()){
-    try {
-      adminLog(`Refresh ${index + 1}/${teams.length}: ${fixName(team.name)}`);
-      await refreshTeamStats(team.id, league.leagueId, league.season, { force:true, light:true });
-      if(index + 1 < teams.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
-    } catch(error) {
-      adminLog(`Misslyckades: ${fixName(team.name)}`, { error:error.message });
-      if(isApiRateLimitError(error)) break;
-    }
-  }
   statsCache = null;
-  await ensureStatsDatasetForSeason(league.season);
+  adminDashboardState.status = await adminApi('status');
+  adminLog(`Ligastatistik sparad för ${league.name}`, { apiCalls:auth.apiCalls || 0, teams:auth.results?.length || teams.length, players:auth.datasetMeta?.playerCount || 0 });
   renderAdminDashboard();
 }
 
 async function adminRefreshRecent(){
   const league = adminCurrentLeague();
-  await adminApi('refresh-recent', { league:league.key });
-  const teams = adminCurrentTeams().filter(team => {
-    const status = adminTeamCacheStatus(team, league);
-    return !status.cached || status.expired || status.emptyStats;
-  });
-  adminLog(`Refresh recent/stale: ${teams.length} lag`);
-  for(const [index, team] of teams.entries()){
-    try {
-      await adminRefreshTeam(team.id, { force:false, deep:false });
-      if(index + 1 < teams.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
-    } catch(error) {
-      adminLog(`Recent refresh stoppad för ${fixName(team.name)}`, { error:error.message });
-      if(isApiRateLimitError(error)) break;
-    }
-  }
+  const auth = await adminApi('refresh-recent', { league:league.key });
+  statsCache = null;
+  adminDashboardState.status = await adminApi('status');
+  adminLog(`Refresh recent/stale klar`, { apiCalls:auth.apiCalls || 0, teams:auth.results?.length || 0, players:auth.datasetMeta?.playerCount || 0 });
   renderAdminDashboard();
 }
 
-function adminClearSelectedTeam(){
+async function adminClearSelectedTeam(){
   const league = adminCurrentLeague();
   if(!adminDashboardState.teamId) return;
-  localStorage.removeItem(statsTeamCacheKey(adminDashboardState.teamId, league.leagueId, league.season));
+  await adminApi('clear', { scope:'team', league:league.key, teamId:adminDashboardState.teamId });
   statsCache = null;
-  adminLog('Valt lag rensat från browser-cache', { teamId:adminDashboardState.teamId });
+  adminDashboardState.status = await adminApi('status');
+  adminLog('Valt lag rensat från server-cache', { teamId:adminDashboardState.teamId });
   renderAdminDashboard();
 }
 
 async function adminClearLeague(){
   const league = adminCurrentLeague();
-  localStorage.removeItem(`${STATS_DATASET_CACHE_PREFIX}:${league.key}:${league.season}`);
-  Object.keys(localStorage)
-    .filter(key => key.startsWith(`${STATS_TEAM_CACHE_PREFIX}:${league.leagueId}:${league.season}:team:`))
-    .forEach(key => localStorage.removeItem(key));
   await adminApi('clear', { scope:'league', league:league.key });
   statsCache = null;
+  adminDashboardState.status = await adminApi('status');
   adminLog('Ligacache rensad', { league:league.key });
   renderAdminDashboard();
 }
 
 async function adminClearAllStats(){
-  clearStatsDatasetCache(null);
-  clearPersistedApiCache();
   await adminApi('clear', { scope:'all' });
   statsCache = null;
+  adminDashboardState.status = await adminApi('status');
   adminLog('All statistikcache rensad');
   renderAdminDashboard();
 }
 
 async function adminRebuildLeaderboards(){
   const league = adminCurrentLeague();
-  const combined = combineCachedTeamStats(adminCurrentTeams(), league.leagueId, league.season);
-  const payload = { year:league.season, leagueKey:league.key, leagueId:league.leagueId, teams:adminCurrentTeams(), players:combined.players, teamStats:combined.teamStats, meta:{ playerCount:combined.players.length, cachedTeamCount:combined.teamCaches.length, warning:'' } };
-  localStorage.setItem(`${STATS_DATASET_CACHE_PREFIX}:${league.key}:${league.season}`, JSON.stringify({ createdAt:Date.now(), data:payload }));
-  await adminApi('rebuild-leaderboards', { league:league.key });
-  statsCache = payload;
-  adminLog('Aggregerade leaderboards byggda från cache', { players:combined.players.length, teams:combined.teamCaches.length });
+  const auth = await adminApi('rebuild-leaderboards', { league:league.key });
+  statsCache = null;
+  adminDashboardState.status = await adminApi('status');
+  adminLog('Aggregerade leaderboards byggda från server-cache', { players:auth.playerCount || auth.datasetMeta?.playerCount || 0, teams:auth.teamCount || 0 });
   renderAdminDashboard();
 }
 
 async function adminRebuildPlayerStats(){
   const league = adminCurrentLeague();
-  await adminApi('rebuild-player-stats', { league:league.key });
-  await adminRefreshLeague(league.key);
+  const auth = await adminApi('rebuild-player-stats', { league:league.key });
+  statsCache = null;
+  adminDashboardState.status = await adminApi('status');
+  adminLog('Spelarstatistik byggd om server-side', { apiCalls:auth.apiCalls || 0, players:auth.datasetMeta?.playerCount || 0 });
+  renderAdminDashboard();
 }
 
 function route(path) {
@@ -6460,14 +6448,10 @@ async function renderBestPlayers(){
   try{
     const el = document.getElementById('bestPlayersList');
     if(!el) return;
-    el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Hämtar spelare…</div>`;
+    el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>Läser sparad statistik…</div>`;
 
     const activeSeason = await getResolvedSeason();
-    const cache = await ensureStatsDatasetForSeason(activeSeason, {
-      onStatus: message => {
-        el.innerHTML = `<div class="news-loading"><div class="spinner" style="width:14px;height:14px"></div>${esc(message)}</div>`;
-      }
-    });
+    const cache = await loadPublicStatsDataset(activeSeason);
 
     const best = getStatsLeaderboardRows(cache.players, 'rating', 1);
 
@@ -10015,7 +9999,46 @@ function statsLeagueTitle(league = getActiveLeagueConfig()){
   return `Statistik ${league.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr'}`;
 }
 
+async function loadPublicStatsDataset(season = SEASON){
+  const league = getActiveLeagueConfig();
+  const response = await fetch(`/api/stats/public?league=${encodeURIComponent(league.key)}&season=${encodeURIComponent(season)}`);
+  const data = await response.json().catch(() => ({}));
+  if(data?.ok && data?.response?.players) {
+    return {
+      ...data.response,
+      loadedAt:Date.now(),
+      leagueKey:league.key,
+      leagueId:league.leagueId,
+      meta:{
+        ...(data.response.meta || {}),
+        publicUpdatedAt:data.updatedAt || data.response.meta?.updatedAt || null,
+        publicStatic:true,
+      }
+    };
+  }
+  return {
+    year:season,
+    loadedAt:Date.now(),
+    leagueKey:league.key,
+    leagueId:league.leagueId,
+    teams:[],
+    players:[],
+    teamStats:[],
+    meta:{
+      playerCount:0,
+      teamCount:0,
+      cachedTeamCount:0,
+      publicStatic:true,
+      publicMissing:true,
+      warning:data?.message || 'Statistik är inte uppdaterad ännu.',
+    }
+  };
+}
+
 async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
+  // Public visitors must never rebuild player statistics live. The old builder is kept only
+  // as an explicit internal escape hatch and is not used by the public statistics page.
+  if(!options.allowLiveBuild) return loadPublicStatsDataset(season);
   const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
   const league = getActiveLeagueConfig();
   const statsMemoryCacheAge = Date.now() - Number(statsCache?.loadedAt || 0);
@@ -10184,13 +10207,9 @@ async function pageStats(el, year=null, force=false) {
   await getResolvedSeason();
   if(force) statsCache = null;
   document.title = `${statsLeagueTitle()} — AllsvenskanAI`;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div>Hämtar ${esc(statsLeagueTitle().toLowerCase())}…</div>`;
+  el.innerHTML = `<div class="stats-shell"><div class="pg-header"><div><div class="pg-title">${esc(statsLeagueTitle())}</div><div class="pg-sub">Läser sparad statistik.</div></div></div></div>`;
   try {
-    await ensureStatsDatasetForSeason(statsYear, {
-      onStatus: message => {
-        el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(message)}</div>`;
-      }
-    });
+    statsCache = await loadPublicStatsDataset(statsYear);
     renderStats(el, currentStatCategory || 'goals', currentStatGroup || 'offense');
   } catch(e) { el.innerHTML=`<div class="err">Fel: ${esc(e.message)}</div>`; }
 }
@@ -10252,6 +10271,9 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
 
   const groupMeta = STAT_GROUPS.find(group => group.id === currentStatGroup) || STAT_GROUPS[0];
   const statsWarning = cache.meta?.warning ? `<div class="err" style="margin:0 0 1rem">${esc(cache.meta.warning)}</div>` : '';
+  const emptyStatsMessage = cache.meta?.publicMissing
+    ? 'Statistik uppdateras av administratör. Kom tillbaka snart.'
+    : 'Ingen sparad statistik hittades för den här kategorin ännu.';
   el.innerHTML = `
     <div class="stats-shell">
       <div class="pg-header" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -10282,7 +10304,7 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
       </div>
       <div class="tw"><div><table class="stats-table">
         <thead><tr><th>#</th><th>Spelare</th><th>${activeCategory.col}</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="3" class="empty">Ingen data</td></tr>'}</tbody>
+        <tbody>${rows||`<tr><td colspan="3" class="empty">${esc(emptyStatsMessage)}</td></tr>`}</tbody>
       </table></div></div>
     </div>`;
 }
