@@ -269,6 +269,18 @@ function playerName(player = {}){
   return player.display_name || player.common_name || player.name || [player.firstname, player.lastname].filter(Boolean).join(' ') || `Spelare ${player.id || ''}`.trim();
 }
 
+function playerAge(player = {}){
+  const raw = player.date_of_birth || player.birthdate || player.birth_date || player.dob;
+  if(!raw) return null;
+  const date = new Date(raw);
+  if(Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - date.getFullYear();
+  const beforeBirthday = now.getMonth() < date.getMonth() || (now.getMonth() === date.getMonth() && now.getDate() < date.getDate());
+  if(beforeBirthday) age -= 1;
+  return age > 0 && age < 80 ? age : null;
+}
+
 function entityId(value){
   if(value === null || value === undefined || value === '') return null;
   if(typeof value === 'object') return entityId(value.id ?? value.team_id ?? value.season_id ?? value.player_id);
@@ -393,6 +405,25 @@ function sanitizeTeamPayload(league, payload = {}){
     ...payload,
     cacheKey:payload.cacheKey || teamStatsStoreKey(league, payload.teamId),
     players,
+    squad:Array.isArray(payload.squad) && payload.squad.length ? payload.squad.filter(player => String(player.teamId || payload.teamId) === String(payload.teamId)) : players.map(player => ({
+      id:player.playerId,
+      playerId:player.playerId,
+      name:player.playerName,
+      playerName:player.playerName,
+      firstname:player.firstname || '',
+      lastname:player.lastname || '',
+      teamId:player.teamId,
+      teamName:player.teamName,
+      season:player.season,
+      seasonId:player.seasonId,
+      leagueId:player.leagueId,
+      leagueKey:player.leagueKey,
+      position:player.position || '',
+      photo:player.photo || '',
+      age:player.age ?? null,
+      nationality:player.nationality || '',
+      country:player.country || '',
+    })),
     playerCount:players.length,
     usefulPlayerCount,
     debug:{
@@ -440,6 +471,9 @@ function normalizePlayerStat(item = {}, team = {}){
     playerName: playerName(player),
     firstname: player.firstname || '',
     lastname: player.lastname || '',
+    age:playerAge(player),
+    nationality:player.nationality?.name || player.country?.name || player.nationality || player.country || '',
+    country:player.country?.name || player.nationality?.name || player.country || player.nationality || '',
     teamId: teamEntity.id || team.id || null,
     teamName: teamEntity.name || team.name || '',
     teamLogo: logo(teamEntity) || logo(team),
@@ -525,11 +559,33 @@ async function refreshStoredTeamStats(teamId, league, options = {}){
   };
   const payload = {
     teamId:Number(teamId),
+    teamName:team.name || `Lag ${teamId}`,
+    league:league.key,
+    leagueKey:league.key,
     leagueId:league.leagueId,
     season:league.seasonLabel,
     seasonId:league.seasonId,
     cacheKey:teamStatsStoreKey(league, teamId),
     team,
+    squad:players.map(player => ({
+      id:player.playerId,
+      playerId:player.playerId,
+      name:player.playerName,
+      playerName:player.playerName,
+      firstname:player.firstname || '',
+      lastname:player.lastname || '',
+      teamId:player.teamId,
+      teamName:player.teamName,
+      season:player.season,
+      seasonId:player.seasonId,
+      leagueId:player.leagueId,
+      leagueKey:player.leagueKey,
+      position:player.position || '',
+      photo:player.photo || '',
+      age:player.age ?? null,
+      nationality:player.nationality || '',
+      country:player.country || '',
+    })),
     players,
     playerCount:players.length,
     usefulPlayerCount,
