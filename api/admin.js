@@ -388,6 +388,11 @@ function playerHasUsefulStats(player = {}){
   return [
     stats.appearances, stats.minutes, stats.goals, stats.assists,
     stats.yellow, stats.red, stats.rating, stats.starts,
+    stats.passes, stats.accuratePasses, stats.keyPasses, stats.shots, stats.shotsOn,
+    stats.tackles, stats.interceptions, stats.blocks, stats.duelsWon, stats.duelsTotal,
+    stats.saves, stats.goalsConceded, stats.cleanSheets,
+    stats.xg, stats.xa, stats.progressivePasses, stats.progressiveRuns,
+    stats.crosses, stats.longPasses,
   ].some(value => Number(value || 0) > 0);
 }
 
@@ -535,6 +540,14 @@ function normalizePlayerStat(item = {}, team = {}){
   const duelsWon = detailValueStrict(details, ['duels won', 'won duels']);
   const duelsTotal = detailValueStrict(details, ['duels total', 'total duels', 'duels'], ['duels won', 'won duels', 'duels lost', 'lost duels']);
   const shotsOn = detailValueStrict(details, ['shots on target', 'on target']);
+  const xg = detailValueStrict(details, ['expected goals', 'xg', 'expected goal'], [], 'average');
+  const xa = detailValueStrict(details, ['expected assists', 'xa', 'expected assist'], [], 'average');
+  const progressivePasses = detailValueStrict(details, ['progressive passes', 'progressive pass']);
+  const progressiveRuns = detailValueStrict(details, ['progressive runs', 'progressive run', 'progressive carries', 'progressive carry']);
+  const crosses = detailValueStrict(details, ['crosses', 'total crosses']);
+  const accurateCrosses = detailValueStrict(details, ['accurate crosses', 'successful crosses', 'completed crosses']);
+  const longPasses = detailValueStrict(details, ['long passes', 'total long passes']);
+  const accurateLongPasses = detailValueStrict(details, ['accurate long passes', 'successful long passes', 'completed long passes']);
   return {
     playerId: player.id || item.player_id,
     playerName: playerName(player),
@@ -564,6 +577,7 @@ function normalizePlayerStat(item = {}, team = {}){
       penaltiesSaved:detailValueStrict(details, ['penalty saved']), penaltiesScored:detailValueStrict(details, ['penalty scored']),
       penaltiesMissed:detailValueStrict(details, ['penalty missed']), penaltiesWon:detailValueStrict(details, ['penalty won']),
       penaltiesCommitted:detailValueStrict(details, ['penalty committed']), rating,
+      xg, xa, progressivePasses, progressiveRuns, crosses, accurateCrosses, longPasses, accurateLongPasses,
     },
     derived: {
       goalContributions,
@@ -581,6 +595,8 @@ function normalizePlayerStat(item = {}, team = {}){
       minutesPerContribution:goalContributions > 0 ? minutes / goalContributions : 0,
       cardsPer90:per90(detailValueStrict(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']) + detailValueStrict(details, ['red cards', 'red card', 'redcards', 'red'])),
       foulsPer90:per90(detailValueStrict(details, ['fouls committed'])),
+      xgPer90:per90(xg),
+      xaPer90:per90(xa),
     },
     flags: {
       goalkeeper: normalizeToken(position).includes('goalkeeper') || saves > 0 || goalsConceded > 0,
@@ -744,6 +760,14 @@ async function getStoredTeamStatus(team, league){
 
 function buildStoredLeagueDataset(league, teams = [], teamPayloads = []){
   const players = dedupePlayers(teamPayloads.flatMap(item => item.players || []));
+  const statInventory = [...new Set(players.flatMap(player => {
+    const stats = player.stats || {};
+    const derived = player.derived || {};
+    return [
+      ...Object.entries(stats).filter(([, value]) => Number(value || 0) > 0).map(([key]) => `stats.${key}`),
+      ...Object.entries(derived).filter(([, value]) => Number(value || 0) > 0).map(([key]) => `derived.${key}`),
+    ];
+  }))].sort();
   const teamStats = teamPayloads.map(item => ({
     teamId:item.teamId,
     leagueId:item.leagueId,
@@ -771,6 +795,8 @@ function buildStoredLeagueDataset(league, teams = [], teamPayloads = []){
       updatedAt:Date.now(),
       source:'admin-persisted',
       storeKeys:statsStoreKeys(league),
+      statInventory,
+      statFieldCount:statInventory.length,
       warning:players.length ? '' : 'Statistik ar inte uppdaterad annu.',
     }
   };
