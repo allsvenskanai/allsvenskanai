@@ -6316,15 +6316,18 @@ function renderAdminDashboard(el = document.getElementById('mc')){
   const teamOptions = teams.map(team => `<option value="${team.id}" ${String(team.id) === String(adminDashboardState.teamId) ? 'selected' : ''}>${esc(fixName(team.name || 'Lag'))}</option>`).join('');
   const leagueSummary = Object.values(LEAGUES).map(item => {
     const statusTeams = adminDashboardState.status?.leagues?.[item.key]?.teams || [];
+    const datasetMeta = adminDashboardState.status?.leagues?.[item.key]?.datasetMeta || {};
     const cached = statusTeams.filter(team => adminTeamCacheStatus(team, item).cached).length;
     const empty = statusTeams.filter(team => adminTeamCacheStatus(team, item).emptyStats).length;
     const stale = statusTeams.filter(team => adminTeamCacheStatus(team, item).expired).length;
     return `<div class="stats-overview-card">
       <div class="stats-overview-label">${esc(item.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr')}</div>
       <div class="stats-overview-value">${cached}/${statusTeams.length || 0}</div>
-      <div class="stats-overview-copy">${stale} stale · ${empty} tom stats</div>
+      <div class="stats-overview-copy">${stale} stale · ${empty} tom stats · ${Number(datasetMeta.statFieldCount || 0)} statfält</div>
     </div>`;
   }).join('');
+  const activeDatasetMeta = adminDashboardState.status?.leagues?.[adminDashboardState.leagueKey]?.datasetMeta || {};
+  const statInventory = Array.isArray(activeDatasetMeta.statInventory) ? activeDatasetMeta.statInventory : [];
   const rows = teams.map(team => {
     const status = adminTeamCacheStatus(team, league);
     const statusClass = !status.cached ? 'bad' : status.emptyStats || status.expired ? 'warn' : 'good';
@@ -6375,6 +6378,7 @@ function renderAdminDashboard(el = document.getElementById('mc')){
       </div>
       <div class="admin-panel">
         <div class="section-label">Cache status · ${esc(league.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr')}</div>
+        <div class="feed-note">Tillgängliga statistikfält i public cache: ${statInventory.length ? esc(statInventory.slice(0, 28).join(', ')) + (statInventory.length > 28 ? ' …' : '') : 'Inga fält sparade ännu'}</div>
         <div class="admin-table-wrap">
           <table class="admin-cache-table"><thead><tr><th>Lag</th><th>Status</th><th>Senast uppdaterad</th><th>Spelare cacheade</th><th>Med stats</th><th>Tom stats</th><th>Åtgärd</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="empty">Ingen data</td></tr>'}</tbody></table>
         </div>
@@ -7766,10 +7770,15 @@ async function loadTeamPagePublicStats(routeTeamId, season, candidateTeams = [])
 function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStatGroup, catId = currentTeamPlayerStatCategory){
   if(!el) return;
   const activeTeamId = Number(window.__teamPlayerStatsData?.teamId || 0);
-  const scopedPlayers = activeTeamId ? dedupeCanonicalTeamPlayers(players, activeTeamId) : (players || []);
-  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
-  const categories = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
-  const activeCategory = categories.find(category => category.id === catId) || categories[0] || STAT_CATEGORIES[0];
+  const scopedPlayers = normalizeStatsPlayers(activeTeamId ? dedupeCanonicalTeamPlayers(players, activeTeamId) : (players || []));
+  const availableGroups = getAvailableStatGroups(scopedPlayers);
+  if(!availableGroups.length) {
+    el.innerHTML = `<div class="tw"><div class="team-empty-state">Spelarstatistik är inte uppdaterad ännu. Truppen kan visas även om statistik saknas.</div></div>`;
+    return;
+  }
+  const activeGroup = availableGroups.find(group => group.id === groupId) || availableGroups[0];
+  const categories = activeGroup.categories;
+  const activeCategory = categories.find(category => category.id === catId) || categories[0];
   currentTeamPlayerStatGroup = activeCategory.group;
   currentTeamPlayerStatCategory = activeCategory.id;
   const qualifies = (value) => {
@@ -7826,12 +7835,11 @@ function renderTeamPlayerStats(el, players = [], groupId = currentTeamPlayerStat
       </tr>`;
     }).join('');
 
-  const groupTabs = STAT_GROUPS.map(group => {
-    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+  const groupTabs = availableGroups.map(group => {
+    const count = group.categories.length;
     return `<button class="stats-group-chip ${group.id===currentTeamPlayerStatGroup?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${group.id}', null)">${group.label}<small>${count}</small></button>`;
   }).join('');
-  const categoryTabs = STAT_CATEGORIES
-    .filter(category => category.group === currentTeamPlayerStatGroup)
+  const categoryTabs = categories
     .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderTeamPlayerStats(document.getElementById('team-player-stats'), window.__teamPlayerStatsData.players || [], '${currentTeamPlayerStatGroup}', '${category.id}')">${category.label}</button>`)
     .join('');
 
@@ -9921,6 +9929,9 @@ const STAT_CATEGORIES = [
   { id:'passAccuracy', label:'Passnings%', title:'Passningsprocent', group:'passing', type:'derived', compute:p => p.derived.passAccuracy, col:'Pass %', description:'Passningssäkerhet över hela säsongen.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:50, secondary:p => `${Math.round(p.stats.passes || 0)} pass`, playerFilter:p => p.stats.passes >= 10 },
   { id:'passesPer90', label:'Pass /90', title:'Passningar per 90', group:'passing', type:'derived', compute:p => p.derived.passesPer90, col:'Pass /90', description:'Hur mycket en spelare är involverad per full match.', formatter:v => formatStatValue(v, 1), minValue:5, secondary:p => `${formatStatValue(p.derived.passAccuracy, 1)}% precision` },
   { id:'keyPassesPer90', label:'Nyckelpass /90', title:'Nyckelpass per 90', group:'passing', type:'derived', compute:p => p.derived.keyPassesPer90, col:'KP /90', description:'Kreativ output relativt speltid.', formatter:v => formatStatValue(v, 2), minValue:0.05, secondary:p => `${Math.round(p.stats.keyPasses || 0)} totalt` },
+  { id:'progressivePasses', label:'Progressiva pass', title:'Progressiva passningar', group:'passing', type:'direct', source:'stats.progressivePasses', col:'Prog. pass', description:'Progressiva passningar när Sportmonks levererar fältet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(statSafePer90(normalizeCanonicalPlayerStats(p).canonical.progressivePasses, normalizeCanonicalPlayerStats(p).canonical.minutes), 2)} /90` },
+  { id:'crosses', label:'Inlägg', title:'Inlägg', group:'passing', type:'direct', source:'stats.crosses', col:'Inlägg', description:'Inlägg när fältet finns i Sportmonks-statistiken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.accurateCrosses || 0)} lyckade` },
+  { id:'longPasses', label:'Långa pass', title:'Långa passningar', group:'passing', type:'direct', source:'stats.longPasses', col:'Långa pass', description:'Långa passningar när fältet finns i cachead data.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.accurateLongPasses || 0)} lyckade` },
   { id:'tackles', label:'Tacklingar', title:'Flest tacklingar', group:'defense', type:'direct', source:'stats.tackles', col:'Tacklingar', description:'Vem som går in i flest dueller på marken.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.interceptions || 0)} brytningar` },
   { id:'interceptions', label:'Interceptions', title:'Flest brytningar', group:'defense', type:'direct', source:'stats.interceptions', col:'Brytningar', description:'Läser spelet och bryter passningar.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.blocks || 0)} blockar` },
   { id:'blocks', label:'Blockar', title:'Flest blockar', group:'defense', type:'direct', source:'stats.blocks', col:'Blockar', description:'Skott- och passblockeringar över säsongen.', formatter:v => Math.round(v), minValue:1, secondary:p => `${Math.round(p.stats.tackles || 0)} tacklingar` },
@@ -9955,6 +9966,11 @@ const STAT_CATEGORIES = [
   { id:'shotAccuracy', label:'Träff%', title:'Träffprocent', group:'advanced', type:'derived', compute:p => p.derived.shotAccuracy, col:'Träff %', description:'Andel skott som träffar mål.', formatter:v => `${formatStatValue(v, 1)}%`, minValue:1, secondary:p => `${Math.round(p.stats.shotsOn || 0)} på mål`, playerFilter:p => p.stats.shots >= 1 },
   { id:'minutesPerGoal', label:'Min / mål', title:'Minuter per mål', group:'advanced', type:'derived', compute:p => p.derived.minutesPerGoal, col:'Min/mål', description:'Hur ofta en spelare gör mål sett till speltid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.stats.goals || 0)} mål`, playerFilter:p => p.stats.goals > 0 },
   { id:'minutesPerContribution', label:'Min / poäng', title:'Minuter per poäng', group:'advanced', type:'derived', compute:p => p.derived.minutesPerContribution, col:'Min/poäng', description:'Hur ofta mål eller assist kommer över tid.', formatter:v => formatStatValue(v, 1), sort:'asc', minValue:1, secondary:p => `${Math.round(p.derived.goalContributions || 0)} poäng`, playerFilter:p => p.derived.goalContributions > 0 },
+  { id:'xg', label:'xG', title:'Expected goals', group:'advanced', type:'direct', source:'stats.xg', col:'xG', description:'Expected goals visas bara om Sportmonks levererar fältet.', formatter:v => formatStatValue(v, 2), minValue:0.01, secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xgPer90, 2)} /90` },
+  { id:'xa', label:'xA', title:'Expected assists', group:'advanced', type:'direct', source:'stats.xa', col:'xA', description:'Expected assists visas bara om Sportmonks levererar fältet.', formatter:v => formatStatValue(v, 2), minValue:0.01, secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xaPer90, 2)} /90` },
+  { id:'xgPer90', label:'xG /90', title:'xG per 90', group:'advanced', type:'derived', compute:p => normalizeCanonicalPlayerStats(p).canonical.xgPer90, col:'xG /90', description:'xG justerat för speltid när fältet finns.', formatter:v => formatStatValue(v, 2), minValue:0.01, secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xg, 2)} xG` },
+  { id:'xaPer90', label:'xA /90', title:'xA per 90', group:'advanced', type:'derived', compute:p => normalizeCanonicalPlayerStats(p).canonical.xaPer90, col:'xA /90', description:'xA justerat för speltid när fältet finns.', formatter:v => formatStatValue(v, 2), minValue:0.01, secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xa, 2)} xA` },
+  { id:'progressiveRuns', label:'Progressiva löpningar', title:'Progressiva löpningar', group:'advanced', type:'direct', source:'stats.progressiveRuns', col:'Prog. löp.', description:'Progressiva löpningar när Sportmonks levererar fältet.', formatter:v => Math.round(v), minValue:1, secondary:p => `${formatStatValue(statSafePer90(normalizeCanonicalPlayerStats(p).canonical.progressiveRuns, normalizeCanonicalPlayerStats(p).canonical.minutes), 2)} /90` },
 ];
 
 const STAT_CATEGORY_EXACT_GETTERS = {
@@ -9976,6 +9992,9 @@ const STAT_CATEGORY_EXACT_GETTERS = {
   passAccuracy:{ value:statField('passAccuracyPct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.passesTotal || 0)} pass` },
   passesPer90:{ value:statField('passesPer90'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.passAccuracyPct, 1)}% precision` },
   keyPassesPer90:{ value:statField('keyPassesPer90'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.keyPasses || 0)} totalt` },
+  progressivePasses:{ value:statField('progressivePasses'), secondary:p => `${formatStatValue(statSafePer90(normalizeCanonicalPlayerStats(p).canonical.progressivePasses, normalizeCanonicalPlayerStats(p).canonical.minutes), 2)} /90` },
+  crosses:{ value:statField('crosses'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.accurateCrosses || 0)} lyckade` },
+  longPasses:{ value:statField('longPasses'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.accurateLongPasses || 0)} lyckade` },
   tackles:{ value:statField('tackles'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.tacklesPer90, 2)} /90` },
   interceptions:{ value:statField('interceptions'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.interceptionsPer90, 2)} /90` },
   blocks:{ value:statField('blocks'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.blocksPer90, 2)} /90` },
@@ -10010,6 +10029,11 @@ const STAT_CATEGORY_EXACT_GETTERS = {
   shotAccuracy:{ value:statField('shotAccuracyPct'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.shotsOnTarget || 0)} på mål` },
   minutesPerGoal:{ value:statField('minutesPerGoal'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goals || 0)} mål` },
   minutesPerContribution:{ value:statField('minutesPerContribution'), secondary:p => `${Math.round(normalizeCanonicalPlayerStats(p).canonical.goalContributions || 0)} poäng` },
+  xg:{ value:statField('xg'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xgPer90, 2)} /90` },
+  xa:{ value:statField('xa'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xaPer90, 2)} /90` },
+  xgPer90:{ value:statField('xgPer90'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xg, 2)} xG` },
+  xaPer90:{ value:statField('xaPer90'), secondary:p => `${formatStatValue(normalizeCanonicalPlayerStats(p).canonical.xa, 2)} xA` },
+  progressiveRuns:{ value:statField('progressiveRuns'), secondary:p => `${formatStatValue(statSafePer90(normalizeCanonicalPlayerStats(p).canonical.progressiveRuns, normalizeCanonicalPlayerStats(p).canonical.minutes), 2)} /90` },
 };
 
 let statsCache = null;
@@ -10268,6 +10292,10 @@ function normalizeCanonicalPlayerStats(player = {}){
     xa: canonicalNumber(sourceStats.xa ?? sourceDerived.xa),
     progressivePasses: canonicalNumber(sourceStats.progressivePasses ?? sourceDerived.progressivePasses),
     progressiveRuns: canonicalNumber(sourceStats.progressiveRuns ?? sourceDerived.progressiveRuns),
+    crosses: canonicalNumber(sourceStats.crosses ?? sourceDerived.crosses),
+    accurateCrosses: canonicalNumber(sourceStats.accurateCrosses ?? sourceDerived.accurateCrosses),
+    longPasses: canonicalNumber(sourceStats.longPasses ?? sourceDerived.longPasses),
+    accurateLongPasses: canonicalNumber(sourceStats.accurateLongPasses ?? sourceDerived.accurateLongPasses),
   };
   canonical.xgPer90 = statSafePer90(canonical.xg, minutes);
   canonical.xaPer90 = statSafePer90(canonical.xa, minutes);
@@ -10295,6 +10323,14 @@ function normalizeCanonicalPlayerStats(player = {}){
     saves,
     cleanSheets,
     goalsConceded,
+    xg:canonical.xg,
+    xa:canonical.xa,
+    progressivePasses:canonical.progressivePasses,
+    progressiveRuns:canonical.progressiveRuns,
+    crosses:canonical.crosses,
+    accurateCrosses:canonical.accurateCrosses,
+    longPasses:canonical.longPasses,
+    accurateLongPasses:canonical.accurateLongPasses,
   };
   const normalizedDerived = {
     ...sourceDerived,
@@ -10801,6 +10837,55 @@ function setStatsGroup(groupId){
   renderStats(document.getElementById('mc'), null, groupId);
 }
 
+function normalizeStatsPlayers(players = []){
+  return (players || []).map(normalizeCanonicalPlayerStats);
+}
+
+function statCategoryHasUsableData(category, players = []){
+  const normalized = normalizeStatsPlayers(players).filter(player => !category.playerFilter || category.playerFilter(player));
+  if(!normalized.length) return false;
+  return normalized.some(player => {
+    const value = getCategoryValue(player, category);
+    if(!Number.isFinite(value)) return false;
+    if(category.sort === 'asc' && category.minValue !== undefined && category.minValue < 0) {
+      return value >= 0 && (
+        value > 0 ||
+        player.canonical?.minutes > 0 ||
+        player.canonical?.appearances > 0 ||
+        player.canonical?.saves > 0
+      );
+    }
+    return value > (category.minValue ?? 0);
+  });
+}
+
+function getAvailableStatCategories(players = [], groupId = null){
+  const available = STAT_CATEGORIES.filter(category => statCategoryHasUsableData(category, players));
+  return groupId ? available.filter(category => category.group === groupId) : available;
+}
+
+function getAvailableStatGroups(players = []){
+  const availableCategories = getAvailableStatCategories(players);
+  return STAT_GROUPS
+    .map(group => ({
+      ...group,
+      categories:availableCategories.filter(category => category.group === group.id)
+    }))
+    .filter(group => group.categories.length);
+}
+
+function getStatsAvailabilitySummary(players = []){
+  const groups = getAvailableStatGroups(players);
+  const categories = groups.flatMap(group => group.categories);
+  const labels = groups.map(group => `${group.label} (${group.categories.length})`).join(' · ');
+  return {
+    groups,
+    categories,
+    categoryCount:categories.length,
+    labels,
+  };
+}
+
 function statsLeagueTitle(league = getActiveLeagueConfig()){
   return `Statistik ${league.key === 'damallsvenskan' ? 'Allsvenskan Dam' : 'Allsvenskan Herr'}`;
 }
@@ -11069,10 +11154,25 @@ async function pageStats(el, year=null, force=false) {
 }
 
 function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup) {
-  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: STAT_CATEGORIES.length, fieldCount: PLAYER_STATS_INVENTORY.length } };
-  const activeGroup = STAT_GROUPS.find(group => group.id === groupId) || STAT_GROUPS[0];
-  const categoriesInGroup = STAT_CATEGORIES.filter(category => category.group === activeGroup.id);
-  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || STAT_CATEGORIES[0];
+  const cache = statsCache || { players: [], meta: { playerCount: 0, teamCount: 0, categoryCount: 0, fieldCount: PLAYER_STATS_INVENTORY.length } };
+  cache.players = normalizeStatsPlayers(cache.players || []);
+  const availability = getStatsAvailabilitySummary(cache.players);
+  if(!availability.groups.length) {
+    el.innerHTML = `
+      <div class="stats-shell">
+        <div class="pg-header">
+          <div>
+            <div class="pg-title">${esc(statsLeagueTitle())}</div>
+            <div class="pg-sub">Statistik uppdateras av administratör. Inga användbara statistikfält finns sparade ännu.</div>
+          </div>
+        </div>
+        <div class="tw"><div class="empty">Statistik är inte uppdaterad ännu. Publika sidan gör inga tunga Sportmonks-anrop.</div></div>
+      </div>`;
+    return;
+  }
+  const activeGroup = availability.groups.find(group => group.id === groupId) || availability.groups[0];
+  const categoriesInGroup = activeGroup.categories;
+  const activeCategory = categoriesInGroup.find(category => category.id === catId) || categoriesInGroup[0] || availability.categories[0];
 
   currentStatGroup = activeCategory.group;
   currentStatCategory = activeCategory.id;
@@ -11084,12 +11184,11 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
   const yearBtns = years.map(y =>
     `<button class="stat-tab ${y===statsYear?'active':''}" onclick="pageStats(document.getElementById('mc'),${y})">${getSeasonLabel(y)}</button>`
   ).join('');
-  const groupTabs = STAT_GROUPS.map(group => {
-    const count = STAT_CATEGORIES.filter(category => category.group === group.id).length;
+  const groupTabs = availability.groups.map(group => {
+    const count = group.categories.length;
     return `<button class="stats-group-chip ${group.id===currentStatGroup?'active':''}" onclick="setStatsGroup('${group.id}')">${group.label}<small>${count}</small></button>`;
   }).join('');
-  const categoryTabs = STAT_CATEGORIES
-    .filter(category => category.group === currentStatGroup)
+  const categoryTabs = categoriesInGroup
     .map(category => `<button class="stat-tab ${category.id===activeCategory.id?'active':''}" onclick="renderStats(document.getElementById('mc'),'${category.id}','${currentStatGroup}')">${category.label}</button>`)
     .join('');
   const teams = cache.teams || [];
@@ -11144,12 +11243,13 @@ function renderStats(el, catId = currentStatCategory, groupId = currentStatGroup
         <div class="stats-category-head">
           <div>
             <div class="stats-category-title">${activeCategory.title}</div>
-            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}. Tabellen visar alltid minst 10 spelare när spelarunderlag finns.</div>
+            <div class="stats-category-copy">${activeCategory.description} ${groupMeta.blurb}. Visar bara kategorier som faktiskt har data i den sparade cachen.</div>
           </div>
           <div class="stats-category-badges">
             <span class="stats-category-badge">${activeCategory.type === 'derived' ? 'Beräknad' : 'Direkt från API'}</span>
             <span class="stats-category-badge">${activeCategory.col}</span>
             <span class="stats-category-badge">${cache.meta.playerCount} spelare</span>
+            <span class="stats-category-badge">${availability.categoryCount} aktiva kategorier</span>
             <span class="stats-category-badge">${cache.meta.cachedTeamCount || 0}/${cache.meta.teamCount || 0} lag cacheade</span>
           </div>
         </div>
