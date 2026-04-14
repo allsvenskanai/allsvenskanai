@@ -22,7 +22,7 @@ export async function renderAdmin(){
       <header class="page-hero">
         <span class="kicker">Privat drift</span>
         <h1 class="page-title">Admin</h1>
-        <p class="page-lead">Admin är den tunga vägen för import, refresh och rebuild. Publika vyer läser bara färdiga snapshots.</p>
+        <p class="page-lead">Admin ar den tunga vagen for import, refresh och rebuild. Publika vyer laser bara fardiga snapshots.</p>
       </header>
 
       <section class="grid-2">
@@ -37,7 +37,7 @@ export async function renderAdmin(){
           </label>
           <label class="admin-field">
             <span>Team ID</span>
-            <input type="number" name="teamId" placeholder="Valfritt för lag-actions">
+            <input type="number" name="teamId" placeholder="Valfritt for lag-actions">
           </label>
           <label class="admin-field">
             <span>Limit</span>
@@ -50,10 +50,17 @@ export async function renderAdmin(){
 
         <section class="card card-pad">
           <div class="card-title">
-            <h2>Logg</h2>
+            <h2>Status och logg</h2>
             <small id="admin-status">Redo</small>
           </div>
-          <pre class="admin-log" id="admin-log">Välj en action för att börja.</pre>
+          <div class="admin-log" id="admin-log">
+            <div class="grid-3">
+              <article class="metric-card"><span>Aktiv liga</span><strong>${esc(league.shortName)}</strong></article>
+              <article class="metric-card"><span>Publik kalla</span><strong>/api/stats</strong></article>
+              <article class="metric-card"><span>Tung import</span><strong>Admin</strong></article>
+            </div>
+            <p class="leader-meta">Valj en action for att se status, cachelage eller importresultat.</p>
+          </div>
         </section>
       </section>
     </section>
@@ -77,17 +84,53 @@ function bindAdminView(){
       limit:Number(data.get('limit') || 16),
       force:true,
     };
-    status.textContent = 'Kör...';
+    status.textContent = 'Kor...';
     button.disabled = true;
     try {
       const result = await adminAction(action, payload, token);
       status.textContent = 'Klart';
-      log.textContent = JSON.stringify(result, null, 2);
+      log.innerHTML = renderAdminResult(result);
     } catch(error) {
       status.textContent = 'Fel';
-      log.textContent = error.message;
+      log.innerHTML = `<div class="error-box"><strong>Action misslyckades</strong><span>${esc(error.message)}</span></div>`;
     } finally {
       button.disabled = false;
     }
   });
+}
+
+function renderAdminResult(result = {}){
+  const teams = result.teams || result.statuses || result.results || [];
+  const summary = [
+    ['Action', result.action || 'status'],
+    ['API-anrop', result.apiCalls ?? 0],
+    ['Stale fallback', result.staleFallback ? 'Ja' : 'Nej'],
+    ['Lag', result.teamCount ?? teams.length ?? 0],
+  ];
+  return `
+    <div class="grid-3">
+      ${summary.map(([label, value]) => `<article class="metric-card"><span>${esc(label)}</span><strong>${esc(value)}</strong></article>`).join('')}
+    </div>
+    ${teams.length ? `
+      <div class="table-wrap card" style="margin-top:14px">
+        <table class="data-table">
+          <thead><tr><th>Lag</th><th>Status</th><th>Spelare</th><th>Uppdaterad</th></tr></thead>
+          <tbody>
+            ${teams.map(team => `
+              <tr>
+                <td>${esc(team.name || team.teamName || team.team?.name || team.id || team.teamId || 'Lag')}</td>
+                <td>${team.ok === false ? 'Fel' : team.cache?.cached || team.cached ? 'Cachead' : 'Ej cachead'}</td>
+                <td>${esc(team.cache?.playerCount ?? team.playerCount ?? 0)}</td>
+                <td>${esc(team.cache?.updatedAt ? new Date(team.cache.updatedAt).toLocaleString('sv-SE') : team.updatedAt ? new Date(team.updatedAt).toLocaleString('sv-SE') : '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : ''}
+    <details class="card card-pad" style="margin-top:14px">
+      <summary>Ratt svar fran API</summary>
+      <pre>${esc(JSON.stringify(result, null, 2))}</pre>
+    </details>
+  `;
 }
