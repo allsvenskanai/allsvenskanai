@@ -3873,12 +3873,10 @@ const STATIC_MANIFEST_PATH = `${STATIC_DATA_BASE}/manifest.json`;
 let STATIC_MANIFEST_PROMISE = null;
 const STATIC_RESPONSE_CACHE = {};
 function shouldUseStaticEndpoint(ep, params = {}){
-  if(['fixtures/statistics','fixtures/events','fixtures/lineups'].includes(ep)) return false;
-  if(ep === 'fixtures') {
-    if(params?.id || params?.last || params?.next || params?.live) return false;
-    return !!params?.team;
-  }
-  return true;
+  // Static files in /data/static were generated from the old API-Football model.
+  // Do not mix them into the Sportmonks adapter. Public stats/transfers now use
+  // admin-persisted caches instead, and football data should come from /api/football.
+  return false;
 }
 
 function stableQueryKey(ep, params = {}){
@@ -10643,84 +10641,8 @@ function normalizeStatsTeamDataset(rawPlayers = [], team = {}, leagueId = LEAGUE
 }
 
 async function refreshTeamStats(teamId, leagueId = LEAGUE, season = SEASON, options = {}){
-  if(!teamId) throw new Error('Inget lag valt.');
-  const params = { league:leagueId, season, team:teamId };
-  const light = Boolean(options.light);
-  const force = options.force !== undefined ? Boolean(options.force) : !light;
-  let rateLimited = false;
-  let statsRaw = null;
-  let fixturesSeason = [];
-  if(!light) {
-    try {
-      statsRaw = await afRaw('teams/statistics', params, { force }).catch(() => ({ response:null }));
-      await delay(STATS_PAGE_FETCH_DELAY_MS);
-    } catch(e) {
-      if(isApiRateLimitError(e)) rateLimited = true;
-      console.warn('[stats] team aggregate refresh failed', { teamId, leagueId, season, error:e.message });
-    }
-  }
-  const rawPlayers = await fetchAllPages('players', params, {
-    force,
-    delayMs: STATS_PAGE_FETCH_DELAY_MS,
-    stopOnRateLimit: true,
-    onRateLimit: () => {
-      rateLimited = true;
-    },
-    dedupeKey: item => {
-      const playerId = item?.player?.id || '';
-      const stat = (item?.statistics || []).find(entry => {
-        const statLeagueId = Number(entry?.league?.id || 0);
-        const statSeason = Number(entry?.league?.season || 0);
-        const statTeamId = Number(entry?.team?.id || 0);
-        return (!statLeagueId || statLeagueId === Number(leagueId))
-          && (!statSeason || statSeason === Number(season))
-          && (!statTeamId || statTeamId === Number(teamId));
-      }) || item?.statistics?.[0] || {};
-      return `${playerId}-${stat?.team?.id || teamId}-${leagueId}-${season}`;
-    }
-  }).catch(e => {
-    if(isApiRateLimitError(e)) rateLimited = true;
-    console.warn('[stats] team player refresh failed', { teamId, leagueId, season, error:e.message });
-    return [];
-  });
-  if(!light && !rateLimited) {
-    try {
-      await delay(STATS_PAGE_FETCH_DELAY_MS);
-      fixturesSeason = await fetchAllPages('fixtures', params, {
-        force,
-        delayMs: STATS_PAGE_FETCH_DELAY_MS,
-        stopOnRateLimit: true,
-        onRateLimit: () => {
-          rateLimited = true;
-        },
-        dedupeKey: item => item?.fixture?.id || ''
-      });
-    } catch(e) {
-      if(isApiRateLimitError(e)) rateLimited = true;
-      console.warn('[stats] team fixtures refresh failed', { teamId, leagueId, season, error:e.message });
-    }
-  }
-  if(rateLimited && !rawPlayers.length) throw new Error('Too many requests. Viss statistik uppdateras inom kort.');
-  const firstTeam = rawPlayers
-    .flatMap(item => item?.statistics || [])
-    .find(stat => Number(stat?.team?.id || 0) === Number(teamId))?.team
-    || statsRaw?.response?.team
-    || rawPlayers.find(item => item?.statistics?.[0]?.team)?.statistics?.[0]?.team
-    || { id:teamId, name:'Lag' };
-  const players = normalizeStatsTeamDataset(rawPlayers, firstTeam, leagueId, season);
-  const data = buildTeamStatsCachePayload({
-    teamId:Number(teamId),
-    leagueId:Number(leagueId),
-    season:Number(season),
-    team:firstTeam,
-    stats:statsRaw?.response || {},
-    fixturesSeason,
-    players,
-    rawPlayers,
-    warning:rateLimited ? 'Viss statistik uppdateras inom kort. Lagcachen innehåller den data som hann laddas.' : ''
-  });
-  writeCachedTeamStats(teamId, leagueId, season, data);
-  return data;
+  console.warn('[stats] refreshTeamStats is disabled on the public frontend. Use /admin to refresh team statistics.', { teamId, leagueId, season });
+  throw new Error('Statistik uppdateras via adminpanelen.');
 }
 
 function combineCachedTeamStats(teams = [], leagueId = LEAGUE, season = SEASON){
@@ -10975,169 +10897,12 @@ async function loadPublicTeamStatsDataset(teamId, season = SEASON){
 }
 
 async function ensureStatsDatasetForSeason(season = SEASON, options = {}){
-  // Public visitors must never rebuild player statistics live. The old builder is kept only
-  // as an explicit internal escape hatch and is not used by the public statistics page.
-  if(!options.allowLiveBuild) return loadPublicStatsDataset(season);
-  const onStatus = typeof options.onStatus === 'function' ? options.onStatus : null;
-  const league = getActiveLeagueConfig();
-  const statsMemoryCacheAge = Date.now() - Number(statsCache?.loadedAt || 0);
-  if(statsCache?.year === season && statsCache?.leagueKey === league.key && !options.refreshTeamId && statsMemoryCacheAge >= 0 && statsMemoryCacheAge < 2 * 60 * 1000) return statsCache;
-
-  if(onStatus) onStatus(`Hämtar lag för ${season}…`);
-  let teams = [];
-  let standingRows = [];
-  try {
-    const standData = await afRaw('standings', {league:league.leagueId, season});
-    const standingGroups = standData?.response?.[0]?.league?.standings || [];
-    standingRows = standingGroups.flat().filter(Boolean);
-    teams = [...new Map(
-      standingRows
-        .map(row => row?.team)
-        .filter(team => team?.id)
-        .map(team => [team.id, team])
-    ).values()];
-  } catch(e) {
-    console.warn('[stats] standings fetch failed', { league:league.key, season, error:e.message });
+  // Production-safe path: public views must never rebuild player/team stats live.
+  // All heavy Sportmonks refreshes belong in the private admin endpoint.
+  if(options?.allowLiveBuild) {
+    console.warn('[stats] allowLiveBuild ignored on public frontend. Use /admin refresh actions instead.');
   }
-
-  let warning = '';
-  if(options.refreshTeamId) {
-    const team = teams.find(item => String(item.id) === String(options.refreshTeamId));
-    if(onStatus) onStatus(`Uppdaterar ${fixName(team?.name || 'valt lag')}…`);
-    try {
-      await refreshTeamStats(options.refreshTeamId, league.leagueId, season, { force:true, light:false });
-    } catch(e) {
-      console.warn('[stats] selected team refresh failed', { teamId:options.refreshTeamId, league:league.key, season, error:e.message });
-      warning = isApiRateLimitError(e)
-        ? 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så vi visar cachead data.'
-        : 'Viss statistik uppdateras inom kort.';
-    }
-  }
-
-  if(!options.refreshTeamId && teams.length) {
-    const standingByTeam = new Map(standingRows.map(row => [String(row?.team?.id || ''), row]));
-    const teamsToRefresh = teams.map(team => {
-      const cached = getCachedTeamStats(team.id, league.leagueId, season, { allowExpired:true });
-      const standing = standingByTeam.get(String(team.id));
-      const standingPlayed = Number(standing?.all?.played || 0);
-      const cachedPlayed = Number(cached?.teamStats?.played || cached?.fixtures?.playedCount || 0);
-      const hasCache = Boolean(cached?.players?.length);
-      const usefulPlayerCount = countUsefulCachedPlayers(cached || {});
-      const hasUsefulStats = usefulPlayerCount > 0;
-      const expired = Boolean(cached?._cacheExpired);
-      return {
-        team,
-        hasCache,
-        hasUsefulStats,
-        usefulPlayerCount,
-        expired,
-        standingPlayed,
-        cachedPlayed,
-        playedDelta: Math.max(0, standingPlayed - cachedPlayed),
-        updatedAt: Number(cached?._cacheCreatedAt || cached?.updatedAt || 0),
-      };
-    })
-    .filter(item => {
-      if(!item.hasCache) return true;
-      if(item.standingPlayed > 0 && !item.hasUsefulStats) return true;
-      if(item.playedDelta > 0) return true;
-      return item.expired && item.standingPlayed > 0;
-    })
-    .sort((a,b) => {
-      if(a.hasCache !== b.hasCache) return a.hasCache ? 1 : -1;
-      if(a.hasUsefulStats !== b.hasUsefulStats) return a.hasUsefulStats ? 1 : -1;
-      if(a.playedDelta !== b.playedDelta) return b.playedDelta - a.playedDelta;
-      if(a.expired !== b.expired) return a.expired ? -1 : 1;
-      if(a.usefulPlayerCount !== b.usefulPlayerCount) return a.usefulPlayerCount - b.usefulPlayerCount;
-      return a.updatedAt - b.updatedAt;
-    })
-    .map(item => item.team);
-
-    if(teamsToRefresh.length) {
-      const refreshQueue = teamsToRefresh.slice(0, STATS_STALE_TEAM_AUTO_REFRESH_LIMIT);
-      for(const [index, team] of refreshQueue.entries()) {
-        if(onStatus) onStatus(`Uppdaterar ny statistik för ${fixName(team.name || 'lag')} (${index + 1}/${refreshQueue.length})…`);
-        try {
-          await refreshTeamStats(team.id, league.leagueId, season, { force:false, light:true });
-        } catch(e) {
-          console.warn('[stats] stale team refresh failed', { teamId:team.id, league:league.key, season, error:e.message });
-          warning = isApiRateLimitError(e)
-            ? 'Viss statistik uppdateras inom kort. API-gränsen nåddes vid uppdatering av nya matcher.'
-            : 'Viss statistik uppdateras inom kort.';
-          if(isApiRateLimitError(e)) break;
-          continue;
-        }
-        if(index + 1 < refreshQueue.length) await delay(STATS_PAGE_FETCH_DELAY_MS);
-      }
-      if(teamsToRefresh.length > refreshQueue.length && !warning) {
-        warning = `${teamsToRefresh.length} lag behöver Sportmonks-uppdateras. ${refreshQueue.length} lag uppdaterades nu för att undvika API-spam.`;
-      }
-    }
-  }
-
-  let { players, teamCaches, teamStats } = combineCachedTeamStats(teams, league.leagueId, season);
-  const datasetCache = readStatsDatasetCache(season, { allowExpired:true });
-  if(datasetCache?.players?.length) {
-    const byPlayer = new Map(players.map(player => [player.playerId || `${player.playerName}-${player.teamId}`, player]));
-    datasetCache.players.forEach(player => {
-      const key = player.playerId || `${player.playerName}-${player.teamId}`;
-      if(!byPlayer.has(key)) byPlayer.set(key, player);
-    });
-    players = [...byPlayer.values()];
-    if(!teams.length && datasetCache.teams?.length) teams = datasetCache.teams;
-    if(!teamStats.length && datasetCache.teamStats?.length) teamStats = datasetCache.teamStats;
-  }
-  if(!teamCaches.length) {
-    teamCaches = listCachedTeamStatsForLeagueSeason(league.leagueId, season);
-    if(!players.length) players = teamCaches.flatMap(cache => cache.players || []);
-    if(!teamStats.length) teamStats = teamCaches.map(teamStatsCacheSummary);
-    if(!teams.length) teams = teamCaches.map(cache => cache.team || { id:cache.teamId, name:`Lag ${cache.teamId}` });
-  }
-
-  if(!players.length) {
-    try {
-      if(onStatus) onStatus(`Bygger statistik från cachead ligadata…`);
-      const rawLeaguePlayers = await fetchAllPages('players', { league:league.leagueId, season }, {
-        force:false,
-        delayMs: STATS_PAGE_FETCH_DELAY_MS,
-        stopOnRateLimit:true,
-        onRateLimit: () => {
-          warning = 'Viss statistik uppdateras inom kort. API-gränsen nåddes, så vi visar den data som finns cachead.';
-        },
-        dedupeKey:item => item?.player?.id || item?.player?.name || ''
-      });
-      players = buildNormalizedStatsDataset(rawLeaguePlayers, season, league.leagueId);
-    } catch(e) {
-      console.warn('[stats] league-wide player fallback failed', { league:league.key, season, error:e.message });
-      if(!warning) warning = 'Viss statistik uppdateras inom kort. Vi kunde inte hämta full spelarstatistik just nu.';
-    }
-  }
-
-  const partialTeamCache = teamCaches.some(cache => cache.warning);
-  if(!players.length && !warning) {
-    warning = 'Statistik laddas in automatiskt. Viss data kan saknas tills Sportmonks har svarat eller cache byggts klart.';
-  } else if(partialTeamCache && !warning) {
-    warning = 'Viss statistik uppdateras inom kort. Några lagcacher är delvis uppdaterade.';
-  }
-  statsCache = {
-    year: season,
-    loadedAt: Date.now(),
-    leagueKey: league.key,
-    leagueId: league.leagueId,
-    teams,
-    players,
-    teamStats,
-    meta: {
-      playerCount: players.length,
-      teamCount: teams.length || new Set(players.map(player => player.teamId).filter(Boolean)).size,
-      cachedTeamCount: teamCaches.length,
-      categoryCount: STAT_CATEGORIES.length,
-      fieldCount: PLAYER_STATS_INVENTORY.length,
-      warning,
-    }
-  };
-  writeStatsDatasetCache(season, statsCache);
-  return statsCache;
+  return loadPublicStatsDataset(season);
 }
 
 async function pageStats(el, year=null, force=false) {
