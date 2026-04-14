@@ -1145,9 +1145,21 @@ async function publicStatsAction(req){
   };
 }
 
+function normalizeAdminAction(action = ''){
+  const normalized = String(action || '').trim();
+  return ({
+    'cache-status':'status',
+    'update-team':'refresh-team',
+    'update-all-teams':'refresh-league',
+    'update-player-stats':'rebuild-player-stats',
+    'update-transfers':'refresh-transfers',
+    'clear-cache':'clear',
+  })[normalized] || normalized;
+}
+
 export default async function handler(req, res){
   const body = await readJsonBody(req);
-  const action = String(req.query?.action || body.action || '').trim();
+  const action = normalizeAdminAction(req.query?.action || body.action || '');
   try {
     if(action === 'public-stats'){
       if(req.method !== 'GET') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
