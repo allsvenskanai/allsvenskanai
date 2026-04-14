@@ -19,7 +19,7 @@ export async function renderStandings(){
         rows,
         columns:[
           { label:'#', render:row => esc(row.rank || '') },
-          { label:'Lag', render:row => `<span class="team-cell">${row.team?.logo ? `<img class="team-logo" src="${esc(row.team.logo)}" alt="">` : ''}${esc(row.team?.name || 'Okänt lag')}</span>` },
+          { label:'Lag', render:row => `<a class="team-cell" href="/app.html#/lag/${esc(row.team?.id || '')}" data-link>${row.team?.logo ? `<img class="team-logo" src="${esc(row.team.logo)}" alt="">` : ''}${esc(row.team?.name || 'Okänt lag')}</a>` },
           { label:'M', render:row => esc(row.all?.played || 0) },
           { label:'V', render:row => esc(row.all?.win || 0) },
           { label:'O', render:row => esc(row.all?.draw || 0) },
