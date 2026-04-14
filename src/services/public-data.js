@@ -66,6 +66,37 @@ export async function getPublicStats({ force = false } = {}){
   return data?.response || null;
 }
 
+export async function getTeams({ force = false } = {}){
+  const [stats, standings] = await Promise.allSettled([getPublicStats({ force }), getStandings({ force })]);
+  const fromStats = stats.status === 'fulfilled' ? stats.value?.teams || [] : [];
+  const fromStandings = standings.status === 'fulfilled' ? standings.value.map(row => row.team).filter(Boolean) : [];
+  const byId = new Map();
+  [...fromStats, ...fromStandings].forEach(team => {
+    const id = Number(team?.id || team?.teamId || 0);
+    if(id && !byId.has(id)) byId.set(id, team);
+  });
+  return [...byId.values()].sort((a, b) => String(a.name || a.teamName || '').localeCompare(String(b.name || b.teamName || ''), 'sv'));
+}
+
+export async function getLineupBuilderData({ force = false } = {}){
+  const [stats, teams] = await Promise.allSettled([getPublicStats({ force }), getTeams({ force })]);
+  const statsData = stats.status === 'fulfilled' ? stats.value : null;
+  const players = (statsData?.players || []).map(player => ({
+    id:Number(player.playerId || player.id || player.player?.id || 0),
+    name:player.playerName || player.name || player.player?.name || 'Okänd spelare',
+    teamId:Number(player.teamId || player.team?.id || 0),
+    teamName:player.teamName || player.team?.name || '',
+    position:player.position || player.stats?.position || '',
+    goals:Number(player.goals || player.stats?.goals || 0),
+    assists:Number(player.assists || player.stats?.assists || 0),
+  })).filter(player => player.id && player.name);
+  return {
+    players,
+    teams:teams.status === 'fulfilled' ? teams.value : [],
+    meta:statsData?.meta || null,
+  };
+}
+
 export async function getTeamStats(teamId, { force = false } = {}){
   if(!teamId) return null;
   const league = getActiveLeague();
