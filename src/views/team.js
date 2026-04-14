@@ -23,7 +23,7 @@ function squadTable(players = []){
     empty:'Spelartruppen är inte cachead ännu.',
     rows:players,
     columns:[
-      { label:'Spelare', render:player => `<a href="/app.html#/spelare/${esc(player.playerId || player.id || '')}" data-link>${esc(player.playerName || player.name || 'Okänd spelare')}</a>` },
+      { label:'Spelare', render:player => `<a href="/spelare/${esc(player.playerId || player.id || '')}" data-link>${esc(player.playerName || player.name || 'Okänd spelare')}</a>` },
       { label:'Pos', render:player => esc(player.position || player.stats?.position || '–') },
       { label:'Min', render:player => esc(formatNumber(playerValue(player, 'minutes'))) },
       { label:'Mål', render:player => esc(formatNumber(playerValue(player, 'goals'))) },
