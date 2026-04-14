@@ -57,7 +57,7 @@ export async function renderPlayer({ params = [] } = {}){
         </p>
         <div class="pill-row">
           ${player.position ? `<span class="pill">${esc(player.position)}</span>` : ''}
-          ${player.teamId ? `<a class="pill" href="/app.html#/lag/${esc(player.teamId)}" data-link>${esc(teamName(team || player))}</a>` : ''}
+          ${player.teamId ? `<a class="pill" href="/lag/${esc(player.teamId)}" data-link>${esc(teamName(team || player))}</a>` : ''}
         </div>
       </header>
 
