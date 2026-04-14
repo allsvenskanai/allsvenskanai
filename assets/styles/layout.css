@@ -9,7 +9,7 @@
   top:12px;
   z-index:40;
   display:grid;
-  grid-template-columns:auto 1fr auto;
+  grid-template-columns:auto 1fr minmax(220px,320px) auto;
   align-items:center;
   gap:18px;
   padding:12px;
@@ -185,6 +185,7 @@
 @media(max-width:900px){
   .site-header{grid-template-columns:1fr auto}
   .desktop-nav{display:none}
+  #global-search-slot,
   .league-switcher{grid-column:1/-1;justify-self:stretch}
   .app-main{padding-top:22px}
   .page-hero{padding:26px}
