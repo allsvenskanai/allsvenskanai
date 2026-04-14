@@ -213,6 +213,7 @@
 }
 
 .admin-field input,
+.admin-field select,
 .search-box input{
   width:100%;
   min-height:46px;
@@ -225,6 +226,7 @@
 }
 
 .admin-field input:focus,
+.admin-field select:focus,
 .search-box input:focus{
   border-color:rgba(216,184,93,.45);
 }
