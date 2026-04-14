@@ -1,5 +1,5 @@
-const LEAGUE_ID = 113;
-const DEFAULT_SEASON = 2026;
+const LEAGUE_ID = 573;
+const DEFAULT_SEASON = 26806;
 
 const SYSTEM_HAIKU = `
 Du hjälper en fotbollssajt om Allsvenskan.
@@ -19,6 +19,23 @@ Max 120 ord.
 
 const HAIKU_MODEL = process.env.ANTHROPIC_HAIKU_MODEL || 'claude-3-5-haiku-20241022';
 const SONNET_MODEL = process.env.ANTHROPIC_SONNET_MODEL || 'claude-sonnet-4-20250514';
+
+function chatSeasonId(yearOrSeason = DEFAULT_SEASON){
+  const numeric = Number(yearOrSeason || DEFAULT_SEASON);
+  if(numeric === 2026) return 26806;
+  return numeric || DEFAULT_SEASON;
+}
+
+function requestOrigin(req){
+  const configured = process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || '';
+  if(configured) {
+    const trimmed = configured.replace(/\/$/, '');
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+  }
+  const vercelUrl = process.env.VERCEL_URL || '';
+  if(vercelUrl) return `https://${vercelUrl.replace(/\/$/, '')}`;
+  return `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+}
 
 const SUPPORTED_INTENTS = [
   'top_scorers',
@@ -159,25 +176,27 @@ async function callAnthropic({ apiKey, model, system, messages, maxTokens }) {
 }
 
 async function fetchFootball(apiKey, endpoint, params = {}) {
-  const search = new URLSearchParams(params);
-  const response = await fetch(`https://v3.football.api-sports.io/${endpoint}?${search.toString()}`, {
-    headers: { 'x-apisports-key': apiKey },
+  const normalizedParams = { ...params };
+  if(normalizedParams.season !== undefined && normalizedParams.season_id === undefined) {
+    normalizedParams.season_id = chatSeasonId(normalizedParams.season);
+    delete normalizedParams.season;
+  }
+  const search = new URLSearchParams({ _endpoint:endpoint, ...normalizedParams });
+  const response = await fetch(`${apiKey.replace(/\/$/, '')}/api/football?${search.toString()}`, {
+    headers:{ accept:'application/json' },
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data?.message || `Football API ${response.status}`);
-  }
-  if (data?.errors && Object.keys(data.errors).length) {
-    throw new Error(Object.values(data.errors).join(', '));
+    throw new Error(data?.message || data?.error || `Football API ${response.status}`);
   }
   return data.response || [];
 }
 
 async function fetchStandings(apiKey, season, allowFallback = false) {
-  let data = await fetchFootball(apiKey, 'standings', { league: LEAGUE_ID, season }).catch(() => []);
+  let data = await fetchFootball(apiKey, 'standings', { league: LEAGUE_ID, season_id:chatSeasonId(season) }).catch(() => []);
   let standings = data[0]?.league?.standings?.[0] || [];
-  if (!standings.length && allowFallback && season !== DEFAULT_SEASON - 1) {
-    data = await fetchFootball(apiKey, 'standings', { league: LEAGUE_ID, season: DEFAULT_SEASON - 1 }).catch(() => []);
+  if (!standings.length && allowFallback && chatSeasonId(season) !== DEFAULT_SEASON) {
+    data = await fetchFootball(apiKey, 'standings', { league: LEAGUE_ID, season_id: DEFAULT_SEASON }).catch(() => []);
     standings = data[0]?.league?.standings?.[0] || [];
   }
   return standings;
@@ -194,7 +213,10 @@ function resolveTeam(teamName, standings = []) {
 
   for (const [alias, canonical] of Object.entries(TEAM_ALIASES)) {
     if (normalized === normalizeText(alias) || normalized.includes(normalizeText(alias))) {
-      return teams.find(team => team.name === canonical) || null;
+      const normalizedAlias = normalizeText(alias);
+      return teams.find(team => normalizeText(team.name || '') === normalizeText(canonical))
+        || teams.find(team => normalizeText(team.name || '').includes(normalizedAlias))
+        || null;
     }
   }
 
@@ -320,8 +342,9 @@ async function runIntent({ footballApiKey, interpretation, standings }) {
         rows: [...standings].sort((a, b) => formScore(b.form) - formScore(a.form)).slice(0, 5).map(compactStandingRow),
       };
     case 'top_scorers': {
+      const seasonId = chatSeasonId(year);
       if (team) {
-        const players = await fetchFootball(footballApiKey, 'players', { league: LEAGUE_ID, season: year, team: team.id }).catch(() => []);
+        const players = await fetchFootball(footballApiKey, 'players', { league: LEAGUE_ID, season_id: seasonId, team: team.id }).catch(() => []);
         const rows = players
           .map(item => ({
             player: getPlayerDisplayName(item.player),
@@ -335,7 +358,7 @@ async function runIntent({ footballApiKey, interpretation, standings }) {
         return { ok: true, kind: 'scorers', title: `Flest mål i ${team.name}`, team: team.name, rows };
       }
 
-      const scorers = await fetchFootball(footballApiKey, 'players/topscorers', { league: LEAGUE_ID, season: year }).catch(() => []);
+      const scorers = await fetchFootball(footballApiKey, 'players/topscorers', { league: LEAGUE_ID, season_id: seasonId }).catch(() => []);
       const rows = scorers.slice(0, 5).map(item => ({
         player: getPlayerDisplayName(item.player),
         team: item.statistics?.[0]?.team?.name || '—',
@@ -345,9 +368,10 @@ async function runIntent({ footballApiKey, interpretation, standings }) {
       return { ok: true, kind: 'scorers', title: 'Flest mål i Allsvenskan', rows };
     }
     case 'latest_matches': {
+      const seasonId = chatSeasonId(year);
       const params = team
-        ? { team: team.id, season: year, last: 3 }
-        : { league: LEAGUE_ID, season: year, last: 3 };
+        ? { team: team.id, season_id: seasonId, last: 3 }
+        : { league: LEAGUE_ID, season_id: seasonId, last: 3 };
       const fixtures = await fetchFootball(footballApiKey, 'fixtures', params).catch(() => []);
       const rows = fixtures.map(item => ({
         home: item.teams?.home?.name || '—',
@@ -422,7 +446,7 @@ export default async function handler(req, res) {
   }
 
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-  const footballApiKey = process.env.APIFOOTBALL_KEY;
+  const footballApiBase = requestOrigin(req);
   const { messages } = req.body || {};
 
   if (!messages || !Array.isArray(messages)) {
@@ -438,12 +462,8 @@ export default async function handler(req, res) {
     if (!anthropicApiKey) {
       return json(res, 500, { error: { message: 'API-nyckel saknas på servern.' } });
     }
-    if (!footballApiKey) {
-      return json(res, 500, { error: { message: 'Fotbollsdata saknas på servern.' } });
-    }
-
     const explicitYear = extractExplicitYear(question);
-    const standings = await fetchStandings(footballApiKey, explicitYear || DEFAULT_SEASON, !explicitYear);
+    const standings = await fetchStandings(footballApiBase, explicitYear || DEFAULT_SEASON, !explicitYear);
     const parsed = await interpretQuestion({ apiKey: anthropicApiKey, question, standings });
     const validated = validateInterpretation(parsed, question, standings);
 
@@ -458,7 +478,7 @@ export default async function handler(req, res) {
     }
 
     const result = await runIntent({
-      footballApiKey,
+      footballApiKey: footballApiBase,
       interpretation: validated.interpretation,
       standings,
     });
