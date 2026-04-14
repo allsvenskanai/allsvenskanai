@@ -18,13 +18,13 @@ async function buildSearch(){
     ...teams.map(team => ({
       type:'Lag',
       title:teamName(team),
-      href:`/app.html#/lag/${team.id || team.teamId}`,
+      href:`/lag/${team.id || team.teamId}`,
       search:[teamName(team), team.short_code || team.code || ''].join(' '),
     })).filter(item => item.href.endsWith('undefined') === false),
     ...players.map(player => ({
       type:'Spelare',
       title:playerName(player),
-      href:`/app.html#/spelare/${player.playerId || player.id}`,
+      href:`/spelare/${player.playerId || player.id}`,
       search:[playerName(player), player.teamName || player.team?.name || '', player.position || ''].join(' '),
     })).filter(item => item.href.endsWith('undefined') === false),
   ];
