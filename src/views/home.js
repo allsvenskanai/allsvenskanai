@@ -44,8 +44,8 @@ export async function renderHome(){
           och grunden är modulär istället för en monolit.
         </p>
         <div class="hero-actions">
-          <a class="cta primary" href="/app.html#/tabell" data-link>Se tabellen</a>
-          <a class="cta" href="/app.html#/statistik" data-link>Utforska statistik</a>
+          <a class="cta primary" href="/tabell" data-link>Se tabellen</a>
+          <a class="cta" href="/statistik" data-link>Utforska statistik</a>
         </div>
       </header>
 
@@ -74,7 +74,7 @@ export async function renderHome(){
       ${sectionCard('Topp 5', renderTable({
         columns:[
           { label:'#', render:row => esc(row.rank || '') },
-          { label:'Lag', render:row => `<a class="team-cell" href="/app.html#/lag/${esc(row.team?.id || '')}" data-link>${row.team?.logo ? `<img class="team-logo" src="${esc(row.team.logo)}" alt="">` : ''}${esc(row.team?.name || 'Okänt lag')}</a>` },
+          { label:'Lag', render:row => `<a class="team-cell" href="/lag/${esc(row.team?.id || '')}" data-link>${row.team?.logo ? `<img class="team-logo" src="${esc(row.team.logo)}" alt="">` : ''}${esc(row.team?.name || 'Okänt lag')}</a>` },
           { label:'M', render:row => esc(row.all?.played || 0) },
           { label:'P', render:row => esc(row.points || 0) },
         ],
