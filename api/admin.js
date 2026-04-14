@@ -866,6 +866,43 @@ async function refreshTeamAction(body){
   };
 }
 
+async function updateStandingsAction(body){
+  const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
+  const result = await sportmonksAdminPaged(`standings/seasons/${league.seasonId}`, {
+    include:'participant;details.type;form;stage',
+    per_page:50,
+  }, { force:Boolean(body.force), fetchAllPages:true });
+  return {
+    ok:true,
+    action:'update-standings',
+    league:league.key,
+    seasonId:league.seasonId,
+    rowCount:result.rows.length,
+    apiCalls:result.apiCalls,
+    staleFallback:result.staleFallback,
+    note:'Standings endpoint warmades i admincache. Publik tabell läser fortsatt via /api/football.',
+  };
+}
+
+async function updateFixturesAction(body){
+  const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
+  const result = await sportmonksAdminPaged('fixtures', {
+    include:'participants;league;season;round;venue;state;scores',
+    filters:`fixtureSeasons:${league.seasonId}`,
+    per_page:50,
+  }, { force:Boolean(body.force), fetchAllPages:true });
+  return {
+    ok:true,
+    action:'update-fixtures',
+    league:league.key,
+    seasonId:league.seasonId,
+    fixtureCount:result.rows.length,
+    apiCalls:result.apiCalls,
+    staleFallback:result.staleFallback,
+    note:'Fixtures endpoint warmades i admincache. Publika resultat läser fortsatt lätt/dynamiskt via /api/football.',
+  };
+}
+
 async function refreshLeagueAction(body){
   const league = getLeagueConfig(body.league || body.leagueKey || body.leagueId);
   const teamsResult = await getAdminTeams(league, { force:Boolean(body.forceTeams) });
@@ -1177,6 +1214,8 @@ export default async function handler(req, res){
     if(req.method !== 'POST' && action !== 'status') return sendJson(res, 405, { ok:false, error:'Method not allowed' });
     const payload =
       action === 'status' ? await statusAction(body) :
+      action === 'update-standings' ? await updateStandingsAction(body) :
+      action === 'update-fixtures' ? await updateFixturesAction(body) :
       action === 'refresh-team' ? await refreshTeamAction(body) :
       action === 'refresh-league' ? await refreshLeagueAction(body) :
       action === 'refresh-recent' ? await refreshRecentAction(body) :
