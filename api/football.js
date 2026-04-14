@@ -164,6 +164,30 @@ function detailValue(details = [], names = [], preferredKey = ''){
   return rows.reduce((sum, row) => sum + valueNumber(row?.value ?? row?.total ?? row?.count, preferredKey), 0);
 }
 
+function detailValueStrict(details = [], names = [], excludedNames = [], preferredKey = ''){
+  const wanted = names.map(normalizeToken);
+  const excluded = excludedNames.map(normalizeToken);
+  const rows = (Array.isArray(details) ? details : []).filter(detail => {
+    const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeToken);
+    const matchesWanted = tokens.some(token => wanted.includes(token));
+    const matchesExcluded = tokens.some(token => excluded.includes(token));
+    return matchesWanted && !matchesExcluded;
+  });
+  return rows.reduce((sum, row) => sum + valueNumber(row?.value ?? row?.total ?? row?.count, preferredKey), 0);
+}
+
+function detailValueFiltered(details = [], names = [], excludedNames = [], preferredKey = ''){
+  const wanted = names.map(normalizeToken);
+  const excluded = excludedNames.map(normalizeToken);
+  const rows = (Array.isArray(details) ? details : []).filter(detail => {
+    const tokens = [detail?.type?.code, detail?.type?.name, detail?.type?.developer_name, detail?.name, detail?.code, detail?.type_id].map(normalizeToken);
+    const matchesWanted = tokens.some(token => wanted.some(want => token === want || token.includes(want)));
+    const matchesExcluded = tokens.some(token => excluded.some(skip => token === skip || token.includes(skip)));
+    return matchesWanted && !matchesExcluded;
+  });
+  return rows.reduce((sum, row) => sum + valueNumber(row?.value ?? row?.total ?? row?.count, preferredKey), 0);
+}
+
 function detailSubValue(details = [], names = [], key = ''){
   const wanted = names.map(normalizeToken);
   const row = (Array.isArray(details) ? details : []).find(detail => {
@@ -431,17 +455,30 @@ function normalizePlayerStat(item = {}, team = {}, league = {}, seasonId = null)
     ...(Array.isArray(item.details) ? item.details : []),
     ...stats.flatMap(stat => Array.isArray(stat.details) ? stat.details : []),
   ];
-  const appearances = detailValue(details, ['appearances', 'appearance']);
-  const starts = detailValue(details, ['lineups', 'starts', 'starting']);
-  const minutes = detailValue(details, ['minutes played', 'minutes']);
-  const goals = detailValue(details, ['goals']);
-  const assists = detailValue(details, ['assists']);
-  const yellow = detailValue(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']);
-  const red = detailValue(details, ['red cards', 'red card', 'redcards', 'red']);
-  const saves = detailValue(details, ['saves']);
-  const conceded = detailValue(details, ['goals conceded', 'conceded']);
-  const rating = detailValue(details, ['rating', 'average rating'], 'average');
+  const appearances = detailValueStrict(details, ['appearances', 'appearance']);
+  const starts = detailValueStrict(details, ['lineups', 'starts', 'starting']);
+  const minutes = detailValueStrict(details, ['minutes played', 'minutes']);
+  const goals = detailValueStrict(details, ['goals', 'goal', 'goals scored', 'scored goals', 'total goals'], ['goals conceded', 'conceded goals', 'conceded', 'against', 'goals against', 'goals allowed', 'own goal', 'own goals', 'penalty', 'penalties']);
+  const assists = detailValueFiltered(details, ['assists', 'assist'], ['expected assists']);
+  const yellow = detailValueStrict(details, ['yellow cards', 'yellow card', 'yellowcards', 'yellow']);
+  const red = detailValueStrict(details, ['red cards', 'red card', 'redcards', 'red']);
+  const saves = detailValueStrict(details, ['saves']);
+  const conceded = detailValueStrict(details, ['goals conceded', 'conceded goals', 'conceded', 'goals against', 'against', 'goals allowed']);
+  const rating = detailValueStrict(details, ['rating', 'average rating'], [], 'average');
   const teamEntity = item.team || team || stats.find(stat => stat.team)?.team || {};
+  const shots = detailValueStrict(details, ['shots total', 'total shots', 'shots'], ['shots on target', 'on target', 'blocked shots']);
+  const shotsOn = detailValueStrict(details, ['shots on target', 'on target']);
+  const passes = detailValueStrict(details, ['passes', 'total passes', 'passes total'], ['accurate passes', 'successful passes', 'completed passes', 'key passes', 'pass accuracy', 'passes accuracy', 'percentage', 'percent']);
+  const accuratePasses = detailValueStrict(details, ['accurate passes', 'passes accurate', 'successful passes', 'completed passes'], ['percentage', 'percent', 'accuracy']);
+  const passAccuracy = passes > 0 && accuratePasses > 0
+    ? (accuratePasses / passes) * 100
+    : detailValueStrict(details, ['pass accuracy', 'passes accuracy', 'passing accuracy', 'pass percentage'], [], 'average');
+  const keyPasses = detailValueStrict(details, ['key passes', 'passes key', 'key pass']);
+  const tackles = detailValueStrict(details, ['tackles', 'total tackles']);
+  const blocks = detailValueStrict(details, ['blocks', 'blocked shots']);
+  const interceptions = detailValueStrict(details, ['interceptions']);
+  const duelsTotal = detailValueStrict(details, ['duels total', 'total duels', 'duels'], ['duels won', 'won duels', 'duels lost', 'lost duels']);
+  const duelsWon = detailValueStrict(details, ['duels won', 'won duels']);
   return {
     player: {
       id: player.id || item.player_id,
@@ -464,15 +501,15 @@ function normalizePlayerStat(item = {}, team = {}, league = {}, seasonId = null)
         rating: rating || null,
       },
       substitutes: { in: detailSubValue(details, ['substitutions', 'substitution'], 'in'), out: detailSubValue(details, ['substitutions', 'substitution'], 'out'), bench: detailValue(details, ['bench']) },
-      shots: { total: detailValue(details, ['shots total', 'shots']), on: detailValue(details, ['shots on target']) },
+      shots: { total: shots, on: shotsOn },
       goals: { total: goals, conceded, assists, saves },
-      passes: { total: detailValue(details, ['passes']), key: detailValue(details, ['key passes']), accuracy: detailValue(details, ['pass accuracy'], 'average') },
-      tackles: { total: detailValue(details, ['tackles']), blocks: detailValue(details, ['blocks']), interceptions: detailValue(details, ['interceptions']) },
-      duels: { total: detailValue(details, ['duels total', 'duels']), won: detailValue(details, ['duels won']) },
-      dribbles: { attempts: detailValue(details, ['dribbles attempts']), success: detailValue(details, ['dribbles success']) },
-      fouls: { drawn: detailValue(details, ['fouls drawn']), committed: detailValue(details, ['fouls committed']) },
+      passes: { total: passes, accurate: accuratePasses, key: keyPasses, accuracy: passAccuracy },
+      tackles: { total: tackles, blocks, interceptions },
+      duels: { total: duelsTotal, won: duelsWon },
+      dribbles: { attempts: detailValueStrict(details, ['dribbles attempts']), success: detailValueStrict(details, ['dribbles success']) },
+      fouls: { drawn: detailValueStrict(details, ['fouls drawn']), committed: detailValueStrict(details, ['fouls committed']) },
       cards: { yellow, red },
-      penalty: { won: detailValue(details, ['penalty won']), commited: detailValue(details, ['penalty committed']), scored: detailValue(details, ['penalty scored']), missed: detailValue(details, ['penalty missed']), saved: detailValue(details, ['penalty saved']) },
+      penalty: { won: detailValueStrict(details, ['penalty won']), commited: detailValueStrict(details, ['penalty committed']), scored: detailValueStrict(details, ['penalty scored']), missed: detailValueStrict(details, ['penalty missed']), saved: detailValueStrict(details, ['penalty saved']) },
     }],
     _sportmonks: item,
     _statsFallback: !details.length,
