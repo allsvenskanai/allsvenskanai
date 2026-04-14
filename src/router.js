@@ -74,7 +74,7 @@ export function bindRouter(){
     const url = new URL(link.href, location.origin);
     if(url.origin !== location.origin) return;
     event.preventDefault();
-    navigate(url.pathname);
+    navigate(url.href);
   });
   window.addEventListener('hashchange', renderCurrentRoute);
   window.addEventListener('popstate', renderCurrentRoute);
