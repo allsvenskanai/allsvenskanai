@@ -18,7 +18,7 @@ const routes = [
   { pattern:/^\/match\/([^/]+)\/?$/, id:'match', render:renderMatch },
   { pattern:/^\/lag\/([^/]+)\/?$/, id:'team', render:renderTeam },
   { pattern:/^\/spelare\/([^/]+)\/?$/, id:'player', render:renderPlayer },
-  { pattern:/^\/overgangar\/?$/, id:'transfers', render:renderTransfers },
+  { pattern:/^\/(?:transfers|overgangar|övergångar)\/?$/, id:'transfers', render:renderTransfers },
   { pattern:/^\/lineup-builder\/?$/, id:'lineup', render:renderLineupBuilder },
   { pattern:/^\/admin\/?$/, id:'admin', render:renderAdmin },
 ];
