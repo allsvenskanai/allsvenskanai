@@ -33,7 +33,7 @@ export async function renderResults(){
         </div>
         <div class="match-list">
           ${fixtures.length ? fixtures.map(match => `
-            <a class="match-card-next" href="/app.html#/match/${esc(match.fixture?.id || match.id || '')}" data-link>
+            <a class="match-card-next" href="/match/${esc(match.fixture?.id || match.id || '')}" data-link>
               <strong class="match-team-name">${esc(teamName(match, 'home'))}</strong>
               <span class="match-score">${esc(score(match))}</span>
               <strong class="match-team-name away">${esc(teamName(match, 'away'))}</strong>
