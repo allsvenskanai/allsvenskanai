@@ -3,7 +3,10 @@
     { "source": "/data/static/(.*)", "destination": "/data/static/$1" },
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/football", "destination": "/api/football.js" },
-    { "source": "/api/sportmonks", "destination": "/api/sportmonks.js" },
+    { "source": "/api/admin", "destination": "/api/admin.js" },
+    { "source": "/api/stats", "destination": "/api/stats.js" },
+    { "source": "/api/news", "destination": "/api/news.js" },
+    { "source": "/api/image-proxy", "destination": "/api/image-proxy.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
