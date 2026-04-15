@@ -305,6 +305,13 @@ body {
   color: #b8c2d8;
 }
 
+.error-detail {
+  color: #e0b84f;
+  font-size: 13px;
+  margin-top: 8px;
+  word-break: break-word;
+}
+
 @media (max-width: 640px) {
   .team-hero {
     align-items: flex-start;
