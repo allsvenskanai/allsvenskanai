@@ -64,7 +64,7 @@ function renderStandingsTable(rows) {
 
 function normalizeStandings(payload) {
   const tableRows = [];
-  const standings = payload?.data || [];
+  const standings = Array.isArray(payload?.data) ? payload.data : [];
 
   for (const item of standings) {
     const participant =
@@ -76,7 +76,7 @@ function normalizeStandings(payload) {
     const details = Array.isArray(item.details) ? item.details : [];
 
     const getDetail = (name) => {
-      const found = details.find((d) => d.type?.developer_name === name);
+      const found = details.find((d) => d?.type?.developer_name === name);
       return found ? Number(found.value) : 0;
     };
 
@@ -94,7 +94,7 @@ function normalizeStandings(payload) {
     });
   }
 
-  return tableRows.sort((a, b) => (a.position || 999) - (b.position || 999));
+  return tableRows.sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
 }
 
 async function loadStandings() {
@@ -118,11 +118,7 @@ async function loadStandings() {
   }
 }
 
-function getFixtureTeam(fixture, location) {
-  const participants = Array.isArray(fixture?.participants)
-    ? fixture.participants
-    : [];
-
+function getParticipantByLocation(participants, location) {
   return (
     participants.find((team) => team?.meta?.location === location) ||
     participants.find((team) => team?.location === location) ||
@@ -131,52 +127,90 @@ function getFixtureTeam(fixture, location) {
   );
 }
 
-function getFixtureScore(fixture, location) {
-  const scores = Array.isArray(fixture?.scores) ? fixture.scores : [];
+function getScoreValue(scores, participantId, description = "CURRENT") {
+  const row = scores.find(
+    (score) =>
+      Number(score?.participant_id) === Number(participantId) &&
+      score?.description === description
+  );
 
-  const score = scores.find((item) => {
-    const participantLocation = String(
-      item?.score?.participant ||
-      item?.participant ||
-      item?.description ||
-      item?.meta?.location ||
-      ""
-    ).toLowerCase();
-
-    const isCurrent =
-      item?.description === "CURRENT" ||
-      item?.type?.developer_name === "CURRENT" ||
-      item?.score?.description === "CURRENT";
-
-    return isCurrent && participantLocation === location;
-  });
-
-  return score?.score?.goals ?? score?.score?.value ?? score?.goals ?? null;
+  if (!row) return null;
+  return Number(row.score ?? 0);
 }
 
-function renderFixtures(fixtures) {
-  const firstFixtures = fixtures.slice(0, 20);
+function formatMatchDate(dateString) {
+  if (!dateString) return "";
 
-  if (!firstFixtures.length) {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString;
+
+  return date.toLocaleString("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function getDisplayScore(match, homeTeam, awayTeam) {
+  if (!homeTeam || !awayTeam) return "Kommande";
+
+  const scores = Array.isArray(match?.scores) ? match.scores : [];
+  const isFinished = Boolean(match?.finished);
+
+  const homeScore = getScoreValue(scores, homeTeam.id, "CURRENT");
+  const awayScore = getScoreValue(scores, awayTeam.id, "CURRENT");
+
+  if (homeScore === null || awayScore === null) {
+    return isFinished ? "Slut" : "Kommande";
+  }
+
+  return `${homeScore} - ${awayScore}`;
+}
+
+function getMatchStatus(match) {
+  if (match?.finished) return "FT";
+  if (match?.starting_at) return "Kommande";
+  return "Okänd status";
+}
+
+function renderFixtures(matches) {
+  const firstMatches = Array.isArray(matches) ? matches.slice(0, 20) : [];
+
+  if (!firstMatches.length) {
     resultsContent.innerHTML = "<p>Inga matcher tillgängliga just nu.</p>";
     return;
   }
 
   resultsContent.innerHTML = `
     <div class="fixtures-list">
-      ${firstFixtures
-        .map((fixture) => {
-          const homeTeam = getFixtureTeam(fixture, "home");
-          const awayTeam = getFixtureTeam(fixture, "away");
-          const homeScore = getFixtureScore(fixture, "home");
-          const awayScore = getFixtureScore(fixture, "away");
-          const hasScore = homeScore !== null && awayScore !== null;
+      ${firstMatches
+        .map((match) => {
+          const participants = Array.isArray(match?.participants) ? match.participants : [];
+          const homeTeam = getParticipantByLocation(participants, "home");
+          const awayTeam = getParticipantByLocation(participants, "away");
+          const score = getDisplayScore(match, homeTeam, awayTeam);
+          const status = getMatchStatus(match);
+          const date = formatMatchDate(match?.starting_at);
 
           return `
-            <div class="fixture-row">
-              <span>${homeTeam?.name ?? "Hemmalag"}</span>
-              <strong>${hasScore ? `${homeScore} - ${awayScore}` : "Kommande"}</strong>
-              <span>${awayTeam?.name ?? "Bortalag"}</span>
+            <div class="fixture-card">
+              <div class="fixture-row">
+                <div class="fixture-team fixture-team-left">
+                  ${homeTeam?.name ?? "Hemmalag"}
+                </div>
+
+                <div class="fixture-center">
+                  <div class="fixture-score">${score}</div>
+                  <div class="fixture-status">${status}</div>
+                  <div class="fixture-date">${date}</div>
+                </div>
+
+                <div class="fixture-team fixture-team-right">
+                  ${awayTeam?.name ?? "Bortalag"}
+                </div>
+              </div>
             </div>
           `;
         })
