@@ -42,9 +42,9 @@ function renderStandingsTable(rows) {
                 <tr>
                   <td>${row.position ?? "-"}</td>
                   <td class="team-cell">
-  <img src="${row.logo ?? ""}" alt="" class="team-logo">
-  ${row.teamName}
-</td>
+                    <img src="${row.logo ?? ""}" alt="" class="team-logo">
+                    ${row.teamName ?? "Okänt lag"}
+                  </td>
                   <td>${row.played ?? "-"}</td>
                   <td>${row.won ?? "-"}</td>
                   <td>${row.draw ?? "-"}</td>
@@ -94,10 +94,7 @@ function normalizeStandings(payload) {
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
         teamName: participant?.name ?? "Okänt lag",
-        return {
-  position: Number(item?.position ?? item?.rank ?? 999),
-  teamName: participant?.name ?? "Okänt lag",
-  logo: participant?.image_path ?? "",
+        logo: participant?.image_path ?? "",
         played: getDetail(item, "OVERALL_MATCHES"),
         won: getDetail(item, "OVERALL_WINS"),
         draw: getDetail(item, "OVERALL_DRAWS"),
@@ -217,7 +214,15 @@ function getMatchStatus(match, homeTeam, awayTeam) {
 }
 
 function renderFixtures(matches) {
-  const firstMatches = Array.isArray(matches) ? matches.slice(0, 20) : [];
+  const sortedMatches = Array.isArray(matches)
+    ? [...matches].sort((a, b) => {
+        const aHasScore = Array.isArray(a?.scores) && a.scores.length > 0 ? 1 : 0;
+        const bHasScore = Array.isArray(b?.scores) && b.scores.length > 0 ? 1 : 0;
+        return bHasScore - aHasScore;
+      })
+    : [];
+
+  const firstMatches = sortedMatches.slice(0, 20);
 
   if (!firstMatches.length) {
     resultsContent.innerHTML = "<p>Inga matcher tillgängliga just nu.</p>";
