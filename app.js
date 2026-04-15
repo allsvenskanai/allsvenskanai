@@ -42,14 +42,14 @@ function renderStandingsTable(rows) {
                 <tr>
                   <td>${row.position ?? "-"}</td>
                   <td>${row.teamName ?? "Okänt lag"}</td>
-                  <td>${row.played ?? 0}</td>
-                  <td>${row.won ?? 0}</td>
-                  <td>${row.draw ?? 0}</td>
-                  <td>${row.lost ?? 0}</td>
-                  <td>${row.goalsFor ?? 0}</td>
-                  <td>${row.goalsAgainst ?? 0}</td>
-                  <td>${row.goalDiff ?? 0}</td>
-                  <td><strong>${row.points ?? 0}</strong></td>
+                  <td>${row.played ?? "-"}</td>
+                  <td>${row.won ?? "-"}</td>
+                  <td>${row.draw ?? "-"}</td>
+                  <td>${row.lost ?? "-"}</td>
+                  <td>${row.goalsFor ?? "-"}</td>
+                  <td>${row.goalsAgainst ?? "-"}</td>
+                  <td>${row.goalDiff ?? "-"}</td>
+                  <td><strong>${row.points ?? "-"}</strong></td>
                 </tr>
               `
             )
@@ -91,85 +91,17 @@ function normalizeStandings(payload) {
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
         teamName: participant?.name ?? "Okänt lag",
-
         played: getDetail(item, "played"),
         won: getDetail(item, "won"),
         draw: getDetail(item, "draw"),
         lost: getDetail(item, "lost"),
-
         goalsFor: getDetail(item, "goals_for"),
         goalsAgainst: getDetail(item, "goals_against"),
         goalDiff: getDetail(item, "goal_difference"),
-
         points: Number(item?.points ?? getDetail(item, "points"))
       };
     })
     .sort((a, b) => a.position - b.position);
-}
-
-  const rows = standings.map((item) => {
-    const participant =
-      item?.participant ||
-      item?.team ||
-      item?.participants?.[0] ||
-      null;
-
-    const played = getStatValue(item, [
-      "played",
-      "games_played",
-      "matches_played"
-    ]);
-
-    const won = getStatValue(item, [
-      "won",
-      "wins"
-    ]);
-
-    const draw = getStatValue(item, [
-      "draw",
-      "draws"
-    ]);
-
-    const lost = getStatValue(item, [
-      "lost",
-      "losses"
-    ]);
-
-    const goalsFor = getStatValue(item, [
-      "goals_for",
-      "goals_scored"
-    ]);
-
-    const goalsAgainst = getStatValue(item, [
-      "goals_against",
-      "goals_conceded"
-    ]);
-
-    const goalDiff = getStatValue(item, [
-      "goal_difference",
-      "goal_diff"
-    ]);
-
-    const points = getStatValue(item, [
-      "points",
-      "pts"
-    ]);
-
-    return {
-      position: Number(item?.position ?? item?.rank ?? 999),
-      teamName: participant?.name ?? "Okänt lag",
-      played,
-      won,
-      draw,
-      lost,
-      goalsFor,
-      goalsAgainst,
-      goalDiff,
-      points
-    };
-  });
-
-  return rows.sort((a, b) => a.position - b.position);
 }
 
 async function loadStandings() {
@@ -180,7 +112,7 @@ async function loadStandings() {
     const data = await response.json();
 
     console.log("STANDINGS RAW:", data);
-console.log("FIRST STANDING ROW:", data?.data?.[0]);
+    console.log("FIRST STANDING ROW:", data?.data?.[0]);
 
     if (!response.ok) {
       standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
@@ -247,7 +179,7 @@ function getDisplayScore(match, homeTeam, awayTeam) {
   if (!homeTeam || !awayTeam) return "Kommande";
 
   const scores = Array.isArray(match?.scores) ? match.scores : [];
-  const isFinished = Boolean(match?.finished);
+  const isFinished = Boolean(match?.finished || match?.result_info);
 
   const homeScore = getScoreValue(scores, homeTeam.id, "CURRENT");
   const awayScore = getScoreValue(scores, awayTeam.id, "CURRENT");
