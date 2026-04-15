@@ -1,6 +1,6 @@
 const TEAM_FACTS_OVERRIDES = {
   // Add manual fixes by Sportmonks team id when the API does not provide them.
-  85: {
+  354: {
     city: "Malmö",
     venue: {
       name: "Eleda Stadion",
