@@ -111,8 +111,14 @@ async function loadStandings() {
     const response = await fetch(`/api/standings?league=${currentLeague}`);
     const data = await response.json();
 
-    console.log("STANDINGS RAW:", data);
-    console.log("FIRST STANDING ROW:", data?.data?.[0]);
+    console.log(
+  data.data[0].details.map(d => ({
+    id: d.type_id,
+    name: d.type?.name,
+    dev: d.type?.developer_name,
+    val: d.value
+  }))
+);
 
     if (!response.ok) {
       standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
