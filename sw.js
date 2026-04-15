@@ -1,5 +1,5 @@
-const VERSION = 'allsvenskanai-v3';
-const API_CACHE = 'api-cache-v3';
+const VERSION = 'allsvenskanai-v4';
+const API_CACHE = 'api-cache-v4';
 
 self.addEventListener('install', e => {
   self.skipWaiting(); // Activate immediately
@@ -15,6 +15,30 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  // Static app modules/assets must never fall back to index.html. If a JS
+  // module receives HTML, the browser rejects it with a MIME error.
+  if(
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.startsWith('/src/') ||
+    e.request.destination === 'script' ||
+    e.request.destination === 'style'
+  ) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' }).then(response => {
+        const contentType = response.headers.get('content-type') || '';
+        if(url.pathname.endsWith('.js') && contentType.includes('text/html')) {
+          console.error('[sw] Refusing HTML response for JS module', url.pathname);
+          return new Response('JavaScript module was served as HTML', {
+            status: 502,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+        }
+        return response;
+      })
+    );
+    return;
+  }
 
   // Cache low-risk public API responses briefly. Admin/statistics cache endpoints must
   // stay network-first so admin refreshes become visible immediately.
