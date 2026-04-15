@@ -63,38 +63,98 @@ function renderStandingsTable(rows) {
 }
 
 function normalizeStandings(payload) {
-  const tableRows = [];
   const standings = Array.isArray(payload?.data) ? payload.data : [];
 
-  for (const item of standings) {
-    const participant =
-      item.participant ||
-      item.team ||
-      item.participants?.[0] ||
-      null;
+  function getStatValue(item, keys = []) {
+    for (const key of keys) {
+      const directValue = item?.[key];
+      if (directValue !== undefined && directValue !== null && directValue !== "") {
+        const parsed = Number(directValue);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
 
-    const details = Array.isArray(item.details) ? item.details : [];
+    const details = Array.isArray(item?.details) ? item.details : [];
 
-    const getDetail = (name) => {
-      const found = details.find((d) => d?.type?.developer_name === name);
-      return found ? Number(found.value) : 0;
-    };
+    for (const key of keys) {
+      const found = details.find((d) => {
+        const devName = d?.type?.developer_name;
+        const name = d?.type?.name;
+        return devName === key || name === key;
+      });
 
-    tableRows.push({
-      position: item.position ?? item.rank ?? "-",
-      teamName: participant?.name ?? "Okänt lag",
-      played: getDetail("played"),
-      won: getDetail("won"),
-      draw: getDetail("draw"),
-      lost: getDetail("lost"),
-      goalsFor: getDetail("goals_for"),
-      goalsAgainst: getDetail("goals_against"),
-      goalDiff: getDetail("goal_difference"),
-      points: getDetail("points")
-    });
+      if (found?.value !== undefined && found?.value !== null && found?.value !== "") {
+        const parsed = Number(found.value);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+
+    return 0;
   }
 
-  return tableRows.sort((a, b) => Number(a.position || 999) - Number(b.position || 999));
+  const rows = standings.map((item) => {
+    const participant =
+      item?.participant ||
+      item?.team ||
+      item?.participants?.[0] ||
+      null;
+
+    const played = getStatValue(item, [
+      "played",
+      "games_played",
+      "matches_played"
+    ]);
+
+    const won = getStatValue(item, [
+      "won",
+      "wins"
+    ]);
+
+    const draw = getStatValue(item, [
+      "draw",
+      "draws"
+    ]);
+
+    const lost = getStatValue(item, [
+      "lost",
+      "losses"
+    ]);
+
+    const goalsFor = getStatValue(item, [
+      "goals_for",
+      "goals_scored"
+    ]);
+
+    const goalsAgainst = getStatValue(item, [
+      "goals_against",
+      "goals_conceded"
+    ]);
+
+    const goalDiff = getStatValue(item, [
+      "goal_difference",
+      "goal_diff"
+    ]);
+
+    const points = getStatValue(item, [
+      "points",
+      "pts"
+    ]);
+
+    return {
+      position: Number(item?.position ?? item?.rank ?? 999),
+      teamName: participant?.name ?? "Okänt lag",
+      played,
+      won,
+      draw,
+      lost,
+      goalsFor,
+      goalsAgainst,
+      goalDiff,
+      points
+    };
+  });
+
+  return rows.sort((a, b) => a.position - b.position);
 }
 
 async function loadStandings() {
