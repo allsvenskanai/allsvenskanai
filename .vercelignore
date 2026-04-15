@@ -1,4 +1,0 @@
-.env.local
-.vercel
-data/static/*.json
-index.legacy-monolith.html
