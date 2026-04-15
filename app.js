@@ -9,12 +9,12 @@ function renderPlaceholderContent() {
   const leagueName =
     currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
 
-  statsContent.textContent = `HÃ¤r kommer statistik fÃ¶r ${leagueName} att visas.`;
+  statsContent.textContent = `Här kommer statistik för ${leagueName} att visas.`;
 }
 
 function renderStandingsTable(rows) {
   if (!rows.length) {
-    standingsContent.innerHTML = "<p>Ingen tabell tillgÃ¤nglig just nu.</p>";
+    standingsContent.innerHTML = "<p>Ingen tabell tillgänglig just nu.</p>";
     return;
   }
 
@@ -94,12 +94,13 @@ function normalizeStandings(payload) {
         item?.team ||
         item?.participants?.[0] ||
         null;
+      const teamId = participant?.id ?? item?.participant_id ?? item?.team_id ?? null;
 
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
-        teamId: participant?.id ?? item?.participant_id ?? item?.team_id ?? null,
-        teamName: formatTeamName(participant?.name),
-        logo: participant?.image_path ?? "",
+        teamId,
+        teamName: formatTeamName(participant?.name, teamId),
+        logo: formatTeamLogo(participant?.image_path, teamId),
         played: getDetail(item, "OVERALL_MATCHES"),
         won: getDetail(item, "OVERALL_WINS"),
         draw: getDetail(item, "OVERALL_DRAWS"),
@@ -249,7 +250,7 @@ function renderFixtures(matches) {
             <div class="fixture-card">
               <div class="fixture-row">
                 <div class="fixture-team fixture-team-left">
-                  ${homeTeam ? formatTeamName(homeTeam.name) : "Hemmalag"}
+                  ${homeTeam ? formatTeamName(homeTeam.name, homeTeam.id) : "Hemmalag"}
                 </div>
 
                 <div class="fixture-center">
@@ -259,7 +260,7 @@ function renderFixtures(matches) {
                 </div>
 
                 <div class="fixture-team fixture-team-right">
-                  ${awayTeam ? formatTeamName(awayTeam.name) : "Bortalag"}
+                  ${awayTeam ? formatTeamName(awayTeam.name, awayTeam.id) : "Bortalag"}
                 </div>
               </div>
             </div>
