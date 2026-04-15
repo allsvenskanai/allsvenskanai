@@ -1,19 +1,19 @@
 {
   "rewrites": [
-    { "source": "/src/(.*)", "destination": "/src/$1" },
-    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/src/:path*", "destination": "/src/:path*" },
+    { "source": "/assets/:path*", "destination": "/assets/:path*" },
     { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/sw.js", "destination": "/sw.js" },
     { "source": "/firebase-messaging-sw.js", "destination": "/firebase-messaging-sw.js" },
-    { "source": "/data/static/(.*)", "destination": "/data/static/$1" },
+    { "source": "/data/static/:path*", "destination": "/data/static/:path*" },
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/football", "destination": "/api/football.js" },
     { "source": "/api/admin", "destination": "/api/admin.js" },
     { "source": "/api/stats", "destination": "/api/stats.js" },
     { "source": "/api/news", "destination": "/api/news.js" },
     { "source": "/api/image-proxy", "destination": "/api/image-proxy.js" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
