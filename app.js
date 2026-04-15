@@ -181,7 +181,16 @@ function getDisplayScore(match, homeTeam, awayTeam) {
   return `${homeScore} - ${awayScore}`;
 }
 
-function getMatchStatus(match) {
+function getMatchStatus(match, homeTeam, awayTeam) {
+  const scores = Array.isArray(match?.scores) ? match.scores : [];
+
+  const homeScore = homeTeam ? getScoreValue(scores, homeTeam.id, "CURRENT") : null;
+  const awayScore = awayTeam ? getScoreValue(scores, awayTeam.id, "CURRENT") : null;
+
+  if (homeScore !== null && awayScore !== null) {
+    return match?.finished ? "FT" : "Live / Uppdaterad";
+  }
+
   if (match?.finished) return "FT";
   if (match?.starting_at) return "Kommande";
   return "Okänd status";
@@ -203,7 +212,7 @@ function renderFixtures(matches) {
           const homeTeam = getParticipantByLocation(participants, "home");
           const awayTeam = getParticipantByLocation(participants, "away");
           const score = getDisplayScore(match, homeTeam, awayTeam);
-          const status = getMatchStatus(match);
+          const status = getMatchStatus(match, homeTeam, awayTeam);
           const date = formatMatchDate(match?.starting_at);
 
           return `
