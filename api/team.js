@@ -1,25 +1,180 @@
 const TEAM_FACTS_OVERRIDES = {
-  // Add manual fixes by Sportmonks team id when the API does not provide them.
-  354: {
-    city: "Malmö",
-    venue: {
-      name: "Eleda Stadion",
-      capacity: 22500
-    },
-    chairman: "Zlatko Rihter",
-    sportingDirector: "Daniel Andersson",
-    coach: "Miguel Angel Ramirez"
-  },
   2678: {
     city: "Uppsala",
     venue: {
       name: "Studenternas IP",
       capacity: 10522
     },
+    founded: 1907,
     chairman: "Ulrika Moström Ågren",
     sportingDirector: "Jonathan Ederström",
     coach: "Andreas Engelmark"
   },
+  443: {
+    city: "Stockholm",
+    venue: {
+      name: "3Arena",
+      capacity: 30000
+    },
+    founded: 1891,
+    chairman: "Erik Gozzi",
+    sportingDirector: null,
+    coach: "Jani Honkavaara"
+  },
+  354: {
+    city: "Malmö",
+    venue: {
+      name: "Eleda Stadion",
+      capacity: 22500
+    },
+    founded: 1910,
+    chairman: "Zlatko Rihter",
+    sportingDirector: "Daniel Andersson",
+    coach: "Miguel Angel Ramirez"
+  },
+  2535: {
+    city: "Göteborg",
+    venue: {
+      name: "Nordic Wellness Arena",
+      capacity: 6250
+    },
+    founded: 1940,
+    chairman: "Anders Billström",
+    sportingDirector: "Erik Friberg",
+    coach: "Jens Gustafsson"
+  },
+  1226: {
+    city: "Borås",
+    venue: {
+      name: "Borås Arena",
+      capacity: 14500
+    },
+    founded: 1904,
+    chairman: "Sune Lundqvist",
+    sportingDirector: "Stefan Andreasson",
+    coach: "Björn Hamberg"
+  },
+  1870: {
+    city: "Göteborg",
+    venue: {
+      name: "Gamla Ullevi",
+      capacity: 18454
+    },
+    founded: 1887,
+    chairman: "Terje Johansson",
+    sportingDirector: "Pontus Farnerud",
+    coach: "Andreas Holmberg"
+  },
+  2825: {
+    city: "Stockholm",
+    venue: {
+      name: "Strawberry Arena",
+      capacity: 50128
+    },
+    founded: 1891,
+    chairman: "Mikael Jomer",
+    sportingDirector: "Miika Takkula",
+    coach: "José Riveiro"
+  },
+  8671: {
+    city: "Västerås",
+    venue: {
+      name: "Hitachi Energy Arena",
+      capacity: 8900
+    },
+    founded: 1904,
+    chairman: "Magnus Breitholtz",
+    sportingDirector: "Billy Magnusson",
+    coach: "Alexander Rubin"
+  },
+  2353: {
+    city: "Stockholm",
+    venue: {
+      name: "3Arena",
+      capacity: 30000
+    },
+    founded: 1915,
+    chairman: "Mattias Fri",
+    sportingDirector: "Mikael Hjelmberg",
+    coach: "Kalle Karlsson"
+  },
+  2753: {
+    city: "Degerfors",
+    venue: {
+      name: "Stora Valla",
+      capacity: 6545
+    },
+    founded: 1907,
+    chairman: "Ulrika Eriksson",
+    sportingDirector: "Patrik Werner",
+    coach: "Henok Goitom"
+  },
+  3285: {
+    city: "Stockholm",
+    venue: {
+      name: "Grimsta IP",
+      capacity: 5000
+    },
+    founded: 1942,
+    chairman: "Johan Ström",
+    sportingDirector: "Sean Sabetkar",
+    coach: "Ulf Kristiansson och Fredrik Landén"
+  },
+  432: {
+    city: "Kalmar",
+    venue: {
+      name: "Guldfågeln Arena",
+      capacity: 12182
+    },
+    founded: 1910,
+    chairman: "Joachim Lantz",
+    sportingDirector: "Mats Wihlblad",
+    coach: "Toni Koskela"
+  },
+  1777: {
+    city: "Göteborg",
+    venue: {
+      name: "Gamla Ullevi",
+      capacity: 18454
+    },
+    founded: 1894,
+    chairman: "Stefan Tilk",
+    sportingDirector: "Niklas Karlström",
+    coach: "Fredrik Holmberg"
+  },
+  720: {
+    city: "Halmstad",
+    venue: {
+      name: "Örjans Vall",
+      capacity: 10873
+    },
+    founded: 1914,
+    chairman: "Pelle Nilsson",
+    sportingDirector: "Jesper Westerberg",
+    coach: "Johan Lindholm"
+  },
+  532: {
+    city: "Göteborg",
+    venue: {
+      name: "Gamla Ullevi",
+      capacity: 18454
+    },
+    founded: 1904,
+    chairman: "Magnus Nilsson",
+    sportingDirector: "Hannes Stiller",
+    coach: "Stefan Billborn"
+  },
+  411: {
+    city: "Hällevik",
+    venue: {
+      name: "Strandvallen",
+      capacity: 6000
+    },
+    founded: 1939,
+    chairman: "Jan Sjöblom",
+    sportingDirector: "Hasse Larsson",
+    coach: "Karl Marius Aksum"
+  }
 };
 
 function firstValue(...values) {
