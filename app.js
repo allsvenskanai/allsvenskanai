@@ -65,32 +65,47 @@ function renderStandingsTable(rows) {
 function normalizeStandings(payload) {
   const standings = Array.isArray(payload?.data) ? payload.data : [];
 
-  function getStatValue(item, keys = []) {
-    for (const key of keys) {
-      const directValue = item?.[key];
-      if (directValue !== undefined && directValue !== null && directValue !== "") {
-        const parsed = Number(directValue);
-        if (Number.isFinite(parsed)) return parsed;
-      }
-    }
-
+  function getDetail(item, key) {
     const details = Array.isArray(item?.details) ? item.details : [];
 
-    for (const key of keys) {
-      const found = details.find((d) => {
-        const devName = d?.type?.developer_name;
-        const name = d?.type?.name;
-        return devName === key || name === key;
-      });
+    const found = details.find(
+      (d) =>
+        d?.type?.developer_name === key ||
+        d?.type?.name === key
+    );
 
-      if (found?.value !== undefined && found?.value !== null && found?.value !== "") {
-        const parsed = Number(found.value);
-        if (Number.isFinite(parsed)) return parsed;
-      }
-    }
+    if (!found) return 0;
 
-    return 0;
+    const parsed = Number(found.value);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
+
+  return standings
+    .map((item) => {
+      const participant =
+        item?.participant ||
+        item?.team ||
+        item?.participants?.[0] ||
+        null;
+
+      return {
+        position: Number(item?.position ?? item?.rank ?? 999),
+        teamName: participant?.name ?? "Okänt lag",
+
+        played: getDetail(item, "played"),
+        won: getDetail(item, "won"),
+        draw: getDetail(item, "draw"),
+        lost: getDetail(item, "lost"),
+
+        goalsFor: getDetail(item, "goals_for"),
+        goalsAgainst: getDetail(item, "goals_against"),
+        goalDiff: getDetail(item, "goal_difference"),
+
+        points: Number(item?.points ?? getDetail(item, "points"))
+      };
+    })
+    .sort((a, b) => a.position - b.position);
+}
 
   const rows = standings.map((item) => {
     const participant =
