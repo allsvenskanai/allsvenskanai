@@ -8,7 +8,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing SPORTMONKS_API_TOKEN" });
     }
 
-    const url = `https://api.sportmonks.com/v3/football/schedules/seasons/${seasonId}`;
+    const url =
+      `https://api.sportmonks.com/v3/football/seasons/${seasonId}` +
+      `?include=fixtures.participants;fixtures.scores`;
 
     const response = await fetch(url, {
       headers: {
@@ -32,16 +34,15 @@ export default async function handler(req, res) {
       payload = JSON.parse(text);
     } catch {
       return res.status(500).json({
-        error: "Schedules response was not valid JSON",
+        error: "Season response was not valid JSON",
         seasonId,
         details: text
       });
     }
 
-    const schedules = Array.isArray(payload?.data) ? payload.data : [];
-    const fixtures = schedules.flatMap((schedule) =>
-      Array.isArray(schedule?.fixtures) ? schedule.fixtures : []
-    );
+    const fixtures = Array.isArray(payload?.data?.fixtures)
+      ? payload.data.fixtures
+      : [];
 
     return res.status(200).json({
       league,
