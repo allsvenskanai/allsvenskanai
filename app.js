@@ -178,6 +178,9 @@ async function loadStandings() {
   }
 }
 
+console.log("STANDINGS RAW:", data);
+console.log("FIRST STANDING ROW:", data?.data?.[0]);
+
 function getParticipantByLocation(participants, location) {
   return (
     participants.find((team) => team?.meta?.location === location) ||
