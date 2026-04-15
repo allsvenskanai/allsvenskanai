@@ -5,16 +5,22 @@ const statsContent = document.getElementById("stats-content");
 
 let currentLeague = "allsvenskan";
 
+function formatTeamName(name) {
+  if (!name) return "Okänt lag";
+
+  return String(name).replace(/\s+W$/i, "").trim();
+}
+
 function renderPlaceholderContent() {
   const leagueName =
     currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
 
-  statsContent.textContent = `Här kommer statistik för ${leagueName} att visas.`;
+  statsContent.textContent = `HÃ¤r kommer statistik fÃ¶r ${leagueName} att visas.`;
 }
 
 function renderStandingsTable(rows) {
   if (!rows.length) {
-    standingsContent.innerHTML = "<p>Ingen tabell tillgänglig just nu.</p>";
+    standingsContent.innerHTML = "<p>Ingen tabell tillgÃ¤nglig just nu.</p>";
     return;
   }
 
@@ -43,7 +49,7 @@ function renderStandingsTable(rows) {
                   <td>${row.position ?? "-"}</td>
                   <td class="team-cell">
                     <img src="${row.logo ?? ""}" alt="" class="team-logo">
-                    ${row.teamName ?? "Okänt lag"}
+                    ${row.teamName ?? "OkÃ¤nt lag"}
                   </td>
                   <td>${row.played ?? "-"}</td>
                   <td>${row.won ?? "-"}</td>
@@ -93,7 +99,7 @@ function normalizeStandings(payload) {
 
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
-        teamName: participant?.name ?? "Okänt lag",
+        teamName: formatTeamName(participant?.name),
         logo: participant?.image_path ?? "",
         played: getDetail(item, "OVERALL_MATCHES"),
         won: getDetail(item, "OVERALL_WINS"),
@@ -116,7 +122,7 @@ async function loadStandings() {
     const data = await response.json();
 
     if (!response.ok) {
-      standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
+      standingsContent.innerHTML = "<p>Kunde inte hÃ¤mta tabellen.</p>";
       console.error(data);
       return;
     }
@@ -124,7 +130,7 @@ async function loadStandings() {
     const rows = normalizeStandings(data);
     renderStandingsTable(rows);
   } catch (error) {
-    standingsContent.innerHTML = "<p>Något gick fel när tabellen skulle hämtas.</p>";
+    standingsContent.innerHTML = "<p>NÃ¥got gick fel nÃ¤r tabellen skulle hÃ¤mtas.</p>";
     console.error(error);
   }
 }
@@ -210,7 +216,7 @@ function getMatchStatus(match, homeTeam, awayTeam) {
     return "Kommande";
   }
 
-  return "Okänd status";
+  return "OkÃ¤nd status";
 }
 
 function renderFixtures(matches) {
@@ -225,7 +231,7 @@ function renderFixtures(matches) {
   const firstMatches = sortedMatches.slice(0, 20);
 
   if (!firstMatches.length) {
-    resultsContent.innerHTML = "<p>Inga matcher tillgängliga just nu.</p>";
+    resultsContent.innerHTML = "<p>Inga matcher tillgÃ¤ngliga just nu.</p>";
     return;
   }
 
@@ -244,7 +250,7 @@ function renderFixtures(matches) {
             <div class="fixture-card">
               <div class="fixture-row">
                 <div class="fixture-team fixture-team-left">
-                  ${homeTeam?.name ?? "Hemmalag"}
+                  ${homeTeam ? formatTeamName(homeTeam.name) : "Hemmalag"}
                 </div>
 
                 <div class="fixture-center">
@@ -254,7 +260,7 @@ function renderFixtures(matches) {
                 </div>
 
                 <div class="fixture-team fixture-team-right">
-                  ${awayTeam?.name ?? "Bortalag"}
+                  ${awayTeam ? formatTeamName(awayTeam.name) : "Bortalag"}
                 </div>
               </div>
             </div>
@@ -273,14 +279,14 @@ async function loadFixtures() {
     const data = await response.json();
 
     if (!response.ok) {
-      resultsContent.innerHTML = "<p>Kunde inte hämta resultaten.</p>";
+      resultsContent.innerHTML = "<p>Kunde inte hÃ¤mta resultaten.</p>";
       console.error(data);
       return;
     }
 
     renderFixtures(data?.data || []);
   } catch (error) {
-    resultsContent.innerHTML = "<p>Något gick fel när resultaten skulle hämtas.</p>";
+    resultsContent.innerHTML = "<p>NÃ¥got gick fel nÃ¤r resultaten skulle hÃ¤mtas.</p>";
     console.error(error);
   }
 }
