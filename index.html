@@ -1,25 +1,39 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AllsvenskanAI</title>
-  <style>
-    body {
-      background:#0b0f14;
-      color:#fff;
-      font-family:sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      text-align:center;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div>
+  <header class="topbar">
     <h1>AllsvenskanAI</h1>
-    <p>Vi bygger om sidan just nu. Kom tillbaka snart 🚀</p>
-  </div>
+    <p>Svensk fotboll, enkelt och snabbt.</p>
+  </header>
+
+  <main class="container">
+    <section class="league-switcher">
+      <button class="league-btn active" data-league="allsvenskan">Allsvenskan</button>
+      <button class="league-btn" data-league="damallsvenskan">Damallsvenskan</button>
+    </section>
+
+    <section class="card">
+      <h2>Tabell</h2>
+      <div id="standings-content">Här kommer tabellen att visas.</div>
+    </section>
+
+    <section class="card">
+      <h2>Resultat</h2>
+      <div id="results-content">Här kommer resultat att visas.</div>
+    </section>
+
+    <section class="card">
+      <h2>Statistik</h2>
+      <div id="stats-content">Här kommer statistik att visas.</div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
