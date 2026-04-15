@@ -30,10 +30,32 @@ const TEAM_NAME_OVERRIDES = {
   "Växjö": "Växjö DFF"
 };
 
-function formatTeamName(name) {
+const TEAM_BRANDING_OVERRIDES = {
+  234951: {
+    name: "IK Uppsala Fotboll",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/IK_Uppsala_logo.svg/250px-IK_Uppsala_logo.svg.png"
+  }
+};
+
+function getTeamBrandingOverride(teamId) {
+  if (teamId === null || teamId === undefined || teamId === "") return null;
+
+  return TEAM_BRANDING_OVERRIDES[String(teamId)] || TEAM_BRANDING_OVERRIDES[Number(teamId)] || null;
+}
+
+function formatTeamName(name, teamId) {
+  const brandingOverride = getTeamBrandingOverride(teamId);
+  if (brandingOverride?.name) return brandingOverride.name;
+
   if (!name) return "Okänt lag";
 
   const cleanedName = String(name).replace(/\s+W$/i, "").trim();
 
   return TEAM_NAME_OVERRIDES[cleanedName] || cleanedName;
+}
+
+function formatTeamLogo(logo, teamId) {
+  const brandingOverride = getTeamBrandingOverride(teamId);
+
+  return brandingOverride?.logo || logo || "";
 }
