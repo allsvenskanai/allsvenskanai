@@ -174,6 +174,161 @@ const TEAM_FACTS_OVERRIDES = {
     chairman: "Jan Sjöblom",
     sportingDirector: "Hasse Larsson",
     coach: "Karl Marius Aksum"
+  },
+
+  166845: {
+    city: "Stockholm",
+    venue: {
+      name: "Skytteholms IP",
+      capacity: 5200
+    },
+    founded: 1891,
+    chairman: "Mikael Jomer",
+    sportingDirector: "Zinar Spindari",
+    coach: "Lukas Syberyjski"
+  },
+  253910: {
+    city: "Göteborg",
+    venue: {
+      name: "Nordic Wellness Arena",
+      capacity: 6250
+    },
+    founded: 1940,
+    chairman: "Anders Billström",
+    sportingDirector: "Christian Lundström",
+    coach: "Elena Sadiku"
+  },
+  236826: {
+    city: "Stockholm",
+    venue: {
+      name: "Grimsta IP",
+      capacity: 5000
+    },
+    founded: 1942,
+    chairman: "Johan Ström",
+    sportingDirector: "Staffan Jacobsson",
+    coach: "Daniel Gunnars"
+  },
+  19169: {
+    city: "Stockholm",
+    venue: {
+      name: "3Arena",
+      capacity: 30000
+    },
+    founded: 1891,
+    chairman: "Erik Gozzi",
+    sportingDirector: "Jean Balawo",
+    coach: "Willie Kirk"
+  },
+  268948: {
+    city: "Malmö",
+    venue: {
+      name: "Eleda Stadion",
+      capacity: 22500
+    },
+    founded: 1910,
+    chairman: "Zlatko Rihter",
+    sportingDirector: "Maxim Khalil",
+    coach: "Jonas Valfridsson"
+  },
+  19154: {
+    city: "Malmö",
+    venue: {
+      name: "Malmö IP",
+      capacity: 7600
+    },
+    founded: 1970,
+    chairman: "Håkan Wifesson",
+    sportingDirector: "Emelie Lundberg",
+    coach: "Joel Kjetselberg"
+  },
+  27479: {
+    city: "Stockholm",
+    venue: {
+      name: "Hammarby IP",
+      capacity: 3700
+    },
+    founded: 1915,
+    chairman: "Mattias Fri",
+    sportingDirector: "Arnór Smárason",
+    coach: "William Strömberg"
+  },
+  236821: {
+    city: "Norrköping",
+    venue: {
+      name: "Idrottsparken",
+      capacity: 16000
+    },
+    founded: 1897,
+    chairman: "Martin Gyllix",
+    sportingDirector: "Dennis Popperyd",
+    coach: "Stellan Carlsson"
+  },
+  19146: {
+    city: "Kristianstad",
+    venue: {
+      name: "Kristianstads Fotbollsarena",
+      capacity: 4700
+    },
+    founded: 1998,
+    chairman: "Stina Trimark",
+    sportingDirector: "Lovisa Ström",
+    coach: "Nik Chamberlain"
+  },
+  19166: {
+    city: "Eskilstuna",
+    venue: {
+      name: "Tunavallen",
+      capacity: 7800
+    },
+    founded: 2002,
+    chairman: "Mats Båverud",
+    sportingDirector: null,
+    coach: "Rickard Johansson"
+  },
+  19147: {
+    city: "Piteå",
+    venue: {
+      name: "LF Arena",
+      capacity: 6000
+    },
+    founded: 2012,
+    chairman: "Mari Wigren",
+    sportingDirector: "James Burgin",
+    coach: "Fredrik Bernhardsson"
+  },
+  234951: {
+    city: "Uppsala",
+    venue: {
+      name: "Studenternas IP",
+      capacity: 10522
+    },
+    founded: 2016,
+    chairman: null,
+    sportingDirector: "Julius Brekkan",
+    coach: "Samuel Fagerholm"
+  },
+  19145: {
+    city: "Hässleholm",
+    venue: {
+      name: "Vittsjö Idrottspark",
+      capacity: 2500
+    },
+    founded: 1933,
+    chairman: "Jakob Wikenstål",
+    sportingDirector: "Mladen Blagojevic",
+    coach: "Mladen Blagojevic"
+  },
+  157605: {
+    city: "Växjö",
+    venue: {
+      name: "Spiris Arena",
+      capacity: 12000
+    },
+    founded: 2014,
+    chairman: "Måns Hammarbäck",
+    sportingDirector: "Kim Focic Åberg",
+    coach: "Olof Unogård"
   }
 };
 
