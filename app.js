@@ -49,7 +49,11 @@ function renderStandingsTable(rows) {
                   <td>${row.position ?? "-"}</td>
                   <td class="team-cell">
                     <img src="${row.logo ?? ""}" alt="" class="team-logo">
-                    ${row.teamName ?? "OkÃ¤nt lag"}
+                    ${
+                      row.teamId
+                        ? `<a href="/team.html?id=${row.teamId}" class="team-link">${row.teamName ?? "OkÃ¤nt lag"}</a>`
+                        : `${row.teamName ?? "OkÃ¤nt lag"}`
+                    }
                   </td>
                   <td>${row.played ?? "-"}</td>
                   <td>${row.won ?? "-"}</td>
@@ -99,6 +103,7 @@ function normalizeStandings(payload) {
 
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
+        teamId: participant?.id ?? item?.participant_id ?? item?.team_id ?? null,
         teamName: formatTeamName(participant?.name),
         logo: participant?.image_path ?? "",
         played: getDetail(item, "OVERALL_MATCHES"),
