@@ -6,9 +6,9 @@ const TEAM_FACTS_OVERRIDES = {
       name: "Eleda Stadion",
       capacity: 22500
     },
-    chairman: "Anders Pålsson",
+    chairman: "Zlatko Rihter",
     sportingDirector: "Daniel Andersson",
-    coach: "Henrik Rydström"
+    coach: "Miguel Angel Ramirez"
   }
 };
 
