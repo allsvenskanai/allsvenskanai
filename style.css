@@ -325,3 +325,75 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.main-header {
+  background: radial-gradient(circle at left, #0a1a2f, #020617);
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #c9a84c, #f5d06f);
+  color: #000;
+  font-weight: bold;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(201,168,76,0.6);
+}
+
+.logo-text h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 1px;
+}
+
+.logo-text h1 span {
+  color: #c9a84c;
+}
+
+.logo-text p {
+  margin: 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 10px;
+  background: rgba(255,255,255,0.05);
+  padding: 5px;
+  border-radius: 30px;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.nav-btn.active,
+.nav-btn:hover {
+  background: #c9a84c;
+  color: #000;
+}
