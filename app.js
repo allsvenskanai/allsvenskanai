@@ -164,6 +164,9 @@ async function loadStandings() {
     const response = await fetch(`/api/standings?league=${currentLeague}`);
     const data = await response.json();
 
+    console.log("STANDINGS RAW:", data);
+console.log("FIRST STANDING ROW:", data?.data?.[0]);
+
     if (!response.ok) {
       standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
       console.error(data);
@@ -177,9 +180,6 @@ async function loadStandings() {
     console.error(error);
   }
 }
-
-console.log("STANDINGS RAW:", data);
-console.log("FIRST STANDING ROW:", data?.data?.[0]);
 
 function getParticipantByLocation(participants, location) {
   return (
