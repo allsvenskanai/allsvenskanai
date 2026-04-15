@@ -135,7 +135,19 @@ function getScoreValue(scores, participantId, description = "CURRENT") {
   );
 
   if (!row) return null;
-  return Number(row.score ?? 0);
+
+  const rawValue =
+    row?.score?.goals ??
+    row?.score?.value ??
+    row?.score ??
+    null;
+
+  if (rawValue === null || rawValue === undefined || rawValue === "") {
+    return null;
+  }
+
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function formatMatchDate(dateString) {
