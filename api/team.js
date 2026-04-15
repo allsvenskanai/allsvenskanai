@@ -9,7 +9,17 @@ const TEAM_FACTS_OVERRIDES = {
     chairman: "Zlatko Rihter",
     sportingDirector: "Daniel Andersson",
     coach: "Miguel Angel Ramirez"
-  }
+  },
+  2678: {
+    city: "Uppsala",
+    venue: {
+      name: "Studenternas IP",
+      capacity: 10522
+    },
+    chairman: "Ulrika Moström Ågren",
+    sportingDirector: "Jonathan Ederström",
+    coach: "Andreas Engelmark"
+  },
 };
 
 function firstValue(...values) {
