@@ -1,14 +1,15 @@
-const TEAM_FACT_OVERRIDES = {
+const TEAM_FACTS_OVERRIDES = {
   // Add manual fixes by Sportmonks team id when the API does not provide them.
-  // Example:
-  // 12345: {
-  //   chairman: "Namn",
-  //   sportingDirector: "Namn",
-  //   city: "Stad",
-  //   venue: { name: "Arena", capacity: 10000 },
-  //   founded: 1900,
-  //   coach: "Namn"
-  // }
+  85: {
+    city: "Malmö",
+    venue: {
+      name: "Eleda Stadion",
+      capacity: 22500
+    },
+    chairman: "Anders Pålsson",
+    sportingDirector: "Daniel Andersson",
+    coach: "Henrik Rydström"
+  }
 };
 
 function firstValue(...values) {
@@ -16,7 +17,7 @@ function firstValue(...values) {
 }
 
 function normalizeTeam(team, id) {
-  const override = TEAM_FACT_OVERRIDES[id] || {};
+  const override = TEAM_FACTS_OVERRIDES[id] || {};
   const venue = team?.venue || team?.stadium || null;
   const coach = Array.isArray(team?.coach) ? team.coach[0] : team?.coach;
 
