@@ -1,5 +1,12 @@
 {
   "rewrites": [
+    { "source": "/src/(.*)", "destination": "/src/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/sw.js", "destination": "/sw.js" },
+    { "source": "/firebase-messaging-sw.js", "destination": "/firebase-messaging-sw.js" },
     { "source": "/data/static/(.*)", "destination": "/data/static/$1" },
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/football", "destination": "/api/football.js" },
