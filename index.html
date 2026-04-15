@@ -53,6 +53,27 @@
     </nav>
   </div>
 
-  <script type="module" src="/src/main.js"></script>
+  <script>
+    window.__allsvenskanAiModuleFailed = function(src){
+      console.error('AllsvenskanAI module load failed', src);
+      var app = document.getElementById('app');
+      if(!app) return;
+      app.innerHTML = [
+        '<section class="page-state error-state">',
+        '<h1>Kunde inte ladda appen</h1>',
+        '<p>En JavaScript-modul kunde inte laddas korrekt. Ladda om sidan om en liten stund.</p>',
+        '<small>' + String(src || 'okand modul') + '</small>',
+        '</section>'
+      ].join('');
+    };
+
+    window.addEventListener('error', function(event){
+      var target = event && event.target;
+      if(target && target.tagName === 'SCRIPT' && target.type === 'module'){
+        window.__allsvenskanAiModuleFailed(target.src);
+      }
+    }, true);
+  </script>
+  <script type="module" src="/src/main.js" onerror="window.__allsvenskanAiModuleFailed && window.__allsvenskanAiModuleFailed(this.src)"></script>
 </body>
 </html>
