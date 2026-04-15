@@ -21,6 +21,13 @@ self.addEventListener('fetch', e => {
   if(
     url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/components/') ||
+    url.pathname.startsWith('/config/') ||
+    url.pathname.startsWith('/services/') ||
+    url.pathname.startsWith('/state/') ||
+    url.pathname.startsWith('/views/') ||
+    url.pathname === '/main.js' ||
+    url.pathname === '/router.js' ||
     e.request.destination === 'script' ||
     e.request.destination === 'style'
   ) {
