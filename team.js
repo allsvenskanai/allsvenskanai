@@ -17,6 +17,10 @@ function formatCapacity(value) {
   return Number.isFinite(parsed) ? parsed.toLocaleString("sv-SE") : value;
 }
 
+function getErrorMessage(data, fallback) {
+  return data?.error || data?.details || fallback;
+}
+
 function renderTeam(team) {
   const facts = [
     ["Stad", formatFact(team.city)],
@@ -83,7 +87,11 @@ async function loadTeam() {
     const data = await response.json();
 
     if (!response.ok) {
-      teamContent.innerHTML = "<p>Kunde inte hämta laget.</p>";
+      const message = getErrorMessage(data, "Kunde inte hämta laget.");
+      teamContent.innerHTML = `
+        <p>Kunde inte hämta laget.</p>
+        <p class="error-detail">${message}</p>
+      `;
       console.error(data);
       return;
     }
