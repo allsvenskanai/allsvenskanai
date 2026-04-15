@@ -187,12 +187,18 @@ function getMatchStatus(match, homeTeam, awayTeam) {
   const homeScore = homeTeam ? getScoreValue(scores, homeTeam.id, "CURRENT") : null;
   const awayScore = awayTeam ? getScoreValue(scores, awayTeam.id, "CURRENT") : null;
 
-  if (homeScore !== null && awayScore !== null) {
-    return match?.finished ? "FT" : "Live / Uppdaterad";
+  if (match?.result_info) {
+    return "Slut";
   }
 
-  if (match?.finished) return "FT";
-  if (match?.starting_at) return "Kommande";
+  if (homeScore !== null && awayScore !== null) {
+    return "Slut";
+  }
+
+  if (match?.starting_at) {
+    return "Kommande";
+  }
+
   return "Okänd status";
 }
 
