@@ -5,19 +5,6 @@ const statsContent = document.getElementById("stats-content");
 
 let currentLeague = "allsvenskan";
 
-const TEAM_NAME_OVERRIDES = {
-  "Djurgården": "Djurgårdens IF",
-  "Häcken": "BK Häcken"
-};
-
-function formatTeamName(name) {
-  if (!name) return "Okänt lag";
-
-  const cleanedName = String(name).replace(/\s+W$/i, "").trim();
-
-  return TEAM_NAME_OVERRIDES[cleanedName] || cleanedName;
-}
-
 function renderPlaceholderContent() {
   const leagueName =
     currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
