@@ -9,7 +9,6 @@ function renderPlaceholderContent() {
   const leagueName =
     currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
 
-  resultsContent.textContent = `Här kommer resultat för ${leagueName} att visas.`;
   statsContent.textContent = `Här kommer statistik för ${leagueName} att visas.`;
 }
 
@@ -65,7 +64,6 @@ function renderStandingsTable(rows) {
 
 function normalizeStandings(payload) {
   const tableRows = [];
-
   const standings = payload?.data || [];
 
   for (const item of standings) {
@@ -107,7 +105,7 @@ async function loadStandings() {
     const data = await response.json();
 
     if (!response.ok) {
-      standingsContent.innerHTML = `<p>Kunde inte hämta tabellen.</p>`;
+      standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
       console.error(data);
       return;
     }
@@ -120,9 +118,96 @@ async function loadStandings() {
   }
 }
 
+function getFixtureTeam(fixture, location) {
+  const participants = Array.isArray(fixture?.participants)
+    ? fixture.participants
+    : [];
+
+  return (
+    participants.find((team) => team?.meta?.location === location) ||
+    participants.find((team) => team?.location === location) ||
+    participants.find((team) => team?.pivot?.location === location) ||
+    null
+  );
+}
+
+function getFixtureScore(fixture, location) {
+  const scores = Array.isArray(fixture?.scores) ? fixture.scores : [];
+
+  const score = scores.find((item) => {
+    const participantLocation = String(
+      item?.score?.participant ||
+      item?.participant ||
+      item?.description ||
+      item?.meta?.location ||
+      ""
+    ).toLowerCase();
+
+    const isCurrent =
+      item?.description === "CURRENT" ||
+      item?.type?.developer_name === "CURRENT" ||
+      item?.score?.description === "CURRENT";
+
+    return isCurrent && participantLocation === location;
+  });
+
+  return score?.score?.goals ?? score?.score?.value ?? score?.goals ?? null;
+}
+
+function renderFixtures(fixtures) {
+  const firstFixtures = fixtures.slice(0, 20);
+
+  if (!firstFixtures.length) {
+    resultsContent.innerHTML = "<p>Inga matcher tillgängliga just nu.</p>";
+    return;
+  }
+
+  resultsContent.innerHTML = `
+    <div class="fixtures-list">
+      ${firstFixtures
+        .map((fixture) => {
+          const homeTeam = getFixtureTeam(fixture, "home");
+          const awayTeam = getFixtureTeam(fixture, "away");
+          const homeScore = getFixtureScore(fixture, "home");
+          const awayScore = getFixtureScore(fixture, "away");
+          const hasScore = homeScore !== null && awayScore !== null;
+
+          return `
+            <div class="fixture-row">
+              <span>${homeTeam?.name ?? "Hemmalag"}</span>
+              <strong>${hasScore ? `${homeScore} - ${awayScore}` : "Kommande"}</strong>
+              <span>${awayTeam?.name ?? "Bortalag"}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+async function loadFixtures() {
+  resultsContent.innerHTML = "<p>Laddar resultat...</p>";
+
+  try {
+    const response = await fetch(`/api/fixtures?league=${currentLeague}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      resultsContent.innerHTML = "<p>Kunde inte hämta resultaten.</p>";
+      console.error(data);
+      return;
+    }
+
+    renderFixtures(data?.data || []);
+  } catch (error) {
+    resultsContent.innerHTML = "<p>Något gick fel när resultaten skulle hämtas.</p>";
+    console.error(error);
+  }
+}
+
 async function renderLeagueContent() {
   renderPlaceholderContent();
-  await loadStandings();
+  await Promise.all([loadStandings(), loadFixtures()]);
 }
 
 buttons.forEach((button) => {
