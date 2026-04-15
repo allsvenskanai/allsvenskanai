@@ -64,3 +64,29 @@ body {
 .card h2 {
   margin-top: 0;
 }
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.standings-table th,
+.standings-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.standings-table th {
+  color: #b8c2d8;
+  font-size: 14px;
+}
+
+.standings-table td {
+  font-size: 14px;
+}
