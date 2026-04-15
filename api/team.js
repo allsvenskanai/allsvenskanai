@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing SPORTMONKS_API_TOKEN" });
     }
 
-    const url = `https://api.sportmonks.com/v3/football/teams/${encodeURIComponent(id)}?include=venue;coach;country`;
+    const url = `https://api.sportmonks.com/v3/football/teams/${encodeURIComponent(id)}`;
 
     const response = await fetch(url, {
       headers: {
