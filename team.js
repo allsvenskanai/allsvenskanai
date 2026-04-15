@@ -6,7 +6,28 @@ function formatTeamName(name) {
   return String(name).replace(/\s+W$/i, "").trim();
 }
 
+function formatFact(value) {
+  return value === null || value === undefined || value === "" ? "Saknas" : value;
+}
+
+function formatCapacity(value) {
+  if (value === null || value === undefined || value === "") return "Saknas";
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toLocaleString("sv-SE") : value;
+}
+
 function renderTeam(team) {
+  const facts = [
+    ["Stad", formatFact(team.city)],
+    ["Arena", formatFact(team.venue?.name)],
+    ["Arenakapacitet", formatCapacity(team.venue?.capacity)],
+    ["Bildat", formatFact(team.founded)],
+    ["Styrelseordförande", formatFact(team.chairman)],
+    ["Sportchef", formatFact(team.sportingDirector)],
+    ["Tränare", formatFact(team.coach)]
+  ];
+
   teamContent.innerHTML = `
     <div class="team-hero">
       <img src="${team.logo || ""}" alt="" class="team-hero-logo">
@@ -15,6 +36,22 @@ function renderTeam(team) {
         <h2>${formatTeamName(team.name)}</h2>
       </div>
     </div>
+
+    <section class="team-facts-card">
+      <h3>Fakta</h3>
+      <div class="team-facts-grid">
+        ${facts
+          .map(
+            ([label, value]) => `
+              <div class="team-fact">
+                <span>${label}</span>
+                <strong>${value}</strong>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </section>
 
     <div class="team-grid">
       <section class="team-info-card">
