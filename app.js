@@ -91,14 +91,14 @@ function normalizeStandings(payload) {
       return {
         position: Number(item?.position ?? item?.rank ?? 999),
         teamName: participant?.name ?? "Okänt lag",
-        played: getDetail(item, "played"),
-        won: getDetail(item, "won"),
-        draw: getDetail(item, "draw"),
-        lost: getDetail(item, "lost"),
-        goalsFor: getDetail(item, "goals_for"),
-        goalsAgainst: getDetail(item, "goals_against"),
-        goalDiff: getDetail(item, "goal_difference"),
-        points: Number(item?.points ?? getDetail(item, "points"))
+        played: getDetail(item, "OVERALL_MATCHES"),
+        won: getDetail(item, "OVERALL_WINS"),
+        draw: getDetail(item, "OVERALL_DRAWS"),
+        lost: getDetail(item, "OVERALL_LOST"),
+        goalsFor: getDetail(item, "OVERALL_SCORED"),
+        goalsAgainst: getDetail(item, "OVERALL_CONCEDED"),
+        goalDiff: getDetail(item, "OVERALL_GOAL_DIFFERENCE"),
+        points: Number(item?.points ?? getDetail(item, "TOTAL_POINTS"))
       };
     })
     .sort((a, b) => a.position - b.position);
@@ -110,15 +110,6 @@ async function loadStandings() {
   try {
     const response = await fetch(`/api/standings?league=${currentLeague}`);
     const data = await response.json();
-
-    console.log(
-  data.data[0].details.map(d => ({
-    id: d.type_id,
-    name: d.type?.name,
-    dev: d.type?.developer_name,
-    val: d.value
-  }))
-);
 
     if (!response.ok) {
       standingsContent.innerHTML = "<p>Kunde inte hämta tabellen.</p>";
