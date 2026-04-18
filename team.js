@@ -1,6 +1,6 @@
 const teamContent = document.getElementById("team-content");
 const SQUAD_TTL = 12 * 60 * 60 * 1000;
-const SQUAD_CACHE_VERSION = "v3";
+const SQUAD_CACHE_VERSION = "v4";
 let squadLoadStarted = false;
 
 function formatFact(value) {
