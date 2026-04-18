@@ -8,12 +8,29 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="/" class="site-logo-link" aria-label="AllsvenskanAI startsida">
-      <img src="logo-allsvenskanai.png" alt="AllsvenskanAI" class="site-logo">
-    </a>
+    <div class="header-inner">
+      <a href="/" class="site-logo-link" aria-label="AllsvenskanAI startsida">
+        <img src="logo-allsvenskanai.png" alt="AllsvenskanAI" class="site-logo">
+      </a>
 
-    <div class="topbar-copy">
-      <p>Svensk fotboll, enkelt och snabbt.</p>
+      <nav class="main-nav" id="main-nav" aria-label="Huvudnavigation">
+        <a href="/#tabell" class="nav-link">Tabell</a>
+        <a href="/#matcher" class="nav-link">Matcher</a>
+        <a href="/#lag" class="nav-link">Lag</a>
+        <a href="/#spelare" class="nav-link">Spelare</a>
+        <a href="/#statistik" class="nav-link">Statistik</a>
+        <a href="/#overgangar" class="nav-link">Övergångar</a>
+      </nav>
+
+      <div class="topbar-copy">
+        <p>Svensk fotboll, enkelt och snabbt.</p>
+      </div>
+
+      <button class="menu-toggle" type="button" aria-label="Öppna meny" aria-controls="main-nav" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </header>
 
@@ -25,6 +42,7 @@
     </section>
   </main>
 
+  <script src="header.js"></script>
   <script src="team-names.js"></script>
   <script src="team.js"></script>
 </body>
