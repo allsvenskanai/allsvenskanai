@@ -19,6 +19,33 @@ function joinName(firstname, lastname) {
   return compact(`${first} ${last}`);
 }
 
+function resolvePlayerName(row) {
+  const nestedPlayer = row?.player?.data || row?.player || {};
+  const firstLast = joinName(
+    nestedPlayer?.firstname || nestedPlayer?.first_name,
+    nestedPlayer?.lastname || nestedPlayer?.last_name
+  );
+  const flatFirstLast = joinName(
+    row?.firstname || row?.first_name,
+    row?.lastname || row?.last_name
+  );
+
+  return firstValue(
+    nestedPlayer?.name,
+    firstLast,
+    nestedPlayer?.display_name,
+    nestedPlayer?.fullname,
+    nestedPlayer?.full_name,
+    nestedPlayer?.common_name,
+    row?.display_name,
+    row?.fullname,
+    row?.full_name,
+    row?.common_name,
+    row?.name,
+    flatFirstLast
+  ) || "Okänd spelare";
+}
+
 function unwrapPlayer(row) {
   return (
     row?.player?.data ||
@@ -28,28 +55,6 @@ function unwrapPlayer(row) {
     row?.person ||
     row
   );
-}
-
-function resolvePlayerName(row) {
-  const player = unwrapPlayer(row);
-  const firstLast = joinName(
-    player?.firstname || player?.first_name || row?.firstname || row?.first_name,
-    player?.lastname || player?.last_name || row?.lastname || row?.last_name
-  );
-
-  return firstValue(
-    firstLast,
-    player?.display_name,
-    player?.fullname,
-    player?.full_name,
-    player?.common_name,
-    player?.name,
-    row?.display_name,
-    row?.fullname,
-    row?.full_name,
-    row?.common_name,
-    row?.name
-  ) || "Okänd spelare";
 }
 
 function resolvePosition(row) {
@@ -167,6 +172,7 @@ function collectRawPlayers(payload) {
 export default async function handler(req, res) {
   const { id } = req.query;
   const token = process.env.SPORTMONKS_API_TOKEN;
+  const debug = req.query.debug === "1" || process.env.NODE_ENV !== "production";
 
   if (!id) {
     return res.status(400).json({ error: "Missing team id" });
@@ -193,15 +199,23 @@ export default async function handler(req, res) {
     }
 
     const rawPlayers = collectRawPlayers(payload);
+    if (debug && rawPlayers[0]) {
+      console.log("Squad raw player sample", {
+        teamId: id,
+        keys: Object.keys(rawPlayers[0] || {}),
+        playerKeys: rawPlayers[0]?.player ? Object.keys(rawPlayers[0].player || {}) : [],
+        sample: rawPlayers[0]
+      });
+    }
     const normalized = rawPlayers.map(normalizePlayer);
     const missingNameCount = normalized.filter((player) => player.name === "Okänd spelare").length;
     const players = uniquePlayers(normalized);
 
-    if (missingNameCount) {
+    if (debug && missingNameCount) {
       console.warn("Squad players missing names", {
         teamId: id,
         missingNameCount,
-        sampleKeys: Object.keys(rawPlayers.find((row) => normalizePlayer(row).name === "Okänd spelare") || {})
+        sample: rawPlayers.find((row) => normalizePlayer(row).name === "Okänd spelare") || null
       });
     }
 
