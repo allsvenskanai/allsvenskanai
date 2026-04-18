@@ -70,7 +70,7 @@ function renderStandingsTable(rows) {
                     ${teamLogoHtml(row)}
                     ${
                       row.teamId
-                        ? `<a href="/team.html?id=${row.teamId}" class="team-link">${escapeHtml(row.teamName)}</a>`
+                        ? `<a href="/team.html?id=${row.teamId}&league=${currentLeague}" class="team-link">${escapeHtml(row.teamName)}</a>`
                         : escapeHtml(row.teamName)
                     }
                   </td>
@@ -336,7 +336,7 @@ function renderHero(rows, fixtures) {
             ? topTeams
                 .map(
                   (team) => `
-                    <a href="/team.html?id=${team.teamId}" class="dashboard-team-row">
+                    <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="dashboard-team-row">
                       <span>${team.position}. ${escapeHtml(team.teamName)}</span>
                       <strong>${team.points} p</strong>
                     </a>
@@ -398,7 +398,7 @@ function listCard(title, rows, valueGetter) {
         ? rows
             .map(
               (row, index) => `
-                <a href="/team.html?id=${row.teamId}" class="mini-row">
+                <a href="/team.html?id=${row.teamId}&league=${currentLeague}" class="mini-row">
                   <span>${index + 1}. ${escapeHtml(row.teamName)}</span>
                   <strong>${valueGetter(row)}</strong>
                 </a>
@@ -415,7 +415,7 @@ function renderTeams(rows) {
     ? rows
         .map(
           (team) => `
-            <a href="/team.html?id=${team.teamId}" class="team-card">
+            <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="team-card">
               ${teamLogoHtml(team, "team-card-logo")}
               <strong>${escapeHtml(team.teamName)}</strong>
               <span>${team.points} poäng</span>
@@ -428,12 +428,8 @@ function renderTeams(rows) {
 
 async function loadStandings() {
   standingsContent.innerHTML = emptyState("Laddar tabell...");
-  const response = await fetch(`/api/standings?league=${currentLeague}`);
-  const data = await response.json();
-
-  if (!response.ok) throw new Error(data?.error || "Kunde inte hämta tabellen.");
-
-  return normalizeStandings(data);
+  const snapshot = await LeagueData.loadLeagueSnapshot(currentLeague);
+  return snapshot.standings;
 }
 
 async function loadFixtures() {
@@ -441,14 +437,8 @@ async function loadFixtures() {
   upcomingMatchesContent.innerHTML = emptyState("Laddar matcher...");
   recentResultsContent.innerHTML = emptyState("Laddar matcher...");
 
-  const response = await fetch(`/api/fixtures?league=${currentLeague}`);
-  const data = await response.json();
-
-  if (!response.ok) throw new Error(data?.error || "Kunde inte hämta matcher.");
-
-  return (Array.isArray(data?.data) ? data.data : [])
-    .map(normalizeFixture)
-    .sort(sortByKickoffAsc);
+  const snapshot = await LeagueData.loadLeagueSnapshot(currentLeague);
+  return snapshot.fixtures;
 }
 
 function renderFixtures(fixtures) {
