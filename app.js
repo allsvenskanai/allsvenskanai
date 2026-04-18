@@ -211,20 +211,22 @@ function formatMatchDate(dateString) {
 
   return date.toLocaleString("sv-SE", {
     month: "short",
-    day: "2-digit",
+    day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
-  });
+  }).replace(",", " •");
 }
 
 function matchCard(match, variant = "") {
-  const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "Kommande";
-  const meta = match.isLive ? "Live" : match.isFinished ? "Slut" : formatMatchDate(match.startingAt);
+  const homeWon = match.hasScore && Number(match.homeScore) > Number(match.awayScore);
+  const awayWon = match.hasScore && Number(match.awayScore) > Number(match.homeScore);
+  const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "vs";
+  const meta = match.isLive ? "Live nu" : match.isFinished ? "Slut" : formatMatchDate(match.startingAt);
   const href = match.id ? `#matcher` : "#matcher";
 
   return `
     <a href="${href}" class="match-card ${variant}">
-      <div class="match-team">
+      <div class="match-team ${homeWon ? "winner" : ""}">
         ${teamLogoHtml(match.homeTeam, "match-team-logo")}
         <span>${escapeHtml(match.homeTeam?.name || "Hemmalag")}</span>
       </div>
@@ -232,7 +234,7 @@ function matchCard(match, variant = "") {
         <strong>${score}</strong>
         <small>${meta || "Match"}</small>
       </div>
-      <div class="match-team right">
+      <div class="match-team right ${awayWon ? "winner" : ""}">
         <span>${escapeHtml(match.awayTeam?.name || "Bortalag")}</span>
         ${teamLogoHtml(match.awayTeam, "match-team-logo")}
       </div>
@@ -401,8 +403,16 @@ function renderFixtures(fixtures) {
     .filter((match) => match.isFinished)
     .sort((a, b) => new Date(b.startingAt) - new Date(a.startingAt))
     .slice(0, 5);
+  const liveFallback = upcoming.slice(0, 3);
 
-  renderMatchColumn(liveMatchesContent, live, "Inga live-matcher just nu.", "live");
+  liveMatchesContent.innerHTML = live.length
+    ? live.map((match) => matchCard(match, "live")).join("")
+    : `
+      <div class="match-column-note">Matcher snart</div>
+      ${liveFallback.length
+        ? liveFallback.map((match) => matchCard(match, "soon")).join("")
+        : emptyState("Inga matcher schemalagda just nu.")}
+    `;
   renderMatchColumn(upcomingMatchesContent, upcoming, "Inga kommande matcher hittades.");
   renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgängliga ännu.");
 }
