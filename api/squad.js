@@ -125,7 +125,8 @@ function resolveNumber(row) {
 
 function normalizePlayer(row) {
   const player = unwrapPlayer(row);
-  const id = player?.id || row?.player_id || row?.participant_id || row?.id || null;
+  const apiFootballPlayer = row?.player || {};
+  const id = apiFootballPlayer?.id || player?.id || row?.player_id || row?.participant_id || row?.id || null;
   const rawPosition = resolvePosition(row);
 
   return {
@@ -158,15 +159,17 @@ function uniquePlayers(players) {
 
 function collectRawPlayers(payload) {
   const data = payload?.data || {};
-  return (
+  const players =
+    payload?.response ||
     data?.players?.data ||
     data?.players ||
     data?.squad?.data ||
     data?.squad ||
     data?.playersSquads?.data ||
     data?.playersSquads ||
-    []
-  );
+    [];
+
+  return Array.isArray(players) ? players : [];
 }
 
 export default async function handler(req, res) {
@@ -188,6 +191,10 @@ export default async function handler(req, res) {
       `?include=players;players.position&api_token=${encodeURIComponent(token)}`;
     const response = await fetch(url);
     const payload = await response.json().catch(() => ({}));
+
+    if (debug) {
+      console.log("SQUAD RAW:", payload);
+    }
 
     if (!response.ok) {
       console.warn("Sportmonks squad request failed", response.status, payload?.message || payload);
@@ -217,6 +224,10 @@ export default async function handler(req, res) {
         missingNameCount,
         sample: rawPlayers.find((row) => normalizePlayer(row).name === "Okänd spelare") || null
       });
+      rawPlayers
+        .filter((row) => normalizePlayer(row).name === "Okänd spelare")
+        .slice(0, 3)
+        .forEach((row) => console.log("Missing name for:", row));
     }
 
     return res.status(200).json({
