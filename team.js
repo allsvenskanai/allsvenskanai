@@ -1,5 +1,6 @@
 const teamContent = document.getElementById("team-content");
 const SQUAD_TTL = 12 * 60 * 60 * 1000;
+const SQUAD_CACHE_VERSION = "v2";
 let squadLoadStarted = false;
 
 function formatFact(value) {
@@ -59,12 +60,67 @@ function safeWriteStorage(key, value) {
 
 function positionSv(position) {
   const raw = String(position || "").toLowerCase();
-  if (!raw) return "Saknas";
+  if (!raw) return "Position saknas";
+  if (raw.includes("position saknas")) return "Position saknas";
+  if (raw.includes("målvakt") || raw.includes("malvakt")) return "Målvakt";
+  if (raw.includes("försvarare") || raw.includes("forsvarare")) return "Försvarare";
+  if (raw.includes("mittfältare") || raw.includes("mittfaltare")) return "Mittfältare";
+  if (raw.includes("anfallare")) return "Anfallare";
   if (raw.includes("goal") || raw.includes("keeper") || raw === "gk") return "Målvakt";
   if (raw.includes("def") || raw.includes("back")) return "Försvarare";
   if (raw.includes("mid") || raw.includes("cm") || raw.includes("dm") || raw.includes("am")) return "Mittfältare";
   if (raw.includes("att") || raw.includes("for") || raw.includes("wing") || raw.includes("striker")) return "Anfallare";
   return position;
+}
+
+function squadPositionOrder(position) {
+  const normalized = positionSv(position);
+  if (normalized === "Målvakt") return 1;
+  if (normalized === "Försvarare") return 2;
+  if (normalized === "Mittfältare") return 3;
+  if (normalized === "Anfallare") return 4;
+  return 9;
+}
+
+function cleanPlayerName(player) {
+  const joined = [player.firstname || player.firstName, player.lastname || player.lastName]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const candidates = [
+    joined,
+    player.fullName,
+    player.full_name,
+    player.fullname,
+    player.display_name,
+    player.name,
+    player.player?.name,
+    player.player?.full_name,
+    player.player?.fullname
+  ];
+  const name = candidates.map((value) => String(value || "").replace(/\s+/g, " ").trim()).find(Boolean);
+  return name || "Okänd spelare";
+}
+
+function normalizeSquadForUi(players) {
+  return (players || [])
+    .map((player) => ({
+      ...player,
+      name: cleanPlayerName(player),
+      position: positionSv(player.position),
+      positionOrder: player.positionOrder || squadPositionOrder(player.position),
+      number: Number.isFinite(Number(player.number)) ? Number(player.number) : null
+    }))
+    .filter((player) => player.id || player.name !== "Okänd spelare")
+    .sort((a, b) => {
+      if (a.positionOrder !== b.positionOrder) return a.positionOrder - b.positionOrder;
+      const aNumber = a.number ?? 999;
+      const bNumber = b.number ?? 999;
+      if (aNumber !== bNumber) return aNumber - bNumber;
+      return a.name.localeCompare(b.name, "sv");
+    });
 }
 
 function getOpponent(teamId, match) {
@@ -164,21 +220,21 @@ function renderStats(standing, form) {
 }
 
 function squadCacheKey(teamId) {
-  return `aai:squad:${teamId}`;
+  return `aai:squad:${SQUAD_CACHE_VERSION}:${teamId}`;
 }
 
 async function loadSquad(teamId) {
   const key = squadCacheKey(teamId);
   const cached = safeReadStorage(key);
   if (cached?.players && cached?.fetchedAt && Date.now() - cached.fetchedAt < SQUAD_TTL) {
-    return cached.players;
+    return normalizeSquadForUi(cached.players);
   }
 
   const response = await fetch(`/api/squad?id=${encodeURIComponent(teamId)}`);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.error || "Kunde inte hämta truppen.");
 
-  const players = data.players || [];
+  const players = normalizeSquadForUi(data.players || []);
   safeWriteStorage(key, { fetchedAt: Date.now(), players });
   return players;
 }
