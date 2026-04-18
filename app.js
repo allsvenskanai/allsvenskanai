@@ -166,6 +166,62 @@ function getScoreValue(scores, participantId, description = "CURRENT") {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseKickoffTime(match) {
+  const timestamp =
+    match?.starting_at_timestamp ??
+    match?.starting_at_time ??
+    match?.time?.starting_at?.timestamp ??
+    null;
+
+  if (timestamp !== null && timestamp !== undefined && timestamp !== "") {
+    const parsedTimestamp = Number(timestamp);
+    if (Number.isFinite(parsedTimestamp)) {
+      return parsedTimestamp > 100000000000
+        ? parsedTimestamp
+        : parsedTimestamp * 1000;
+    }
+  }
+
+  const rawDate =
+    match?.starting_at ??
+    match?.time?.starting_at?.date_time ??
+    match?.time?.starting_at?.date ??
+    "";
+
+  if (!rawDate) return null;
+
+  const dateString = String(rawDate).trim();
+  const normalizedDateString =
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(dateString)
+      ? `${dateString.replace(" ", "T")}Z`
+      : dateString;
+  const parsedDate = new Date(normalizedDateString);
+
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();
+}
+
+function sortByKickoffAsc(a, b) {
+  return (a.kickoffMs ?? Number.MAX_SAFE_INTEGER) - (b.kickoffMs ?? Number.MAX_SAFE_INTEGER);
+}
+
+function sortByKickoffDesc(a, b) {
+  return (b.kickoffMs ?? 0) - (a.kickoffMs ?? 0);
+}
+
+function getUpcomingMatches(fixtures, limit = 5) {
+  const now = Date.now();
+  const upcoming = fixtures
+    .filter((match) => !match.isLive && !match.isFinished && match.kickoffMs !== null && match.kickoffMs >= now)
+    .sort(sortByKickoffAsc);
+
+  if (upcoming.length) return upcoming.slice(0, limit);
+
+  return fixtures
+    .filter((match) => !match.isLive && !match.isFinished)
+    .sort(sortByKickoffAsc)
+    .slice(0, limit);
+}
+
 function normalizeFixture(match) {
   const participants = Array.isArray(match?.participants) ? match.participants : [];
   const scores = Array.isArray(match?.scores) ? match.scores : [];
@@ -177,10 +233,12 @@ function normalizeFixture(match) {
   const isFinished = Boolean(match?.finished || match?.result_info || hasScore);
   const statusText = String(match?.state?.name || match?.state?.short_name || match?.status || "").toLowerCase();
   const isLive = statusText.includes("live") || statusText.includes("1st") || statusText.includes("2nd");
+  const kickoffMs = parseKickoffTime(match);
 
   return {
     id: match?.id,
-    startingAt: match?.starting_at || match?.starting_at_timestamp || "",
+    startingAt: kickoffMs !== null ? new Date(kickoffMs).toISOString() : (match?.starting_at || ""),
+    kickoffMs,
     homeTeam: homeTeam
       ? {
           id: homeTeam.id,
@@ -251,7 +309,7 @@ function renderMatchColumn(container, matches, fallback, variant = "") {
 function renderHero(rows, fixtures) {
   const topTeams = rows.slice(0, 3);
   const liveMatches = fixtures.filter((match) => match.isLive).slice(0, 2);
-  const nextMatch = fixtures.find((match) => !match.isFinished);
+  const nextMatch = getUpcomingMatches(fixtures, 1)[0];
 
   heroHighlight.innerHTML = `
     <div class="dashboard-header">
@@ -390,18 +448,15 @@ async function loadFixtures() {
 
   return (Array.isArray(data?.data) ? data.data : [])
     .map(normalizeFixture)
-    .sort((a, b) => new Date(a.startingAt) - new Date(b.startingAt));
+    .sort(sortByKickoffAsc);
 }
 
 function renderFixtures(fixtures) {
-  const now = Date.now();
   const live = fixtures.filter((match) => match.isLive).slice(0, 4);
-  const upcoming = fixtures
-    .filter((match) => !match.isFinished && new Date(match.startingAt).getTime() >= now)
-    .slice(0, 5);
+  const upcoming = getUpcomingMatches(fixtures, 5);
   const recent = fixtures
     .filter((match) => match.isFinished)
-    .sort((a, b) => new Date(b.startingAt) - new Date(a.startingAt))
+    .sort(sortByKickoffDesc)
     .slice(0, 5);
   const liveFallback = upcoming.slice(0, 3);
 
