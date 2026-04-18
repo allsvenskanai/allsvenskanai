@@ -42,9 +42,10 @@ body {
 
 .site-logo {
   display: block;
-  width: clamp(190px, 24vw, 310px);
+  width: auto;
   max-width: 100%;
-  height: auto;
+  height: 44px;
+  max-height: 44px;
   object-fit: contain;
 }
 
@@ -207,7 +208,9 @@ body {
   }
 
   .site-logo {
-    width: clamp(150px, 52vw, 210px);
+    width: auto;
+    height: 32px;
+    max-height: 32px;
   }
 
   .topbar-copy p {
