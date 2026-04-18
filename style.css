@@ -1348,22 +1348,48 @@ body {
   gap: 0;
 }
 
-.load-squad-button {
-  border: 1px solid rgba(224,184,79,0.28);
-  border-radius: 999px;
-  padding: 10px 16px;
-  background: rgba(224,184,79,0.08);
-  color: #f7e4a1;
-  cursor: pointer;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+.skeleton-row {
+  pointer-events: none;
 }
 
-.load-squad-button:hover {
-  transform: translateY(-2px);
-  border-color: rgba(224,184,79,0.5);
-  background: rgba(224,184,79,0.14);
+.skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+  background-size: 220% 100%;
+  animation: squadSkeleton 1.25s ease-in-out infinite;
+}
+
+.skeleton-line.wide {
+  width: min(190px, 40vw);
+}
+
+.skeleton-line.medium {
+  width: 96px;
+}
+
+.skeleton-line.short {
+  width: 38px;
+  min-width: 38px;
+}
+
+.skeleton-pulse {
+  animation: squadSkeleton 1.25s ease-in-out infinite;
+}
+
+@keyframes squadSkeleton {
+  0% {
+    background-position: 100% 0;
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    background-position: -100% 0;
+    opacity: 0.55;
+  }
 }
 
 .squad-row em {
