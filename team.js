@@ -1,5 +1,6 @@
 const teamContent = document.getElementById("team-content");
-const LEAGUE_KEYS = ["allsvenskan", "damallsvenskan"];
+const SQUAD_TTL = 12 * 60 * 60 * 1000;
+let squadLoadStarted = false;
 
 function formatFact(value) {
   return value === null || value === undefined || value === "" ? "Saknas" : value;
@@ -7,7 +8,6 @@ function formatFact(value) {
 
 function formatCapacity(value) {
   if (value === null || value === undefined || value === "") return "Saknas";
-
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed.toLocaleString("sv-SE") : value;
 }
@@ -36,119 +36,25 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-function getErrorMessage(data, fallback) {
-  return data?.error || data?.details || fallback;
+function formatLeagueLabel(leagueKey) {
+  return leagueKey === "damallsvenskan" ? "Damallsvenskan" : "Allsvenskan";
 }
 
-function getDetailValue(details, codes) {
-  const wanted = Array.isArray(codes) ? codes : [codes];
-  const found = (details || []).find((detail) => {
-    const code = detail?.type?.code || detail?.type?.developer_name || detail?.type?.name;
-    return wanted.includes(code);
-  });
-
-  return Number(found?.value?.total ?? found?.value ?? 0);
-}
-
-function normalizeStandings(payload) {
-  return (payload?.data || [])
-    .map((row) => {
-      const details = row.details || [];
-      const team = row.participant || row.team || {};
-      const goalsFor = getDetailValue(details, ["OVERALL_SCORED", "GOALS_FOR"]);
-      const goalsAgainst = getDetailValue(details, ["OVERALL_CONCEDED", "GOALS_AGAINST"]);
-
-      return {
-        position: Number(row.position || row.rank || 0),
-        teamId: team.id || row.participant_id || row.team_id,
-        teamName: formatTeamName(team.name, team.id || row.participant_id || row.team_id),
-        logo: formatTeamLogo(team.image_path || team.logo_path || team.logo, team.id || row.participant_id || row.team_id),
-        played: getDetailValue(details, ["OVERALL_MATCHES", "MATCHES_PLAYED"]),
-        points: getDetailValue(details, ["TOTAL_POINTS", "POINTS"]),
-        goalsFor,
-        goalsAgainst,
-        goalDiff: goalsFor - goalsAgainst
-      };
-    })
-    .filter((row) => row.teamId);
-}
-
-function parseKickoffTime(match) {
-  if (match.starting_at_timestamp) {
-    const timestamp = Number(match.starting_at_timestamp);
-    return new Date(timestamp > 9999999999 ? timestamp : timestamp * 1000);
+function safeReadStorage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
-
-  const raw = match.starting_at || match.starting_at_datetime || match.date || match.time?.starting_at;
-  if (!raw) return null;
-
-  const normalized = typeof raw === "string" && raw.includes(" ") ? raw.replace(" ", "T") + "Z" : raw;
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function getScoreValue(score) {
-  return Number(
-    score?.score?.goals ??
-      score?.score?.goal ??
-      score?.score?.value ??
-      score?.goals ??
-      score?.value ??
-      0
-  );
-}
-
-function getParticipant(match, location) {
-  return (match.participants || []).find((team) => team.meta?.location === location || team.location === location);
-}
-
-function getParticipantScore(match, participantId) {
-  const score = (match.scores || [])
-    .filter((entry) => Number(entry.participant_id) === Number(participantId))
-    .find((entry) => {
-      const description = String(entry.description || entry.type?.description || "").toUpperCase();
-      return !description || description.includes("CURRENT") || description.includes("2ND_HALF") || description.includes("FULLTIME");
-    });
-
-  return score ? getScoreValue(score) : null;
-}
-
-function isFinished(match) {
-  const state = String(match.state?.name || match.state?.short_name || match.status || "").toLowerCase();
-  return ["ft", "full-time", "finished", "after extra time"].some((word) => state.includes(word));
-}
-
-function normalizeFixture(match, teamId) {
-  const home = getParticipant(match, "home") || (match.participants || [])[0] || {};
-  const away = getParticipant(match, "away") || (match.participants || [])[1] || {};
-  const kickoff = parseKickoffTime(match);
-  const homeScore = getParticipantScore(match, home.id);
-  const awayScore = getParticipantScore(match, away.id);
-  const teamIsHome = Number(home.id) === Number(teamId);
-  const teamScore = teamIsHome ? homeScore : awayScore;
-  const opponentScore = teamIsHome ? awayScore : homeScore;
-  const opponent = teamIsHome ? away : home;
-  const finished = isFinished(match);
-  let form = "";
-
-  if (finished && teamScore !== null && opponentScore !== null) {
-    form = teamScore > opponentScore ? "W" : teamScore < opponentScore ? "L" : "D";
+function safeWriteStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn("Kunde inte spara truppcache", error);
   }
-
-  return {
-    id: match.id,
-    kickoff,
-    kickoffMs: kickoff ? kickoff.getTime() : 0,
-    home,
-    away,
-    opponent,
-    homeScore,
-    awayScore,
-    teamIsHome,
-    finished,
-    form,
-    href: `/?match=${encodeURIComponent(match.id)}#matcher`
-  };
 }
 
 function positionSv(position) {
@@ -161,50 +67,8 @@ function positionSv(position) {
   return position;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data, `Kunde inte hämta ${url}`));
-  }
-
-  return data;
-}
-
-async function loadLeagueContext(teamId) {
-  const contexts = await Promise.all(
-    LEAGUE_KEYS.map(async (league) => {
-      const [standings, fixtures] = await Promise.all([
-        fetchJson(`/api/standings?league=${league}`).catch((error) => {
-          console.warn("Kunde inte hämta tabell", league, error);
-          return { data: [] };
-        }),
-        fetchJson(`/api/fixtures?league=${league}`).catch((error) => {
-          console.warn("Kunde inte hämta matcher", league, error);
-          return { data: [] };
-        })
-      ]);
-
-      const rows = normalizeStandings(standings);
-      const allFixtures = fixtures.data || [];
-      const teamFixtures = allFixtures
-        .filter((match) => (match.participants || []).some((team) => Number(team.id) === Number(teamId)))
-        .map((match) => normalizeFixture(match, teamId));
-
-      return {
-        league,
-        standing: rows.find((row) => Number(row.teamId) === Number(teamId)) || null,
-        fixtures: teamFixtures
-      };
-    })
-  );
-
-  return (
-    contexts.find((context) => context.standing) ||
-    contexts.find((context) => context.fixtures.length) ||
-    { league: "allsvenskan", standing: null, fixtures: [] }
-  );
+function getOpponent(teamId, match) {
+  return Number(match.homeTeamId) === Number(teamId) ? match.awayTeam : match.homeTeam;
 }
 
 function renderForm(form) {
@@ -217,23 +81,26 @@ function renderForm(form) {
 }
 
 function renderMatchRow(match, teamId) {
-  const opponentName = formatTeamName(match.opponent?.name, match.opponent?.id);
-  const opponentLogo = formatTeamLogo(match.opponent?.image_path || match.opponent?.logo_path || match.opponent?.logo, match.opponent?.id);
-  const score = match.homeScore !== null && match.awayScore !== null ? `${match.homeScore}–${match.awayScore}` : "Kommande";
-  const resultClass = match.form === "W" ? "win" : match.form === "L" ? "loss" : match.form === "D" ? "draw" : "";
+  const opponent = getOpponent(teamId, match) || {};
+  const opponentName = formatTeamName(opponent.name, opponent.id);
+  const opponentLogo = formatTeamLogo(opponent.logo, opponent.id);
+  const score = match.hasScore ? `${match.homeScore}–${match.awayScore}` : "Kommande";
+  const result = LeagueData.getTeamResult(teamId, match);
+  const resultClass = result === "W" ? "win" : result === "L" ? "loss" : result === "D" ? "draw" : "";
+  const teamIsHome = Number(match.homeTeamId) === Number(teamId);
 
   return `
-    <a class="team-match-row" href="${match.href}">
+    <a class="team-match-row" href="/?match=${encodeURIComponent(match.id)}#matcher">
       <div class="team-match-opponent">
-        <img src="${opponentLogo}" alt="">
+        ${opponentLogo ? `<img src="${opponentLogo}" alt="">` : '<span class="squad-avatar"></span>'}
         <div>
           <strong>${opponentName}</strong>
-          <span>${match.teamIsHome ? "Hemma" : "Borta"} • ${formatDateTime(match.kickoff)}</span>
+          <span>${teamIsHome ? "Hemma" : "Borta"} • ${formatDateTime(match.startingAt)}</span>
         </div>
       </div>
       <div class="team-match-score ${resultClass}">
         <strong>${score}</strong>
-        ${match.form ? `<span>${match.form}</span>` : ""}
+        ${result ? `<span>${result}</span>` : ""}
       </div>
     </a>
   `;
@@ -296,7 +163,104 @@ function renderStats(standing, form) {
   `;
 }
 
-function renderTeam(team, context, squad) {
+function squadCacheKey(teamId) {
+  return `aai:squad:${teamId}`;
+}
+
+async function loadSquad(teamId) {
+  const key = squadCacheKey(teamId);
+  const cached = safeReadStorage(key);
+  if (cached?.players && cached?.fetchedAt && Date.now() - cached.fetchedAt < SQUAD_TTL) {
+    return cached.players;
+  }
+
+  const response = await fetch(`/api/squad?id=${encodeURIComponent(teamId)}`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || "Kunde inte hämta truppen.");
+
+  const players = data.players || [];
+  safeWriteStorage(key, { fetchedAt: Date.now(), players });
+  return players;
+}
+
+function setupLazySquad(teamId, force = false) {
+  const container = document.getElementById("team-squad-content");
+  if (!container) return;
+
+  const load = async () => {
+    if (squadLoadStarted) return;
+    squadLoadStarted = true;
+    container.innerHTML = '<p class="team-empty">Laddar trupp...</p>';
+
+    try {
+      const players = await loadSquad(teamId);
+      container.innerHTML = renderSquad(players);
+      const count = document.getElementById("team-squad-count");
+      if (count) count.textContent = players.length ? `${players.length} spelare` : "Uppdateras";
+    } catch (error) {
+      console.warn("Kunde inte hämta trupp", error);
+      container.innerHTML = '<p class="team-empty">Truppdata uppdateras snart.</p>';
+    }
+  };
+
+  if (force) {
+    load();
+    return;
+  }
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        load();
+      }
+    }, { rootMargin: "180px" });
+    observer.observe(container);
+    return;
+  }
+
+  load();
+}
+
+async function loadTeamContext(teamId, preferredLeague) {
+  const primaryLeague = LeagueData.LEAGUES[preferredLeague] ? preferredLeague : "allsvenskan";
+  const primarySnapshot = await LeagueData.loadLeagueSnapshot(primaryLeague);
+
+  if (LeagueData.getTeamStanding(teamId, primarySnapshot) || LeagueData.getTeamFixtures(teamId, primarySnapshot).length) {
+    return primarySnapshot;
+  }
+
+  const otherLeagueKeys = Object.keys(LeagueData.LEAGUES).filter((key) => key !== primaryLeague);
+  const snapshots = [primarySnapshot];
+
+  for (const league of otherLeagueKeys) {
+    snapshots.push(await LeagueData.loadLeagueSnapshot(league));
+  }
+
+  return LeagueData.findLeagueForTeam(teamId, snapshots);
+}
+
+function buildFallbackTeam(teamId, standing, snapshot) {
+  const fromTeams = snapshot?.derived?.teams?.find((team) => Number(team.id) === Number(teamId));
+  return {
+    id: teamId,
+    name: standing?.teamName || fromTeams?.name || "Okänt lag",
+    logo: standing?.logo || fromTeams?.logo || "",
+    city: null,
+    venue: { name: null, capacity: null },
+    founded: null,
+    chairman: null,
+    sportingDirector: null,
+    coach: null
+  };
+}
+
+function renderTeam(team, snapshot) {
+  const teamId = team.id;
+  const standing = LeagueData.getTeamStanding(teamId, snapshot);
+  const latestMatches = LeagueData.getTeamRecentMatches(teamId, snapshot, 5);
+  const upcomingMatches = LeagueData.getTeamUpcomingMatches(teamId, snapshot, 5);
+  const form = LeagueData.getTeamForm(teamId, snapshot, 5);
   const facts = [
     ["Stad", formatFact(team.city)],
     ["Arena", formatFact(team.venue?.name)],
@@ -306,17 +270,12 @@ function renderTeam(team, context, squad) {
     ["Sportchef", formatFact(team.sportingDirector)],
     ["Tränare", formatFact(team.coach)]
   ];
-  const fixtures = [...context.fixtures].sort((a, b) => a.kickoffMs - b.kickoffMs);
-  const latestMatches = fixtures.filter((match) => match.finished).sort((a, b) => b.kickoffMs - a.kickoffMs).slice(0, 5);
-  const upcomingMatches = fixtures.filter((match) => !match.finished && match.kickoffMs >= Date.now()).slice(0, 5);
-  const form = latestMatches.slice().reverse().map((match) => match.form).filter(Boolean).slice(-5);
-  const standing = context.standing;
 
   teamContent.innerHTML = `
     <div class="team-hero expanded">
       <img src="${formatTeamLogo(team.logo, team.id)}" alt="" class="team-hero-logo">
       <div class="team-hero-copy">
-        <p class="eyebrow">Lagsida</p>
+        <p class="eyebrow">${formatLeagueLabel(snapshot?.leagueKey)} 2026</p>
         <h2>${formatTeamName(team.name, team.id)}</h2>
         <div class="team-summary-grid">
           <div class="team-summary-stat">
@@ -344,16 +303,12 @@ function renderTeam(team, context, squad) {
         <h3>Fakta</h3>
       </div>
       <div class="team-facts-grid">
-        ${facts
-          .map(
-            ([label, value]) => `
-              <div class="team-fact">
-                <span>${label}</span>
-                <strong>${value}</strong>
-              </div>
-            `
-          )
-          .join("")}
+        ${facts.map(([label, value]) => `
+          <div class="team-fact">
+            <span>${label}</span>
+            <strong>${value}</strong>
+          </div>
+        `).join("")}
       </div>
     </section>
 
@@ -362,7 +317,7 @@ function renderTeam(team, context, squad) {
         <h3>Senaste matcher</h3>
         <span>5 senaste</span>
       </div>
-      ${latestMatches.length ? latestMatches.map((match) => renderMatchRow(match, team.id)).join("") : '<p class="team-empty">Inga matcher ännu.</p>'}
+      ${latestMatches.length ? latestMatches.map((match) => renderMatchRow(match, teamId)).join("") : '<p class="team-empty">Inga matcher ännu.</p>'}
     </section>
 
     <section class="team-section">
@@ -370,15 +325,17 @@ function renderTeam(team, context, squad) {
         <h3>Kommande matcher</h3>
         <span>Nästa matcher</span>
       </div>
-      ${upcomingMatches.length ? upcomingMatches.map((match) => renderMatchRow(match, team.id)).join("") : '<p class="team-empty">Inga matcher ännu.</p>'}
+      ${upcomingMatches.length ? upcomingMatches.map((match) => renderMatchRow(match, teamId)).join("") : '<p class="team-empty">Inga matcher ännu.</p>'}
     </section>
 
-    <section class="team-section">
+    <section class="team-section" id="trupp">
       <div class="team-section-header">
         <h3>Trupp</h3>
-        <span>${squad.length ? `${squad.length} spelare` : "Uppdateras"}</span>
+        <span id="team-squad-count">Laddas vid behov</span>
       </div>
-      ${renderSquad(squad)}
+      <div id="team-squad-content">
+        <button class="load-squad-button" type="button">Visa trupp</button>
+      </div>
     </section>
 
     <section class="team-section">
@@ -389,11 +346,15 @@ function renderTeam(team, context, squad) {
       ${renderStats(standing, form)}
     </section>
   `;
+
+  document.querySelector(".load-squad-button")?.addEventListener("click", () => setupLazySquad(teamId, true));
+  setupLazySquad(teamId);
 }
 
 async function loadTeam() {
   const params = new URLSearchParams(window.location.search);
   const teamId = params.get("id");
+  const preferredLeague = params.get("league") || "allsvenskan";
 
   if (!teamId) {
     teamContent.innerHTML = "<p>Inget lag valt.</p>";
@@ -403,16 +364,14 @@ async function loadTeam() {
   teamContent.innerHTML = "<p>Laddar lag...</p>";
 
   try {
-    const [teamData, context, squadData] = await Promise.all([
-      fetchJson(`/api/team?id=${encodeURIComponent(teamId)}`),
-      loadLeagueContext(teamId),
-      fetchJson(`/api/squad?id=${encodeURIComponent(teamId)}`).catch((error) => {
-        console.warn("Kunde inte hämta trupp", error);
-        return { players: [] };
-      })
-    ]);
+    const snapshot = await loadTeamContext(teamId, preferredLeague);
+    const standing = LeagueData.getTeamStanding(teamId, snapshot);
+    const facts = await LeagueData.loadTeamFacts(teamId).catch((error) => {
+      console.warn("Kunde inte hämta lagfakta, använder snapshot-data", error);
+      return buildFallbackTeam(teamId, standing, snapshot);
+    });
 
-    renderTeam(teamData.team, context, squadData.players || []);
+    renderTeam({ ...buildFallbackTeam(teamId, standing, snapshot), ...facts }, snapshot);
   } catch (error) {
     teamContent.innerHTML = `
       <p>Kunde inte hämta laget.</p>
