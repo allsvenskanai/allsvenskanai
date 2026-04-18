@@ -447,8 +447,7 @@ body {
 }
 
 .match-card:hover,
-.mini-row:hover,
-.stats-feature:hover {
+.mini-row:hover {
   transform: translateY(-2px);
   border-color: rgba(224,184,79,0.32);
   background: rgba(255,255,255,0.055);
@@ -655,15 +654,59 @@ body {
 .stats-feature-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .stats-feature {
-  padding: 18px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  font-weight: 800;
+  display: grid;
+  gap: 7px;
+  min-height: 132px;
+  padding: 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035));
+  box-shadow: 0 12px 28px rgba(0,0,0,0.13);
+  transition: transform 200ms ease, border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+}
+
+.stats-feature.featured {
+  min-height: 154px;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(224,184,79,0.14), transparent 44%),
+    linear-gradient(180deg, rgba(255,255,255,0.078), rgba(255,255,255,0.038));
+  border-color: rgba(224,184,79,0.26);
+}
+
+.stats-feature span {
+  color: #e0b84f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.stats-feature strong {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.stats-feature.featured strong {
+  font-size: 22px;
+}
+
+.stats-feature small {
+  color: #9fb0cc;
+  line-height: 1.45;
+}
+
+.stats-feature:hover {
+  transform: translateY(-5px);
+  border-color: rgba(224,184,79,0.38);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(224,184,79,0.10), transparent 45%),
+    linear-gradient(180deg, rgba(255,255,255,0.088), rgba(255,255,255,0.048));
+  box-shadow: 0 20px 42px rgba(0,0,0,0.25);
 }
 
 .insight-card {
