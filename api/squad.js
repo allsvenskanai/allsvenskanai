@@ -63,11 +63,18 @@ function normalizePlayer(row) {
   const player = resolvePlayer(row);
   const rawPosition = resolvePosition(row);
   const number = Number(row?.jersey_number ?? row?.shirt_number ?? row?.number);
+  const birthDate = player.date_of_birth ? new Date(player.date_of_birth) : null;
+  const age = birthDate && !Number.isNaN(birthDate.getTime())
+    ? Math.max(0, Math.floor((Date.now() - birthDate.getTime()) / 31557600000))
+    : null;
 
   return {
     id: player.id || row.player_id || null,
     name: resolvePlayerName(row),
     photo: player.image_path || player.photo || "",
+    nationality: player.nationality?.name || player.country?.name || "",
+    flag: player.nationality?.image_path || player.country?.image_path || "",
+    age,
     position: normalizePosition(rawPosition),
     positionOrder: positionOrder(rawPosition),
     number: Number.isFinite(number) && number > 0 ? number : null
