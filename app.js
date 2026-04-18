@@ -247,26 +247,67 @@ function renderMatchColumn(container, matches, fallback, variant = "") {
 }
 
 function renderHero(rows, fixtures) {
-  const leader = rows[0];
+  const topTeams = rows.slice(0, 3);
+  const liveMatches = fixtures.filter((match) => match.isLive).slice(0, 2);
   const nextMatch = fixtures.find((match) => !match.isFinished);
 
   heroHighlight.innerHTML = `
-    <div class="hero-panel-top">
+    <div class="dashboard-header">
       <span>${leagueLabel()} 2026</span>
-      <strong>Aktiv liga</strong>
+      <strong>Ligapuls</strong>
     </div>
-    <div class="hero-leader">
-      <span>Serieledare</span>
-      <div>
-        ${leader ? teamLogoHtml(leader, "hero-team-logo") : ""}
-        <strong>${leader ? escapeHtml(leader.teamName) : "Ingen tabell"}</strong>
+
+    <section class="dashboard-section">
+      <h3>Live / Aktivt nu</h3>
+      <div class="dashboard-live-list">
+        ${
+          liveMatches.length
+            ? liveMatches.map((match) => matchCard(match, "live compact")).join("")
+            : emptyState("Inga matcher live")
+        }
       </div>
-    </div>
-    <div class="hero-next-match">
-      <span>Nästa match</span>
-      <strong>${nextMatch ? `${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")} - ${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}` : "Inget schema tillgängligt"}</strong>
-      <small>${nextMatch ? formatMatchDate(nextMatch.startingAt) : ""}</small>
-    </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h3>Tabelltopp</h3>
+      <div class="dashboard-table-top">
+        ${
+          topTeams.length
+            ? topTeams
+                .map(
+                  (team) => `
+                    <a href="/team.html?id=${team.teamId}" class="dashboard-team-row">
+                      <span>${team.position}. ${escapeHtml(team.teamName)}</span>
+                      <strong>${team.points} p</strong>
+                    </a>
+                  `
+                )
+                .join("")
+            : emptyState("Ingen tabell tillgänglig")
+        }
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <h3>Skytteliga</h3>
+      ${emptyState("Skytteligadata saknas ännu")}
+    </section>
+
+    <section class="dashboard-section next-match-feature">
+      <h3>Nästa match</h3>
+      ${
+        nextMatch
+          ? `
+            <div class="next-match-teams">
+              <span>${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")}</span>
+              <strong>mot</strong>
+              <span>${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}</span>
+            </div>
+            <p>${formatMatchDate(nextMatch.startingAt)}</p>
+          `
+          : emptyState("Inget schema tillgängligt")
+      }
+    </section>
   `;
 }
 
