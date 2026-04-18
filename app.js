@@ -1,24 +1,49 @@
 const buttons = document.querySelectorAll(".league-btn");
+const heroHighlight = document.getElementById("hero-highlight");
 const standingsContent = document.getElementById("standings-content");
-const resultsContent = document.getElementById("results-content");
-const statsContent = document.getElementById("stats-content");
+const liveMatchesContent = document.getElementById("live-matches-content");
+const upcomingMatchesContent = document.getElementById("upcoming-matches-content");
+const recentResultsContent = document.getElementById("recent-results-content");
+const teamsGrid = document.getElementById("teams-grid");
+const leagueSnapshotCard = document.getElementById("league-snapshot-card");
+const attackCard = document.getElementById("attack-card");
+const defenseCard = document.getElementById("defense-card");
 
 let currentLeague = "allsvenskan";
 
-function renderPlaceholderContent() {
-  const leagueName =
-    currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
+function leagueLabel() {
+  return currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
+}
 
-  statsContent.textContent = `Här kommer statistik för ${leagueName} att visas.`;
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function emptyState(text) {
+  return `<p class="empty-state">${text}</p>`;
+}
+
+function teamLogoHtml(team, className = "team-logo") {
+  const logo = team?.logo || "";
+  const name = team?.teamName || team?.name || "Lag";
+
+  if (!logo) return `<span class="${className} team-logo-placeholder"></span>`;
+
+  return `<img src="${escapeHtml(logo)}" alt="" class="${className}" loading="lazy">`;
 }
 
 function renderStandingsTable(rows) {
   if (!rows.length) {
-    standingsContent.innerHTML = "<p>Ingen tabell tillgänglig just nu.</p>";
+    standingsContent.innerHTML = emptyState("Ingen tabell tillgänglig just nu.");
     return;
   }
 
-  const tableHtml = `
+  standingsContent.innerHTML = `
     <div class="table-wrap">
       <table class="standings-table">
         <thead>
@@ -42,11 +67,11 @@ function renderStandingsTable(rows) {
                 <tr>
                   <td>${row.position ?? "-"}</td>
                   <td class="team-cell">
-                    <img src="${row.logo ?? ""}" alt="" class="team-logo">
+                    ${teamLogoHtml(row)}
                     ${
                       row.teamId
-                        ? `<a href="/team.html?id=${row.teamId}" class="team-link">${row.teamName ?? "OkÃ¤nt lag"}</a>`
-                        : `${row.teamName ?? "OkÃ¤nt lag"}`
+                        ? `<a href="/team.html?id=${row.teamId}" class="team-link">${escapeHtml(row.teamName)}</a>`
+                        : escapeHtml(row.teamName)
                     }
                   </td>
                   <td>${row.played ?? "-"}</td>
@@ -65,8 +90,6 @@ function renderStandingsTable(rows) {
       </table>
     </div>
   `;
-
-  standingsContent.innerHTML = tableHtml;
 }
 
 function normalizeStandings(payload) {
@@ -74,7 +97,6 @@ function normalizeStandings(payload) {
 
   function getDetail(item, key) {
     const details = Array.isArray(item?.details) ? item.details : [];
-
     const found = details.find(
       (d) =>
         d?.type?.developer_name === key ||
@@ -114,27 +136,6 @@ function normalizeStandings(payload) {
     .sort((a, b) => a.position - b.position);
 }
 
-async function loadStandings() {
-  standingsContent.innerHTML = "<p>Laddar tabell...</p>";
-
-  try {
-    const response = await fetch(`/api/standings?league=${currentLeague}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      standingsContent.innerHTML = "<p>Kunde inte hÃ¤mta tabellen.</p>";
-      console.error(data);
-      return;
-    }
-
-    const rows = normalizeStandings(data);
-    renderStandingsTable(rows);
-  } catch (error) {
-    standingsContent.innerHTML = "<p>NÃ¥got gick fel nÃ¤r tabellen skulle hÃ¤mtas.</p>";
-    console.error(error);
-  }
-}
-
 function getParticipantByLocation(participants, location) {
   return (
     participants.find((team) => team?.meta?.location === location) ||
@@ -159,141 +160,230 @@ function getScoreValue(scores, participantId, description = "CURRENT") {
     row?.score ??
     null;
 
-  if (rawValue === null || rawValue === undefined || rawValue === "") {
-    return null;
-  }
+  if (rawValue === null || rawValue === undefined || rawValue === "") return null;
 
   const parsed = Number(rawValue);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeFixture(match) {
+  const participants = Array.isArray(match?.participants) ? match.participants : [];
+  const scores = Array.isArray(match?.scores) ? match.scores : [];
+  const homeTeam = getParticipantByLocation(participants, "home");
+  const awayTeam = getParticipantByLocation(participants, "away");
+  const homeScore = homeTeam ? getScoreValue(scores, homeTeam.id, "CURRENT") : null;
+  const awayScore = awayTeam ? getScoreValue(scores, awayTeam.id, "CURRENT") : null;
+  const hasScore = homeScore !== null && awayScore !== null;
+  const isFinished = Boolean(match?.finished || match?.result_info || hasScore);
+  const statusText = String(match?.state?.name || match?.state?.short_name || match?.status || "").toLowerCase();
+  const isLive = statusText.includes("live") || statusText.includes("1st") || statusText.includes("2nd");
+
+  return {
+    id: match?.id,
+    startingAt: match?.starting_at || match?.starting_at_timestamp || "",
+    homeTeam: homeTeam
+      ? {
+          id: homeTeam.id,
+          name: formatTeamName(homeTeam.name, homeTeam.id),
+          logo: formatTeamLogo(homeTeam.image_path, homeTeam.id)
+        }
+      : null,
+    awayTeam: awayTeam
+      ? {
+          id: awayTeam.id,
+          name: formatTeamName(awayTeam.name, awayTeam.id),
+          logo: formatTeamLogo(awayTeam.image_path, awayTeam.id)
+        }
+      : null,
+    homeScore,
+    awayScore,
+    hasScore,
+    isFinished,
+    isLive
+  };
 }
 
 function formatMatchDate(dateString) {
   if (!dateString) return "";
 
   const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return dateString;
+  if (Number.isNaN(date.getTime())) return "";
 
   return date.toLocaleString("sv-SE", {
-    year: "numeric",
-    month: "2-digit",
+    month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
-function getDisplayScore(match, homeTeam, awayTeam) {
-  if (!homeTeam || !awayTeam) return "Kommande";
+function matchCard(match, variant = "") {
+  const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "Kommande";
+  const meta = match.isLive ? "Live" : match.isFinished ? "Slut" : formatMatchDate(match.startingAt);
+  const href = match.id ? `#matcher` : "#matcher";
 
-  const scores = Array.isArray(match?.scores) ? match.scores : [];
-  const isFinished = Boolean(match?.finished || match?.result_info);
-
-  const homeScore = getScoreValue(scores, homeTeam.id, "CURRENT");
-  const awayScore = getScoreValue(scores, awayTeam.id, "CURRENT");
-
-  if (homeScore === null || awayScore === null) {
-    return isFinished ? "Slut" : "Kommande";
-  }
-
-  return `${homeScore} - ${awayScore}`;
+  return `
+    <a href="${href}" class="match-card ${variant}">
+      <div class="match-team">
+        ${teamLogoHtml(match.homeTeam, "match-team-logo")}
+        <span>${escapeHtml(match.homeTeam?.name || "Hemmalag")}</span>
+      </div>
+      <div class="match-score-block">
+        <strong>${score}</strong>
+        <small>${meta || "Match"}</small>
+      </div>
+      <div class="match-team right">
+        <span>${escapeHtml(match.awayTeam?.name || "Bortalag")}</span>
+        ${teamLogoHtml(match.awayTeam, "match-team-logo")}
+      </div>
+    </a>
+  `;
 }
 
-function getMatchStatus(match, homeTeam, awayTeam) {
-  const scores = Array.isArray(match?.scores) ? match.scores : [];
-
-  const homeScore = homeTeam ? getScoreValue(scores, homeTeam.id, "CURRENT") : null;
-  const awayScore = awayTeam ? getScoreValue(scores, awayTeam.id, "CURRENT") : null;
-
-  if (match?.result_info) {
-    return "Slut";
-  }
-
-  if (homeScore !== null && awayScore !== null) {
-    return "Slut";
-  }
-
-  if (match?.starting_at) {
-    return "Kommande";
-  }
-
-  return "OkÃ¤nd status";
+function renderMatchColumn(container, matches, fallback, variant = "") {
+  container.innerHTML = matches.length
+    ? matches.map((match) => matchCard(match, variant)).join("")
+    : emptyState(fallback);
 }
 
-function renderFixtures(matches) {
-  const sortedMatches = Array.isArray(matches)
-    ? [...matches].sort((a, b) => {
-        const aHasScore = Array.isArray(a?.scores) && a.scores.length > 0 ? 1 : 0;
-        const bHasScore = Array.isArray(b?.scores) && b.scores.length > 0 ? 1 : 0;
-        return bHasScore - aHasScore;
-      })
-    : [];
+function renderHero(rows, fixtures) {
+  const leader = rows[0];
+  const nextMatch = fixtures.find((match) => !match.isFinished);
 
-  const firstMatches = sortedMatches.slice(0, 20);
-
-  if (!firstMatches.length) {
-    resultsContent.innerHTML = "<p>Inga matcher tillgÃ¤ngliga just nu.</p>";
-    return;
-  }
-
-  resultsContent.innerHTML = `
-    <div class="fixtures-list">
-      ${firstMatches
-        .map((match) => {
-          const participants = Array.isArray(match?.participants) ? match.participants : [];
-          const homeTeam = getParticipantByLocation(participants, "home");
-          const awayTeam = getParticipantByLocation(participants, "away");
-          const score = getDisplayScore(match, homeTeam, awayTeam);
-          const status = getMatchStatus(match, homeTeam, awayTeam);
-          const date = formatMatchDate(match?.starting_at);
-
-          return `
-            <div class="fixture-card">
-              <div class="fixture-row">
-                <div class="fixture-team fixture-team-left">
-                  ${homeTeam ? formatTeamName(homeTeam.name, homeTeam.id) : "Hemmalag"}
-                </div>
-
-                <div class="fixture-center">
-                  <div class="fixture-score">${score}</div>
-                  <div class="fixture-status">${status}</div>
-                  <div class="fixture-date">${date}</div>
-                </div>
-
-                <div class="fixture-team fixture-team-right">
-                  ${awayTeam ? formatTeamName(awayTeam.name, awayTeam.id) : "Bortalag"}
-                </div>
-              </div>
-            </div>
-          `;
-        })
-        .join("")}
+  heroHighlight.innerHTML = `
+    <div class="hero-panel-top">
+      <span>${leagueLabel()} 2026</span>
+      <strong>Aktiv liga</strong>
+    </div>
+    <div class="hero-leader">
+      <span>Serieledare</span>
+      <div>
+        ${leader ? teamLogoHtml(leader, "hero-team-logo") : ""}
+        <strong>${leader ? escapeHtml(leader.teamName) : "Ingen tabell"}</strong>
+      </div>
+    </div>
+    <div class="hero-next-match">
+      <span>Nästa match</span>
+      <strong>${nextMatch ? `${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")} - ${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}` : "Inget schema tillgängligt"}</strong>
+      <small>${nextMatch ? formatMatchDate(nextMatch.startingAt) : ""}</small>
     </div>
   `;
 }
 
+function renderQuickStats(rows) {
+  const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
+  const goals = rows.reduce((sum, row) => sum + Number(row.goalsFor || 0), 0);
+  const bestAttack = [...rows].sort((a, b) => b.goalsFor - a.goalsFor).slice(0, 5);
+  const bestDefense = [...rows].sort((a, b) => a.goalsAgainst - b.goalsAgainst).slice(0, 5);
+
+  leagueSnapshotCard.innerHTML = `
+    <h3>Ligaläge</h3>
+    <div class="snapshot-grid">
+      <div><span>Matcher</span><strong>${Math.round(playedMatches)}</strong></div>
+      <div><span>Mål</span><strong>${goals}</strong></div>
+      <div><span>Mål/match</span><strong>${playedMatches > 0 ? (goals / playedMatches).toFixed(2) : "0.00"}</strong></div>
+    </div>
+  `;
+
+  attackCard.innerHTML = listCard("Bästa anfall", bestAttack, (row) => `${row.goalsFor} mål`);
+  defenseCard.innerHTML = listCard("Bästa försvar", bestDefense, (row) => `${row.goalsAgainst} insläppta`);
+}
+
+function listCard(title, rows, valueGetter) {
+  return `
+    <h3>${title}</h3>
+    <div class="mini-list">
+      ${rows.length
+        ? rows
+            .map(
+              (row, index) => `
+                <a href="/team.html?id=${row.teamId}" class="mini-row">
+                  <span>${index + 1}. ${escapeHtml(row.teamName)}</span>
+                  <strong>${valueGetter(row)}</strong>
+                </a>
+              `
+            )
+            .join("")
+        : emptyState("Data saknas just nu.")}
+    </div>
+  `;
+}
+
+function renderTeams(rows) {
+  teamsGrid.innerHTML = rows.length
+    ? rows
+        .map(
+          (team) => `
+            <a href="/team.html?id=${team.teamId}" class="team-card">
+              ${teamLogoHtml(team, "team-card-logo")}
+              <strong>${escapeHtml(team.teamName)}</strong>
+              <span>${team.points} poäng</span>
+            </a>
+          `
+        )
+        .join("")
+    : emptyState("Inga lag tillgängliga just nu.");
+}
+
+async function loadStandings() {
+  standingsContent.innerHTML = emptyState("Laddar tabell...");
+  const response = await fetch(`/api/standings?league=${currentLeague}`);
+  const data = await response.json();
+
+  if (!response.ok) throw new Error(data?.error || "Kunde inte hämta tabellen.");
+
+  return normalizeStandings(data);
+}
+
 async function loadFixtures() {
-  resultsContent.innerHTML = "<p>Laddar resultat...</p>";
+  liveMatchesContent.innerHTML = emptyState("Laddar matcher...");
+  upcomingMatchesContent.innerHTML = emptyState("Laddar matcher...");
+  recentResultsContent.innerHTML = emptyState("Laddar matcher...");
 
-  try {
-    const response = await fetch(`/api/fixtures?league=${currentLeague}`);
-    const data = await response.json();
+  const response = await fetch(`/api/fixtures?league=${currentLeague}`);
+  const data = await response.json();
 
-    if (!response.ok) {
-      resultsContent.innerHTML = "<p>Kunde inte hÃ¤mta resultaten.</p>";
-      console.error(data);
-      return;
-    }
+  if (!response.ok) throw new Error(data?.error || "Kunde inte hämta matcher.");
 
-    renderFixtures(data?.data || []);
-  } catch (error) {
-    resultsContent.innerHTML = "<p>NÃ¥got gick fel nÃ¤r resultaten skulle hÃ¤mtas.</p>";
-    console.error(error);
-  }
+  return (Array.isArray(data?.data) ? data.data : [])
+    .map(normalizeFixture)
+    .sort((a, b) => new Date(a.startingAt) - new Date(b.startingAt));
+}
+
+function renderFixtures(fixtures) {
+  const now = Date.now();
+  const live = fixtures.filter((match) => match.isLive).slice(0, 4);
+  const upcoming = fixtures
+    .filter((match) => !match.isFinished && new Date(match.startingAt).getTime() >= now)
+    .slice(0, 5);
+  const recent = fixtures
+    .filter((match) => match.isFinished)
+    .sort((a, b) => new Date(b.startingAt) - new Date(a.startingAt))
+    .slice(0, 5);
+
+  renderMatchColumn(liveMatchesContent, live, "Inga live-matcher just nu.", "live");
+  renderMatchColumn(upcomingMatchesContent, upcoming, "Inga kommande matcher hittades.");
+  renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgängliga ännu.");
 }
 
 async function renderLeagueContent() {
-  renderPlaceholderContent();
-  await Promise.all([loadStandings(), loadFixtures()]);
+  try {
+    const [standings, fixtures] = await Promise.all([loadStandings(), loadFixtures()]);
+
+    renderHero(standings, fixtures);
+    renderStandingsTable(standings);
+    renderFixtures(fixtures);
+    renderQuickStats(standings);
+    renderTeams(standings);
+  } catch (error) {
+    console.error(error);
+    const message = error?.message || "Något gick fel när startsidan skulle laddas.";
+    heroHighlight.innerHTML = emptyState(message);
+    standingsContent.innerHTML = emptyState(message);
+    liveMatchesContent.innerHTML = emptyState(message);
+    upcomingMatchesContent.innerHTML = emptyState(message);
+    recentResultsContent.innerHTML = emptyState(message);
+  }
 }
 
 buttons.forEach((button) => {
