@@ -1348,6 +1348,24 @@ body {
   gap: 0;
 }
 
+.load-squad-button {
+  border: 1px solid rgba(224,184,79,0.28);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(224,184,79,0.08);
+  color: #f7e4a1;
+  cursor: pointer;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.load-squad-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224,184,79,0.5);
+  background: rgba(224,184,79,0.14);
+}
+
 .squad-row em {
   color: #e0b84f;
   font-style: normal;
