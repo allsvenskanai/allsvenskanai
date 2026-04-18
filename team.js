@@ -1,6 +1,6 @@
 const teamContent = document.getElementById("team-content");
 const SQUAD_TTL = 12 * 60 * 60 * 1000;
-const SQUAD_CACHE_VERSION = "v2";
+const SQUAD_CACHE_VERSION = "v3";
 let squadLoadStarted = false;
 
 function formatFact(value) {
@@ -83,6 +83,13 @@ function squadPositionOrder(position) {
 }
 
 function cleanPlayerName(player) {
+  const nested = player.player?.data || player.player || {};
+  const nestedJoined = [nested.firstname || nested.first_name, nested.lastname || nested.last_name]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
   const joined = [player.firstname || player.firstName, player.lastname || player.lastName]
     .map((part) => String(part || "").trim())
     .filter(Boolean)
@@ -90,7 +97,13 @@ function cleanPlayerName(player) {
     .replace(/\s+/g, " ")
     .trim();
   const candidates = [
+    nested.name,
+    nestedJoined,
     joined,
+    nested.fullName,
+    nested.full_name,
+    nested.fullname,
+    nested.display_name,
     player.fullName,
     player.full_name,
     player.fullname,
