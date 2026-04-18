@@ -2,28 +2,52 @@ function clean(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-function playerName(player) {
-  const nested = player?.player || {};
-  const nestedFirstLast = clean(`${nested.firstname || ""} ${nested.lastname || ""}`);
-  const flatFirstLast = clean(`${player?.firstname || ""} ${player?.lastname || ""}`);
+function firstValue(...values) {
+  return values.map(clean).find(Boolean) || "";
+}
+
+function joinName(firstname, lastname) {
+  return clean(`${firstname || ""} ${lastname || ""}`);
+}
+
+function resolvePlayer(row) {
+  return row?.player?.data || row?.player || {};
+}
+
+function resolvePlayerName(row) {
+  const player = resolvePlayer(row);
 
   return (
-    clean(nested.name) ||
-    nestedFirstLast ||
-    clean(player?.name) ||
-    flatFirstLast ||
-    "Okänd spelare"
+    firstValue(
+      player.name,
+      joinName(player.firstname || player.first_name, player.lastname || player.last_name),
+      player.display_name,
+      player.common_name,
+      player.fullname,
+      player.full_name
+    ) || "Okänd spelare"
+  );
+}
+
+function resolvePosition(row) {
+  const position = row?.position?.data || row?.position || row?.detailedPosition?.data || row?.detailedPosition || {};
+
+  return firstValue(
+    position.name,
+    position.developer_name,
+    position.code,
+    row.position_name
   );
 }
 
 function normalizePosition(position) {
   const raw = clean(position).toLowerCase();
   if (!raw) return "Position saknas";
-  if (raw.includes("goalkeeper") || raw.includes("keeper") || raw === "gk") return "Målvakt";
-  if (raw.includes("defender") || raw.includes("defence") || raw.includes("defense") || raw === "df") return "Försvarare";
-  if (raw.includes("midfielder") || raw.includes("midfield") || raw === "mf") return "Mittfältare";
-  if (raw.includes("attacker") || raw.includes("forward") || raw.includes("striker") || raw === "fw") return "Anfallare";
-  return position || "Position saknas";
+  if (raw.includes("goal") || raw.includes("keeper") || raw === "gk") return "Målvakt";
+  if (raw.includes("def") || raw.includes("back") || raw === "df") return "Försvarare";
+  if (raw.includes("mid") || raw === "mf" || raw === "cm" || raw === "dm" || raw === "am") return "Mittfältare";
+  if (raw.includes("att") || raw.includes("for") || raw.includes("wing") || raw.includes("striker") || raw === "fw") return "Anfallare";
+  return position;
 }
 
 function positionOrder(position) {
@@ -35,16 +59,15 @@ function positionOrder(position) {
   return 9;
 }
 
-function normalizePlayer(player) {
-  const nested = player?.player || {};
-  const name = playerName(player);
-  const rawPosition = player?.position || nested.position || "";
-  const number = Number(player?.number ?? nested.number ?? player?.shirt_number ?? nested.shirt_number);
+function normalizePlayer(row) {
+  const player = resolvePlayer(row);
+  const rawPosition = resolvePosition(row);
+  const number = Number(row?.jersey_number ?? row?.shirt_number ?? row?.number);
 
   return {
-    id: nested.id || player?.id || null,
-    name,
-    photo: nested.photo || player?.photo || "",
+    id: player.id || row.player_id || null,
+    name: resolvePlayerName(row),
+    photo: player.image_path || player.photo || "",
     position: normalizePosition(rawPosition),
     positionOrder: positionOrder(rawPosition),
     number: Number.isFinite(number) && number > 0 ? number : null
@@ -61,81 +84,106 @@ function sortPlayers(players) {
   });
 }
 
-function getApiFootballToken() {
-  return (
-    process.env.API_FOOTBALL_KEY ||
-    process.env.APIFOOTBALL_API_KEY ||
-    process.env.FOOTBALL_API_KEY ||
-    process.env.RAPIDAPI_KEY ||
-    process.env.X_RAPIDAPI_KEY ||
-    ""
-  );
+async function sportmonksFetch(path, token) {
+  const response = await fetch(`https://api.sportmonks.com/v3/football${path}`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: token
+    }
+  });
+  const text = await response.text();
+  let payload = {};
+
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { raw: text };
+  }
+
+  return { response, payload, text };
 }
 
 export default async function handler(req, res) {
-  const { id } = req.query;
-  const token = getApiFootballToken();
+  const teamId = req.query.id;
+  const league = String(req.query.league || "").toLowerCase();
+  const requestedSeason = req.query.season;
+  const seasonId = Number(requestedSeason || (league === "damallsvenskan" ? 26782 : 26806));
+  const token = process.env.SPORTMONKS_API_TOKEN;
   const debug = req.query.debug === "1" || process.env.NODE_ENV !== "production";
 
-  if (!id) {
+  if (!teamId) {
     return res.status(400).json({ error: "Missing team id" });
   }
 
   if (!token) {
-    return res.status(500).json({
-      error: "Missing API-Football token",
-      details: "Set API_FOOTBALL_KEY, APIFOOTBALL_API_KEY, FOOTBALL_API_KEY or RAPIDAPI_KEY in Vercel."
-    });
+    return res.status(500).json({ error: "Missing SPORTMONKS_API_TOKEN" });
   }
 
   try {
-    const url = `https://v3.football.api-sports.io/players/squads?team=${encodeURIComponent(id)}`;
-    const response = await fetch(url, {
-      headers: {
-        "x-apisports-key": token
+    const includes = "player;position;detailedPosition";
+    const seasonPath = `/squads/seasons/${encodeURIComponent(seasonId)}/teams/${encodeURIComponent(teamId)}?include=${includes}`;
+    let { response, payload, text } = await sportmonksFetch(seasonPath, token);
+    let source = "season-squad";
+
+    if (!response.ok || !Array.isArray(payload?.data) || payload.data.length === 0) {
+      if (debug) {
+        console.warn("Season squad unavailable, trying current squad", {
+          teamId,
+          seasonId,
+          status: response.status,
+          payload
+        });
       }
-    });
-    const payload = await response.json().catch(() => ({}));
+
+      const currentPath = `/squads/teams/${encodeURIComponent(teamId)}?include=${includes}`;
+      const fallback = await sportmonksFetch(currentPath, token);
+      response = fallback.response;
+      payload = fallback.payload;
+      text = fallback.text;
+      source = "current-squad";
+    }
 
     if (debug) {
       console.log("SQUAD RESPONSE:", payload);
     }
 
     if (!response.ok) {
-      console.warn("API-Football squad request failed", response.status, payload);
-      return res.status(200).json({
-        teamId: Number(id),
-        players: [],
-        warning: payload?.message || payload?.errors || "Squad data unavailable"
+      return res.status(response.status).json({
+        error: "Failed to load squad",
+        details: payload?.message || payload?.error || text,
+        teamId: Number(teamId),
+        seasonId,
+        source
       });
     }
 
-    const squad = Array.isArray(payload?.response?.[0]?.players)
-      ? payload.response[0].players
-      : [];
-    const normalized = squad.map(normalizePlayer);
+    const rawPlayers = Array.isArray(payload?.data) ? payload.data : [];
+    const normalized = rawPlayers.map(normalizePlayer);
     const missingNameCount = normalized.filter((player) => player.name === "Okänd spelare").length;
 
     if (debug && missingNameCount) {
-      squad
-        .filter((player) => playerName(player) === "Okänd spelare")
+      rawPlayers
+        .filter((row) => normalizePlayer(row).name === "Okänd spelare")
         .slice(0, 5)
-        .forEach((player) => console.log("Missing name for:", player));
+        .forEach((row) => console.log("Missing name for:", row));
     }
 
     return res.status(200).json({
-      teamId: Number(id),
+      teamId: Number(teamId),
+      seasonId,
+      source,
       players: sortPlayers(normalized),
-      rawCount: squad.length,
+      rawCount: rawPlayers.length,
       count: normalized.length,
       missingNameCount
     });
   } catch (error) {
     console.warn("Squad endpoint failed", error);
-    return res.status(200).json({
-      teamId: Number(id),
-      players: [],
-      warning: error.message || "Squad data unavailable"
+    return res.status(500).json({
+      error: "Failed to load squad",
+      details: error.message,
+      teamId: Number(teamId),
+      seasonId
     });
   }
 }
