@@ -1,6 +1,5 @@
 const teamContent = document.getElementById("team-content");
-const SQUAD_TTL = 12 * 60 * 60 * 1000;
-const SQUAD_CACHE_VERSION = "v5";
+const SQUAD_TTL = 24 * 60 * 60 * 1000;
 let squadLoadStarted = false;
 
 function formatFact(value) {
@@ -177,22 +176,46 @@ function renderMatchRow(match, teamId) {
 
 function renderSquad(players) {
   if (!players.length) {
-    return '<p class="team-empty">Truppdata uppdateras snart.</p>';
+    return '<p class="team-empty">Ingen truppdata tillgänglig just nu.</p>';
   }
 
   return `
     <div class="squad-table">
       ${players
-        .map(
-          (player) => `
-            <a class="squad-row" href="/?player=${encodeURIComponent(player.id)}#spelare">
+        .map((player) => {
+          const tag = player.id ? "a" : "div";
+          const href = player.id ? ` href="/?player=${encodeURIComponent(player.id)}#spelare"` : "";
+
+          return `
+            <${tag} class="squad-row"${href}>
               <div class="squad-player">
                 ${player.photo ? `<img src="${player.photo}" alt="">` : '<span class="squad-avatar"></span>'}
                 <strong>${player.name || "Okänd spelare"}</strong>
               </div>
               <span>${positionSv(player.position)}</span>
               <em>#${player.number || "–"}</em>
-            </a>
+            </${tag}>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSquadSkeleton(rows = 6) {
+  return `
+    <div class="squad-table squad-skeleton" aria-label="Laddar trupp">
+      ${Array.from({ length: rows })
+        .map(
+          () => `
+            <div class="squad-row skeleton-row">
+              <div class="squad-player">
+                <span class="squad-avatar skeleton-pulse"></span>
+                <strong class="skeleton-line wide"></strong>
+              </div>
+              <span class="skeleton-line medium"></span>
+              <em class="skeleton-line short"></em>
+            </div>
           `
         )
         .join("")}
@@ -233,15 +256,22 @@ function renderStats(standing, form) {
 }
 
 function squadCacheKey(teamId) {
-  return `aai:squad:${SQUAD_CACHE_VERSION}:${teamId}`;
+  return `squad_${teamId}`;
+}
+
+function getFreshCachedSquad(teamId) {
+  const cached = safeReadStorage(squadCacheKey(teamId));
+  if (cached?.players && cached?.fetchedAt && Date.now() - cached.fetchedAt < SQUAD_TTL) {
+    return normalizeSquadForUi(cached.players);
+  }
+
+  return null;
 }
 
 async function loadSquad(teamId) {
   const key = squadCacheKey(teamId);
-  const cached = safeReadStorage(key);
-  if (cached?.players && cached?.fetchedAt && Date.now() - cached.fetchedAt < SQUAD_TTL) {
-    return normalizeSquadForUi(cached.players);
-  }
+  const cached = getFreshCachedSquad(teamId);
+  if (cached) return cached;
 
   const response = await fetch(`/api/squad?id=${encodeURIComponent(teamId)}`);
   const data = await response.json().catch(() => ({}));
@@ -252,43 +282,22 @@ async function loadSquad(teamId) {
   return players;
 }
 
-function setupLazySquad(teamId, force = false) {
+async function hydrateSquad(teamId) {
   const container = document.getElementById("team-squad-content");
-  if (!container) return;
+  if (!container || squadLoadStarted) return;
+  squadLoadStarted = true;
 
-  const load = async () => {
-    if (squadLoadStarted) return;
-    squadLoadStarted = true;
-    container.innerHTML = '<p class="team-empty">Laddar trupp...</p>';
-
-    try {
-      const players = await loadSquad(teamId);
-      container.innerHTML = renderSquad(players);
-      const count = document.getElementById("team-squad-count");
-      if (count) count.textContent = players.length ? `${players.length} spelare` : "Uppdateras";
-    } catch (error) {
-      console.warn("Kunde inte hämta trupp", error);
-      container.innerHTML = '<p class="team-empty">Truppdata uppdateras snart.</p>';
-    }
-  };
-
-  if (force) {
-    load();
-    return;
+  try {
+    const players = await loadSquad(teamId);
+    container.innerHTML = renderSquad(players);
+    const count = document.getElementById("team-squad-count");
+    if (count) count.textContent = players.length ? `${players.length} spelare` : "Uppdateras";
+  } catch (error) {
+    console.warn("Kunde inte hämta trupp", error);
+    container.innerHTML = '<p class="team-empty">Trupp kunde inte hämtas just nu.</p>';
+    const count = document.getElementById("team-squad-count");
+    if (count) count.textContent = "Fel";
   }
-
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        observer.disconnect();
-        load();
-      }
-    }, { rootMargin: "180px" });
-    observer.observe(container);
-    return;
-  }
-
-  load();
 }
 
 async function loadTeamContext(teamId, preferredLeague) {
@@ -326,6 +335,7 @@ function buildFallbackTeam(teamId, standing, snapshot) {
 
 function renderTeam(team, snapshot) {
   const teamId = team.id;
+  const cachedSquad = getFreshCachedSquad(teamId);
   const standing = LeagueData.getTeamStanding(teamId, snapshot);
   const latestMatches = LeagueData.getTeamRecentMatches(teamId, snapshot, 5);
   const upcomingMatches = LeagueData.getTeamUpcomingMatches(teamId, snapshot, 5);
@@ -400,10 +410,10 @@ function renderTeam(team, snapshot) {
     <section class="team-section" id="trupp">
       <div class="team-section-header">
         <h3>Trupp</h3>
-        <span id="team-squad-count">Laddas vid behov</span>
+        <span id="team-squad-count">${cachedSquad ? `${cachedSquad.length} spelare` : "Laddar"}</span>
       </div>
       <div id="team-squad-content">
-        <button class="load-squad-button" type="button">Visa trupp</button>
+        ${cachedSquad ? renderSquad(cachedSquad) : renderSquadSkeleton()}
       </div>
     </section>
 
@@ -416,8 +426,9 @@ function renderTeam(team, snapshot) {
     </section>
   `;
 
-  document.querySelector(".load-squad-button")?.addEventListener("click", () => setupLazySquad(teamId, true));
-  setupLazySquad(teamId);
+  if (!cachedSquad) {
+    hydrateSquad(teamId);
+  }
 }
 
 async function loadTeam() {
