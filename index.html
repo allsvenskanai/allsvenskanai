@@ -34,40 +34,120 @@
     </div>
   </header>
 
-  <main class="container">
-    <section class="league-switcher">
+  <main class="home-shell">
+    <section class="hero-section">
+      <div class="hero-copy">
+        <p class="eyebrow">AllsvenskanAI</p>
+        <h1>Svensk fotbollsdata, byggd för matchdag.</h1>
+        <p class="hero-text">
+          Följ tabeller, matcher, lag och statistik för Allsvenskan och Damallsvenskan i ett snabbt, modernt och datadrivet gränssnitt.
+        </p>
+        <div class="hero-actions">
+          <a href="#tabell" class="primary-action">Se tabellen</a>
+          <a href="#matcher" class="secondary-action">Se matcher</a>
+          <a href="#statistik" class="secondary-action">Utforska statistik</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" id="hero-highlight">
+        <p>Laddar ligaläge...</p>
+      </aside>
+    </section>
+
+    <section class="league-switcher home-league-toggle" aria-label="Välj liga">
       <button class="league-btn active" data-league="allsvenskan">Allsvenskan</button>
       <button class="league-btn" data-league="damallsvenskan">Damallsvenskan</button>
     </section>
 
-    <section class="card" id="tabell">
-      <h2>Tabell</h2>
-      <div id="standings-content">Här kommer tabellen att visas.</div>
+    <section class="section-block" id="matcher">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Matchcenter</p>
+          <h2>Matcher, resultat och kommande avspark</h2>
+        </div>
+        <a href="#matcher" class="section-link">Visa matchcenter</a>
+      </div>
+
+      <div class="match-center-grid">
+        <div class="data-card">
+          <h3>Live matcher</h3>
+          <div id="live-matches-content" class="match-list"></div>
+        </div>
+        <div class="data-card">
+          <h3>Kommande matcher</h3>
+          <div id="upcoming-matches-content" class="match-list"></div>
+        </div>
+        <div class="data-card">
+          <h3>Senaste resultat</h3>
+          <div id="recent-results-content" class="match-list"></div>
+        </div>
+      </div>
     </section>
 
-    <section class="card" id="matcher">
-      <h2>Resultat</h2>
-      <div id="results-content">Här kommer resultat att visas.</div>
+    <section class="section-block table-stats-layout" id="tabell">
+      <div class="data-card table-card">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Tabell</p>
+            <h2>Ligatabell</h2>
+          </div>
+        </div>
+        <div id="standings-content">Laddar tabell...</div>
+      </div>
+
+      <aside class="quick-stats-stack">
+        <div class="data-card" id="league-snapshot-card"></div>
+        <div class="data-card" id="attack-card"></div>
+        <div class="data-card" id="defense-card"></div>
+      </aside>
     </section>
 
-    <section class="card" id="statistik">
-      <h2>Statistik</h2>
-      <div id="stats-content">Här kommer statistik att visas.</div>
+    <section class="section-block" id="lag">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Lag</p>
+          <h2>Utforska klubbarna</h2>
+        </div>
+        <a href="#tabell" class="section-link">Öppna från tabellen</a>
+      </div>
+      <div id="teams-grid" class="teams-grid"></div>
     </section>
 
-    <section class="card" id="lag">
-      <h2>Lag</h2>
-      <p>Välj ett lag direkt från tabellen för att öppna lagsidan.</p>
+    <section class="section-block stats-hub" id="statistik">
+      <div>
+        <p class="eyebrow">Statistikhubb</p>
+        <h2>Djupare data för spelare, lag och form</h2>
+        <p>
+          AllsvenskanAI byggs för att samla tabeller, form, lagdata och spelarstatistik på ett ställe. De publika statistikvyerna kopplas på stegvis när datakällorna är verifierade.
+        </p>
+      </div>
+      <div class="stats-feature-grid">
+        <a href="#statistik" class="stats-feature">Spelarstatistik</a>
+        <a href="#statistik" class="stats-feature">Lagstatistik</a>
+        <a href="#statistik" class="stats-feature">Målvaktsstatistik</a>
+        <a href="#statistik" class="stats-feature">Formtabeller</a>
+      </div>
     </section>
 
-    <section class="card" id="spelare">
-      <h2>Spelare</h2>
-      <p>Spelarsidor kommer snart.</p>
+    <section class="section-block insights-section" id="spelare">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Insikter</p>
+          <h2>Redo för analyser och spelarsidor</h2>
+        </div>
+      </div>
+      <div class="insight-card">
+        <p>Nyhets- och analysytan är förberedd för verifierad data. Inga fejkade rubriker visas här.</p>
+      </div>
     </section>
 
-    <section class="card" id="overgangar">
-      <h2>Övergångar</h2>
-      <p>Övergångar kommer snart.</p>
+    <section class="footer-cta" id="overgangar">
+      <p class="eyebrow">AllsvenskanAI</p>
+      <h2>Snabbare väg till svensk fotbollsdata.</h2>
+      <div class="hero-actions">
+        <a href="#tabell" class="primary-action">Till tabellen</a>
+        <a href="#matcher" class="secondary-action">Till matcher</a>
+      </div>
     </section>
   </main>
 
