@@ -116,6 +116,20 @@ function cleanPlayerName(player) {
   return name || "Okänd spelare";
 }
 
+function playerMeta(player) {
+  const parts = [];
+
+  if (player.flag) {
+    parts.push(`<img src="${player.flag}" alt="" class="squad-flag">`);
+  }
+  if (player.age) {
+    parts.push(`<span>${player.age} år</span>`);
+  }
+  parts.push(`<span>${positionSv(player.position)}</span>`);
+
+  return parts.join("");
+}
+
 function normalizeSquadForUi(players) {
   return (players || [])
     .map((player) => ({
@@ -188,12 +202,17 @@ function renderSquad(players) {
 
           return `
             <${tag} class="squad-row"${href}>
-              <div class="squad-player">
+              <div class="squad-player-main">
                 ${player.photo ? `<img src="${player.photo}" alt="">` : '<span class="squad-avatar"></span>'}
-                <strong>${player.name || "Okänd spelare"}</strong>
+                <div class="squad-player-copy">
+                  <strong>${player.name || "Okänd spelare"}</strong>
+                  <div class="squad-meta">${playerMeta(player)}</div>
+                </div>
               </div>
-              <span>${positionSv(player.position)}</span>
-              <em>#${player.number || "–"}</em>
+              <div class="squad-row-right">
+                <em>#${player.number || "–"}</em>
+                ${player.id ? '<span class="squad-arrow">›</span>' : ""}
+              </div>
             </${tag}>
           `;
         })
@@ -209,12 +228,16 @@ function renderSquadSkeleton(rows = 6) {
         .map(
           () => `
             <div class="squad-row skeleton-row">
-              <div class="squad-player">
+              <div class="squad-player-main">
                 <span class="squad-avatar skeleton-pulse"></span>
-                <strong class="skeleton-line wide"></strong>
+                <div class="squad-player-copy">
+                  <strong class="skeleton-line wide"></strong>
+                  <span class="skeleton-line medium"></span>
+                </div>
               </div>
-              <span class="skeleton-line medium"></span>
-              <em class="skeleton-line short"></em>
+              <div class="squad-row-right">
+                <em class="skeleton-line short"></em>
+              </div>
             </div>
           `
         )
