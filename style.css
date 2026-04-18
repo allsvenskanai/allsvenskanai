@@ -645,8 +645,7 @@ body {
   margin-bottom: 22px;
 }
 
-.stats-hub p,
-.insight-card p {
+.stats-hub p {
   color: #b8c2d8;
   line-height: 1.7;
 }
@@ -707,13 +706,6 @@ body {
     radial-gradient(circle at 18% 14%, rgba(224,184,79,0.10), transparent 45%),
     linear-gradient(180deg, rgba(255,255,255,0.088), rgba(255,255,255,0.048));
   box-shadow: 0 20px 42px rgba(0,0,0,0.25);
-}
-
-.insight-card {
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px dashed rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.025);
 }
 
 .footer-cta {
