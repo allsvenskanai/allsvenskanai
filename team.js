@@ -268,12 +268,17 @@ function getFreshCachedSquad(teamId) {
   return null;
 }
 
-async function loadSquad(teamId) {
+async function loadSquad(teamId, snapshot) {
   const key = squadCacheKey(teamId);
   const cached = getFreshCachedSquad(teamId);
   if (cached) return cached;
 
-  const response = await fetch(`/api/squad?id=${encodeURIComponent(teamId)}`);
+  const params = new URLSearchParams({
+    id: teamId,
+    league: snapshot?.leagueKey || "allsvenskan",
+    season: snapshot?.season || ""
+  });
+  const response = await fetch(`/api/squad?${params.toString()}`);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.error || "Kunde inte hämta truppen.");
 
@@ -282,13 +287,13 @@ async function loadSquad(teamId) {
   return players;
 }
 
-async function hydrateSquad(teamId) {
+async function hydrateSquad(teamId, snapshot) {
   const container = document.getElementById("team-squad-content");
   if (!container || squadLoadStarted) return;
   squadLoadStarted = true;
 
   try {
-    const players = await loadSquad(teamId);
+    const players = await loadSquad(teamId, snapshot);
     container.innerHTML = renderSquad(players);
     const count = document.getElementById("team-squad-count");
     if (count) count.textContent = players.length ? `${players.length} spelare` : "Uppdateras";
@@ -427,7 +432,7 @@ function renderTeam(team, snapshot) {
   `;
 
   if (!cachedSquad) {
-    hydrateSquad(teamId);
+    hydrateSquad(teamId, snapshot);
   }
 }
 
