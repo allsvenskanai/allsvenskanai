@@ -26,21 +26,50 @@ function numericValue(...values) {
   return 0;
 }
 
+function unwrap(entity) {
+  return entity?.data || entity || {};
+}
+
 function normalizeScorer(row) {
-  const player = row?.player || {};
-  const team = row?.team || row?.participant || {};
+  const player = unwrap(row?.player);
+  const team = unwrap(row?.participant || row?.team);
   const value = row?.value || {};
 
   return {
     playerId: player.id || row.player_id || null,
-    playerName: clean(player.display_name || player.name || `${player.firstname || ""} ${player.lastname || ""}`) || "Okänd spelare",
+    playerName:
+      clean(
+        player.display_name ||
+          player.common_name ||
+          player.name ||
+          `${player.firstname || ""} ${player.lastname || ""}`
+      ) || "Okänd spelare",
     playerPhoto: player.image_path || player.photo || "",
-    teamId: team.id || row.team_id || row.participant_id || null,
-    teamName: clean(team.name) || "Okänt lag",
+    teamId: team.id || row.participant_id || row.team_id || null,
+    teamName: clean(team.name || team.short_code) || "Okänt lag",
     teamLogo: team.image_path || team.logo_path || team.logo || "",
     goals: numericValue(row.total, row.goals, value.total, value.goals, row.score),
     position: Number(row.position || 999)
   };
+}
+
+async function fetchSportmonksJson(url, token) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      Authorization: token
+    }
+  });
+  const text = await response.text();
+  let payload = {};
+
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { raw: text };
+  }
+
+  return { response, text, payload };
 }
 
 export default async function handler(req, res) {
@@ -55,13 +84,13 @@ export default async function handler(req, res) {
   }
 
   const params = new URLSearchParams({
-    include: "player;team;type",
+    include: "player;participant;type",
     filters: "seasonTopscorerTypes:208",
     per_page: "50",
-    order: "asc"
+    order: "desc"
   });
   const endpoint = `/football/topscorers/seasons/${encodeURIComponent(seasonId)}`;
-  const url = `https://api.sportmonks.com/v3${endpoint}?${params.toString()}`;
+  const baseUrl = `https://api.sportmonks.com/v3${endpoint}`;
   const requestDebug = {
     league,
     leagueId,
@@ -75,23 +104,32 @@ export default async function handler(req, res) {
       console.log("TOPSCORERS REQUEST:", requestDebug);
     }
 
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        Authorization: token
-      }
-    });
-    const text = await response.text();
-    let payload = {};
-
-    try {
-      payload = text ? JSON.parse(text) : {};
-    } catch {
-      payload = { raw: text };
-    }
+    let url = `${baseUrl}?${params.toString()}`;
+    let { response, text, payload } = await fetchSportmonksJson(url, token);
 
     if (debug) {
       console.log("TOPSCORERS RAW:", { ...requestDebug, payload });
+    }
+
+    // Keep the homepage resilient if a subscription/API plan rejects the dynamic filter.
+    // The response still contains type_id, so we can filter goals locally.
+    if (!response.ok && response.status < 500) {
+      const fallbackParams = new URLSearchParams({
+        include: "player;participant;type",
+        per_page: "50",
+        order: "desc"
+      });
+      url = `${baseUrl}?${fallbackParams.toString()}`;
+      if (debug) {
+        console.warn("TOPSCORERS RETRY WITHOUT FILTER:", {
+          ...requestDebug,
+          query: Object.fromEntries(fallbackParams.entries()),
+          firstStatus: response.status,
+          firstError: payload?.message || payload?.error || text
+        });
+      }
+      ({ response, text, payload } = await fetchSportmonksJson(url, token));
+      requestDebug.query = Object.fromEntries(fallbackParams.entries());
     }
 
     if (!response.ok) {
