@@ -177,9 +177,11 @@ body {
 .hero-copy {
   padding: clamp(24px, 5vw, 52px);
   background:
+    linear-gradient(135deg, rgba(255,255,255,0.025) 1px, transparent 1px),
     radial-gradient(circle at 12% 12%, rgba(224,184,79,0.13), transparent 28%),
     radial-gradient(circle at 86% 24%, rgba(76,139,255,0.11), transparent 26%),
     linear-gradient(180deg, rgba(18,28,47,0.98), rgba(9,15,27,0.98));
+  background-size: 22px 22px, auto, auto, auto;
 }
 
 .hero-copy h1 {
@@ -202,7 +204,45 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 30px;
+  margin-top: 24px;
+}
+
+.hero-mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+  max-width: 680px;
+}
+
+.hero-mini-stats:empty {
+  display: none;
+}
+
+.hero-mini-stats div {
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.035);
+}
+
+.hero-mini-stats span {
+  display: block;
+  color: #91a0ba;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-mini-stats strong {
+  display: block;
+  margin-top: 5px;
+  color: #ffffff;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .primary-action,
@@ -254,7 +294,10 @@ body {
 .hero-panel {
   padding: 18px;
   display: grid;
-  gap: 12px;
+  gap: 11px;
+  background:
+    radial-gradient(circle at 24% 0%, rgba(224,184,79,0.10), transparent 34%),
+    linear-gradient(180deg, rgba(16,26,43,0.98), rgba(8,13,23,0.98));
 }
 
 .dashboard-header,
@@ -287,6 +330,39 @@ body {
 
 .dashboard-section h3 {
   margin: 0 0 10px;
+}
+
+.hero-dashboard-main {
+  order: -1;
+  border-color: rgba(224,184,79,0.18);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(224,184,79,0.13), transparent 42%),
+    rgba(255,255,255,0.045);
+}
+
+.dashboard-soft-state {
+  margin: 0 0 8px;
+  color: #b8c2d8;
+  font-size: 13px;
+}
+
+.dashboard-skeleton-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-skeleton-list span {
+  color: #b8c2d8;
+  font-size: 13px;
+}
+
+.dashboard-skeleton-list i {
+  display: block;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.07), rgba(255,255,255,0.14), rgba(255,255,255,0.07));
+  background-size: 220% 100%;
+  animation: squadSkeleton 1.4s ease-in-out infinite;
 }
 
 .dashboard-live-list,
