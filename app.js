@@ -453,7 +453,7 @@ function renderFixtures(fixtures) {
   liveMatchesContent.innerHTML = live.length
     ? live.map((match) => matchCard(match, "live")).join("")
     : `
-      <div class="match-column-note">Matcher snart</div>
+      <div class="match-column-note">Nästa avspark</div>
       ${liveFallback.length
         ? liveFallback.map((match) => matchCard(match, "soon")).join("")
         : emptyState("Inga matcher schemalagda just nu.")}
