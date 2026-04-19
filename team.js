@@ -536,7 +536,7 @@ function renderPlayerTopLists(players) {
       .map((player) => ({ player, value: validatedPlayerStat(player, config) }))
       .filter((row) => row.value !== null && row.value > 0)
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .slice(0, 3);
     return { key: config.key, label: config.label, formatter: config.formatter || formatNumber, rows };
   }).filter((list) => list.rows.length);
 
@@ -556,29 +556,6 @@ function renderPlayerTopLists(players) {
   `).join("")}</div>`;
 }
 
-function renderPlayerStatsTable(players) {
-  const statColumns = availablePlayerStatConfigs(players);
-
-  return `<div class="player-stats-table-wrap">
-    <table class="player-stats-table">
-      <thead><tr><th>Spelare</th><th>Pos</th><th>#</th><th>Ålder</th>${statColumns.map((config) => `<th>${escapeHtml(config.short || config.label)}</th>`).join("")}</tr></thead>
-      <tbody>${players.map((player) => `
-        <tr>
-          <td><a href="/?player=${encodeURIComponent(player.id || "")}#spelare">${escapeHtml(player.name)}</a></td>
-          <td>${escapeHtml(positionSv(player.position))}</td>
-          <td>${player.number || "-"}</td>
-          <td>${player.age || "-"}</td>
-          ${statColumns.map((config) => {
-            const value = validatedPlayerStat(player, config);
-            const formatter = config.formatter || (config.options?.kind === "percentage" ? (v) => formatDecimal(v, 1) : formatNumber);
-            return `<td>${value === null ? "-" : escapeHtml(formatter(value))}</td>`;
-          }).join("")}
-        </tr>
-      `).join("")}</tbody>
-    </table>
-  </div>`;
-}
-
 function renderPlayerStats(players) {
   if (!players.length) return '<p class="team-empty">Ingen spelarstatistik tillgänglig just nu.</p>';
   const available = availablePlayerStatConfigs(players);
@@ -590,7 +567,7 @@ function renderPlayerStats(players) {
     });
   }
   if (!available.length) return '<p class="team-empty">Spelarstatistik uppdateras snart. Truppen visas nedan.</p>';
-  return `${renderPlayerTopLists(players)}${renderPlayerStatsTable(players)}`;
+  return renderPlayerTopLists(players);
 }
 
 function renderSquad(players) {
