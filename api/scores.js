@@ -96,6 +96,7 @@ export default async function handler(req, res) {
     leagueId,
     seasonId,
     endpoint,
+    fullUrl: `${baseUrl}?${params.toString()}`,
     query: Object.fromEntries(params.entries())
   };
 
@@ -108,7 +109,13 @@ export default async function handler(req, res) {
     let { response, text, payload } = await fetchSportmonksJson(url, token);
 
     if (debug) {
-      console.log("TOPSCORERS RAW:", { ...requestDebug, payload });
+      console.log("TOPSCORERS RAW RESPONSE:", {
+        ...requestDebug,
+        status: response.status,
+        ok: response.ok,
+        rawText: text,
+        payload
+      });
     }
 
     // Keep the homepage resilient if a subscription/API plan rejects the dynamic filter.
@@ -123,6 +130,7 @@ export default async function handler(req, res) {
       if (debug) {
         console.warn("TOPSCORERS RETRY WITHOUT FILTER:", {
           ...requestDebug,
+          fallbackFullUrl: url,
           query: Object.fromEntries(fallbackParams.entries()),
           firstStatus: response.status,
           firstError: payload?.message || payload?.error || text
@@ -130,9 +138,25 @@ export default async function handler(req, res) {
       }
       ({ response, text, payload } = await fetchSportmonksJson(url, token));
       requestDebug.query = Object.fromEntries(fallbackParams.entries());
+      requestDebug.fullUrl = url;
+
+      if (debug) {
+        console.log("TOPSCORERS FALLBACK RAW RESPONSE:", {
+          ...requestDebug,
+          status: response.status,
+          ok: response.ok,
+          rawText: text,
+          payload
+        });
+      }
     }
 
     if (!response.ok) {
+      console.error("TOPSCORERS HTTP ERROR:", {
+        ...requestDebug,
+        status: response.status,
+        details: payload?.message || payload?.error || text
+      });
       return res.status(response.status).json({
         error: "Failed to load top scorers",
         details: payload?.message || payload?.error || text,
@@ -141,6 +165,13 @@ export default async function handler(req, res) {
     }
 
     const rawRows = Array.isArray(payload?.data) ? payload.data : [];
+    if (debug && rawRows.length === 0) {
+      console.warn("TOPSCORERS EMPTY RESPONSE:", {
+        ...requestDebug,
+        payload
+      });
+    }
+
     const scorers = rawRows
       .filter(isGoalType)
       .map(normalizeScorer)
@@ -151,9 +182,10 @@ export default async function handler(req, res) {
       });
 
     if (debug) {
-      console.log("TOPSCORERS MAPPED:", {
+      console.log("TOPSCORERS MAPPED BEFORE RENDER:", {
         rawCount: rawRows.length,
         mappedCount: scorers.length,
+        scorers,
         top3: scorers.slice(0, 3)
       });
     }
@@ -172,7 +204,11 @@ export default async function handler(req, res) {
         : undefined
     });
   } catch (error) {
-    console.error("TOPSCORERS ERROR:", { ...requestDebug, error });
+    console.error("TOPSCORERS THROWN ERROR:", {
+      ...requestDebug,
+      message: error?.message,
+      stack: error?.stack
+    });
     return res.status(500).json({
       error: "Failed to load top scorers",
       details: error.message,
