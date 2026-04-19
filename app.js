@@ -11,6 +11,9 @@ const attackCard = document.getElementById("attack-card");
 const defenseCard = document.getElementById("defense-card");
 
 let currentLeague = "allsvenskan";
+const scorerCache = new Map();
+const scorerInFlight = new Map();
+const SCORER_TTL = 10 * 60 * 1000;
 
 function leagueLabel() {
   return currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
@@ -27,6 +30,92 @@ function escapeHtml(value) {
 
 function emptyState(text) {
   return `<p class="empty-state">${text}</p>`;
+}
+
+function scorerCacheKey(league) {
+  return `${league}:2026`;
+}
+
+function scorerSkeleton() {
+  return `
+    <div class="dashboard-skeleton-list">
+      <span>Laddar skytteliga</span>
+      <i></i>
+    </div>
+  `;
+}
+
+async function loadTopScorers(league) {
+  const key = scorerCacheKey(league);
+  const cached = scorerCache.get(key);
+
+  if (cached?.fetchedAt && Date.now() - cached.fetchedAt < SCORER_TTL) {
+    return cached.data;
+  }
+
+  if (scorerInFlight.has(key)) {
+    return scorerInFlight.get(key);
+  }
+
+  const request = fetch(`/api/scorers?league=${encodeURIComponent(league)}`)
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Skytteligan kunde inte hÃ¤mtas just nu.");
+      const scorers = Array.isArray(data?.data) ? data.data.slice(0, 3) : [];
+      scorerCache.set(key, { fetchedAt: Date.now(), data: scorers });
+      if (location.hostname === "localhost" || location.search.includes("debug=1")) {
+        console.log("Top scorers loaded", { league, scorers });
+      }
+      return scorers;
+    })
+    .finally(() => scorerInFlight.delete(key));
+
+  scorerInFlight.set(key, request);
+  return request;
+}
+
+function renderTopScorersRows(scorers) {
+  if (!scorers.length) {
+    return emptyState("Ingen skytteligadata tillgÃ¤nglig just nu.");
+  }
+
+  return `
+    <div class="top-scorer-list">
+      ${scorers
+        .slice(0, 3)
+        .map(
+          (scorer, index) => `
+            <a href="/?player=${scorer.playerId || ""}#spelare" class="top-scorer-row">
+              <span class="top-scorer-rank">${index + 1}</span>
+              <div class="top-scorer-main">
+                <strong>${escapeHtml(scorer.playerName)}</strong>
+                <small>${escapeHtml(formatTeamName(scorer.teamName, scorer.teamId))}</small>
+              </div>
+              <em>${scorer.goals} mÃ¥l</em>
+            </a>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+async function hydrateHeroTopScorers(league) {
+  const target = document.getElementById("hero-topscorers");
+  if (!target) return;
+
+  target.innerHTML = scorerSkeleton();
+
+  try {
+    const scorers = await loadTopScorers(league);
+    if (league !== currentLeague) return;
+    target.innerHTML = renderTopScorersRows(scorers);
+  } catch (error) {
+    console.warn("Skytteligan kunde inte hÃ¤mtas", error);
+    if (league === currentLeague) {
+      target.innerHTML = emptyState("Skytteligan kunde inte hÃ¤mtas just nu.");
+    }
+  }
 }
 
 function teamLogoHtml(team, className = "team-logo") {
@@ -390,12 +479,11 @@ function renderHero(rows, fixtures) {
 
     <section class="dashboard-section">
       <h3>Skytteliga</h3>
-      <div class="dashboard-skeleton-list">
-        <span>Data uppdateras</span>
-        <i></i>
-      </div>
+      <div id="hero-topscorers">${scorerSkeleton()}</div>
     </section>
   `;
+
+  hydrateHeroTopScorers(currentLeague);
 }
 function renderQuickStats(rows) {
   const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
