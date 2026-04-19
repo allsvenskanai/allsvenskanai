@@ -172,7 +172,7 @@ function squadCacheKey(teamId) {
 }
 
 function teamDetailsCacheKey(teamId, season) {
-  return `team_details_v3_${teamId}_${season || "current"}`;
+  return `team_details_v4_${teamId}_${season || "current"}`;
 }
 
 function getFreshCachedSquad(teamId) {
