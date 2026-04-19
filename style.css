@@ -1849,55 +1849,6 @@ body {
   font-weight: 950;
 }
 
-.player-stats-table-wrap {
-  overflow: visible;
-}
-
-.player-stats-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 6px;
-}
-
-.player-stats-table th,
-.player-stats-table td {
-  padding: 10px 8px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.player-stats-table th {
-  color: #91a0ba;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.player-stats-table td {
-  color: #d8e1f2;
-  font-size: 13px;
-  background: rgba(255,255,255,0.025);
-  border-top: 1px solid rgba(255,255,255,0.045);
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-
-.player-stats-table td:first-child {
-  border-left: 1px solid rgba(255,255,255,0.055);
-  border-radius: 12px 0 0 12px;
-}
-
-.player-stats-table td:last-child {
-  border-right: 1px solid rgba(255,255,255,0.055);
-  border-radius: 0 12px 12px 0;
-}
-
-.player-stats-table a {
-  color: #ffffff;
-  font-weight: 850;
-  text-decoration: none;
-}
-
 .team-split-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2319,17 +2270,6 @@ body {
   .team-subnav {
     top: 78px;
     border-radius: 16px;
-  }
-
-  .player-stats-table th,
-  .player-stats-table td {
-    padding: 8px 5px;
-    font-size: 11px;
-  }
-
-  .player-stats-table th:nth-child(n+7),
-  .player-stats-table td:nth-child(n+7) {
-    display: none;
   }
 
   .team-match-row,
