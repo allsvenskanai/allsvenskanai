@@ -15,6 +15,14 @@ const scorerCache = new Map();
 const scorerInFlight = new Map();
 const SCORER_TTL = 10 * 60 * 1000;
 
+function isDebugMode() {
+  return location.hostname === "localhost" || location.search.includes("debug=1");
+}
+
+function activeScorerLeagueId(league) {
+  return league === "damallsvenskan" ? 576 : 573;
+}
+
 function leagueLabel() {
   return currentLeague === "allsvenskan" ? "Allsvenskan" : "Damallsvenskan";
 }
@@ -33,7 +41,8 @@ function emptyState(text) {
 }
 
 function scorerCacheKey(league) {
-  return `${league}:2026`;
+  const season = window.LeagueData?.LEAGUES?.[league]?.season || "2026";
+  return `${league}:${season}`;
 }
 
 function scorerSkeleton() {
@@ -46,6 +55,8 @@ function scorerSkeleton() {
 }
 
 async function loadTopScorers(league) {
+  const season = window.LeagueData?.LEAGUES?.[league]?.season;
+  const leagueId = activeScorerLeagueId(league);
   const key = scorerCacheKey(league);
   const cached = scorerCache.get(key);
 
@@ -57,14 +68,47 @@ async function loadTopScorers(league) {
     return scorerInFlight.get(key);
   }
 
-  const request = fetch(`/api/scorers?league=${encodeURIComponent(league)}`)
+  const params = new URLSearchParams({ league });
+  if (season) params.set("season", season);
+  if (isDebugMode()) params.set("debug", "1");
+  const endpoint = `/api/scorers?${params.toString()}`;
+
+  if (isDebugMode()) {
+    console.log("Top scorers request", {
+      league,
+      leagueId,
+      season,
+      endpoint
+    });
+  }
+
+  const request = fetch(endpoint)
     .then(async (response) => {
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Skytteligan kunde inte hÃ¤mtas just nu.");
-      const scorers = Array.isArray(data?.data) ? data.data.slice(0, 3) : [];
+      if (isDebugMode()) {
+        console.log("Top scorers response", {
+          league,
+          leagueId,
+          season,
+          endpoint,
+          ok: response.ok,
+          status: response.status,
+          raw: data
+        });
+      }
+      if (!response.ok) throw new Error(data?.details || data?.error || "Skytteligan kunde inte hämtas just nu.");
+      if (!Array.isArray(data?.data)) throw new Error("Ogiltigt skytteligasvar.");
+      const scorers = data.data
+        .map((scorer) => ({
+          ...scorer,
+          goals: Number(scorer.goals || 0)
+        }))
+        .filter((scorer) => scorer.playerName && scorer.goals > 0)
+        .sort((a, b) => b.goals - a.goals)
+        .slice(0, 3);
       scorerCache.set(key, { fetchedAt: Date.now(), data: scorers });
-      if (location.hostname === "localhost" || location.search.includes("debug=1")) {
-        console.log("Top scorers loaded", { league, scorers });
+      if (isDebugMode()) {
+        console.log("Top scorers mapped", { league, leagueId, season, scorers });
       }
       return scorers;
     })
@@ -76,7 +120,7 @@ async function loadTopScorers(league) {
 
 function renderTopScorersRows(scorers) {
   if (!scorers.length) {
-    return emptyState("Ingen skytteligadata tillgÃ¤nglig just nu.");
+    return emptyState("Ingen skytteligadata tillgänglig just nu.");
   }
 
   return `
@@ -91,7 +135,7 @@ function renderTopScorersRows(scorers) {
                 <strong>${escapeHtml(scorer.playerName)}</strong>
                 <small>${escapeHtml(formatTeamName(scorer.teamName, scorer.teamId))}</small>
               </div>
-              <em>${scorer.goals} mÃ¥l</em>
+              <em>${scorer.goals} mål</em>
             </a>
           `
         )
@@ -111,9 +155,9 @@ async function hydrateHeroTopScorers(league) {
     if (league !== currentLeague) return;
     target.innerHTML = renderTopScorersRows(scorers);
   } catch (error) {
-    console.warn("Skytteligan kunde inte hÃ¤mtas", error);
+    console.warn("Skytteligan kunde inte hämtas", error);
     if (league === currentLeague) {
-      target.innerHTML = emptyState("Skytteligan kunde inte hÃ¤mtas just nu.");
+      target.innerHTML = emptyState("Skytteligan kunde inte hämtas just nu.");
     }
   }
 }
@@ -129,7 +173,7 @@ function teamLogoHtml(team, className = "team-logo") {
 
 function renderStandingsTable(rows) {
   if (!rows.length) {
-    standingsContent.innerHTML = emptyState("Ingen tabell tillgÃ¤nglig just nu.");
+    standingsContent.innerHTML = emptyState("Ingen tabell tillgänglig just nu.");
     return;
   }
 
@@ -362,7 +406,7 @@ function formatMatchDate(dateString) {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
-  }).replace(",", " â€¢");
+  }).replace(",", " •");
 }
 
 function matchCard(match, variant = "") {
@@ -492,16 +536,16 @@ function renderQuickStats(rows) {
   const bestDefense = [...rows].sort((a, b) => a.goalsAgainst - b.goalsAgainst).slice(0, 5);
 
   leagueSnapshotCard.innerHTML = `
-    <h3>LigalÃ¤ge</h3>
+    <h3>Ligaläge</h3>
     <div class="snapshot-grid">
       <div><span>Matcher</span><strong>${Math.round(playedMatches)}</strong></div>
-      <div><span>MÃ¥l</span><strong>${goals}</strong></div>
-      <div><span>MÃ¥l/match</span><strong>${playedMatches > 0 ? (goals / playedMatches).toFixed(2) : "0.00"}</strong></div>
+      <div><span>mål</span><strong>${goals}</strong></div>
+      <div><span>mål/match</span><strong>${playedMatches > 0 ? (goals / playedMatches).toFixed(2) : "0.00"}</strong></div>
     </div>
   `;
 
-  attackCard.innerHTML = listCard("BÃ¤sta anfall", bestAttack, (row) => `${row.goalsFor} mÃ¥l`);
-  defenseCard.innerHTML = listCard("BÃ¤sta fÃ¶rsvar", bestDefense, (row) => `${row.goalsAgainst} inslÃ¤ppta`);
+  attackCard.innerHTML = listCard("Bästa anfall", bestAttack, (row) => `${row.goalsFor} mål`);
+  defenseCard.innerHTML = listCard("Bästa försvar", bestDefense, (row) => `${row.goalsAgainst} insläppta`);
 }
 
 function listCard(title, rows, valueGetter) {
@@ -532,12 +576,12 @@ function renderTeams(rows) {
             <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="team-card">
               ${teamLogoHtml(team, "team-card-logo")}
               <strong>${escapeHtml(team.teamName)}</strong>
-              <span>${team.points} poÃ¤ng</span>
+              <span>${team.points} poäng</span>
             </a>
           `
         )
         .join("")
-    : emptyState("Inga lag tillgÃ¤ngliga just nu.");
+    : emptyState("Inga lag tillgängliga just nu.");
 }
 
 async function loadStandings() {
@@ -567,13 +611,13 @@ function renderFixtures(fixtures) {
   liveMatchesContent.innerHTML = live.length
     ? live.map((match) => matchCard(match, "live")).join("")
     : `
-      <div class="match-column-note">NÃ¤sta avspark</div>
+      <div class="match-column-note">Nästa avspark</div>
       ${liveFallback.length
         ? liveFallback.map((match) => matchCard(match, "soon")).join("")
         : emptyState("Inga matcher schemalagda just nu.")}
     `;
   renderMatchColumn(upcomingMatchesContent, upcoming, "Inga kommande matcher hittades.");
-  renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgÃ¤ngliga Ã¤nnu.");
+  renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgängliga ännu.");
 }
 
 async function renderLeagueContent() {
@@ -587,7 +631,7 @@ async function renderLeagueContent() {
     renderTeams(standings);
   } catch (error) {
     console.error(error);
-    const message = error?.message || "NÃ¥got gick fel nÃ¤r startsidan skulle laddas.";
+    const message = error?.message || "Något gick fel när startsidan skulle laddas.";
     heroHighlight.innerHTML = emptyState(message);
     standingsContent.innerHTML = emptyState(message);
     liveMatchesContent.innerHTML = emptyState(message);
