@@ -161,6 +161,55 @@ function mergeStatistics(primary, fallback) {
   return merged;
 }
 
+function collectCoverageFlags(value, target = {}) {
+  if (!value || typeof value !== "object") return target;
+  Object.entries(value).forEach(([key, child]) => {
+    const normalizedKey = clean(key).toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    if (typeof child === "boolean") {
+      target[normalizedKey] = child;
+      return;
+    }
+    if (typeof child === "number") {
+      target[normalizedKey] = child > 0;
+      return;
+    }
+    if (child && typeof child === "object") collectCoverageFlags(child, target);
+  });
+  return target;
+}
+
+function flagIncludes(flags, tokens) {
+  const wanted = Array.isArray(tokens) ? tokens : [tokens];
+  const matched = Object.entries(flags).filter(([key]) => wanted.some((token) => key.includes(token)));
+  if (!matched.length) return null;
+  return matched.some(([, value]) => value === true);
+}
+
+function normalizeSeasonCoverage(rawSeason) {
+  const season = unwrap(rawSeason) || {};
+  const coverageSource = unwrap(season.coverage) || unwrap(season.coverages) || season;
+  const flags = collectCoverageFlags(coverageSource);
+  const families = {
+    standings: flagIncludes(flags, ["standing", "table"]),
+    fixtures: flagIncludes(flags, ["fixture", "match", "result"]),
+    events: flagIncludes(flags, ["event"]),
+    lineups: flagIncludes(flags, ["lineup"]),
+    fixtureStatistics: flagIncludes(flags, ["fixture_statistic", "match_statistic", "statistic"]),
+    playerStatistics: flagIncludes(flags, ["player_statistic", "player_stats"]),
+    topScorers: flagIncludes(flags, ["topscorer", "top_scorer", "scorer"]),
+    topAssists: flagIncludes(flags, ["assist"]),
+    topCards: flagIncludes(flags, ["card"]),
+    injuries: flagIncludes(flags, ["injur"]),
+    predictions: flagIncludes(flags, ["prediction"]),
+    odds: flagIncludes(flags, ["odd"])
+  };
+
+  return {
+    available: Object.fromEntries(Object.entries(families).map(([key, value]) => [key, value === null ? null : Boolean(value)])),
+    rawFlags: flags
+  };
+}
+
 function mergeMissing(apiValue, fallbackValue) {
   return apiValue === null || apiValue === undefined || apiValue === "" ? fallbackValue ?? null : apiValue;
 }
@@ -222,6 +271,23 @@ export default async function handler(req, res) {
   const path = `/teams/${encodeURIComponent(teamId)}?include=${encodeURIComponent(includes)}${filters}`;
 
   try {
+    let coverage = { available: {}, rawFlags: {} };
+    if (includeStats) {
+      const coveragePath = `/seasons/${encodeURIComponent(seasonId)}?include=coverage`;
+      const coverageResult = await sportmonksFetch(coveragePath, token);
+      if (coverageResult.response.ok) {
+        coverage = normalizeSeasonCoverage(coverageResult.payload?.data);
+      } else {
+        console.warn("SEASON COVERAGE REQUEST FAILED:", {
+          seasonId,
+          path: coveragePath,
+          status: coverageResult.response.status,
+          details: coverageResult.payload?.message || coverageResult.payload?.error || coverageResult.text
+        });
+      }
+      console.log("SEASON COVERAGE FLAGS:", { seasonId, coverage });
+    }
+
     let directStats = null;
     if (includeStats) {
       const directPath = `/statistics/seasons/teams/${encodeURIComponent(teamId)}?include=details.type&filters=teamStatisticSeasons:${encodeURIComponent(seasonId)}&per_page=50`;
@@ -302,6 +368,7 @@ export default async function handler(req, res) {
     const team = normalizeTeam(payload?.data, seasonId);
     if (includeStats) {
       team.statistics = mergeStatistics(directStats, team.statistics);
+      team.statistics.coverage = coverage;
       console.log("TEAM STATS FINAL MAPPED METRICS:", {
         teamId: Number(teamId),
         seasonId,
