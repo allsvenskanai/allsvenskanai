@@ -172,7 +172,7 @@ function squadCacheKey(teamId) {
 }
 
 function teamDetailsCacheKey(teamId, season) {
-  return `team_details_v2_${teamId}_${season || "current"}`;
+  return `team_details_v3_${teamId}_${season || "current"}`;
 }
 
 function getFreshCachedSquad(teamId) {
@@ -217,6 +217,10 @@ function metricValue(metrics, keys) {
   return null;
 }
 
+function missingMetricKeys(metrics, keys) {
+  return keys.filter((key) => metrics?.[key] === null || metrics?.[key] === undefined || metrics?.[key] === "");
+}
+
 function addMetric(list, label, value, formatter = formatNumber, hint = "") {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return;
@@ -251,6 +255,11 @@ function recordFor(teamId, matches) {
 
 function buildTeamStatGroups(team, standing, snapshot, form) {
   const metrics = team?.statistics?.metrics || {};
+  console.log("TEAM PAGE STATS SOURCE:", {
+    teamId: team?.id,
+    sourceObject: team?.statistics,
+    metrics
+  });
   const played = Number(standing?.played || 0);
   const goalsFor = Number(standing?.goalsFor || 0);
   const goalsAgainst = Number(standing?.goalsAgainst || 0);
@@ -273,33 +282,33 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
   const attack = [];
   addMetric(attack, "Gjorda mål", goalsFor);
   addMetric(attack, "Mål / match", played > 0 ? goalsFor / played : null, (v) => formatDecimal(v, 2));
-  addMetric(attack, "Skott", metricValue(metrics, ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL"]));
-  addMetric(attack, "Skott på mål", metricValue(metrics, ["SHOTS_ON_TARGET", "ON_TARGET"]));
-  addMetric(attack, "Skott utanför", metricValue(metrics, ["SHOTS_OFF_TARGET", "OFF_TARGET"]));
+  addMetric(attack, "Skott", metricValue(metrics, ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL", "SHOTS_TOTALS"]));
+  addMetric(attack, "Skott på mål", metricValue(metrics, ["SHOTS_ON_TARGET", "SHOTS_ON_GOAL", "ON_TARGET", "SHOTS_ON_GOALS"]));
+  addMetric(attack, "Skott utanför", metricValue(metrics, ["SHOTS_OFF_TARGET", "SHOTS_OFF_GOAL", "OFF_TARGET", "SHOTS_OFF_GOALS"]));
   addMetric(attack, "Big chances", metricValue(metrics, ["BIG_CHANCES", "BIG_CHANCES_CREATED"]));
   addMetric(attack, "Missade big chances", metricValue(metrics, ["BIG_CHANCES_MISSED"]));
   addMetric(attack, "xG", metricValue(metrics, ["EXPECTED_GOALS", "XG"]), (v) => formatDecimal(v, 2));
-  addMetric(attack, "Straffmål", metricValue(metrics, ["PENALTY_GOALS", "PENALTIES_SCORED"]));
+  addMetric(attack, "Straffmål", metricValue(metrics, ["PENALTY_GOALS", "PENALTIES_SCORED", "PENALTIES"]));
   addMetric(attack, "Fasta situationer", metricValue(metrics, ["SET_PIECE_GOALS"]));
 
   const passing = [];
   addMetric(passing, "Bollinnehav", metricValue(metrics, ["BALL_POSSESSION", "POSSESSION"]), formatPercent);
-  addMetric(passing, "Passningar", metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"]));
-  const passes = metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"]);
+  addMetric(passing, "Passningar", metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL", "ACCURATE_PASSES_TOTAL"]));
+  const passes = metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL", "ACCURATE_PASSES_TOTAL"]);
   addMetric(passing, "Passningar / match", passes && played > 0 ? passes / played : null, (v) => formatDecimal(v, 1));
-  addMetric(passing, "Passnings%", metricValue(metrics, ["PASS_ACCURACY", "PASSES_ACCURACY"]), formatPercent);
+  addMetric(passing, "Passnings%", metricValue(metrics, ["PASS_ACCURACY", "PASSES_ACCURACY", "PASSING_ACCURACY"]), formatPercent);
   addMetric(passing, "Nyckelpass", metricValue(metrics, ["KEY_PASSES"]));
   addMetric(passing, "Inlägg", metricValue(metrics, ["CROSSES"]));
-  addMetric(passing, "Lyckade inlägg", metricValue(metrics, ["SUCCESSFUL_CROSSES", "ACCURATE_CROSSES"]));
+  addMetric(passing, "Lyckade inlägg", metricValue(metrics, ["SUCCESSFUL_CROSSES", "ACCURATE_CROSSES", "CROSSES_ACCURATE"]));
   addMetric(passing, "Långbollar", metricValue(metrics, ["LONG_BALLS"]));
-  addMetric(passing, "Lyckade långbollar", metricValue(metrics, ["SUCCESSFUL_LONG_BALLS", "ACCURATE_LONG_BALLS"]));
+  addMetric(passing, "Lyckade långbollar", metricValue(metrics, ["SUCCESSFUL_LONG_BALLS", "ACCURATE_LONG_BALLS", "LONG_BALLS_ACCURATE"]));
 
   const defense = [];
   addMetric(defense, "Insläppta mål", goalsAgainst);
   addMetric(defense, "Tacklingar", metricValue(metrics, ["TACKLES"]));
   addMetric(defense, "Interceptions", metricValue(metrics, ["INTERCEPTIONS"]));
   addMetric(defense, "Rensningar", metricValue(metrics, ["CLEARANCES"]));
-  addMetric(defense, "Blockerade skott", metricValue(metrics, ["BLOCKED_SHOTS", "BLOCKS"]));
+  addMetric(defense, "Blockerade skott", metricValue(metrics, ["BLOCKED_SHOTS", "BLOCKS", "SHOTS_BLOCKED"]));
   addMetric(defense, "Vunna dueller", metricValue(metrics, ["DUELS_WON"]));
   addMetric(defense, "Luftdueller vunna", metricValue(metrics, ["AERIALS_WON", "AERIAL_DUELS_WON"]));
   addMetric(defense, "Hållna nollor", cleanSheets(team.id, snapshot));
@@ -321,7 +330,7 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
   addMetric(homeAway, "Mål hemma", homeRecord.goalsFor);
   addMetric(homeAway, "Mål borta", awayRecord.goalsFor);
 
-  return [
+  const groups = [
     { key: "overview", title: "Översikt", metrics: overview, after: `<div class="team-stat-form-row"><span>Form</span>${renderForm(form)}</div>` },
     { key: "attack", title: "Anfall", metrics: attack },
     { key: "passing", title: "Passning / bollinnehav", metrics: passing },
@@ -329,6 +338,19 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
     { key: "discipline", title: "Disciplin", metrics: discipline },
     { key: "homeaway", title: "Hemma / borta", metrics: homeAway }
   ].filter((group) => group.metrics.length || group.after);
+
+  console.log("TEAM PAGE STATS CATEGORY MAPPING:", {
+    teamId: team?.id,
+    mapped: Object.fromEntries(groups.map((group) => [group.key, group.metrics.map((metric) => metric.label)])),
+    missing: {
+      attack: missingMetricKeys(metrics, ["SHOTS", "TOTAL_SHOTS", "SHOTS_ON_TARGET", "SHOTS_OFF_TARGET", "BIG_CHANCES", "EXPECTED_GOALS", "PENALTY_GOALS", "SET_PIECE_GOALS"]),
+      passing: missingMetricKeys(metrics, ["BALL_POSSESSION", "PASSES", "TOTAL_PASSES", "PASS_ACCURACY", "KEY_PASSES", "CROSSES", "SUCCESSFUL_CROSSES", "LONG_BALLS", "SUCCESSFUL_LONG_BALLS"]),
+      defense: missingMetricKeys(metrics, ["TACKLES", "INTERCEPTIONS", "CLEARANCES", "BLOCKED_SHOTS", "DUELS_WON", "AERIAL_DUELS_WON", "SAVES", "EXPECTED_GOALS_AGAINST"]),
+      discipline: missingMetricKeys(metrics, ["YELLOW_CARDS", "RED_CARDS", "FOULS", "FOULS_DRAWN", "OFFSIDES"])
+    }
+  });
+
+  return groups;
 }
 
 function renderMetricGrid(metrics) {
