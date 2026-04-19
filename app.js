@@ -1,5 +1,6 @@
 const buttons = document.querySelectorAll(".league-btn");
 const heroHighlight = document.getElementById("hero-highlight");
+const heroMiniStats = document.getElementById("hero-mini-stats");
 const standingsContent = document.getElementById("standings-content");
 const liveMatchesContent = document.getElementById("live-matches-content");
 const upcomingMatchesContent = document.getElementById("upcoming-matches-content");
@@ -310,6 +311,26 @@ function renderHero(rows, fixtures) {
   const topTeams = rows.slice(0, 3);
   const liveMatches = fixtures.filter((match) => match.isLive).slice(0, 2);
   const nextMatch = getUpcomingMatches(fixtures, 1)[0];
+  const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
+  const goals = rows.reduce((sum, row) => sum + Number(row.goalsFor || 0), 0);
+  const leader = topTeams[0];
+
+  if (heroMiniStats) {
+    heroMiniStats.innerHTML = `
+      <div>
+        <span>Serieledare</span>
+        <strong>${leader ? escapeHtml(leader.teamName) : "Uppdateras"}</strong>
+      </div>
+      <div>
+        <span>Spelade matcher</span>
+        <strong>${Math.round(playedMatches)}</strong>
+      </div>
+      <div>
+        <span>M�l totalt</span>
+        <strong>${goals}</strong>
+      </div>
+    `;
+  }
 
   heroHighlight.innerHTML = `
     <div class="dashboard-header">
@@ -317,13 +338,32 @@ function renderHero(rows, fixtures) {
       <strong>Ligapuls</strong>
     </div>
 
+    <section class="dashboard-section next-match-feature hero-dashboard-main">
+      <h3>N�sta match</h3>
+      ${
+        nextMatch
+          ? `
+            <div class="next-match-teams">
+              <span>${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")}</span>
+              <strong>mot</strong>
+              <span>${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}</span>
+            </div>
+            <p>${formatMatchDate(nextMatch.startingAt)}</p>
+          `
+          : emptyState("Matchschemat uppdateras")
+      }
+    </section>
+
     <section class="dashboard-section">
       <h3>Live / Aktivt nu</h3>
       <div class="dashboard-live-list">
         ${
           liveMatches.length
             ? liveMatches.map((match) => matchCard(match, "live compact")).join("")
-            : emptyState("Inga matcher live")
+            : `
+              <p class="dashboard-soft-state">Inga matcher live just nu</p>
+              ${nextMatch ? matchCard(nextMatch, "soon compact") : ""}
+            `
         }
       </div>
     </section>
@@ -343,34 +383,21 @@ function renderHero(rows, fixtures) {
                   `
                 )
                 .join("")
-            : emptyState("Ingen tabell tillgänglig")
+            : emptyState("Ingen tabell tillg�nglig")
         }
       </div>
     </section>
 
     <section class="dashboard-section">
       <h3>Skytteliga</h3>
-      ${emptyState("Skytteligadata saknas ännu")}
-    </section>
-
-    <section class="dashboard-section next-match-feature">
-      <h3>Nästa match</h3>
-      ${
-        nextMatch
-          ? `
-            <div class="next-match-teams">
-              <span>${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")}</span>
-              <strong>mot</strong>
-              <span>${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}</span>
-            </div>
-            <p>${formatMatchDate(nextMatch.startingAt)}</p>
-          `
-          : emptyState("Inget schema tillgängligt")
-      }
+      <div class="dashboard-skeleton-list">
+        <span>Data uppdateras</span>
+        <i></i>
+        <i></i>
+      </div>
     </section>
   `;
 }
-
 function renderQuickStats(rows) {
   const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
   const goals = rows.reduce((sum, row) => sum + Number(row.goalsFor || 0), 0);
@@ -492,3 +519,4 @@ buttons.forEach((button) => {
 });
 
 renderLeagueContent();
+
