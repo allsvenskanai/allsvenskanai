@@ -176,7 +176,7 @@ function squadCacheKey(teamId) {
 }
 
 function teamDetailsCacheKey(teamId, season) {
-  return `team_details_v5_${teamId}_${season || "current"}`;
+  return `team_details_v6_${teamId}_${season || "current"}`;
 }
 
 function getFreshCachedSquad(teamId) {
@@ -327,11 +327,79 @@ function recordFor(teamId, matches) {
   }, { played: 0, wins: 0, draws: 0, losses: 0, points: 0, goalsFor: 0, goalsAgainst: 0 });
 }
 
+function coverageAllows(team, family) {
+  const value = team?.statistics?.coverage?.available?.[family];
+  return value !== false;
+}
+
+const TEAM_STAT_GROUP_TITLES = {
+  overview: "Översikt",
+  attack: "Anfall",
+  passing: "Passning / bollinnehav",
+  defense: "Försvar",
+  discipline: "Disciplin",
+  homeaway: "Hemma / borta",
+  timing: "Tidsmönster"
+};
+
+const TEAM_API_METRICS = [
+  { group: "attack", label: "Skott", keys: ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL", "SHOTS_TOTALS"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Skott på mål", keys: ["SHOTS_ON_TARGET", "SHOTS_ON_GOAL", "ON_TARGET", "SHOTS_ON_GOALS"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Skott utanför", keys: ["SHOTS_OFF_TARGET", "SHOTS_OFF_GOAL", "OFF_TARGET", "SHOTS_OFF_GOALS"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Big chances", keys: ["BIG_CHANCES", "BIG_CHANCE_CREATED"], options: { integer: true, min: 0, max: 500 } },
+  { group: "attack", label: "Missade big chances", keys: ["BIG_CHANCES_MISSED", "BIG_CHANCE_MISSED"], options: { integer: true, min: 0, max: 500 } },
+  { group: "attack", label: "xG", keys: ["EXPECTED_GOALS", "XG"], formatter: (v) => formatDecimal(v, 2), options: { min: 0, max: 150 } },
+  { group: "attack", label: "Straffmål", keys: ["PENALTY_GOALS", "PENALTIES_SCORED", "PENALTIES"], options: { integer: true, min: 0, max: 100 } },
+  { group: "attack", label: "Fasta situationer", keys: ["SET_PIECE_GOALS", "SETPIECE_GOALS"], options: { integer: true, min: 0, max: 100 } },
+  { group: "passing", label: "Bollinnehav", keys: ["BALL_POSSESSION", "POSSESSION"], formatter: formatPercent, options: { kind: "percentage" }, normalize: (value, context) => normalizePossessionMetric(value, context.played) },
+  { group: "passing", label: "Passningar", keys: ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"], options: { integer: true, min: 0, max: 25000 } },
+  { group: "passing", label: "Passningar / match", keys: ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"], formatter: (v) => formatDecimal(v, 1), options: { min: 0, max: 1500 }, normalize: (value, context) => context.played > 0 ? value / context.played : null },
+  { group: "passing", label: "Passnings%", keys: ["PASS_ACCURACY", "PASSES_ACCURACY", "PASSING_ACCURACY"], formatter: formatPercent, options: { kind: "percentage" } },
+  { group: "passing", label: "Nyckelpass", keys: ["KEY_PASSES", "KEYPASS", "KEY_PASS"], options: { integer: true, min: 0, max: 1000 } },
+  { group: "passing", label: "Inlägg", keys: ["CROSSES", "TOTAL_CROSSES"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "passing", label: "Lyckade inlägg", keys: ["SUCCESSFUL_CROSSES", "ACCURATE_CROSSES"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "passing", label: "Långbollar", keys: ["LONG_BALLS", "TOTAL_LONG_BALLS"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "passing", label: "Lyckade långbollar", keys: ["SUCCESSFUL_LONG_BALLS", "ACCURATE_LONG_BALLS"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "defense", label: "Tacklingar", keys: ["TACKLES"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "defense", label: "Interceptions", keys: ["INTERCEPTIONS"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "defense", label: "Rensningar", keys: ["CLEARANCES"], options: { integer: true, min: 0, max: 3000 } },
+  { group: "defense", label: "Blockerade skott", keys: ["BLOCKED_SHOTS", "BLOCKS"], options: { integer: true, min: 0, max: 1500 } },
+  { group: "defense", label: "Vunna dueller", keys: ["DUELS_WON"], options: { integer: true, min: 0, max: 5000 } },
+  { group: "defense", label: "Luftdueller vunna", keys: ["AERIAL_DUELS_WON", "AERIALS_WON"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "defense", label: "Räddningar", keys: ["SAVES"], options: { integer: true, min: 0, max: 1000 } },
+  { group: "defense", label: "xGA", keys: ["EXPECTED_GOALS_AGAINST", "XGA"], formatter: (v) => formatDecimal(v, 2), options: { min: 0, max: 150 } },
+  { group: "discipline", label: "Gula kort", keys: ["YELLOWCARDS", "YELLOW_CARDS"], options: { integer: true, min: 0, max: 250 } },
+  { group: "discipline", label: "Röda kort", keys: ["REDCARDS", "RED_CARDS"], options: { integer: true, min: 0, max: 50 } },
+  { group: "discipline", label: "Frisparkar orsakade", keys: ["FOULS", "FOULS_COMMITTED"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "discipline", label: "Frisparkar vunna", keys: ["FOULS_DRAWN"], options: { integer: true, min: 0, max: 2500 } },
+  { group: "discipline", label: "Offside", keys: ["OFFSIDES"], options: { integer: true, min: 0, max: 500 } },
+  { group: "timing", label: "Mål 0–15", keys: ["GOALS_0_15", "GOALS_FOR_0_15"], options: { integer: true, min: 0, max: 100 } },
+  { group: "timing", label: "Mål 16–30", keys: ["GOALS_16_30", "GOALS_FOR_16_30"], options: { integer: true, min: 0, max: 100 } },
+  { group: "timing", label: "Mål 31–45", keys: ["GOALS_31_45", "GOALS_FOR_31_45"], options: { integer: true, min: 0, max: 100 } },
+  { group: "timing", label: "Mål 46–60", keys: ["GOALS_46_60", "GOALS_FOR_46_60"], options: { integer: true, min: 0, max: 100 } },
+  { group: "timing", label: "Mål 61–75", keys: ["GOALS_61_75", "GOALS_FOR_61_75"], options: { integer: true, min: 0, max: 100 } },
+  { group: "timing", label: "Mål 76–90", keys: ["GOALS_76_90", "GOALS_FOR_76_90"], options: { integer: true, min: 0, max: 100 } }
+];
+
+function addApiMetric(groups, descriptor, metrics, context, hidden) {
+  const raw = metricValue(metrics, descriptor.keys);
+  const value = descriptor.normalize ? descriptor.normalize(raw, context) : raw;
+  const before = groups[descriptor.group].length;
+  addMetric(groups[descriptor.group], descriptor.label, value, descriptor.formatter || formatNumber, "", descriptor.options || {});
+  if (groups[descriptor.group].length === before) {
+    hidden.push({ label: descriptor.label, keys: descriptor.keys, raw, reason: raw === null ? "missing" : "invalid" });
+  }
+}
+
 function buildTeamStatGroups(team, standing, snapshot, form) {
   const metrics = team?.statistics?.metrics || {};
+  const hiddenMetrics = [];
   if (isTeamDebugMode()) {
     console.log("TEAM PAGE STATS SOURCE:", {
       teamId: team?.id,
+      league: snapshot?.leagueKey,
+      season: snapshot?.season,
+      coverage: team?.statistics?.coverage || null,
       sourceObject: team?.statistics,
       metrics
     });
@@ -343,7 +411,8 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
   const homeRecord = recordFor(team.id, allPlayed.filter((match) => Number(match.homeTeamId) === Number(team.id)));
   const awayRecord = recordFor(team.id, allPlayed.filter((match) => Number(match.awayTeamId) === Number(team.id)));
 
-  const overview = [];
+  const groupsByKey = { overview: [], attack: [], passing: [], defense: [], discipline: [], homeaway: [], timing: [] };
+  const overview = groupsByKey.overview;
   addMetric(overview, "Placering", standing?.position);
   addMetric(overview, "Poäng", standing?.points);
   addMetric(overview, "Vinster", standing?.won);
@@ -355,34 +424,21 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
   addMetric(overview, "Poäng / match", played > 0 ? standing.points / played : null, (v) => formatDecimal(v, 2));
   addMetric(overview, "Hållna nollor", cleanSheets(team.id, snapshot));
 
-  const attack = [];
+  const attack = groupsByKey.attack;
   addMetric(attack, "Gjorda mål", goalsFor, formatNumber, "", { integer: true, min: 0 });
   addMetric(attack, "Mål / match", played > 0 ? goalsFor / played : null, (v) => formatDecimal(v, 2), "", { min: 0 });
-  addMetric(attack, "Skott", metricValue(metrics, ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL", "SHOTS_TOTALS"]), formatNumber, "", { integer: true, min: 0, max: 1200 });
-  addMetric(attack, "Skott på mål", metricValue(metrics, ["SHOTS_ON_TARGET", "SHOTS_ON_GOAL", "ON_TARGET", "SHOTS_ON_GOALS"]), formatNumber, "", { integer: true, min: 0, max: 1200 });
-  addMetric(attack, "Skott utanför", metricValue(metrics, ["SHOTS_OFF_TARGET", "SHOTS_OFF_GOAL", "OFF_TARGET", "SHOTS_OFF_GOALS"]), formatNumber, "", { integer: true, min: 0, max: 1200 });
 
-  const passing = [];
-  const possession = metricValue(metrics, ["BALL_POSSESSION", "POSSESSION"]);
-  addMetric(passing, "Bollinnehav", normalizePossessionMetric(possession, played), formatPercent, "", { kind: "percentage" });
-  addMetric(passing, "Passningar", metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"]), formatNumber, "", { integer: true, min: 0, max: 25000 });
-  const passes = metricValue(metrics, ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL", "ACCURATE_PASSES_TOTAL"]);
-  addMetric(passing, "Passningar / match", passes && played > 0 ? passes / played : null, (v) => formatDecimal(v, 1), "", { min: 0, max: 1500 });
-  addMetric(passing, "Passnings%", metricValue(metrics, ["PASS_ACCURACY", "PASSES_ACCURACY", "PASSING_ACCURACY"]), formatPercent, "", { kind: "percentage" });
-
-  const defense = [];
+  const defense = groupsByKey.defense;
   addMetric(defense, "Insläppta mål", goalsAgainst, formatNumber, "", { integer: true, min: 0 });
-  addMetric(defense, "Tacklingar", metricValue(metrics, ["TACKLES"]), formatNumber, "", { integer: true, min: 0, max: 2500 });
-  addMetric(defense, "Interceptions", metricValue(metrics, ["INTERCEPTIONS"]), formatNumber, "", { integer: true, min: 0, max: 2500 });
   addMetric(defense, "Hållna nollor", cleanSheets(team.id, snapshot), formatNumber, "", { integer: true, min: 0, max: played || 30 });
 
-  const discipline = [];
-  addMetric(discipline, "Gula kort", metricValue(metrics, ["YELLOWCARDS", "YELLOW_CARDS"]), formatNumber, "", { integer: true, min: 0, max: 250 });
-  addMetric(discipline, "Röda kort", metricValue(metrics, ["REDCARDS", "RED_CARDS"]), formatNumber, "", { integer: true, min: 0, max: 50 });
-  addMetric(discipline, "Frisparkar orsakade", metricValue(metrics, ["FOULS", "FOULS_COMMITTED"]), formatNumber, "", { integer: true, min: 0, max: 2500 });
-  addMetric(discipline, "Offside", metricValue(metrics, ["OFFSIDES"]), formatNumber, "", { integer: true, min: 0, max: 500 });
+  if (coverageAllows(team, "fixtureStatistics")) {
+    TEAM_API_METRICS.forEach((descriptor) => addApiMetric(groupsByKey, descriptor, metrics, { played }, hiddenMetrics));
+  } else {
+    hiddenMetrics.push({ family: "fixtureStatistics", reason: "coverage_false" });
+  }
 
-  const homeAway = [];
+  const homeAway = groupsByKey.homeaway;
   addMetric(homeAway, "Hemma", homeRecord.played, (v) => `${homeRecord.wins}-${homeRecord.draws}-${homeRecord.losses}`);
   addMetric(homeAway, "Borta", awayRecord.played, (v) => `${awayRecord.wins}-${awayRecord.draws}-${awayRecord.losses}`);
   addMetric(homeAway, "Hemmapoäng", homeRecord.points);
@@ -391,12 +447,13 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
   addMetric(homeAway, "Mål borta", awayRecord.goalsFor);
 
   const groups = [
-    { key: "overview", title: "Översikt", metrics: overview, after: `<div class="team-stat-form-row"><span>Form</span>${renderForm(form)}</div>` },
-    { key: "attack", title: "Anfall", metrics: attack },
-    { key: "passing", title: "Passning / bollinnehav", metrics: passing },
-    { key: "defense", title: "Försvar", metrics: defense },
-    { key: "discipline", title: "Disciplin", metrics: discipline },
-    { key: "homeaway", title: "Hemma / borta", metrics: homeAway }
+    { key: "overview", title: TEAM_STAT_GROUP_TITLES.overview, metrics: groupsByKey.overview, after: `<div class="team-stat-form-row"><span>Form</span>${renderForm(form)}</div>` },
+    { key: "attack", title: TEAM_STAT_GROUP_TITLES.attack, metrics: groupsByKey.attack },
+    { key: "passing", title: TEAM_STAT_GROUP_TITLES.passing, metrics: groupsByKey.passing },
+    { key: "defense", title: TEAM_STAT_GROUP_TITLES.defense, metrics: groupsByKey.defense },
+    { key: "discipline", title: TEAM_STAT_GROUP_TITLES.discipline, metrics: groupsByKey.discipline },
+    { key: "homeaway", title: TEAM_STAT_GROUP_TITLES.homeaway, metrics: groupsByKey.homeaway },
+    { key: "timing", title: TEAM_STAT_GROUP_TITLES.timing, metrics: groupsByKey.timing }
   ].filter((group) => group.metrics.length || group.after);
 
   if (isTeamDebugMode()) {
@@ -408,7 +465,8 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
         passing: missingMetricKeys(metrics, ["BALL_POSSESSION", "PASSES", "TOTAL_PASSES", "PASS_ACCURACY"]),
         defense: missingMetricKeys(metrics, ["TACKLES", "INTERCEPTIONS"]),
         discipline: missingMetricKeys(metrics, ["YELLOW_CARDS", "RED_CARDS", "FOULS", "OFFSIDES"])
-      }
+      },
+      hiddenMetrics
     });
   }
 
@@ -443,18 +501,43 @@ function playerStat(player, key) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const PLAYER_TOP_LISTS = [
-  ["goals", "Mål"], ["assists", "Assist"], ["appearances", "Matcher"], ["minutes", "Minuter"], ["rating", "Rating"], ["shots", "Skott"], ["shotsOnTarget", "Skott på mål"], ["keyPasses", "Nyckelpass"], ["tackles", "Tacklingar"], ["interceptions", "Interceptions"], ["saves", "Räddningar"], ["yellowCards", "Gula kort"]
+const PLAYER_STAT_CONFIG = [
+  { key: "appearances", label: "Matcher", short: "M", top: true, options: { integer: true, min: 0, max: 60 } },
+  { key: "starts", label: "Starter", short: "Start", top: true, options: { integer: true, min: 0, max: 60 } },
+  { key: "minutes", label: "Minuter", short: "Min", top: true, options: { integer: true, min: 0, max: 6000 } },
+  { key: "goals", label: "Mål", short: "Mål", top: true, options: { integer: true, min: 0, max: 80 } },
+  { key: "assists", label: "Assist", short: "A", top: true, options: { integer: true, min: 0, max: 80 } },
+  { key: "rating", label: "Rating", short: "Rat", top: true, formatter: (v) => formatDecimal(v, 2), options: { min: 0, max: 10 } },
+  { key: "shots", label: "Skott", short: "Skott", top: true, options: { integer: true, min: 0, max: 400 } },
+  { key: "shotsOnTarget", label: "Skott på mål", short: "SOT", top: true, options: { integer: true, min: 0, max: 300 } },
+  { key: "passAccuracyPct", label: "Passnings%", short: "Pass%", formatter: (v) => formatDecimal(v, 1), options: { kind: "percentage" } },
+  { key: "keyPasses", label: "Nyckelpass", short: "Nyckel", top: true, options: { integer: true, min: 0, max: 300 } },
+  { key: "chancesCreated", label: "Skapade chanser", short: "Chanser", top: true, options: { integer: true, min: 0, max: 300 } },
+  { key: "tackles", label: "Tacklingar", short: "Tack", top: true, options: { integer: true, min: 0, max: 500 } },
+  { key: "interceptions", label: "Interceptions", short: "Int", top: true, options: { integer: true, min: 0, max: 500 } },
+  { key: "saves", label: "Räddningar", short: "Rädd", top: true, options: { integer: true, min: 0, max: 300 } },
+  { key: "cleanSheets", label: "Hållna nollor", short: "Nollor", options: { integer: true, min: 0, max: 60 } },
+  { key: "yellowCards", label: "Gula kort", short: "G", top: true, options: { integer: true, min: 0, max: 30 } },
+  { key: "redCards", label: "Röda kort", short: "R", top: true, options: { integer: true, min: 0, max: 10 } }
 ];
 
+function validatedPlayerStat(player, config) {
+  const validation = validateMetricValue(config.label, playerStat(player, config.key), config.options || {});
+  return validation.valid ? validation.normalized : null;
+}
+
+function availablePlayerStatConfigs(players) {
+  return PLAYER_STAT_CONFIG.filter((config) => players.some((player) => validatedPlayerStat(player, config) !== null));
+}
+
 function renderPlayerTopLists(players) {
-  const lists = PLAYER_TOP_LISTS.map(([key, label]) => {
+  const lists = availablePlayerStatConfigs(players).filter((config) => config.top).map((config) => {
     const rows = players
-      .map((player) => ({ player, value: playerStat(player, key) }))
+      .map((player) => ({ player, value: validatedPlayerStat(player, config) }))
       .filter((row) => row.value !== null && row.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
-    return { key, label, rows };
+    return { key: config.key, label: config.label, formatter: config.formatter || formatNumber, rows };
   }).filter((list) => list.rows.length);
 
   if (!lists.length) return '<p class="team-empty">Spelarstatistik uppdateras snart. Truppen visas nedan.</p>';
@@ -466,7 +549,7 @@ function renderPlayerTopLists(players) {
         <a href="/?player=${encodeURIComponent(player.id || "")}#spelare" class="player-toplist-row">
           <span>${index + 1}</span>
           <strong>${escapeHtml(player.name)}</strong>
-          <em>${formatNumber(value)}</em>
+          <em>${escapeHtml(list.formatter(value))}</em>
         </a>
       `).join("")}
     </article>
@@ -474,22 +557,21 @@ function renderPlayerTopLists(players) {
 }
 
 function renderPlayerStatsTable(players) {
-  const statColumns = [
-    ["appearances", "M"], ["starts", "Start"], ["minutes", "Min"], ["goals", "Mål"], ["assists", "A"], ["yellowCards", "G"], ["redCards", "R"], ["rating", "Rat"], ["shots", "Skott"], ["shotsOnTarget", "SOT"], ["passAccuracyPct", "Pass%"], ["tackles", "Tack"], ["interceptions", "Int"], ["saves", "Rädd"]
-  ].filter(([key]) => players.some((player) => playerStat(player, key) !== null));
+  const statColumns = availablePlayerStatConfigs(players);
 
   return `<div class="player-stats-table-wrap">
     <table class="player-stats-table">
-      <thead><tr><th>Spelare</th><th>Pos</th><th>#</th><th>Ålder</th>${statColumns.map(([, label]) => `<th>${label}</th>`).join("")}</tr></thead>
+      <thead><tr><th>Spelare</th><th>Pos</th><th>#</th><th>Ålder</th>${statColumns.map((config) => `<th>${escapeHtml(config.short || config.label)}</th>`).join("")}</tr></thead>
       <tbody>${players.map((player) => `
         <tr>
           <td><a href="/?player=${encodeURIComponent(player.id || "")}#spelare">${escapeHtml(player.name)}</a></td>
           <td>${escapeHtml(positionSv(player.position))}</td>
           <td>${player.number || "-"}</td>
           <td>${player.age || "-"}</td>
-          ${statColumns.map(([key]) => {
-            const value = playerStat(player, key);
-            return `<td>${value === null ? "-" : key.includes("Pct") || key === "rating" ? formatDecimal(value, 1) : formatNumber(value)}</td>`;
+          ${statColumns.map((config) => {
+            const value = validatedPlayerStat(player, config);
+            const formatter = config.formatter || (config.options?.kind === "percentage" ? (v) => formatDecimal(v, 1) : formatNumber);
+            return `<td>${value === null ? "-" : escapeHtml(formatter(value))}</td>`;
           }).join("")}
         </tr>
       `).join("")}</tbody>
@@ -499,6 +581,15 @@ function renderPlayerStatsTable(players) {
 
 function renderPlayerStats(players) {
   if (!players.length) return '<p class="team-empty">Ingen spelarstatistik tillgänglig just nu.</p>';
+  const available = availablePlayerStatConfigs(players);
+  if (isTeamDebugMode()) {
+    console.log("TEAM PLAYER STATS MAPPING:", {
+      available: available.map((config) => config.key),
+      hidden: PLAYER_STAT_CONFIG.filter((config) => !available.includes(config)).map((config) => config.key),
+      sample: players.slice(0, 3).map((player) => ({ id: player.id, name: player.name, stats: player.stats }))
+    });
+  }
+  if (!available.length) return '<p class="team-empty">Spelarstatistik uppdateras snart. Truppen visas nedan.</p>';
   return `${renderPlayerTopLists(players)}${renderPlayerStatsTable(players)}`;
 }
 
@@ -536,7 +627,9 @@ async function hydrateSquadAndPlayerStats(teamId, snapshot) {
   try {
     const players = await loadSquad(teamId, snapshot);
     squadContainer.innerHTML = renderSquad(players);
-    if (playerStatsContainer) playerStatsContainer.innerHTML = renderPlayerStats(players);
+    if (playerStatsContainer && coverageAllows(currentTeamState?.team, "playerStatistics")) {
+      playerStatsContainer.innerHTML = renderPlayerStats(players);
+    }
     const count = document.getElementById("team-squad-count");
     if (count) count.textContent = players.length ? `${players.length} spelare` : "Uppdateras";
   } catch (error) {
@@ -570,6 +663,7 @@ function renderTeam(team, snapshot) {
   const latestMatches = LeagueData.getTeamRecentMatches(teamId, snapshot, 5);
   const upcomingMatches = LeagueData.getTeamUpcomingMatches(teamId, snapshot, 5);
   const form = LeagueData.getTeamForm(teamId, snapshot, 5);
+  const playerStatsSupported = coverageAllows(team, "playerStatistics");
   const facts = [["Stad", formatFact(team.city)], ["Arena", formatFact(team.venue?.name)], ["Arenakapacitet", formatCapacity(team.venue?.capacity)], ["Bildat", formatFact(team.founded)], ["Styrelseordförande", formatFact(team.chairman)], ["Sportchef", formatFact(team.sportingDirector)], ["Tränare", formatFact(team.coach)]];
 
   teamContent.innerHTML = `
@@ -603,7 +697,7 @@ function renderTeam(team, snapshot) {
 
     <section class="team-section" id="spelarstatistik">
       <div class="team-section-header"><h3>Spelarstatistik</h3><span>Interna topplistor</span></div>
-      <div id="team-player-stats-content">${cachedSquad ? renderPlayerStats(cachedSquad) : renderSquadSkeleton(4)}</div>
+      <div id="team-player-stats-content">${!playerStatsSupported ? '<p class="team-empty">Spelarstatistik stöds inte för den här säsongen ännu.</p>' : cachedSquad ? renderPlayerStats(cachedSquad) : renderSquadSkeleton(4)}</div>
     </section>
 
     <section class="team-section" id="trupp">
