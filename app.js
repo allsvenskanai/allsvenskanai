@@ -40,7 +40,7 @@ function teamLogoHtml(team, className = "team-logo") {
 
 function renderStandingsTable(rows) {
   if (!rows.length) {
-    standingsContent.innerHTML = emptyState("Ingen tabell tillgänglig just nu.");
+    standingsContent.innerHTML = emptyState("Ingen tabell tillgÃ¤nglig just nu.");
     return;
   }
 
@@ -273,7 +273,7 @@ function formatMatchDate(dateString) {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
-  }).replace(",", " •");
+  }).replace(",", " â€¢");
 }
 
 function matchCard(match, variant = "") {
@@ -326,7 +326,7 @@ function renderHero(rows, fixtures) {
         <strong>${Math.round(playedMatches)}</strong>
       </div>
       <div>
-        <span>M�l totalt</span>
+        <span>Mål totalt</span>
         <strong>${goals}</strong>
       </div>
     `;
@@ -339,13 +339,13 @@ function renderHero(rows, fixtures) {
     </div>
 
     <section class="dashboard-section next-match-feature hero-dashboard-main">
-      <h3>N�sta match</h3>
+      <h3>Nästa match</h3>
       ${
         nextMatch
           ? `
             <div class="next-match-teams">
               <span>${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")}</span>
-              <strong>mot</strong>
+              <strong>VS</strong>
               <span>${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}</span>
             </div>
             <p>${formatMatchDate(nextMatch.startingAt)}</p>
@@ -383,7 +383,7 @@ function renderHero(rows, fixtures) {
                   `
                 )
                 .join("")
-            : emptyState("Ingen tabell tillg�nglig")
+            : emptyState("Ingen tabell tillgänglig")
         }
       </div>
     </section>
@@ -392,7 +392,6 @@ function renderHero(rows, fixtures) {
       <h3>Skytteliga</h3>
       <div class="dashboard-skeleton-list">
         <span>Data uppdateras</span>
-        <i></i>
         <i></i>
       </div>
     </section>
@@ -405,16 +404,16 @@ function renderQuickStats(rows) {
   const bestDefense = [...rows].sort((a, b) => a.goalsAgainst - b.goalsAgainst).slice(0, 5);
 
   leagueSnapshotCard.innerHTML = `
-    <h3>Ligaläge</h3>
+    <h3>LigalÃ¤ge</h3>
     <div class="snapshot-grid">
       <div><span>Matcher</span><strong>${Math.round(playedMatches)}</strong></div>
-      <div><span>Mål</span><strong>${goals}</strong></div>
-      <div><span>Mål/match</span><strong>${playedMatches > 0 ? (goals / playedMatches).toFixed(2) : "0.00"}</strong></div>
+      <div><span>MÃ¥l</span><strong>${goals}</strong></div>
+      <div><span>MÃ¥l/match</span><strong>${playedMatches > 0 ? (goals / playedMatches).toFixed(2) : "0.00"}</strong></div>
     </div>
   `;
 
-  attackCard.innerHTML = listCard("Bästa anfall", bestAttack, (row) => `${row.goalsFor} mål`);
-  defenseCard.innerHTML = listCard("Bästa försvar", bestDefense, (row) => `${row.goalsAgainst} insläppta`);
+  attackCard.innerHTML = listCard("BÃ¤sta anfall", bestAttack, (row) => `${row.goalsFor} mÃ¥l`);
+  defenseCard.innerHTML = listCard("BÃ¤sta fÃ¶rsvar", bestDefense, (row) => `${row.goalsAgainst} inslÃ¤ppta`);
 }
 
 function listCard(title, rows, valueGetter) {
@@ -445,12 +444,12 @@ function renderTeams(rows) {
             <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="team-card">
               ${teamLogoHtml(team, "team-card-logo")}
               <strong>${escapeHtml(team.teamName)}</strong>
-              <span>${team.points} poäng</span>
+              <span>${team.points} poÃ¤ng</span>
             </a>
           `
         )
         .join("")
-    : emptyState("Inga lag tillgängliga just nu.");
+    : emptyState("Inga lag tillgÃ¤ngliga just nu.");
 }
 
 async function loadStandings() {
@@ -480,13 +479,13 @@ function renderFixtures(fixtures) {
   liveMatchesContent.innerHTML = live.length
     ? live.map((match) => matchCard(match, "live")).join("")
     : `
-      <div class="match-column-note">Nästa avspark</div>
+      <div class="match-column-note">NÃ¤sta avspark</div>
       ${liveFallback.length
         ? liveFallback.map((match) => matchCard(match, "soon")).join("")
         : emptyState("Inga matcher schemalagda just nu.")}
     `;
   renderMatchColumn(upcomingMatchesContent, upcoming, "Inga kommande matcher hittades.");
-  renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgängliga ännu.");
+  renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgÃ¤ngliga Ã¤nnu.");
 }
 
 async function renderLeagueContent() {
@@ -500,7 +499,7 @@ async function renderLeagueContent() {
     renderTeams(standings);
   } catch (error) {
     console.error(error);
-    const message = error?.message || "Något gick fel när startsidan skulle laddas.";
+    const message = error?.message || "NÃ¥got gick fel nÃ¤r startsidan skulle laddas.";
     heroHighlight.innerHTML = emptyState(message);
     standingsContent.innerHTML = emptyState(message);
     liveMatchesContent.innerHTML = emptyState(message);
