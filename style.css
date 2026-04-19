@@ -368,6 +368,76 @@ body {
   animation: squadSkeleton 1.4s ease-in-out infinite;
 }
 
+.top-scorer-list {
+  display: grid;
+  gap: 8px;
+}
+
+.top-scorer-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 13px;
+  padding: 8px;
+  background: rgba(255,255,255,0.025);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.top-scorer-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(224,184,79,0.26);
+  background: rgba(224,184,79,0.055);
+}
+
+.top-scorer-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(224,184,79,0.13);
+  color: #f4d779;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.top-scorer-main {
+  min-width: 0;
+}
+
+.top-scorer-main strong,
+.top-scorer-main small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-scorer-main strong {
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.top-scorer-main small {
+  color: #91a0ba;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.top-scorer-row em {
+  color: #e0b84f;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
 .dashboard-live-list,
 .dashboard-table-top {
   display: grid;
