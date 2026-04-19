@@ -1028,28 +1028,218 @@ body {
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: min(680px, 72vh);
+  padding: 2px 2px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224,184,79,0.36) rgba(255,255,255,0.045);
+}
+
+.table-wrap::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.035);
+  border-radius: 999px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(224,184,79,0.44), rgba(224,184,79,0.18));
+  border-radius: 999px;
+}
+
+.premium-table-wrap {
+  border-radius: 16px;
 }
 
 .standings-table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 700px;
+  border-collapse: separate;
+  border-spacing: 0 7px;
+  min-width: 820px;
 }
 
 .standings-table th,
 .standings-table td {
-  padding: 10px 8px;
+  padding: 13px 10px;
   text-align: left;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .standings-table th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   color: #b8c2d8;
-  font-size: 14px;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(8,13,23,0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .standings-table td {
   font-size: 14px;
+  color: #d8e1f2;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.046), rgba(255,255,255,0.022));
+  border-top: 1px solid rgba(255,255,255,0.055);
+  border-bottom: 1px solid rgba(255,255,255,0.035);
+  transition: background 190ms ease, border-color 190ms ease, transform 190ms ease, box-shadow 190ms ease;
+}
+
+.standings-row {
+  cursor: pointer;
+  position: relative;
+  transform: translateY(0);
+}
+
+.standings-row:hover {
+  transform: translateY(-2px);
+}
+
+.standings-row td:first-child {
+  border-left: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px 0 0 14px;
+}
+
+.standings-row td:last-child {
+  border-right: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0 14px 14px 0;
+}
+
+.standings-row:hover td {
+  background:
+    radial-gradient(circle at 12% 50%, rgba(224,184,79,0.09), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035));
+  border-color: rgba(224,184,79,0.22);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+}
+
+.standings-row.zone-top td:first-child {
+  box-shadow: inset 3px 0 0 rgba(67,220,132,0.62);
+}
+
+.standings-row.zone-bottom td:first-child {
+  box-shadow: inset 3px 0 0 rgba(239,91,91,0.58);
+}
+
+.standings-row.zone-mid td:first-child {
+  box-shadow: inset 3px 0 0 rgba(224,184,79,0.18);
+}
+
+.rank-col,
+.rank-cell {
+  width: 44px;
+  text-align: center;
+}
+
+.rank-cell span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(255,255,255,0.055);
+  font-weight: 900;
+}
+
+.team-cell {
+  min-width: 220px;
+}
+
+.team-cell-main {
+  min-width: 0;
+}
+
+.team-link {
+  color: #ffffff;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.team-link:hover {
+  color: #f4d675;
+}
+
+.standings-table td:not(.team-cell):not(.form-cell) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-diff {
+  font-weight: 900;
+}
+
+.goal-diff.positive {
+  color: #53df91;
+}
+
+.goal-diff.negative {
+  color: #ff7373;
+}
+
+.goal-diff.neutral {
+  color: #b8c2d8;
+}
+
+.points-col,
+.points-cell {
+  text-align: center;
+}
+
+.points-cell strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #07111c;
+  background: linear-gradient(135deg, #f0d37a, #d7aa39);
+  box-shadow: 0 8px 18px rgba(224,184,79,0.16);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.form-cell {
+  min-width: 94px;
+}
+
+.table-form {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.table-form.empty {
+  color: #6f7d95;
+}
+
+.table-form-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.045), 0 5px 12px rgba(0,0,0,0.18);
+}
+
+.table-form-dot.win {
+  background: #36d284;
+}
+
+.table-form-dot.draw {
+  background: #e0b84f;
+}
+
+.table-form-dot.loss {
+  background: #ef5b5b;
 }
 
 .fixtures-list {
