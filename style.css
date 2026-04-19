@@ -1027,27 +1027,9 @@ body {
 }
 
 .table-wrap {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: min(680px, 72vh);
-  padding: 2px 2px 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(224,184,79,0.36) rgba(255,255,255,0.045);
-}
-
-.table-wrap::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-}
-
-.table-wrap::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.035);
-  border-radius: 999px;
-}
-
-.table-wrap::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(224,184,79,0.44), rgba(224,184,79,0.18));
-  border-radius: 999px;
+  height: auto;
+  overflow: visible;
+  padding: 2px 0 4px;
 }
 
 .premium-table-wrap {
@@ -1057,14 +1039,16 @@ body {
 .standings-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 7px;
-  min-width: 820px;
+  border-spacing: 0 8px;
+  min-width: 0;
+  table-layout: auto;
 }
 
 .standings-table th,
 .standings-table td {
-  padding: 13px 10px;
+  padding: 13px 9px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .standings-table th {
@@ -1150,7 +1134,7 @@ body {
 }
 
 .team-cell {
-  min-width: 220px;
+  min-width: 190px;
 }
 
 .team-cell-main {
@@ -1471,7 +1455,62 @@ body {
   }
 
   .standings-table {
-    min-width: 620px;
+    min-width: 0;
+  }
+
+  .standings-table th,
+  .standings-table td {
+    padding: 10px 5px;
+    font-size: 12px;
+  }
+
+  .standings-table th {
+    font-size: 9px;
+    letter-spacing: 0.05em;
+  }
+
+  .rank-col,
+  .rank-cell {
+    width: 30px;
+  }
+
+  .rank-cell span {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .team-cell {
+    min-width: 130px;
+  }
+
+  .team-link {
+    font-size: 12px;
+  }
+
+  .team-cell .team-logo,
+  .team-cell .team-logo-placeholder {
+    width: 28px;
+    height: 28px;
+  }
+
+  .points-cell strong {
+    min-width: 28px;
+    padding: 5px 6px;
+    font-size: 13px;
+  }
+
+  .form-cell {
+    min-width: 64px;
+  }
+
+  .table-form {
+    gap: 4px;
+  }
+
+  .table-form-dot {
+    width: 8px;
+    height: 8px;
   }
 
   .fixture-row {
@@ -1482,6 +1521,39 @@ body {
   .fixture-team-left,
   .fixture-team-right {
     text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .standings-table th,
+  .standings-table td {
+    padding: 9px 3px;
+    font-size: 11px;
+  }
+
+  .standings-table th:nth-child(4),
+  .standings-table th:nth-child(5),
+  .standings-table th:nth-child(6),
+  .standings-table th:nth-child(7),
+  .standings-table th:nth-child(8),
+  .standings-table td:nth-child(4),
+  .standings-table td:nth-child(5),
+  .standings-table td:nth-child(6),
+  .standings-table td:nth-child(7),
+  .standings-table td:nth-child(8) {
+    display: none;
+  }
+
+  .team-cell {
+    min-width: 114px;
+  }
+
+  .team-link {
+    font-size: 11px;
+  }
+
+  .form-cell {
+    min-width: 54px;
   }
 }
 
