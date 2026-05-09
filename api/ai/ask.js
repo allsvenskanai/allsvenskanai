@@ -437,7 +437,7 @@ async function askOpenAI({ question, context }) {
   }
 }
 
-export default async function handler(req, res) {
+async function handleAsk(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Endast POST stöds." });
@@ -536,6 +536,25 @@ export default async function handler(req, res) {
       confidence: "low",
       usedData: [],
       warnings: [stage === "openai" ? "AI-anropet misslyckades." : "Datahämtningen misslyckades."]
+    });
+  }
+}
+
+export default async function handler(req, res) {
+  try {
+    return await handleAsk(req, res);
+  } catch (error) {
+    logServerEvent("unhandled endpoint error", {
+      message: error?.message,
+      stack: error?.stack
+    });
+    return res.status(500).json({
+      error: "AI-endpointen fick ett oväntat serverfel.",
+      details: clean(error?.message).slice(0, 240),
+      answer: "",
+      confidence: "low",
+      usedData: [],
+      warnings: ["Oväntat serverfel i AI-endpointen."]
     });
   }
 }
