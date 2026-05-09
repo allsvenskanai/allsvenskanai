@@ -137,13 +137,13 @@ async function loadTopScorers(league) {
   const params = new URLSearchParams({ league });
   if (season) params.set("season", season);
   params.set("debug", "1");
-  const endpoints = [`/api/scorers?${params.toString()}`, `/api/topscorers?${params.toString()}`];
+  const endpoints = [`/api/topscorers?${params.toString()}`];
 
   console.log("HOMEPAGE TOPSCORERS REQUEST:", {
     league,
     leagueId,
     season,
-    path: "/api/scorers",
+    path: "/api/topscorers",
     query: Object.fromEntries(params.entries()),
     endpoints
   });
