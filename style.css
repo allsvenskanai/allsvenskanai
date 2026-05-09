@@ -23,12 +23,12 @@ body {
 
 .header-inner {
   width: 100%;
-  min-height: 72px;
+  min-height: 128px;
   display: grid;
-  grid-template-columns: minmax(150px, 0.6fr) auto minmax(150px, 0.6fr);
+  grid-template-columns: minmax(330px, 0.8fr) auto minmax(150px, 0.8fr);
   align-items: center;
   gap: clamp(12px, 2vw, 24px);
-  padding: 0 clamp(16px, 4vw, 44px);
+  padding: 8px clamp(16px, 4vw, 44px);
 }
 
 .main-nav {
@@ -109,24 +109,24 @@ body {
   min-width: 0;
   line-height: 0;
   filter:
-    drop-shadow(0 3px 5px rgba(0,0,0,0.34))
-    drop-shadow(0 0 10px rgba(224,184,79,0.10));
+    drop-shadow(0 5px 9px rgba(0,0,0,0.42))
+    drop-shadow(0 0 18px rgba(224,184,79,0.13));
   transition: transform 180ms ease, filter 180ms ease;
 }
 
 .site-logo-link:hover {
   transform: translateY(-1px) scale(1.015);
   filter:
-    drop-shadow(0 4px 9px rgba(0,0,0,0.38))
-    drop-shadow(0 0 13px rgba(224,184,79,0.16));
+    drop-shadow(0 7px 13px rgba(0,0,0,0.46))
+    drop-shadow(0 0 22px rgba(224,184,79,0.18));
 }
 
 .site-logo {
   display: block;
-  width: clamp(210px, 18vw, 270px);
+  width: auto;
   max-width: 100%;
   height: auto;
-  max-height: 64px;
+  max-height: 116px;
   object-fit: contain;
   image-rendering: auto;
 }
@@ -1463,7 +1463,9 @@ body {
 @media (max-width: 1040px) {
   .header-inner {
     grid-template-columns: auto 1fr auto;
-    min-height: 68px;
+    min-height: 78px;
+    padding-top: 6px;
+    padding-bottom: 6px;
   }
 
   .main-nav {
@@ -1500,7 +1502,7 @@ body {
   .header-inner {
     position: relative;
     grid-template-columns: auto 1fr auto auto;
-    min-height: 64px;
+    min-height: 70px;
     padding: 0 16px;
     gap: 10px;
   }
@@ -1508,7 +1510,7 @@ body {
   .site-logo {
     width: clamp(150px, 42vw, 190px);
     height: auto;
-    max-height: 46px;
+    max-height: 54px;
   }
 
   .header-cta {
