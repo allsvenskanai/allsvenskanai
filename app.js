@@ -137,7 +137,7 @@ async function loadTopScorers(league) {
   const params = new URLSearchParams({ league });
   if (season) params.set("season", season);
   params.set("debug", "1");
-  const endpoint = `/api/scorers?${params.toString()}`;
+  const endpoints = [`/api/scorers?${params.toString()}`, `/api/topscorers?${params.toString()}`];
 
   console.log("HOMEPAGE TOPSCORERS REQUEST:", {
     league,
@@ -145,11 +145,14 @@ async function loadTopScorers(league) {
     season,
     path: "/api/scorers",
     query: Object.fromEntries(params.entries()),
-    endpoint
+    endpoints
   });
 
-  const request = fetch(endpoint)
-    .then(async (response) => {
+  const request = (async () => {
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+      const response = await fetch(endpoint);
       const rawText = await response.text();
       let data = {};
       try {
@@ -171,7 +174,8 @@ async function loadTopScorers(league) {
 
       if (!response.ok) {
         const message = data?.details || data?.error || `HTTP ${response.status}`;
-        console.error("HOMEPAGE TOPSCORERS HTTP ERROR:", {
+        lastError = new Error(message);
+        console.warn("HOMEPAGE TOPSCORERS HTTP ERROR:", {
           league,
           leagueId,
           season,
@@ -180,11 +184,12 @@ async function loadTopScorers(league) {
           message,
           raw: data
         });
-        throw new Error(message);
+        continue;
       }
 
       if (!Array.isArray(data?.data)) {
-        console.error("HOMEPAGE TOPSCORERS MAPPING ERROR:", {
+        lastError = new Error("Ogiltigt skytteligasvar.");
+        console.warn("HOMEPAGE TOPSCORERS MAPPING ERROR:", {
           league,
           leagueId,
           season,
@@ -192,7 +197,7 @@ async function loadTopScorers(league) {
           expected: "data[]",
           raw: data
         });
-        throw new Error("Ogiltigt skytteligasvar.");
+        continue;
       }
 
       if (data.data.length === 0) {
@@ -225,17 +230,27 @@ async function loadTopScorers(league) {
 
       scorerCache.set(key, { fetchedAt: Date.now(), data: scorers });
       return scorers;
-    })
+    }
+
+    console.warn("HOMEPAGE TOPSCORERS FALLBACK EMPTY:", {
+      league,
+      leagueId,
+      season,
+      message: lastError?.message || "Skytteligan kunde inte hämtas."
+    });
+    scorerCache.set(key, { fetchedAt: Date.now(), data: [] });
+    return [];
+  })()
     .catch((error) => {
       console.error("HOMEPAGE TOPSCORERS FETCH THROWN ERROR:", {
         league,
         leagueId,
         season,
-        endpoint,
+        endpoints,
         message: error?.message,
         error
       });
-      throw error;
+      return [];
     })
     .finally(() => scorerInFlight.delete(key));
 
