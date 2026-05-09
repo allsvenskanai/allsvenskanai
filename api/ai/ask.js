@@ -20,16 +20,33 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function logServerEvent(event, details = {}) {
+  console.error(`[api/ai/ask] ${event}`, details);
+}
+
 function readBody(req) {
-  if (!req.body) return {};
+  if (!req.body) return { body: {}, invalidBody: false };
   if (typeof req.body === "string") {
     try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
+      return { body: JSON.parse(req.body), invalidBody: false };
+    } catch (error) {
+      logServerEvent("invalid request body", { message: error.message });
+      return { body: {}, invalidBody: true };
     }
   }
-  return req.body;
+  if (typeof req.body !== "object") {
+    logServerEvent("invalid request body", { bodyType: typeof req.body });
+    return { body: {}, invalidBody: true };
+  }
+  return { body: req.body, invalidBody: false };
+}
+
+function safeCacheSet(key, value) {
+  try {
+    answerCache.set(key, { fetchedAt: Date.now(), value });
+  } catch (error) {
+    logServerEvent("data fetch/cache error", { stage: "answerCache.set", message: error.message });
+  }
 }
 
 function getClientKey(req) {
@@ -201,20 +218,25 @@ function normalizeTeamStats(payload) {
 }
 
 async function sportmonksFetch(path, token) {
-  const response = await fetch(`https://api.sportmonks.com/v3/football${path}`, {
-    headers: {
-      Accept: "application/json",
-      Authorization: token
-    }
-  });
-  const text = await response.text();
-  let payload = {};
   try {
-    payload = text ? JSON.parse(text) : {};
-  } catch {
-    payload = { raw: text };
+    const response = await fetch(`https://api.sportmonks.com/v3/football${path}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: token
+      }
+    });
+    const text = await response.text();
+    let payload = {};
+    try {
+      payload = text ? JSON.parse(text) : {};
+    } catch {
+      payload = { raw: text };
+    }
+    return { response, payload, text };
+  } catch (error) {
+    logServerEvent("data fetch/cache error", { stage: "sportmonksFetch", path, message: error.message });
+    throw error;
   }
-  return { response, payload, text };
 }
 
 function findMentionedTeams(question, standings) {
@@ -260,6 +282,12 @@ async function buildFootballContext({ question, league, seasonId, token }) {
     if (standings.length) usedData.push("standings");
     else warnings.push("Tabellunderlag saknas.");
   } else {
+    logServerEvent("data fetch/cache error", {
+      stage: "standings",
+      status: standingsResult.status,
+      httpStatus: standingsResult.value?.response?.status,
+      message: standingsResult.reason?.message || standingsResult.value?.payload?.message || standingsResult.value?.text
+    });
     warnings.push("Tabellen kunde inte hämtas från datakällan.");
   }
 
@@ -268,6 +296,12 @@ async function buildFootballContext({ question, league, seasonId, token }) {
     if (fixtures.length) usedData.push("fixtures");
     else warnings.push("Matchunderlag saknas.");
   } else {
+    logServerEvent("data fetch/cache error", {
+      stage: "fixtures",
+      status: fixturesResult.status,
+      httpStatus: fixturesResult.value?.response?.status,
+      message: fixturesResult.reason?.message || fixturesResult.value?.payload?.message || fixturesResult.value?.text
+    });
     warnings.push("Matcher kunde inte hämtas från datakällan.");
   }
 
@@ -277,6 +311,12 @@ async function buildFootballContext({ question, league, seasonId, token }) {
       const path = `/statistics/seasons/teams/${encodeURIComponent(team.teamId)}?include=details.type&filters=teamStatisticSeasons:${encodeURIComponent(seasonId)}&per_page=50`;
       const result = await sportmonksFetch(path, token);
       if (!result.response.ok) {
+        logServerEvent("data fetch/cache error", {
+          stage: "team_stats",
+          teamId: team.teamId,
+          httpStatus: result.response.status,
+          message: result.payload?.message || result.payload?.error || result.text
+        });
         warnings.push(`Lagstatistik kunde inte hämtas för ${team.teamName}.`);
         return;
       }
@@ -404,12 +444,9 @@ export default async function handler(req, res) {
   }
 
   if (!process.env.OPENAI_API_KEY) {
+    logServerEvent("missing OPENAI_API_KEY");
     return res.status(500).json({
-      error: "OPENAI_API_KEY saknas på servern.",
-      answer: "",
-      confidence: "low",
-      usedData: [],
-      warnings: ["OPENAI_API_KEY saknas på servern."]
+      error: "OPENAI_API_KEY saknas på servern"
     });
   }
 
@@ -423,7 +460,16 @@ export default async function handler(req, res) {
     });
   }
 
-  const body = readBody(req);
+  const { body, invalidBody } = readBody(req);
+  if (invalidBody) {
+    return res.status(400).json({
+      error: "Ogiltig JSON i request body.",
+      answer: "",
+      confidence: "low",
+      usedData: [],
+      warnings: ["Ogiltig request body."]
+    });
+  }
   const question = clean(body?.question);
   const league = ["allsvenskan", "damallsvenskan"].includes(String(body?.league || "").toLowerCase())
     ? String(body.league).toLowerCase()
@@ -432,6 +478,7 @@ export default async function handler(req, res) {
   const seasonId = Number.isFinite(requestedSeason) && requestedSeason > 10000 ? requestedSeason : SEASONS[league] || SEASONS.allsvenskan;
 
   if (!question) {
+    logServerEvent("invalid request body", { reason: "empty question" });
     return res.status(400).json({
       error: "Frågan får inte vara tom.",
       answer: "",
@@ -442,6 +489,7 @@ export default async function handler(req, res) {
   }
 
   if (question.length > 500) {
+    logServerEvent("invalid request body", { reason: "question too long", length: question.length });
     return res.status(400).json({
       error: "Frågan får vara max 500 tecken.",
       answer: "",
@@ -460,31 +508,34 @@ export default async function handler(req, res) {
   const sportmonksToken = process.env.SPORTMONKS_API_TOKEN;
   if (!sportmonksToken) {
     const value = fallbackAnswer("Sportmonks-nyckeln saknas, så AllsvenskanAI har inget statistiskt underlag att analysera.", ["SPORTMONKS_API_TOKEN saknas på servern."]);
-    answerCache.set(cacheKey, { fetchedAt: Date.now(), value });
+    safeCacheSet(cacheKey, value);
     return res.status(200).json(value);
   }
 
+  let stage = "data";
   try {
     const context = await buildFootballContext({ question, league, seasonId, token: sportmonksToken });
 
     if (!context.usedData.length) {
       const value = fallbackAnswer("Underlaget saknas för den här frågan just nu.", context.warnings);
-      answerCache.set(cacheKey, { fetchedAt: Date.now(), value });
+      safeCacheSet(cacheKey, value);
       return res.status(200).json(value);
     }
 
+    stage = "openai";
     const aiPayload = await askOpenAI({ question, context });
     const value = normalizeAiPayload(aiPayload, context.usedData, context.warnings);
-    answerCache.set(cacheKey, { fetchedAt: Date.now(), value });
+    safeCacheSet(cacheKey, value);
     return res.status(200).json(value);
   } catch (error) {
+    logServerEvent(stage === "openai" ? "OpenAI error" : "data fetch/cache error", { stage, message: error.message });
     return res.status(500).json({
-      error: "AI-analysen kunde inte skapas.",
-      details: error.message,
+      error: stage === "openai" ? "AI-anropet misslyckades." : "Underlaget kunde inte hämtas.",
+      details: clean(error.message).slice(0, 240),
       answer: "",
       confidence: "low",
       usedData: [],
-      warnings: [error.message]
+      warnings: [stage === "openai" ? "AI-anropet misslyckades." : "Datahämtningen misslyckades."]
     });
   }
 }
