@@ -2426,3 +2426,308 @@ body {
     align-items: flex-start;
   }
 }
+
+/* Homepage premium refresh */
+body {
+  background:
+    radial-gradient(circle at 50% -18%, rgba(224,184,79,0.16), transparent 34rem),
+    linear-gradient(180deg, #07101d 0%, #0b1220 42%, #070d17 100%);
+}
+
+.home-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 18px;
+}
+
+.hero-section { order: 1; }
+.home-league-toggle { order: 2; }
+#tabell { order: 3; }
+#matcher { order: 4; }
+#fraga-ai { order: 5; }
+#lag { order: 6; }
+#statistik { order: 7; }
+#overgangar { order: 8; }
+
+.hero-section,
+.table-stats-layout,
+.match-center-grid,
+.stats-feature-grid,
+.teams-grid {
+  gap: 16px;
+}
+
+.hero-copy,
+.hero-panel,
+.section-block,
+.data-card,
+.stats-hub,
+.footer-cta {
+  border-color: rgba(255,255,255,0.10);
+  background:
+    linear-gradient(180deg, rgba(19,30,49,0.92), rgba(8,14,25,0.96));
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.hero-copy {
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(224,184,79,0.18), transparent 20rem),
+    linear-gradient(135deg, rgba(255,255,255,0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(18,30,50,0.98), rgba(7,13,24,0.98));
+  background-size: auto, 26px 26px, auto;
+}
+
+.hero-copy h1,
+.section-heading h2,
+.stats-hub h2,
+.footer-cta h2 {
+  letter-spacing: 0;
+}
+
+.hero-copy h1 {
+  max-width: 760px;
+  font-size: clamp(42px, 64px, 72px);
+  line-height: 1;
+}
+
+.hero-text {
+  max-width: 560px;
+  color: #d7deea;
+  font-size: 18px;
+}
+
+.hero-actions .primary-action,
+.hero-actions .secondary-action,
+.ai-ask-actions .primary-action {
+  min-height: 48px;
+  padding: 0 22px;
+}
+
+.primary-action {
+  border: 1px solid rgba(255,255,255,0.12);
+  background:
+    linear-gradient(180deg, #f4d779, #d7a936);
+  box-shadow: 0 14px 28px rgba(224,184,79,0.18);
+}
+
+.secondary-action {
+  background: rgba(255,255,255,0.065);
+}
+
+.hero-panel {
+  align-content: start;
+  border-color: rgba(224,184,79,0.16);
+}
+
+.dashboard-header {
+  background:
+    linear-gradient(135deg, rgba(224,184,79,0.16), rgba(255,255,255,0.04));
+}
+
+.next-match-feature {
+  border-color: rgba(224,184,79,0.24);
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+.premium-table-wrap {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.075);
+  background: rgba(4,9,17,0.26);
+}
+
+.standings-table {
+  font-size: 13px;
+}
+
+.standings-table th {
+  color: #8f9bb0;
+  background: rgba(255,255,255,0.035);
+}
+
+.standings-table th,
+.standings-table td {
+  padding: 10px 9px;
+}
+
+.standings-row.zone-top td:first-child {
+  box-shadow: inset 3px 0 0 rgba(224,184,79,0.82);
+}
+
+.standings-row.zone-top {
+  background: linear-gradient(90deg, rgba(224,184,79,0.075), transparent 44%);
+}
+
+.team-logo,
+.team-logo-placeholder,
+.match-team-logo {
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.match-card {
+  min-height: 86px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.024));
+}
+
+.match-score-block strong {
+  font-size: 20px;
+}
+
+.match-score-block small span {
+  color: #f4d779;
+  font-weight: 900;
+}
+
+.ai-ask-section {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(22px, 30px, 34px);
+  border-color: rgba(224,184,79,0.20);
+  background:
+    radial-gradient(circle at 85% 0%, rgba(75,121,255,0.16), transparent 19rem),
+    radial-gradient(circle at 12% 0%, rgba(224,184,79,0.16), transparent 18rem),
+    linear-gradient(180deg, rgba(18,30,50,0.98), rgba(7,13,24,0.98));
+}
+
+.ai-ask-section .section-heading {
+  margin-bottom: 16px;
+}
+
+.ai-ask-form textarea {
+  min-height: 128px;
+  border-radius: 18px;
+  border-color: rgba(224,184,79,0.22);
+  background: rgba(4,9,17,0.42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.ai-example-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.ai-example-chips button {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #dfe7f5;
+  background: rgba(255,255,255,0.055);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.ai-example-chips button:hover,
+.ai-example-chips button:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(224,184,79,0.42);
+  background: rgba(224,184,79,0.10);
+  outline: none;
+}
+
+.ai-answer-card {
+  border-color: rgba(224,184,79,0.14);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
+}
+
+.ai-answer-grid section {
+  background: rgba(4,9,17,0.42);
+}
+
+.ai-answer-grid ul,
+.ai-answer-grid dl {
+  margin: 0;
+  color: #c6d0e2;
+  line-height: 1.55;
+}
+
+.ai-answer-grid ul {
+  padding-left: 18px;
+}
+
+.ai-answer-grid dl div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.45fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.ai-answer-grid dl div:last-child {
+  border-bottom: 0;
+}
+
+.ai-answer-grid dt {
+  color: #f4d779;
+  font-weight: 900;
+}
+
+.ai-answer-grid dd {
+  margin: 0;
+}
+
+.quick-stats-stack .data-card {
+  border-radius: 18px;
+}
+
+.mini-row,
+.top-scorer-row,
+.dashboard-team-row {
+  border: 1px solid rgba(255,255,255,0.065);
+}
+
+@media (min-width: 1041px) {
+  .home-shell {
+    gap: 22px;
+  }
+
+  .hero-section {
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
+  }
+
+  .match-center-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-copy {
+    min-height: 0;
+  }
+
+  .hero-copy h1 {
+    font-size: 42px;
+  }
+
+  .hero-mini-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-example-chips {
+    display: grid;
+  }
+
+  .ai-example-chips button {
+    text-align: left;
+  }
+
+  .ai-answer-grid dl div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
