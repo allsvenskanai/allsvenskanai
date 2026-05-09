@@ -123,10 +123,10 @@ body {
 
 .site-logo {
   display: block;
-  width: auto;
+  width: clamp(210px, 18vw, 270px);
   max-width: 100%;
-  height: 58px;
-  max-height: 58px;
+  height: auto;
+  max-height: 64px;
   object-fit: contain;
   image-rendering: auto;
 }
@@ -1506,9 +1506,9 @@ body {
   }
 
   .site-logo {
-    width: auto;
-    height: 42px;
-    max-height: 42px;
+    width: clamp(150px, 42vw, 190px);
+    height: auto;
+    max-height: 46px;
   }
 
   .header-cta {
