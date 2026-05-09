@@ -360,6 +360,38 @@ function fallbackAnswer(message, warnings = []) {
   };
 }
 
+function formatAiText(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => `- ${formatAiInlineText(item)}`)
+      .join("\n");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value)
+      .filter(([, entryValue]) => entryValue !== null && entryValue !== undefined && entryValue !== "")
+      .map(([key, entryValue]) => `- ${formatAiLabel(key)}: ${formatAiInlineText(entryValue)}`)
+      .join("\n");
+  }
+  return clean(value);
+}
+
+function formatAiInlineText(value) {
+  if (Array.isArray(value)) return value.map(formatAiInlineText).join(", ");
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, entryValue]) => `${formatAiLabel(key)}: ${formatAiInlineText(entryValue)}`)
+      .join("; ");
+  }
+  return clean(value);
+}
+
+function formatAiLabel(key) {
+  return String(key || "")
+    .replaceAll("_", " ")
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
 function normalizeAiPayload(payload, usedData, warnings) {
   const confidence = ["low", "medium", "high"].includes(payload?.confidence) ? payload.confidence : usedData.length >= 2 ? "medium" : "low";
   const sections = payload?.sections || {};
@@ -369,7 +401,7 @@ function normalizeAiPayload(payload, usedData, warnings) {
     ["Statistik som stöd", sections.statistics || payload?.statistics],
     ["Osäkerheter", sections.uncertainties || payload?.uncertainties || warnings.join(" ")]
   ]
-    .map(([title, text]) => `${title}\n${clean(text) || "Underlag saknas."}`)
+    .map(([title, text]) => `${title}\n${formatAiText(text) || "Underlag saknas."}`)
     .join("\n\n");
 
   return {
