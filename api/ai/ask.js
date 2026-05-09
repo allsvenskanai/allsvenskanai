@@ -417,7 +417,10 @@ async function askOpenAI({ question, context }) {
   }
 
   if (!response.ok) {
-    throw new Error(payload?.error?.message || payload?.error || text || "OpenAI-anropet misslyckades.");
+    const error = new Error(payload?.error?.message || payload?.error || text || "OpenAI-anropet misslyckades.");
+    error.status = response.status;
+    error.code = payload?.error?.code || payload?.error?.type || "";
+    throw error;
   }
 
   const content = payload?.choices?.[0]?.message?.content || "{}";
@@ -437,6 +440,32 @@ async function askOpenAI({ question, context }) {
   }
 }
 
+function openAiPublicError(error) {
+  const raw = clean(`${error?.code || ""} ${error?.message || ""}`).toLowerCase();
+
+  if (raw.includes("quota") || raw.includes("billing") || raw.includes("insufficient_quota")) {
+    return {
+      status: 503,
+      error: "OpenAI-kvoten är slut eller billing saknas.",
+      warning: "OpenAI-kvoten är slut eller billing saknas på serverkontot."
+    };
+  }
+
+  if (raw.includes("rate limit") || error?.status === 429) {
+    return {
+      status: 429,
+      error: "AI-tjänsten är tillfälligt överbelastad. Försök igen snart.",
+      warning: "OpenAI rate limit nåddes."
+    };
+  }
+
+  return {
+    status: 500,
+    error: "AI-anropet misslyckades.",
+    warning: "AI-anropet misslyckades."
+  };
+}
+
 async function handleAsk(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -445,7 +474,7 @@ async function handleAsk(req, res) {
 
   if (!process.env.OPENAI_API_KEY) {
     logServerEvent("missing OPENAI_API_KEY");
-    return res.status(500).json({
+    return res.status(publicOpenAiError?.status || 500).json({
       error: "OPENAI_API_KEY saknas på servern"
     });
   }
@@ -529,13 +558,14 @@ async function handleAsk(req, res) {
     return res.status(200).json(value);
   } catch (error) {
     logServerEvent(stage === "openai" ? "OpenAI error" : "data fetch/cache error", { stage, message: error.message });
+    const publicOpenAiError = stage === "openai" ? openAiPublicError(error) : null;
     return res.status(500).json({
-      error: stage === "openai" ? "AI-anropet misslyckades." : "Underlaget kunde inte hämtas.",
-      details: clean(error.message).slice(0, 240),
+      error: publicOpenAiError?.error || "Underlaget kunde inte hämtas.",
+      details: publicOpenAiError?.warning || clean(error.message).slice(0, 240),
       answer: "",
       confidence: "low",
       usedData: [],
-      warnings: [stage === "openai" ? "AI-anropet misslyckades." : "Datahämtningen misslyckades."]
+      warnings: [publicOpenAiError?.warning || "Datahämtningen misslyckades."]
     });
   }
 }
