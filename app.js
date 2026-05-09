@@ -99,6 +99,24 @@ function renderAiError(message) {
   aiAnswer.innerHTML = `<div class="ai-answer-card ai-error"><strong>Kunde inte analysera frågan</strong><p>${escapeHtml(message)}</p></div>`;
 }
 
+async function readApiJson(response) {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("AI ASK INVALID JSON RESPONSE:", {
+      status: response.status,
+      text,
+      message: error?.message
+    });
+    return {
+      error: "Servern svarade inte med giltig JSON."
+    };
+  }
+}
+
 function updateAiQuestionCount() {
   if (!aiQuestionInput || !aiQuestionCount) return;
   aiQuestionCount.textContent = `${aiQuestionInput.value.length}/500`;
@@ -883,14 +901,23 @@ if (aiAskForm) {
           season: 2026
         })
       });
-      const data = await response.json().catch(() => ({}));
+      const data = await readApiJson(response);
 
       if (!response.ok) {
+        console.error("AI ASK HTTP ERROR:", {
+          status: response.status,
+          statusText: response.statusText,
+          payload: data
+        });
         throw new Error(data?.error || data?.details || "Något gick fel när analysen skulle skapas.");
       }
 
       renderAiAnswer(data);
     } catch (error) {
+      console.error("AI ASK FAILED:", {
+        message: error?.message,
+        error
+      });
       renderAiError(error?.message || "Något gick fel när analysen skulle skapas.");
     } finally {
       submitButton.disabled = false;
