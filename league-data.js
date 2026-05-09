@@ -43,10 +43,46 @@
   }
 
   function safeWriteStorage(key, value) {
+    const cacheValue = compactStorageValue(value);
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key, JSON.stringify(cacheValue));
     } catch (error) {
+      if (error?.name === "QuotaExceededError") {
+        pruneAppStorage(key);
+        try {
+          localStorage.setItem(key, JSON.stringify(cacheValue));
+          return;
+        } catch (retryError) {
+          console.info("Webbläsarens cache är full. AllsvenskanAI fortsätter med minnescache.", {
+            key,
+            message: retryError?.message
+          });
+          return;
+        }
+      }
       console.warn("Kunde inte spara cache", key, error);
+    }
+  }
+
+  function compactStorageValue(value) {
+    if (!value || typeof value !== "object") return value;
+    if (value.leagueKey && Array.isArray(value.standings) && Array.isArray(value.fixtures)) {
+      const { derived, teams, ...rest } = value;
+      return rest;
+    }
+    return value;
+  }
+
+  function pruneAppStorage(keepKey) {
+    try {
+      const keys = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith("aai:") && key !== keepKey) keys.push(key);
+      }
+      keys.forEach((key) => localStorage.removeItem(key));
+    } catch (error) {
+      console.info("Kunde inte rensa äldre AllsvenskanAI-cache.", error);
     }
   }
 
