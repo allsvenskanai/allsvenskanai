@@ -38,14 +38,13 @@
     <section class="hero-section">
       <div class="hero-copy">
         <p class="eyebrow">AllsvenskanAI</p>
-        <h1>Svensk elitfotboll, samlad i realtid.</h1>
+        <h1>Allsvenskan 2026 med AI-analys</h1>
         <p class="hero-text">
-          F&ouml;lj tabeller, matcher, klubbar och statistik f&ouml;r Allsvenskan och Damallsvenskan - snabbt, tydligt och byggt f&ouml;r matchdag.
+          Tabeller, matcher, form, statistik och smarta analyser p&aring; svenska.
         </p>
         <div class="hero-actions">
-          <a href="#tabell" class="primary-action">Se tabellen</a>
-          <a href="#matcher" class="secondary-action">Se matcher</a>
-          <a href="#statistik" class="secondary-action">Utforska statistik</a>
+          <a href="#fraga-ai" class="primary-action">Fr&aring;ga AllsvenskanAI</a>
+          <a href="#tabell" class="secondary-action">Se tabellen</a>
         </div>
         <div class="hero-mini-stats" id="hero-mini-stats"></div>
       </div>
@@ -76,6 +75,11 @@
           rows="3"
           placeholder="Fr&aring;ga t.ex. varf&ouml;r Malm&ouml; FF sl&auml;pper in m&aring;l sent i matcherna&hellip;"
         ></textarea>
+        <div class="ai-example-chips" aria-label="Exempelfr&aring;gor">
+          <button type="button" data-question="Varf&ouml;r ligger Hammarby tv&aring;a?">Varf&ouml;r ligger Hammarby tv&aring;a?</button>
+          <button type="button" data-question="Analysera Malm&ouml; FF:s form">Analysera Malm&ouml; FF:s form</button>
+          <button type="button" data-question="Vilket lag har b&auml;st defensiv?">Vilket lag har b&auml;st defensiv?</button>
+        </div>
         <div class="ai-ask-actions">
           <span id="ai-question-count">0/500</span>
           <button type="submit" class="primary-action">Analysera</button>
@@ -122,6 +126,7 @@
 
       <aside class="quick-stats-stack">
         <div class="data-card" id="league-snapshot-card"></div>
+        <div class="data-card" id="top-scorers-card"></div>
         <div class="data-card" id="attack-card"></div>
         <div class="data-card" id="defense-card"></div>
       </aside>
