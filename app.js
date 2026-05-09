@@ -9,8 +9,13 @@ const teamsGrid = document.getElementById("teams-grid");
 const leagueSnapshotCard = document.getElementById("league-snapshot-card");
 const attackCard = document.getElementById("attack-card");
 const defenseCard = document.getElementById("defense-card");
+const aiAskForm = document.getElementById("ai-ask-form");
+const aiQuestionInput = document.getElementById("ai-question");
+const aiQuestionCount = document.getElementById("ai-question-count");
+const aiAnswer = document.getElementById("ai-answer");
 
 let currentLeague = "allsvenskan";
+let latestLeagueSnapshot = null;
 const scorerCache = new Map();
 const scorerInFlight = new Map();
 const SCORER_TTL = 10 * 60 * 1000;
@@ -40,6 +45,65 @@ function emptyState(text) {
   return `<p class="empty-state">${text}</p>`;
 }
 
+function answerSection(answer, title) {
+  const pattern = new RegExp(`${title}\\s*\\n([\\s\\S]*?)(?=\\n\\n(?:Slutsats|Analys|Statistik som st(?:ö|o)d|Os(?:ä|a)kerheter)\\s*\\n|$)`, "i");
+  const match = String(answer || "").match(pattern);
+  return match ? match[1].trim() : "";
+}
+
+function confidenceLabel(confidence) {
+  if (confidence === "high") return "Hög";
+  if (confidence === "medium") return "Medel";
+  return "Låg";
+}
+
+function renderAiAnswer(data) {
+  const answer = data?.answer || "";
+  const sections = [
+    ["Slutsats", answerSection(answer, "Slutsats")],
+    ["Analys", answerSection(answer, "Analys")],
+    ["Statistik som stöd", answerSection(answer, "Statistik som st(?:ö|o)d")],
+    ["Osäkerheter", answerSection(answer, "Os(?:ä|a)kerheter")]
+  ];
+  const warnings = Array.isArray(data?.warnings) ? data.warnings.filter(Boolean) : [];
+  const usedData = Array.isArray(data?.usedData) ? data.usedData : [];
+
+  aiAnswer.innerHTML = `
+    <article class="ai-answer-card">
+      <div class="ai-answer-meta">
+        <span>Säkerhet: ${confidenceLabel(data?.confidence)}</span>
+        <span>Underlag: ${usedData.length ? usedData.map(escapeHtml).join(", ") : "saknas"}</span>
+      </div>
+      <div class="ai-answer-grid">
+        ${sections
+          .map(
+            ([title, text]) => `
+              <section>
+                <h3>${escapeHtml(title)}</h3>
+                <p>${escapeHtml(text || "Underlag saknas.")}</p>
+              </section>
+            `
+          )
+          .join("")}
+      </div>
+      ${
+        warnings.length
+          ? `<div class="ai-warnings"><strong>Varningar</strong><p>${warnings.map(escapeHtml).join(" ")}</p></div>`
+          : ""
+      }
+    </article>
+  `;
+}
+
+function renderAiError(message) {
+  aiAnswer.innerHTML = `<div class="ai-answer-card ai-error"><strong>Kunde inte analysera frågan</strong><p>${escapeHtml(message)}</p></div>`;
+}
+
+function updateAiQuestionCount() {
+  if (!aiQuestionInput || !aiQuestionCount) return;
+  aiQuestionCount.textContent = `${aiQuestionInput.value.length}/500`;
+}
+
 function scorerCacheKey(league) {
   const season = window.LeagueData?.LEAGUES?.[league]?.season || "2026";
   return `${league}:${season}`;
@@ -61,43 +125,86 @@ async function loadTopScorers(league) {
   const cached = scorerCache.get(key);
 
   if (cached?.fetchedAt && Date.now() - cached.fetchedAt < SCORER_TTL) {
+    console.log("HOMEPAGE TOPSCORERS CACHE HIT:", { league, leagueId, season, key, scorers: cached.data });
     return cached.data;
   }
 
   if (scorerInFlight.has(key)) {
+    console.log("HOMEPAGE TOPSCORERS IN-FLIGHT REUSE:", { league, leagueId, season, key });
     return scorerInFlight.get(key);
   }
 
   const params = new URLSearchParams({ league });
   if (season) params.set("season", season);
-  if (isDebugMode()) params.set("debug", "1");
+  params.set("debug", "1");
   const endpoint = `/api/scorers?${params.toString()}`;
 
-  if (isDebugMode()) {
-    console.log("Top scorers request", {
-      league,
-      leagueId,
-      season,
-      endpoint
-    });
-  }
+  console.log("HOMEPAGE TOPSCORERS REQUEST:", {
+    league,
+    leagueId,
+    season,
+    path: "/api/scorers",
+    query: Object.fromEntries(params.entries()),
+    endpoint
+  });
 
   const request = fetch(endpoint)
     .then(async (response) => {
-      const data = await response.json().catch(() => ({}));
-      if (isDebugMode()) {
-        console.log("Top scorers response", {
+      const rawText = await response.text();
+      let data = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch (parseError) {
+        data = { raw: rawText, parseError: parseError.message };
+      }
+
+      console.log("HOMEPAGE TOPSCORERS RAW RESPONSE:", {
+        league,
+        leagueId,
+        season,
+        endpoint,
+        ok: response.ok,
+        status: response.status,
+        rawText,
+        raw: data
+      });
+
+      if (!response.ok) {
+        const message = data?.details || data?.error || `HTTP ${response.status}`;
+        console.error("HOMEPAGE TOPSCORERS HTTP ERROR:", {
           league,
           leagueId,
           season,
           endpoint,
-          ok: response.ok,
           status: response.status,
+          message,
+          raw: data
+        });
+        throw new Error(message);
+      }
+
+      if (!Array.isArray(data?.data)) {
+        console.error("HOMEPAGE TOPSCORERS MAPPING ERROR:", {
+          league,
+          leagueId,
+          season,
+          endpoint,
+          expected: "data[]",
+          raw: data
+        });
+        throw new Error("Ogiltigt skytteligasvar.");
+      }
+
+      if (data.data.length === 0) {
+        console.warn("HOMEPAGE TOPSCORERS EMPTY API RESPONSE:", {
+          league,
+          leagueId,
+          season,
+          endpoint,
           raw: data
         });
       }
-      if (!response.ok) throw new Error(data?.details || data?.error || "Skytteligan kunde inte hämtas just nu.");
-      if (!Array.isArray(data?.data)) throw new Error("Ogiltigt skytteligasvar.");
+
       const scorers = data.data
         .map((scorer) => ({
           ...scorer,
@@ -106,21 +213,40 @@ async function loadTopScorers(league) {
         .filter((scorer) => scorer.playerName && scorer.goals > 0)
         .sort((a, b) => b.goals - a.goals)
         .slice(0, 3);
+
+      console.log("HOMEPAGE TOPSCORERS MAPPED BEFORE RENDER:", {
+        league,
+        leagueId,
+        season,
+        endpoint,
+        mappedCount: scorers.length,
+        scorers
+      });
+
       scorerCache.set(key, { fetchedAt: Date.now(), data: scorers });
-      if (isDebugMode()) {
-        console.log("Top scorers mapped", { league, leagueId, season, scorers });
-      }
       return scorers;
+    })
+    .catch((error) => {
+      console.error("HOMEPAGE TOPSCORERS FETCH THROWN ERROR:", {
+        league,
+        leagueId,
+        season,
+        endpoint,
+        message: error?.message,
+        error
+      });
+      throw error;
     })
     .finally(() => scorerInFlight.delete(key));
 
   scorerInFlight.set(key, request);
   return request;
 }
-
 function renderTopScorersRows(scorers) {
+  console.log("HOMEPAGE TOPSCORERS RENDER INPUT:", { scorers });
+
   if (!scorers.length) {
-    return emptyState("Ingen skytteligadata tillgänglig just nu.");
+    return emptyState("Ingen skytteligadata tillg\u00e4nglig just nu.");
   }
 
   return `
@@ -135,7 +261,7 @@ function renderTopScorersRows(scorers) {
                 <strong>${escapeHtml(scorer.playerName)}</strong>
                 <small>${escapeHtml(formatTeamName(scorer.teamName, scorer.teamId))}</small>
               </div>
-              <em>${scorer.goals} mål</em>
+              <em>${scorer.goals} m\u00e5l</em>
             </a>
           `
         )
@@ -143,7 +269,6 @@ function renderTopScorersRows(scorers) {
     </div>
   `;
 }
-
 async function hydrateHeroTopScorers(league) {
   const target = document.getElementById("hero-topscorers");
   if (!target) return;
@@ -155,13 +280,16 @@ async function hydrateHeroTopScorers(league) {
     if (league !== currentLeague) return;
     target.innerHTML = renderTopScorersRows(scorers);
   } catch (error) {
-    console.warn("Skytteligan kunde inte hämtas", error);
+    console.error("HOMEPAGE TOPSCORERS THROWN ERROR:", {
+      league,
+      message: error?.message,
+      error
+    });
     if (league === currentLeague) {
-      target.innerHTML = emptyState("Skytteligan kunde inte hämtas just nu.");
+      target.innerHTML = emptyState("Skytteligan kunde inte h\u00e4mtas just nu.");
     }
   }
 }
-
 function teamLogoHtml(team, className = "team-logo") {
   const logo = team?.logo || "";
   const name = team?.teamName || team?.name || "Lag";
@@ -171,18 +299,61 @@ function teamLogoHtml(team, className = "team-logo") {
   return `<img src="${escapeHtml(logo)}" alt="" class="${className}" loading="lazy">`;
 }
 
-function renderStandingsTable(rows) {
+function standingsZoneClass(position, totalRows) {
+  const pos = Number(position || 0);
+  if (!pos) return "";
+  if (pos <= 3) return "zone-top";
+  if (pos >= Math.max(totalRows - 2, 1)) return "zone-bottom";
+  return "zone-mid";
+}
+
+function goalDiffClass(value) {
+  const diff = Number(value || 0);
+  if (diff > 0) return "positive";
+  if (diff < 0) return "negative";
+  return "neutral";
+}
+
+function renderTableForm(teamId, snapshot) {
+  const form = teamId && snapshot ? LeagueData.getTeamForm(teamId, snapshot, 5) : [];
+  if (!form.length) return `<span class="table-form empty" aria-label="Form saknas">-</span>`;
+
+  return `
+    <span class="table-form" aria-label="Senaste fem matcher">
+      ${form
+        .slice(-5)
+        .map((result) => {
+          const value = String(result || "").toUpperCase();
+          const className = value === "W" ? "win" : value === "L" ? "loss" : "draw";
+          return `<span class="table-form-dot ${className}" title="${value}"></span>`;
+        })
+        .join("")}
+    </span>
+  `;
+}
+
+function attachStandingsRowLinks() {
+  standingsContent.querySelectorAll(".standings-row[data-href]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("a")) return;
+      window.location.href = row.dataset.href;
+    });
+  });
+}
+function renderStandingsTable(rows, snapshot = latestLeagueSnapshot) {
   if (!rows.length) {
-    standingsContent.innerHTML = emptyState("Ingen tabell tillgänglig just nu.");
+    standingsContent.innerHTML = emptyState("Ingen tabell tillg\u00e4nglig just nu.");
     return;
   }
 
+  const totalRows = rows.length;
+
   standingsContent.innerHTML = `
-    <div class="table-wrap">
-      <table class="standings-table">
+    <div class="table-wrap premium-table-wrap">
+      <table class="standings-table premium-standings-table">
         <thead>
           <tr>
-            <th>#</th>
+            <th class="rank-col">#</th>
             <th>Lag</th>
             <th>Sp</th>
             <th>V</th>
@@ -191,22 +362,29 @@ function renderStandingsTable(rows) {
             <th>GM</th>
             <th>IM</th>
             <th>+/-</th>
-            <th>P</th>
+            <th>Form</th>
+            <th class="points-col">P</th>
           </tr>
         </thead>
         <tbody>
           ${rows
-            .map(
-              (row) => `
-                <tr>
-                  <td>${row.position ?? "-"}</td>
+            .map((row) => {
+              const href = row.teamId ? `/team.html?id=${row.teamId}&league=${currentLeague}` : "";
+              const zoneClass = standingsZoneClass(row.position, totalRows);
+              const diffClass = goalDiffClass(row.goalDiff);
+
+              return `
+                <tr class="standings-row ${zoneClass}" ${href ? `data-href="${href}"` : ""}>
+                  <td class="rank-cell"><span>${row.position ?? "-"}</span></td>
                   <td class="team-cell">
                     ${teamLogoHtml(row)}
-                    ${
-                      row.teamId
-                        ? `<a href="/team.html?id=${row.teamId}&league=${currentLeague}" class="team-link">${escapeHtml(row.teamName)}</a>`
-                        : escapeHtml(row.teamName)
-                    }
+                    <div class="team-cell-main">
+                      ${
+                        row.teamId
+                          ? `<a href="${href}" class="team-link">${escapeHtml(row.teamName)}</a>`
+                          : `<span>${escapeHtml(row.teamName)}</span>`
+                      }
+                    </div>
                   </td>
                   <td>${row.played ?? "-"}</td>
                   <td>${row.won ?? "-"}</td>
@@ -214,18 +392,20 @@ function renderStandingsTable(rows) {
                   <td>${row.lost ?? "-"}</td>
                   <td>${row.goalsFor ?? "-"}</td>
                   <td>${row.goalsAgainst ?? "-"}</td>
-                  <td>${row.goalDiff ?? "-"}</td>
-                  <td><strong>${row.points ?? "-"}</strong></td>
+                  <td class="goal-diff ${diffClass}">${Number(row.goalDiff || 0) > 0 ? "+" : ""}${row.goalDiff ?? "-"}</td>
+                  <td class="form-cell">${renderTableForm(row.teamId, snapshot)}</td>
+                  <td class="points-cell"><strong>${row.points ?? "-"}</strong></td>
                 </tr>
-              `
-            )
+              `;
+            })
             .join("")}
         </tbody>
       </table>
     </div>
   `;
-}
 
+  attachStandingsRowLinks();
+}
 function normalizeStandings(payload) {
   const standings = Array.isArray(payload?.data) ? payload.data : [];
 
@@ -587,6 +767,7 @@ function renderTeams(rows) {
 async function loadStandings() {
   standingsContent.innerHTML = emptyState("Laddar tabell...");
   const snapshot = await LeagueData.loadLeagueSnapshot(currentLeague);
+  latestLeagueSnapshot = snapshot;
   return snapshot.standings;
 }
 
@@ -596,6 +777,7 @@ async function loadFixtures() {
   recentResultsContent.innerHTML = emptyState("Laddar matcher...");
 
   const snapshot = await LeagueData.loadLeagueSnapshot(currentLeague);
+  latestLeagueSnapshot = snapshot;
   return snapshot.fixtures;
 }
 
@@ -625,7 +807,7 @@ async function renderLeagueContent() {
     const [standings, fixtures] = await Promise.all([loadStandings(), loadFixtures()]);
 
     renderHero(standings, fixtures);
-    renderStandingsTable(standings);
+    renderStandingsTable(standings, latestLeagueSnapshot);
     renderFixtures(fixtures);
     renderQuickStats(standings);
     renderTeams(standings);
@@ -648,6 +830,59 @@ buttons.forEach((button) => {
     renderLeagueContent();
   });
 });
+
+if (aiQuestionInput) {
+  aiQuestionInput.addEventListener("input", updateAiQuestionCount);
+  updateAiQuestionCount();
+}
+
+if (aiAskForm) {
+  aiAskForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const question = aiQuestionInput.value.trim();
+
+    if (!question) {
+      renderAiError("Skriv en fråga först.");
+      return;
+    }
+
+    if (question.length > 500) {
+      renderAiError("Frågan får vara max 500 tecken.");
+      return;
+    }
+
+    const submitButton = aiAskForm.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "Analyserar...";
+    aiAnswer.innerHTML = `<div class="ai-answer-card ai-loading"><p>AllsvenskanAI analyserar tillgängligt underlag...</p></div>`;
+
+    try {
+      const response = await fetch("/api/ai/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          question,
+          league: currentLeague,
+          season: 2026
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || data?.details || "Något gick fel när analysen skulle skapas.");
+      }
+
+      renderAiAnswer(data);
+    } catch (error) {
+      renderAiError(error?.message || "Något gick fel när analysen skulle skapas.");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Analysera";
+    }
+  });
+}
 
 renderLeagueContent();
 
