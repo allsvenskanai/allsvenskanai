@@ -7,6 +7,7 @@ const upcomingMatchesContent = document.getElementById("upcoming-matches-content
 const recentResultsContent = document.getElementById("recent-results-content");
 const teamsGrid = document.getElementById("teams-grid");
 const leagueSnapshotCard = document.getElementById("league-snapshot-card");
+const topScorersCard = document.getElementById("top-scorers-card");
 const attackCard = document.getElementById("attack-card");
 const defenseCard = document.getElementById("defense-card");
 const aiAskForm = document.getElementById("ai-ask-form");
@@ -57,13 +58,49 @@ function confidenceLabel(confidence) {
   return "Låg";
 }
 
+function formatAiKey(key) {
+  return String(key || "")
+    .replaceAll("_", " ")
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function renderAiInlineValue(value) {
+  if (Array.isArray(value)) return value.map(renderAiInlineValue).join(", ");
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, entryValue]) => `${escapeHtml(formatAiKey(key))}: ${renderAiInlineValue(entryValue)}`)
+      .join("; ");
+  }
+  return escapeHtml(value ?? "Saknas");
+}
+
+function renderAiValue(value) {
+  if (value === null || value === undefined || value === "") return "<p>Underlag saknas.</p>";
+
+  if (Array.isArray(value)) {
+    if (!value.length) return "<p>Underlag saknas.</p>";
+    return `<ul>${value.map((item) => `<li>${renderAiInlineValue(item)}</li>`).join("")}</ul>`;
+  }
+
+  if (typeof value === "object") {
+    const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== null && entryValue !== undefined && entryValue !== "");
+    if (!entries.length) return "<p>Underlag saknas.</p>";
+    return `<dl>${entries.map(([key, entryValue]) => `<div><dt>${escapeHtml(formatAiKey(key))}</dt><dd>${renderAiInlineValue(entryValue)}</dd></div>`).join("")}</dl>`;
+  }
+
+  const text = String(value).trim();
+  if (!text || text === "[object Object]") return "<p>Underlag saknas.</p>";
+  return `<p>${escapeHtml(text)}</p>`;
+}
+
 function renderAiAnswer(data) {
   const answer = data?.answer || "";
+  const responseSections = data?.sections || {};
   const sections = [
-    ["Slutsats", answerSection(answer, "Slutsats")],
-    ["Analys", answerSection(answer, "Analys")],
-    ["Statistik som stöd", answerSection(answer, "Statistik som st(?:ö|o)d")],
-    ["Osäkerheter", answerSection(answer, "Os(?:ä|a)kerheter")]
+    ["Slutsats", responseSections.conclusion ?? answerSection(answer, "Slutsats")],
+    ["Analys", responseSections.analysis ?? answerSection(answer, "Analys")],
+    ["Statistik som stöd", responseSections.statistics ?? answerSection(answer, "Statistik som st(?:ö|o)d")],
+    ["Osäkerheter", responseSections.uncertainties ?? answerSection(answer, "Os(?:ä|a)kerheter")]
   ];
   const warnings = Array.isArray(data?.warnings) ? data.warnings.filter(Boolean) : [];
   const usedData = Array.isArray(data?.usedData) ? data.usedData : [];
@@ -80,7 +117,7 @@ function renderAiAnswer(data) {
             ([title, text]) => `
               <section>
                 <h3>${escapeHtml(title)}</h3>
-                <p>${escapeHtml(text || "Underlag saknas.")}</p>
+                ${renderAiValue(text)}
               </section>
             `
           )
@@ -302,6 +339,15 @@ function renderTopScorersRows(scorers) {
     </div>
   `;
 }
+
+function renderTopScorersCard(scorers) {
+  if (!topScorersCard) return;
+  topScorersCard.innerHTML = `
+    <h3>Skytteliga</h3>
+    ${renderTopScorersRows(scorers)}
+  `;
+}
+
 async function hydrateHeroTopScorers(league) {
   const target = document.getElementById("hero-topscorers");
   if (!target) return;
@@ -312,6 +358,7 @@ async function hydrateHeroTopScorers(league) {
     const scorers = await loadTopScorers(league);
     if (league !== currentLeague) return;
     target.innerHTML = renderTopScorersRows(scorers);
+    renderTopScorersCard(scorers);
   } catch (error) {
     console.error("HOMEPAGE TOPSCORERS THROWN ERROR:", {
       league,
@@ -320,6 +367,7 @@ async function hydrateHeroTopScorers(league) {
     });
     if (league === currentLeague) {
       target.innerHTML = emptyState("Skytteligan kunde inte h\u00e4mtas just nu.");
+      if (topScorersCard) topScorersCard.innerHTML = `<h3>Skytteliga</h3>${emptyState("Skytteligan kunde inte h\u00e4mtas just nu.")}`;
     }
   }
 }
@@ -626,7 +674,8 @@ function matchCard(match, variant = "") {
   const homeWon = match.hasScore && Number(match.homeScore) > Number(match.awayScore);
   const awayWon = match.hasScore && Number(match.awayScore) > Number(match.homeScore);
   const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "vs";
-  const meta = match.isLive ? "Live nu" : match.isFinished ? "Slut" : formatMatchDate(match.startingAt);
+  const dateLabel = formatMatchDate(match.startingAt);
+  const statusLabel = match.isLive ? "Live nu" : match.isFinished ? "Slut" : "Kommande";
   const href = match.id ? `#matcher` : "#matcher";
 
   return `
@@ -637,7 +686,7 @@ function matchCard(match, variant = "") {
       </div>
       <div class="match-score-block">
         <strong>${score}</strong>
-        <small>${meta || "Match"}</small>
+        <small><span>${statusLabel}</span>${dateLabel ? ` ${escapeHtml(dateLabel)}` : ""}</small>
       </div>
       <div class="match-team right ${awayWon ? "winner" : ""}">
         <span>${escapeHtml(match.awayTeam?.name || "Bortalag")}</span>
@@ -757,6 +806,10 @@ function renderQuickStats(rows) {
     </div>
   `;
 
+  if (topScorersCard && !topScorersCard.innerHTML.trim()) {
+    topScorersCard.innerHTML = `<h3>Skytteliga</h3>${scorerSkeleton()}`;
+  }
+
   attackCard.innerHTML = listCard("Bästa anfall", bestAttack, (row) => `${row.goalsFor} mål`);
   defenseCard.innerHTML = listCard("Bästa försvar", bestDefense, (row) => `${row.goalsAgainst} insläppta`);
 }
@@ -868,6 +921,15 @@ if (aiQuestionInput) {
   aiQuestionInput.addEventListener("input", updateAiQuestionCount);
   updateAiQuestionCount();
 }
+
+document.querySelectorAll(".ai-example-chips button[data-question]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!aiQuestionInput) return;
+    aiQuestionInput.value = button.dataset.question || "";
+    aiQuestionInput.focus();
+    updateAiQuestionCount();
+  });
+});
 
 if (aiAskForm) {
   aiAskForm.addEventListener("submit", async (event) => {
