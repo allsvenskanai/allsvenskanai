@@ -687,7 +687,7 @@ function matchCard(match, variant = "") {
 
   return `
     <a href="${href}" class="match-card ${variant}">
-      <div class="match-team ${homeWon ? "winner" : ""}">
+      <div class="match-team ${homeWon ? "winner" : ""}" title="${escapeHtml(match.homeTeam?.name || "Hemmalag")}">
         ${teamLogoHtml(match.homeTeam, "match-team-logo")}
         <span>${escapeHtml(match.homeTeam?.name || "Hemmalag")}</span>
       </div>
@@ -695,7 +695,7 @@ function matchCard(match, variant = "") {
         <strong>${score}</strong>
         <small><span class="match-status-chip">${statusLabel}</span>${dateLabel ? `<em>${escapeHtml(dateLabel)}</em>` : ""}</small>
       </div>
-      <div class="match-team right ${awayWon ? "winner" : ""}">
+      <div class="match-team right ${awayWon ? "winner" : ""}" title="${escapeHtml(match.awayTeam?.name || "Bortalag")}">
         <span>${escapeHtml(match.awayTeam?.name || "Bortalag")}</span>
         ${teamLogoHtml(match.awayTeam, "match-team-logo")}
       </div>
