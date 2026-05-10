@@ -76,6 +76,53 @@ function safeWriteStorage(key, value) {
   }
 }
 
+function collectObjectKeys(value, prefix = "", output = []) {
+  if (!value || typeof value !== "object") return output;
+
+  if (Array.isArray(value)) {
+    value.slice(0, 5).forEach((item, index) => collectObjectKeys(item, `${prefix}[${index}]`, output));
+    return output;
+  }
+
+  Object.entries(value).forEach(([key, child]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    output.push(path);
+    if (child && typeof child === "object") collectObjectKeys(child, path, output);
+  });
+
+  return output;
+}
+
+function flattenStatDetails(rows) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  return sourceRows.flatMap((row, rowIndex) => {
+    const details = Array.isArray(row?.details) ? row.details : Array.isArray(row?.details?.data) ? row.details.data : [];
+    return details.map((detail) => ({
+      row: rowIndex,
+      typeId: detail?.type_id,
+      key: detail?.type?.developer_name || detail?.type?.code || detail?.type?.name || detail?.type_id || "",
+      value: detail?.value ?? detail?.data?.value ?? detail?.data ?? ""
+    }));
+  });
+}
+
+function logRawTeamStatsDebug(data) {
+  if (!isTeamDebugMode()) return;
+
+  const rawStats = data?.debugStats?.directStatsResponse || data?.debugStats?.unfilteredStatsResponse || data?.debugStats?.teamResponse || null;
+  console.log("RAW TEAM STATS", rawStats);
+  console.log("RAW TEAM STATS DEBUG PAYLOAD", data?.debugStats || null);
+  console.log("RAW TEAM STATS NORMALIZED OBJECT", data?.team?.statistics || null);
+
+  const keys = Array.from(new Set(collectObjectKeys(rawStats))).sort((a, b) => a.localeCompare(b, "sv"));
+  console.log("RAW TEAM STATS KEYS", keys);
+
+  const tableRows = flattenStatDetails(rawStats?.data);
+  if (tableRows.length && console.table) {
+    console.table(tableRows);
+  }
+}
+
 function positionSv(position) {
   const raw = String(position || "").toLowerCase();
   if (!raw) return "Position saknas";
@@ -210,6 +257,7 @@ async function loadTeamDetails(teamId, snapshot) {
   const response = await fetch(`/api/team?${params.toString()}`);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.details || data?.error || "Kunde inte hämta laget.");
+  logRawTeamStatsDebug(data);
   safeWriteStorage(key, { fetchedAt: Date.now(), team: data.team });
   return data.team;
 }
