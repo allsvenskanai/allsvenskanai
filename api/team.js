@@ -296,6 +296,7 @@ export default async function handler(req, res) {
 
   try {
     let coverage = { available: {}, rawFlags: {} };
+    const debugStats = {};
     if (includeStats) {
       const coveragePath = `/seasons/${encodeURIComponent(seasonId)}?include=coverage`;
       const coverageResult = await sportmonksFetch(coveragePath, token);
@@ -316,6 +317,7 @@ export default async function handler(req, res) {
     if (includeStats) {
       const directPath = `/statistics/seasons/teams/${encodeURIComponent(teamId)}?include=details.type&filters=teamStatisticSeasons:${encodeURIComponent(seasonId)}&per_page=50`;
       const direct = await sportmonksFetch(directPath, token);
+      if (debug) debugStats.directStatsResponse = direct.payload;
       if (debug) console.log("TEAM STATS DIRECT RAW RESPONSE:", {
         teamId: Number(teamId),
         seasonId,
@@ -330,6 +332,7 @@ export default async function handler(req, res) {
         if (!directStats.hasStatistics) {
           const unfilteredPath = `/statistics/seasons/teams/${encodeURIComponent(teamId)}?include=details.type&per_page=50`;
           const unfiltered = await sportmonksFetch(unfilteredPath, token);
+          if (debug) debugStats.unfilteredStatsResponse = unfiltered.payload;
           console.warn("TEAM STATS DIRECT EMPTY, RETRYING WITHOUT SEASON FILTER:", {
             teamId: Number(teamId),
             seasonId,
@@ -361,6 +364,7 @@ export default async function handler(req, res) {
     }
 
     let { response, payload, text } = await sportmonksFetch(path, token);
+    if (debug) debugStats.teamResponse = payload;
     if (debug) console.log("TEAM ENDPOINT RAW RESPONSE:", {
       teamId: Number(teamId),
       seasonId,
@@ -378,6 +382,7 @@ export default async function handler(req, res) {
         details: payload?.message || payload?.error || text
       });
       ({ response, payload, text } = await sportmonksFetch(`/teams/${encodeURIComponent(teamId)}?include=venue`, token));
+      if (debug) debugStats.basicTeamResponse = payload;
     }
 
     if (!response.ok) {
@@ -400,7 +405,12 @@ export default async function handler(req, res) {
         rawDetails: team.statistics.rawDetails
       });
     }
-    return res.status(200).json({ team, seasonId, statsIncluded: includeStats });
+    return res.status(200).json({
+      team,
+      seasonId,
+      statsIncluded: includeStats,
+      ...(debug ? { debugStats } : {})
+    });
   } catch (error) {
     console.error("Team endpoint failed", error);
     return res.status(500).json({
