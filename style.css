@@ -485,7 +485,7 @@ body {
 }
 
 .match-card.compact {
-  grid-template-columns: minmax(112px, 1.45fr) minmax(44px, 0.34fr) minmax(112px, 1.45fr);
+  grid-template-columns: minmax(112px, 1fr) 54px minmax(112px, 1fr);
   padding: 9px;
   border-radius: 13px;
 }
@@ -824,10 +824,11 @@ body {
 
 .match-card {
   display: grid;
-  grid-template-columns: minmax(132px, 1.55fr) minmax(48px, 0.36fr) minmax(132px, 1.55fr);
+  grid-template-columns: minmax(118px, 1fr) 58px minmax(118px, 1fr);
   align-items: stretch;
-  gap: 8px;
-  padding: 14px 10px;
+  gap: 7px;
+  min-height: 128px;
+  padding: 14px 9px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.075);
   background:
@@ -877,11 +878,11 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
   width: 100%;
   text-align: center;
-  font-size: 11.8px;
+  font-size: clamp(10.5px, 0.82vw, 12px);
   font-weight: 850;
   color: #f3f6fb;
 }
@@ -892,7 +893,8 @@ body {
 
 .match-team span {
   width: 100%;
-  min-height: 2.7em;
+  max-width: 136px;
+  min-height: 2.65em;
   display: block;
   overflow: visible;
   text-overflow: clip;
@@ -900,7 +902,8 @@ body {
   word-break: keep-all;
   overflow-wrap: normal;
   hyphens: none;
-  line-height: 1.35;
+  text-wrap: balance;
+  line-height: 1.28;
 }
 
 .match-team.winner {
@@ -926,7 +929,7 @@ body {
   justify-items: center;
   gap: 4px;
   text-align: center;
-  min-width: 44px;
+  min-width: 58px;
   max-width: 58px;
   padding: 0;
 }
@@ -934,7 +937,7 @@ body {
 .match-score-block strong {
   display: block;
   color: #ffffff;
-  font-size: 23px;
+  font-size: 20px;
   font-weight: 950;
   letter-spacing: -0.015em;
   line-height: 1;
@@ -948,7 +951,7 @@ body {
   gap: 3px;
   width: auto;
   color: rgba(143,157,182,0.78);
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.08em;
   margin-top: 6px;
@@ -1626,7 +1629,7 @@ body {
   }
 
   .match-card {
-    grid-template-columns: minmax(110px, 1.5fr) minmax(44px, 0.35fr) minmax(110px, 1.5fr);
+    grid-template-columns: minmax(108px, 1fr) 54px minmax(108px, 1fr);
     text-align: center;
   }
 
@@ -3248,13 +3251,14 @@ body {
 
 .match-card {
   min-height: 86px;
+  min-height: 128px;
   border-radius: 16px;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.024));
 }
 
 .match-card {
-  grid-template-columns: minmax(132px, 1.55fr) minmax(48px, 0.36fr) minmax(132px, 1.55fr);
+  grid-template-columns: minmax(118px, 1fr) 58px minmax(118px, 1fr);
 }
 
 .match-score-block strong {
