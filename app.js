@@ -800,6 +800,152 @@ function renderHero(rows, fixtures) {
 
   heroHighlight.innerHTML = renderHeroTable(rows);
 }
+
+function formatStatValue(value) {
+  if (value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return "–";
+  return String(value);
+}
+
+function formScore(form) {
+  return form.reduce((sum, result) => {
+    if (result === "W") return sum + 3;
+    if (result === "D") return sum + 1;
+    return sum;
+  }, 0);
+}
+
+function renderStatFormPills(teamId) {
+  const form = teamId && latestLeagueSnapshot ? LeagueData.getTeamForm(teamId, latestLeagueSnapshot, 5) : [];
+  if (!form.length) return `<span class="stats-card-fallback">Form saknas.</span>`;
+  return `
+    <div class="stats-form-pills">
+      ${form
+        .map((result) => {
+          const label = result === "W" ? "V" : result === "D" ? "O" : "F";
+          const className = result === "W" ? "win" : result === "D" ? "draw" : "loss";
+          return `<span class="${className}">${label}</span>`;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function statsTeamCard({ title, row, value, text, variant = "" }) {
+  return `
+    <article class="stats-metric-card ${variant}">
+      <div class="stats-card-bg"></div>
+      <div class="stats-card-media">${row ? teamLogoHtml(row, "stats-card-logo") : `<span class="stats-player-placeholder"></span>`}</div>
+      <div>
+        <span class="stats-card-label">${title}</span>
+        <strong class="stats-card-value">${formatStatValue(value)}</strong>
+        <h3>${escapeHtml(row?.teamName || "Data saknas")}</h3>
+        <p>${text}</p>
+      </div>
+    </article>
+  `;
+}
+
+function statsFormCard(row) {
+  return `
+    <article class="stats-metric-card form-card">
+      <div class="stats-card-bg"></div>
+      <div class="stats-card-media">${row ? teamLogoHtml(row, "stats-card-logo") : `<span class="stats-player-placeholder"></span>`}</div>
+      <div>
+        <span class="stats-card-label">Bäst form just nu</span>
+        <h3>${escapeHtml(row?.teamName || "Data saknas")}</h3>
+        ${row ? renderStatFormPills(row.teamId) : `<span class="stats-card-fallback">Data uppdateras när mer statistik finns.</span>`}
+        <p>Senaste 5 matcherna</p>
+      </div>
+    </article>
+  `;
+}
+
+function statsPlayerCard({ id, title, player, value, metric }) {
+  const hasData = Boolean(player && Number(value) > 0);
+  return `
+    <article class="stats-metric-card player-card" id="${id}">
+      <div class="stats-card-bg"></div>
+      <div class="stats-card-media">
+        ${
+          hasData && player.playerPhoto
+            ? `<img src="${escapeHtml(player.playerPhoto)}" alt="" class="stats-player-photo" loading="lazy">`
+            : `<span class="stats-player-placeholder"></span>`
+        }
+      </div>
+      <div>
+        <span class="stats-card-label">${title}</span>
+        ${
+          hasData
+            ? `
+              <strong class="stats-card-value">${formatStatValue(value)}</strong>
+              <h3>${escapeHtml(player.playerName)}</h3>
+              <p>${escapeHtml(formatTeamName(player.teamName, player.teamId))} · ${metric}</p>
+            `
+            : `<p class="stats-card-fallback">Data uppdateras när mer statistik finns.</p>`
+        }
+      </div>
+    </article>
+  `;
+}
+
+function bestFormTeam(rows) {
+  return [...rows]
+    .map((row) => {
+      const form = row.teamId && latestLeagueSnapshot ? LeagueData.getTeamForm(row.teamId, latestLeagueSnapshot, 5) : [];
+      return { row, score: formScore(form), formLength: form.length };
+    })
+    .filter((item) => item.formLength > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return Number(a.row.position || 999) - Number(b.row.position || 999);
+    })[0]?.row || null;
+}
+
+function renderStatsOverview(rows) {
+  const bestAttack = [...rows].filter((row) => Number.isFinite(Number(row.goalsFor))).sort((a, b) => Number(b.goalsFor || 0) - Number(a.goalsFor || 0))[0] || null;
+  const bestDefense = [...rows].filter((row) => Number(row.played || 0) > 0).sort((a, b) => Number(a.goalsAgainst || 0) - Number(b.goalsAgainst || 0))[0] || null;
+  const formTeam = bestFormTeam(rows);
+
+  standingsContent.innerHTML = `
+    <div class="stats-overview">
+      <div class="stats-row-heading">Lagstatistik</div>
+      <div class="stats-card-grid">
+        ${statsTeamCard({ title: "Flest gjorda mål", row: bestAttack, value: bestAttack?.goalsFor, text: "Totalt i Allsvenskan 2026", variant: "attack-card" })}
+        ${statsTeamCard({ title: "Bäst försvar", row: bestDefense, value: bestDefense?.goalsAgainst, text: "Minst insläppta mål", variant: "defense-card" })}
+        ${statsFormCard(formTeam)}
+      </div>
+      <div class="stats-row-heading player-heading">Spelarstatistik</div>
+      <div class="stats-card-grid">
+        ${statsPlayerCard({ id: "stats-top-scorer-card", title: "Skytteliga", player: null, value: null, metric: "mål" })}
+        ${statsPlayerCard({ id: "stats-assists-card", title: "Flest assist", player: null, value: null, metric: "assist" })}
+        ${statsPlayerCard({ id: "stats-clean-sheets-card", title: "Flest hållna nollor", player: null, value: null, metric: "hållna nollor" })}
+      </div>
+    </div>
+  `;
+
+  hydrateStatsPlayerCards(currentLeague);
+}
+
+async function hydrateStatsPlayerCards(league) {
+  const topScorerCard = document.getElementById("stats-top-scorer-card");
+  if (!topScorerCard) return;
+
+  try {
+    const scorers = await loadTopScorers(league);
+    if (league !== currentLeague) return;
+    const topScorer = hasReliableScorerData(scorers) ? scorers[0] : null;
+    topScorerCard.outerHTML = statsPlayerCard({
+      id: "stats-top-scorer-card",
+      title: "Skytteliga",
+      player: topScorer,
+      value: topScorer?.goals,
+      metric: "mål"
+    });
+  } catch (error) {
+    console.warn("Spelarstatistik kunde inte hämtas.", error);
+  }
+}
+
 function renderQuickStats(rows) {
   const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
   const goals = rows.reduce((sum, row) => sum + Number(row.goalsFor || 0), 0);
@@ -860,7 +1006,7 @@ function renderTeams(rows) {
 }
 
 async function loadStandings() {
-  standingsContent.innerHTML = emptyState("Laddar tabell...");
+  standingsContent.innerHTML = emptyState("Laddar statistik...");
   const snapshot = await LeagueData.loadLeagueSnapshot(currentLeague);
   latestLeagueSnapshot = snapshot;
   return snapshot.standings;
@@ -902,10 +1048,8 @@ async function renderLeagueContent() {
     const [standings, fixtures] = await Promise.all([loadStandings(), loadFixtures()]);
 
     renderHero(standings, fixtures);
-    renderStandingsTable(standings, latestLeagueSnapshot);
+    renderStatsOverview(standings);
     renderFixtures(fixtures);
-    renderQuickStats(standings);
-    hydrateHeroTopScorers(currentLeague);
     renderTeams(standings);
   } catch (error) {
     console.error(error);
