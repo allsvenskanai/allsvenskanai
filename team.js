@@ -206,6 +206,7 @@ async function loadTeamDetails(teamId, snapshot) {
   if (cached?.team && cached?.fetchedAt && Date.now() - cached.fetchedAt < TEAM_DETAILS_TTL) return cached.team;
 
   const params = new URLSearchParams({ id: teamId, league: snapshot?.leagueKey || "allsvenskan", season: snapshot?.season || "", stats: "1" });
+  if (isTeamDebugMode()) params.set("debug", "1");
   const response = await fetch(`/api/team?${params.toString()}`);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.details || data?.error || "Kunde inte hämta laget.");
@@ -343,14 +344,14 @@ const TEAM_STAT_GROUP_TITLES = {
 };
 
 const TEAM_API_METRICS = [
-  { group: "attack", label: "Skott", keys: ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL", "SHOTS_TOTALS"], options: { integer: true, min: 0, max: 1200 } },
-  { group: "attack", label: "Skott på mål", keys: ["SHOTS_ON_TARGET", "SHOTS_ON_GOAL", "ON_TARGET", "SHOTS_ON_GOALS"], options: { integer: true, min: 0, max: 1200 } },
-  { group: "attack", label: "Skott utanför", keys: ["SHOTS_OFF_TARGET", "SHOTS_OFF_GOAL", "OFF_TARGET", "SHOTS_OFF_GOALS"], options: { integer: true, min: 0, max: 1200 } },
-  { group: "attack", label: "Big chances", keys: ["BIG_CHANCES", "BIG_CHANCE_CREATED"], options: { integer: true, min: 0, max: 500 } },
-  { group: "attack", label: "Missade big chances", keys: ["BIG_CHANCES_MISSED", "BIG_CHANCE_MISSED"], options: { integer: true, min: 0, max: 500 } },
-  { group: "attack", label: "xG", keys: ["EXPECTED_GOALS", "XG"], formatter: (v) => formatDecimal(v, 2), options: { min: 0, max: 150 } },
-  { group: "attack", label: "Straffmål", keys: ["PENALTY_GOALS", "PENALTIES_SCORED", "PENALTIES"], options: { integer: true, min: 0, max: 100 } },
-  { group: "attack", label: "Fasta situationer", keys: ["SET_PIECE_GOALS", "SETPIECE_GOALS"], options: { integer: true, min: 0, max: 100 } },
+  { group: "attack", label: "Skott", keys: ["SHOTS", "TOTAL_SHOTS", "SHOTS_TOTAL", "SHOTS_TOTALS", "SHOTS_TOTAL_TEAM"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Skott på mål", keys: ["SHOTS_ON_TARGET", "SHOTS_ON_GOAL", "ON_TARGET", "SHOTS_ON_GOALS", "TOTAL_SHOTS_ON_TARGET", "SHOTS_TARGET"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Skott utanför", keys: ["SHOTS_OFF_TARGET", "SHOTS_OFF_GOAL", "OFF_TARGET", "SHOTS_OFF_GOALS", "TOTAL_SHOTS_OFF_TARGET", "SHOTS_OFF"], options: { integer: true, min: 0, max: 1200 } },
+  { group: "attack", label: "Big chances", keys: ["BIG_CHANCES", "BIG_CHANCE_CREATED", "BIG_CHANCES_CREATED", "BIG_CHANCES_TOTAL"], options: { integer: true, min: 0, max: 500 } },
+  { group: "attack", label: "Missade big chances", keys: ["BIG_CHANCES_MISSED", "BIG_CHANCE_MISSED", "MISSED_BIG_CHANCES"], options: { integer: true, min: 0, max: 500 } },
+  { group: "attack", label: "xG", keys: ["EXPECTED_GOALS", "XG", "EXPECTED_GOALS_FOR", "TEAM_EXPECTED_GOALS"], formatter: (v) => formatDecimal(v, 2), options: { min: 0, max: 150 } },
+  { group: "attack", label: "Straffmål", keys: ["PENALTY_GOALS", "PENALTIES_SCORED", "PENALTIES", "PENALTY_SCORED"], options: { integer: true, min: 0, max: 100 } },
+  { group: "attack", label: "Fasta situationer", keys: ["SET_PIECE_GOALS", "SETPIECE_GOALS", "SET_PLAY_GOALS", "SET_PLAYS_GOALS"], options: { integer: true, min: 0, max: 100 } },
   { group: "passing", label: "Bollinnehav", keys: ["BALL_POSSESSION", "POSSESSION"], formatter: formatPercent, options: { kind: "percentage" }, normalize: (value, context) => normalizePossessionMetric(value, context.played) },
   { group: "passing", label: "Passningar", keys: ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"], options: { integer: true, min: 0, max: 25000 } },
   { group: "passing", label: "Passningar / match", keys: ["PASSES", "TOTAL_PASSES", "PASSES_TOTAL"], formatter: (v) => formatDecimal(v, 1), options: { min: 0, max: 1500 }, normalize: (value, context) => context.played > 0 ? value / context.played : null },
@@ -404,9 +405,9 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
       metrics
     });
   }
-  const played = Number(standing?.played || 0);
-  const goalsFor = Number(standing?.goalsFor || 0);
-  const goalsAgainst = Number(standing?.goalsAgainst || 0);
+  const played = Number.isFinite(Number(standing?.played)) ? Number(standing.played) : null;
+  const goalsFor = Number.isFinite(Number(standing?.goalsFor)) ? Number(standing.goalsFor) : null;
+  const goalsAgainst = Number.isFinite(Number(standing?.goalsAgainst)) ? Number(standing.goalsAgainst) : null;
   const allPlayed = playedFixtures(team.id, snapshot);
   const homeRecord = recordFor(team.id, allPlayed.filter((match) => Number(match.homeTeamId) === Number(team.id)));
   const awayRecord = recordFor(team.id, allPlayed.filter((match) => Number(match.awayTeamId) === Number(team.id)));
@@ -426,7 +427,7 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
 
   const attack = groupsByKey.attack;
   addMetric(attack, "Gjorda mål", goalsFor, formatNumber, "", { integer: true, min: 0 });
-  addMetric(attack, "Mål / match", played > 0 ? goalsFor / played : null, (v) => formatDecimal(v, 2), "", { min: 0 });
+  addMetric(attack, "Mål / match", played > 0 && goalsFor !== null ? goalsFor / played : null, (v) => formatDecimal(v, 2), "", { min: 0 });
 
   const defense = groupsByKey.defense;
   addMetric(defense, "Insläppta mål", goalsAgainst, formatNumber, "", { integer: true, min: 0 });
@@ -436,6 +437,28 @@ function buildTeamStatGroups(team, standing, snapshot, form) {
     TEAM_API_METRICS.forEach((descriptor) => addApiMetric(groupsByKey, descriptor, metrics, { played }, hiddenMetrics));
   } else {
     hiddenMetrics.push({ family: "fixtureStatistics", reason: "coverage_false" });
+  }
+
+  if (isTeamDebugMode()) {
+    const attackDescriptors = TEAM_API_METRICS.filter((descriptor) => descriptor.group === "attack");
+    console.log("TEAM ATTACK STATS MAPPING:", {
+      teamId: team?.id,
+      teamName: team?.name,
+      calculatedFromStandings: {
+        goalsFor,
+        played,
+        goalsPerMatch: played > 0 && goalsFor !== null ? goalsFor / played : null
+      },
+      apiMetrics: metrics,
+      shown: groupsByKey.attack.map((metric) => metric.label),
+      missing: attackDescriptors
+        .filter((descriptor) => !groupsByKey.attack.some((metric) => metric.label === descriptor.label))
+        .map((descriptor) => ({
+          label: descriptor.label,
+          keys: descriptor.keys,
+          raw: metricValue(metrics, descriptor.keys)
+        }))
+    });
   }
 
   const homeAway = groupsByKey.homeaway;
