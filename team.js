@@ -556,6 +556,51 @@ function renderPlayerTopLists(players) {
   `).join("")}</div>`;
 }
 
+function renderPlayerStatsTable(players, configs) {
+  const tableConfigs = configs.filter((config) => players.some((player) => validatedPlayerStat(player, config) !== null));
+  if (!tableConfigs.length) return "";
+
+  const minuteConfig = tableConfigs.find((config) => config.key === "minutes") || tableConfigs[0];
+  const rows = [...players].sort((a, b) => {
+    const aSort = validatedPlayerStat(a, minuteConfig) || 0;
+    const bSort = validatedPlayerStat(b, minuteConfig) || 0;
+    if (bSort !== aSort) return bSort - aSort;
+    return a.name.localeCompare(b.name, "sv");
+  });
+
+  return `
+    <div class="player-stats-table-wrap">
+      <table class="player-stats-table">
+        <thead>
+          <tr>
+            <th>Spelare</th>
+            <th>Position</th>
+            ${tableConfigs.map((config) => `<th>${escapeHtml(config.short || config.label)}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((player) => `
+            <tr>
+              <td>
+                <div class="player-stats-name">
+                  ${player.photo ? `<img src="${escapeHtml(player.photo)}" alt="" loading="lazy">` : '<span></span>'}
+                  <strong>${escapeHtml(player.name)}</strong>
+                </div>
+              </td>
+              <td>${escapeHtml(positionSv(player.position))}</td>
+              ${tableConfigs.map((config) => {
+                const value = validatedPlayerStat(player, config);
+                const formatter = config.formatter || formatNumber;
+                return `<td>${value === null ? "–" : escapeHtml(formatter(value))}</td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 function renderPlayerStats(players) {
   if (!players.length) return '<p class="team-empty">Ingen spelarstatistik tillgänglig just nu.</p>';
   const available = availablePlayerStatConfigs(players);
@@ -567,7 +612,7 @@ function renderPlayerStats(players) {
     });
   }
   if (!available.length) return '<p class="team-empty">Spelarstatistik uppdateras snart. Truppen visas nedan.</p>';
-  return renderPlayerTopLists(players);
+  return `${renderPlayerTopLists(players)}${renderPlayerStatsTable(players, available)}`;
 }
 
 function renderSquad(players) {
