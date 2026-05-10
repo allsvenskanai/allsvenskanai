@@ -20,6 +20,16 @@ let latestLeagueSnapshot = null;
 const scorerCache = new Map();
 const scorerInFlight = new Map();
 const SCORER_TTL = 10 * 60 * 1000;
+const playerStatsCache = new Map();
+const playerStatsInFlight = new Map();
+const PLAYER_STATS_TTL = 10 * 60 * 1000;
+const leagueStatsState = {
+  teamSort: "points",
+  teamId: "all",
+  playerMetric: "goals",
+  playerTeamId: "all",
+  playerPosition: "all"
+};
 
 function isDebugMode() {
   return location.hostname === "localhost" || location.search.includes("debug=1");
@@ -377,6 +387,46 @@ async function hydrateHeroTopScorers(league) {
       if (topScorersCard) topScorersCard.innerHTML = `<h3>Skytteliga</h3>${emptyState("Skytteligan kunde inte h\u00e4mtas just nu.")}`;
     }
   }
+}
+
+function playerStatsCacheKey(league) {
+  const season = window.LeagueData?.LEAGUES?.[league]?.season || "2026";
+  return `${league}:${season}`;
+}
+
+async function loadPlayerStats(league) {
+  const season = window.LeagueData?.LEAGUES?.[league]?.season;
+  const key = playerStatsCacheKey(league);
+  const cached = playerStatsCache.get(key);
+
+  if (cached?.fetchedAt && Date.now() - cached.fetchedAt < PLAYER_STATS_TTL) return cached.data;
+  if (playerStatsInFlight.has(key)) return playerStatsInFlight.get(key);
+
+  const params = new URLSearchParams({ league });
+  if (season) params.set("season", season);
+
+  const request = fetch(`/api/playerstats?${params.toString()}`)
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || data?.details || "Spelarstatistik kunde inte hämtas.");
+      const normalized = {
+        categories: data?.categories || {},
+        players: Array.isArray(data?.players) ? data.players : [],
+        warnings: Array.isArray(data?.warnings) ? data.warnings : []
+      };
+      playerStatsCache.set(key, { fetchedAt: Date.now(), data: normalized });
+      return normalized;
+    })
+    .catch((error) => {
+      console.warn("Spelarstatistik kunde inte hämtas.", error);
+      const fallback = { categories: {}, players: [], warnings: ["Spelarstatistik kunde inte hämtas just nu."] };
+      playerStatsCache.set(key, { fetchedAt: Date.now(), data: fallback });
+      return fallback;
+    })
+    .finally(() => playerStatsInFlight.delete(key));
+
+  playerStatsInFlight.set(key, request);
+  return request;
 }
 function teamLogoHtml(team, className = "team-logo") {
   const logo = team?.logo || "";
@@ -901,10 +951,369 @@ function bestFormTeam(rows) {
     })[0]?.row || null;
 }
 
+function playedFixturesForTeam(teamId) {
+  return latestLeagueSnapshot
+    ? LeagueData.getTeamFixtures(teamId, latestLeagueSnapshot).filter((match) => match.isFinished && match.hasScore)
+    : [];
+}
+
+function recordForTeam(teamId, matches) {
+  return matches.reduce((record, match) => {
+    const result = LeagueData.getTeamResult(teamId, match);
+    const isHome = Number(match.homeTeamId) === Number(teamId);
+    const scored = Number(isHome ? match.homeScore : match.awayScore);
+    const conceded = Number(isHome ? match.awayScore : match.homeScore);
+    record.played += 1;
+    record.goalsFor += Number.isFinite(scored) ? scored : 0;
+    record.goalsAgainst += Number.isFinite(conceded) ? conceded : 0;
+    if (result === "W") {
+      record.won += 1;
+      record.points += 3;
+    }
+    if (result === "D") {
+      record.draw += 1;
+      record.points += 1;
+    }
+    if (result === "L") record.lost += 1;
+    if (Number.isFinite(conceded) && conceded === 0) record.cleanSheets += 1;
+    return record;
+  }, { played: 0, won: 0, draw: 0, lost: 0, points: 0, goalsFor: 0, goalsAgainst: 0, cleanSheets: 0 });
+}
+
+function buildLeagueTeamStats(rows) {
+  return rows.map((row) => {
+    const matches = playedFixturesForTeam(row.teamId);
+    const home = recordForTeam(row.teamId, matches.filter((match) => Number(match.homeTeamId) === Number(row.teamId)));
+    const away = recordForTeam(row.teamId, matches.filter((match) => Number(match.awayTeamId) === Number(row.teamId)));
+    const cleanSheets = recordForTeam(row.teamId, matches).cleanSheets;
+    const form = row.teamId && latestLeagueSnapshot ? LeagueData.getTeamForm(row.teamId, latestLeagueSnapshot, 5) : [];
+    const played = Number(row.played || 0);
+
+    return {
+      ...row,
+      cleanSheets,
+      home,
+      away,
+      form,
+      pointsPerMatch: played > 0 ? Number(row.points || 0) / played : null
+    };
+  });
+}
+
+const TEAM_SORT_OPTIONS = [
+  { key: "points", label: "Poäng" },
+  { key: "goalsFor", label: "Gjorda mål" },
+  { key: "goalsAgainstAsc", label: "Bäst försvar" },
+  { key: "goalDiff", label: "Målskillnad" },
+  { key: "cleanSheets", label: "Nollor" },
+  { key: "homePoints", label: "Hemmapoäng" },
+  { key: "awayPoints", label: "Bortapoäng" },
+  { key: "form", label: "Form" }
+];
+
+const PLAYER_METRIC_LABELS = {
+  goals: "Mål",
+  assists: "Assist",
+  yellowCards: "Gula kort",
+  redCards: "Röda kort",
+  cleanSheets: "Nollor",
+  minutes: "Minuter",
+  saves: "Räddningar"
+};
+
+function statNumber(value, fallback = "–") {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toLocaleString("sv-SE") : fallback;
+}
+
+function formPoints(form) {
+  return formScore(form || []);
+}
+
+function sortTeamStats(rows, sortKey) {
+  const sorted = [...rows];
+  sorted.sort((a, b) => {
+    if (sortKey === "goalsAgainstAsc") return Number(a.goalsAgainst ?? 999) - Number(b.goalsAgainst ?? 999);
+    if (sortKey === "homePoints") return Number(b.home?.points || 0) - Number(a.home?.points || 0);
+    if (sortKey === "awayPoints") return Number(b.away?.points || 0) - Number(a.away?.points || 0);
+    if (sortKey === "form") return formPoints(b.form) - formPoints(a.form);
+    return Number(b[sortKey] || 0) - Number(a[sortKey] || 0);
+  });
+  return sorted;
+}
+
+function renderMiniForm(form) {
+  if (!form?.length) return `<span class="league-stat-muted">Saknas</span>`;
+  return `<div class="league-form-pills">${form.map((result) => {
+    const label = result === "W" ? "V" : result === "D" ? "O" : "F";
+    const className = result === "W" ? "win" : result === "D" ? "draw" : "loss";
+    return `<span class="${className}">${label}</span>`;
+  }).join("")}</div>`;
+}
+
+function renderTeamFilterOptions(rows, selected) {
+  return [`<option value="all">Alla lag</option>`]
+    .concat(rows.map((row) => `<option value="${row.teamId}" ${String(selected) === String(row.teamId) ? "selected" : ""}>${escapeHtml(row.teamName)}</option>`))
+    .join("");
+}
+
+function renderLeagueTeamStatsTable(rows) {
+  const filtered = leagueStatsState.teamId === "all"
+    ? rows
+    : rows.filter((row) => String(row.teamId) === String(leagueStatsState.teamId));
+  const sorted = sortTeamStats(filtered, leagueStatsState.teamSort);
+
+  if (!sorted.length) return emptyState("Ingen lagstatistik matchar filtret.");
+
+  return `
+    <div class="league-stat-table-wrap">
+      <table class="league-stat-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Lag</th>
+            <th>Matcher</th>
+            <th>V</th>
+            <th>O</th>
+            <th>F</th>
+            <th>Mål</th>
+            <th>Insläppta</th>
+            <th>+/-</th>
+            <th>Poäng</th>
+            <th>Hemma</th>
+            <th>Borta</th>
+            <th>Nollor</th>
+            <th>Form</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map((row, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td>
+                <a href="/team.html?id=${row.teamId}&league=${currentLeague}" class="league-stat-team">
+                  ${teamLogoHtml(row, "league-stat-logo")}
+                  <span>${escapeHtml(row.teamName)}</span>
+                </a>
+              </td>
+              <td>${statNumber(row.played)}</td>
+              <td>${statNumber(row.won)}</td>
+              <td>${statNumber(row.draw)}</td>
+              <td>${statNumber(row.lost)}</td>
+              <td>${statNumber(row.goalsFor)}</td>
+              <td>${statNumber(row.goalsAgainst)}</td>
+              <td>${Number(row.goalDiff || 0) > 0 ? "+" : ""}${statNumber(row.goalDiff)}</td>
+              <td><strong>${statNumber(row.points)}</strong></td>
+              <td>${row.home.played ? `${row.home.won}-${row.home.draw}-${row.home.lost}` : "–"}</td>
+              <td>${row.away.played ? `${row.away.won}-${row.away.draw}-${row.away.lost}` : "–"}</td>
+              <td>${statNumber(row.cleanSheets)}</td>
+              <td>${renderMiniForm(row.form)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function availablePlayerMetrics(playerStats) {
+  const metrics = new Set();
+  Object.keys(playerStats?.categories || {}).forEach((metric) => metrics.add(metric));
+  (playerStats?.players || []).forEach((player) => {
+    Object.entries(player.stats || {}).forEach(([metric, value]) => {
+      if (Number(value) > 0) metrics.add(metric);
+    });
+  });
+  return Array.from(metrics).filter((metric) => PLAYER_METRIC_LABELS[metric]);
+}
+
+function playerMetricValue(player, metric) {
+  const parsed = Number(player?.stats?.[metric]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function filteredPlayerRows(playerStats, teamRows) {
+  const teamIds = new Set(teamRows.map((row) => String(row.teamId)));
+  return (playerStats?.players || [])
+    .filter((player) => !teamIds.size || !player.teamId || teamIds.has(String(player.teamId)))
+    .filter((player) => leagueStatsState.playerTeamId === "all" || String(player.teamId) === String(leagueStatsState.playerTeamId))
+    .filter((player) => leagueStatsState.playerPosition === "all" || player.position === leagueStatsState.playerPosition)
+    .map((player) => ({ player, value: playerMetricValue(player, leagueStatsState.playerMetric) }))
+    .filter((row) => row.value !== null && row.value > 0)
+    .sort((a, b) => b.value - a.value);
+}
+
+function renderPlayerMetricOptions(metrics) {
+  return metrics
+    .map((metric) => `<option value="${metric}" ${leagueStatsState.playerMetric === metric ? "selected" : ""}>${PLAYER_METRIC_LABELS[metric]}</option>`)
+    .join("");
+}
+
+function renderPositionFilter(players) {
+  const positions = Array.from(new Set(players.map((player) => player.position).filter(Boolean))).sort((a, b) => a.localeCompare(b, "sv"));
+  if (!positions.length) return "";
+  return `
+    <label>
+      Position
+      <select id="league-player-position-filter">
+        <option value="all">Alla positioner</option>
+        ${positions.map((position) => `<option value="${escapeHtml(position)}" ${leagueStatsState.playerPosition === position ? "selected" : ""}>${escapeHtml(position)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+}
+
+function renderLeaguePlayerStats(playerStats, teamRows) {
+  const metrics = availablePlayerMetrics(playerStats);
+  if (!metrics.includes(leagueStatsState.playerMetric)) leagueStatsState.playerMetric = metrics[0] || "goals";
+
+  if (!metrics.length) {
+    return `
+      <article class="league-stat-panel" id="spelare">
+        <div class="league-stat-panel-heading">
+          <div><span>Spelarstatistik</span><h3>Topplistor</h3></div>
+        </div>
+        ${emptyState("Spelarstatistik uppdateras när mer data finns.")}
+      </article>
+    `;
+  }
+
+  const rows = filteredPlayerRows(playerStats, teamRows);
+  const players = playerStats.players || [];
+
+  return `
+    <article class="league-stat-panel" id="spelare">
+      <div class="league-stat-panel-heading">
+        <div><span>Spelarstatistik</span><h3>${escapeHtml(PLAYER_METRIC_LABELS[leagueStatsState.playerMetric])}</h3></div>
+        <div class="league-stat-controls">
+          <label>
+            Sortering
+            <select id="league-player-metric-sort">${renderPlayerMetricOptions(metrics)}</select>
+          </label>
+          <label>
+            Lag
+            <select id="league-player-team-filter">${renderTeamFilterOptions(teamRows, leagueStatsState.playerTeamId)}</select>
+          </label>
+          ${renderPositionFilter(players)}
+        </div>
+      </div>
+      ${
+        rows.length
+          ? `
+            <div class="league-stat-table-wrap">
+              <table class="league-stat-table player-stat-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Spelare</th>
+                    <th>Lag</th>
+                    ${players.some((player) => player.position) ? "<th>Position</th>" : ""}
+                    <th>${escapeHtml(PLAYER_METRIC_LABELS[leagueStatsState.playerMetric])}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.slice(0, 50).map(({ player, value }, index) => `
+                    <tr>
+                      <td>${index + 1}</td>
+                      <td>
+                        <div class="league-stat-player">
+                          ${player.playerPhoto ? `<img src="${escapeHtml(player.playerPhoto)}" alt="" loading="lazy">` : `<span></span>`}
+                          <strong>${escapeHtml(player.playerName)}</strong>
+                        </div>
+                      </td>
+                      <td>${escapeHtml(formatTeamName(player.teamName, player.teamId))}</td>
+                      ${players.some((item) => item.position) ? `<td>${escapeHtml(player.position || "–")}</td>` : ""}
+                      <td><strong>${statNumber(value)}</strong></td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `
+          : emptyState("Ingen spelarstatistik matchar filtret.")
+      }
+    </article>
+  `;
+}
+
+function renderLeagueStatPanels(teamStats, playerStats = null) {
+  return `
+    <div class="league-stat-lab" id="statistik">
+      <article class="league-stat-panel">
+        <div class="league-stat-panel-heading">
+          <div>
+            <span>Lagstatistik</span>
+            <h3>${escapeHtml(leagueLabel())} 2026</h3>
+          </div>
+          <div class="league-stat-controls">
+            <label>
+              Sortering
+              <select id="league-team-sort">
+                ${TEAM_SORT_OPTIONS.map((option) => `<option value="${option.key}" ${leagueStatsState.teamSort === option.key ? "selected" : ""}>${option.label}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              Lag
+              <select id="league-team-filter">${renderTeamFilterOptions(teamStats, leagueStatsState.teamId)}</select>
+            </label>
+            <label>
+              Säsong
+              <select disabled><option>2026</option></select>
+            </label>
+          </div>
+        </div>
+        ${renderLeagueTeamStatsTable(teamStats)}
+      </article>
+      ${
+        playerStats
+          ? renderLeaguePlayerStats(playerStats, teamStats)
+          : `<article class="league-stat-panel"><div class="league-stat-panel-heading"><div><span>Spelarstatistik</span><h3>Laddar topplistor</h3></div></div>${emptyState("Laddar spelarstatistik...")}</article>`
+      }
+    </div>
+  `;
+}
+
+function bindLeagueStatsControls(teamStats, playerStats) {
+  const teamSort = document.getElementById("league-team-sort");
+  const teamFilter = document.getElementById("league-team-filter");
+  const playerSort = document.getElementById("league-player-metric-sort");
+  const playerTeamFilter = document.getElementById("league-player-team-filter");
+  const playerPositionFilter = document.getElementById("league-player-position-filter");
+
+  const rerender = () => {
+    const target = document.getElementById("league-stat-panels");
+    if (!target) return;
+    target.innerHTML = renderLeagueStatPanels(teamStats, playerStats);
+    bindLeagueStatsControls(teamStats, playerStats);
+  };
+
+  if (teamSort) teamSort.addEventListener("change", (event) => {
+    leagueStatsState.teamSort = event.target.value;
+    rerender();
+  });
+  if (teamFilter) teamFilter.addEventListener("change", (event) => {
+    leagueStatsState.teamId = event.target.value;
+    rerender();
+  });
+  if (playerSort) playerSort.addEventListener("change", (event) => {
+    leagueStatsState.playerMetric = event.target.value;
+    rerender();
+  });
+  if (playerTeamFilter) playerTeamFilter.addEventListener("change", (event) => {
+    leagueStatsState.playerTeamId = event.target.value;
+    rerender();
+  });
+  if (playerPositionFilter) playerPositionFilter.addEventListener("change", (event) => {
+    leagueStatsState.playerPosition = event.target.value;
+    rerender();
+  });
+}
+
 function renderStatsOverview(rows) {
   const bestAttack = [...rows].filter((row) => Number.isFinite(Number(row.goalsFor))).sort((a, b) => Number(b.goalsFor || 0) - Number(a.goalsFor || 0))[0] || null;
   const bestDefense = [...rows].filter((row) => Number(row.played || 0) > 0).sort((a, b) => Number(a.goalsAgainst || 0) - Number(b.goalsAgainst || 0))[0] || null;
   const formTeam = bestFormTeam(rows);
+  const teamStats = buildLeagueTeamStats(rows);
 
   standingsContent.innerHTML = `
     <div class="stats-overview">
@@ -920,10 +1329,15 @@ function renderStatsOverview(rows) {
         ${statsPlayerCard({ id: "stats-assists-card", title: "Flest assist", player: null, value: null, metric: "assist" })}
         ${statsPlayerCard({ id: "stats-clean-sheets-card", title: "Flest hållna nollor", player: null, value: null, metric: "hållna nollor" })}
       </div>
+      <div id="league-stat-panels">
+        ${renderLeagueStatPanels(teamStats)}
+      </div>
     </div>
   `;
 
+  bindLeagueStatsControls(teamStats, null);
   hydrateStatsPlayerCards(currentLeague);
+  hydrateLeaguePlayerStats(currentLeague, teamStats);
 }
 
 async function hydrateStatsPlayerCards(league) {
@@ -931,7 +1345,7 @@ async function hydrateStatsPlayerCards(league) {
   if (!topScorerCard) return;
 
   try {
-    const scorers = await loadTopScorers(league);
+    const [scorers, playerStats] = await Promise.all([loadTopScorers(league), loadPlayerStats(league)]);
     if (league !== currentLeague) return;
     const topScorer = hasReliableScorerData(scorers) ? scorers[0] : null;
     topScorerCard.outerHTML = statsPlayerCard({
@@ -941,9 +1355,43 @@ async function hydrateStatsPlayerCards(league) {
       value: topScorer?.goals,
       metric: "mål"
     });
+    hydrateStatsCategoryCard("stats-assists-card", "Flest assist", playerStats, "assists", "assist");
+    hydrateStatsCategoryCard("stats-clean-sheets-card", "Flest hållna nollor", playerStats, "cleanSheets", "hållna nollor");
   } catch (error) {
     console.warn("Spelarstatistik kunde inte hämtas.", error);
   }
+}
+
+function hydrateStatsCategoryCard(id, title, playerStats, metric, metricLabel) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const categoryRows = playerStats?.categories?.[metric]?.rows || [];
+  const row = categoryRows[0];
+  const player = row
+    ? {
+        playerName: row.playerName,
+        playerPhoto: row.playerPhoto,
+        teamName: row.teamName,
+        teamId: row.teamId
+      }
+    : null;
+  card.outerHTML = statsPlayerCard({
+    id,
+    title,
+    player,
+    value: row?.value,
+    metric: metricLabel
+  });
+}
+
+async function hydrateLeaguePlayerStats(league, teamStats) {
+  const target = document.getElementById("league-stat-panels");
+  if (!target) return;
+
+  const playerStats = await loadPlayerStats(league);
+  if (league !== currentLeague) return;
+  target.innerHTML = renderLeagueStatPanels(teamStats, playerStats);
+  bindLeagueStatsControls(teamStats, playerStats);
 }
 
 function renderQuickStats(rows) {
