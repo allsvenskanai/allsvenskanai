@@ -1704,6 +1704,193 @@ body {
   }
 }
 
+/* Premium statistics overview */
+.stats-overview-section {
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.stats-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.stats-row-heading {
+  color: #f4d779;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stats-row-heading.player-heading {
+  margin-top: 8px;
+}
+
+.stats-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stats-metric-card {
+  position: relative;
+  min-height: 230px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 24px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(224,184,79,0.13), transparent 11rem),
+    linear-gradient(180deg, rgba(18,30,50,0.96), rgba(7,13,24,0.98));
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.stats-metric-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(224,184,79,0.28);
+  box-shadow:
+    0 22px 58px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.stats-card-bg {
+  position: absolute;
+  inset: auto -24px -42px auto;
+  width: 150px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(224,184,79,0.16);
+  border-radius: 50%;
+  opacity: 0.6;
+  background:
+    linear-gradient(90deg, transparent 48%, rgba(224,184,79,0.16) 50%, transparent 52%),
+    radial-gradient(circle, transparent 0 48%, rgba(224,184,79,0.14) 49%, transparent 51%);
+}
+
+.stats-card-media {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.stats-card-logo,
+.stats-player-photo,
+.stats-player-placeholder {
+  width: 56px;
+  height: 56px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 50%;
+  background: #ffffff;
+  object-fit: contain;
+  padding: 5px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.22);
+}
+
+.stats-player-photo {
+  object-fit: cover;
+  padding: 0;
+  background: rgba(255,255,255,0.08);
+}
+
+.stats-player-placeholder {
+  display: inline-block;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.24), transparent 28%),
+    linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.04));
+}
+
+.stats-card-label {
+  display: block;
+  color: #9daac0;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stats-card-value {
+  display: block;
+  margin-top: 8px;
+  color: #f4d779;
+  font-size: clamp(42px, 5vw, 58px);
+  line-height: 0.95;
+  font-weight: 950;
+}
+
+.stats-metric-card h3 {
+  margin: 12px 0 0;
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.stats-metric-card p {
+  margin: 8px 0 0;
+  color: #c2ccdc;
+  line-height: 1.45;
+}
+
+.stats-card-fallback {
+  display: block;
+  margin-top: 14px;
+  color: #c2ccdc;
+  line-height: 1.5;
+}
+
+.stats-form-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.stats-form-pills span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #101827;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.stats-form-pills .win {
+  background: #36d284;
+}
+
+.stats-form-pills .draw {
+  background: #e0b84f;
+}
+
+.stats-form-pills .loss {
+  background: #ef5b5b;
+}
+
+@media (max-width: 1040px) {
+  .stats-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-metric-card {
+    min-height: 210px;
+  }
+}
+
 /* Hero AI platform polish */
 .hero-section {
   grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.92fr);
