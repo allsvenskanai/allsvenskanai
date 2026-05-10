@@ -358,14 +358,13 @@ function renderTopScorersCard(scorers) {
 
 async function hydrateHeroTopScorers(league) {
   const target = document.getElementById("hero-topscorers");
-  if (!target) return;
 
-  target.innerHTML = scorerSkeleton();
+  if (target) target.innerHTML = scorerSkeleton();
 
   try {
     const scorers = await loadTopScorers(league);
     if (league !== currentLeague) return;
-    target.innerHTML = renderTopScorersRows(scorers);
+    if (target) target.innerHTML = renderTopScorersRows(scorers);
     renderTopScorersCard(scorers);
   } catch (error) {
     console.error("HOMEPAGE TOPSCORERS THROWN ERROR:", {
@@ -374,7 +373,7 @@ async function hydrateHeroTopScorers(league) {
       error
     });
     if (league === currentLeague) {
-      target.innerHTML = emptyState("Skytteligan kunde inte h\u00e4mtas just nu.");
+      if (target) target.innerHTML = emptyState("Skytteligan kunde inte h\u00e4mtas just nu.");
       if (topScorersCard) topScorersCard.innerHTML = `<h3>Skytteliga</h3>${emptyState("Skytteligan kunde inte h\u00e4mtas just nu.")}`;
     }
   }
@@ -715,10 +714,71 @@ function heroStatValue(value, fallback = "–") {
   return value;
 }
 
+function heroTableZoneClass(row, rows) {
+  const position = Number(row?.position || 0);
+  if (position >= 1 && position <= 3) return "hero-table-top";
+  if (rows.length > 10 && position > rows.length - 2) return "hero-table-bottom";
+  return "";
+}
+
+function renderHeroTable(rows) {
+  if (!rows.length) {
+    return `
+      <section class="hero-table-card">
+        <div class="hero-table-heading">
+          <span>Tabell</span>
+          <h2>Tabell Allsvenskan 2026</h2>
+        </div>
+        ${emptyState("Tabellen kunde inte laddas just nu.")}
+      </section>
+    `;
+  }
+
+  return `
+    <section class="hero-table-card">
+      <div class="hero-table-heading">
+        <span>Tabell</span>
+        <h2>Tabell Allsvenskan 2026</h2>
+      </div>
+      <div class="hero-table-wrap">
+        <table class="hero-standings-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Lag</th>
+              <th>Sp</th>
+              <th>+/-</th>
+              <th>P</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(
+                (row) => `
+                  <tr class="${heroTableZoneClass(row, rows)}">
+                    <td>${row.position ?? "–"}</td>
+                    <td>
+                      <a href="/team.html?id=${row.teamId || ""}&league=${currentLeague}" class="hero-table-team">
+                        ${teamLogoHtml(row, "hero-table-logo")}
+                        <span>${escapeHtml(row.teamName || "Okänt lag")}</span>
+                      </a>
+                    </td>
+                    <td>${row.played ?? "–"}</td>
+                    <td>${Number(row.goalDiff || 0) > 0 ? "+" : ""}${row.goalDiff ?? "–"}</td>
+                    <td><strong>${row.points ?? "–"}</strong></td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderHero(rows, fixtures) {
   const topTeams = rows.slice(0, 3);
-  const liveMatches = fixtures.filter((match) => match.isLive).slice(0, 2);
-  const nextMatch = getUpcomingMatches(fixtures, 1)[0];
   const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
   const goals = rows.reduce((sum, row) => sum + Number(row.goalsFor || 0), 0);
   const leader = topTeams[0];
@@ -740,77 +800,7 @@ function renderHero(rows, fixtures) {
     `;
   }
 
-  heroHighlight.innerHTML = `
-    <div class="dashboard-header">
-      <span>${leagueLabel()} 2026</span>
-      <strong>Ligapuls</strong>
-    </div>
-
-    <a class="dashboard-ai-card" href="#fraga-ai">
-      <span>AI-insikt just nu</span>
-      <strong>AI:n analyserar tabell, matcher och form</strong>
-      <small>Fråga vad som helst om Allsvenskan.</small>
-    </a>
-
-    <section class="dashboard-section next-match-feature hero-dashboard-main">
-      <h3>Nästa match</h3>
-      ${
-        nextMatch
-          ? `
-            <div class="next-match-teams">
-              <span>${escapeHtml(nextMatch.homeTeam?.name || "Hemmalag")}</span>
-              <strong>VS</strong>
-              <span>${escapeHtml(nextMatch.awayTeam?.name || "Bortalag")}</span>
-            </div>
-            <p>${formatMatchDate(nextMatch.startingAt)}</p>
-          `
-          : emptyState("Matchschemat uppdateras")
-      }
-    </section>
-
-    <section class="dashboard-section">
-      <h3>Live / Aktivt nu</h3>
-      <div class="dashboard-live-list">
-        ${
-          liveMatches.length
-            ? liveMatches.map((match) => matchCard(match, "live compact")).join("")
-            : `
-              <p class="dashboard-soft-state">Inga matcher live just nu</p>
-              ${nextMatch ? matchCard(nextMatch, "soon compact") : ""}
-            `
-        }
-      </div>
-    </section>
-
-    <section class="dashboard-section">
-      <h3>Tabelltopp</h3>
-      <div class="dashboard-table-top">
-        ${
-          topTeams.length
-            ? topTeams
-                .map(
-                  (team, index) => `
-                    <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="dashboard-team-row ${index === 0 ? "leader" : ""}">
-                      <span class="dashboard-rank">${team.position}</span>
-                      ${teamLogoHtml(team, "dashboard-team-logo")}
-                      <span class="dashboard-team-name">${escapeHtml(team.teamName)}</span>
-                      <strong>${team.points} p</strong>
-                    </a>
-                  `
-                )
-                .join("")
-            : emptyState("Ingen tabell tillgänglig")
-        }
-      </div>
-    </section>
-
-    <section class="dashboard-section">
-      <h3>Skytteliga</h3>
-      <div id="hero-topscorers">${scorerSkeleton()}</div>
-    </section>
-  `;
-
-  hydrateHeroTopScorers(currentLeague);
+  heroHighlight.innerHTML = renderHeroTable(rows);
 }
 function renderQuickStats(rows) {
   const playedMatches = rows.reduce((sum, row) => sum + Number(row.played || 0), 0) / 2;
@@ -917,6 +907,7 @@ async function renderLeagueContent() {
     renderStandingsTable(standings, latestLeagueSnapshot);
     renderFixtures(fixtures);
     renderQuickStats(standings);
+    hydrateHeroTopScorers(currentLeague);
     renderTeams(standings);
   } catch (error) {
     console.error(error);
