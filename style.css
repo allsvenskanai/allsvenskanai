@@ -491,9 +491,9 @@ body {
 }
 
 .match-card.compact .match-team-logo {
-  width: 46px;
-  height: 46px;
-  flex-basis: 46px;
+  width: 50px;
+  height: 50px;
+  flex-basis: 50px;
 }
 
 .match-card.compact .match-score-block {
@@ -811,7 +811,7 @@ body {
 .match-list,
 .mini-list {
   display: grid;
-  gap: 13px;
+  gap: 14px;
 }
 
 .live-column .match-list:empty {
@@ -828,11 +828,11 @@ body {
 
 .match-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
-  min-height: 128px;
-  padding: 18px 24px;
+  gap: 28px;
+  min-height: 136px;
+  padding: 20px 26px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.075);
   background:
@@ -845,21 +845,21 @@ body {
 .match-card:hover,
 .mini-row:hover {
   transform: translateY(-2px);
-  border-color: rgba(224,184,79,0.34);
+  border-color: rgba(224,184,79,0.44);
   background:
     radial-gradient(circle at 50% 48%, rgba(255,255,255,0.075), transparent 68%),
     linear-gradient(180deg, rgba(255,255,255,0.074), rgba(255,255,255,0.032));
   box-shadow:
     0 16px 34px rgba(0,0,0,0.28),
-    0 0 22px rgba(224,184,79,0.055),
+    0 0 28px rgba(224,184,79,0.10),
     inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .match-card:hover .match-team-logo {
   transform: translateY(-2px) scale(1.04);
   box-shadow:
-    0 14px 28px rgba(0,0,0,0.28),
-    0 0 24px rgba(224,184,79,0.16);
+    0 16px 32px rgba(0,0,0,0.30),
+    0 0 30px rgba(224,184,79,0.20);
 }
 
 .match-card.live {
@@ -923,15 +923,18 @@ body {
 }
 
 .match-team-logo {
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
   border-radius: 50%;
   object-fit: contain;
   background: #ffffff;
-  padding: 6px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.24);
-  transition: transform 220ms ease, box-shadow 220ms ease;
+  padding: 7px;
+  box-shadow:
+    0 12px 26px rgba(0,0,0,0.26),
+    0 0 22px rgba(224,184,79,0.10);
+  filter: drop-shadow(0 0 12px rgba(99,150,255,0.08));
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
 }
 
 .match-score-block {
@@ -940,8 +943,8 @@ body {
   justify-items: center;
   gap: 5px;
   text-align: center;
-  min-width: 76px;
-  max-width: 76px;
+  min-width: 84px;
+  max-width: 84px;
   padding: 0 2px;
 }
 
@@ -979,8 +982,7 @@ body {
 .schedule-column .match-card .match-score-block strong,
 .live-column .match-card.soon .match-score-block strong {
   color: rgba(244,215,121,0.48);
-  font-size: 18px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 850;
   letter-spacing: 0.16em;
 }
@@ -992,8 +994,33 @@ body {
 }
 
 .results-column .match-card .match-score-block strong {
-  font-size: 31px;
+  font-size: 36px;
   letter-spacing: -0.02em;
+}
+
+.schedule-column .match-status-chip,
+.live-column .match-card.soon .match-status-chip {
+  font-size: 7.5px;
+  padding: 2px 6px;
+}
+
+.match-card.live .match-status-chip {
+  border-color: rgba(255,89,89,0.42);
+  color: #ff8a8a;
+  background: rgba(255,89,89,0.10);
+  box-shadow: 0 0 0 0 rgba(255,89,89,0.24);
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255,89,89,0.24);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(255,89,89,0);
+  }
 }
 
 .snapshot-grid {
@@ -1641,12 +1668,12 @@ body {
   }
 
   .match-card {
-    grid-template-columns: minmax(0, 1fr) 66px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
     text-align: center;
-    gap: 14px;
-    min-height: 118px;
-    padding-left: 14px;
-    padding-right: 14px;
+    gap: 16px;
+    min-height: 124px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .match-team {
@@ -1655,9 +1682,9 @@ body {
   }
 
   .match-team-logo {
-    width: 54px;
-    height: 54px;
-    flex-basis: 54px;
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
   }
 
   .match-team,
@@ -3280,18 +3307,18 @@ body {
 }
 
 .match-card {
-  min-height: 128px;
+  min-height: 136px;
   border-radius: 16px;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.024));
 }
 
 .match-card {
-  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr);
 }
 
 .match-score-block strong {
-  font-size: 28px;
+  font-size: 30px;
 }
 
 .match-score-block small span {
@@ -3453,16 +3480,16 @@ body {
   }
 
   .match-card {
-    grid-template-columns: minmax(0, 1fr) 66px minmax(0, 1fr);
-    gap: 14px;
-    min-height: 118px;
-    padding-left: 14px;
-    padding-right: 14px;
+    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
+    gap: 16px;
+    min-height: 124px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .match-team-logo {
-    width: 54px;
-    height: 54px;
-    flex-basis: 54px;
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
   }
 }
