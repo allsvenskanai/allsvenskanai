@@ -315,8 +315,8 @@ async function loadTopScorers(league) {
 function renderTopScorersRows(scorers) {
   console.log("HOMEPAGE TOPSCORERS RENDER INPUT:", { scorers });
 
-  if (!scorers.length) {
-    return emptyState("Ingen skytteligadata tillg\u00e4nglig just nu.");
+  if (!hasReliableScorerData(scorers)) {
+    return emptyState("Skytteligan uppdateras n\u00e4r mer data finns.");
   }
 
   return `
@@ -338,6 +338,14 @@ function renderTopScorersRows(scorers) {
         .join("")}
     </div>
   `;
+}
+
+function hasReliableScorerData(scorers) {
+  if (!Array.isArray(scorers) || scorers.length < 3) return false;
+  const goals = scorers.map((scorer) => Number(scorer.goals || 0));
+  const maxGoals = Math.max(...goals);
+  const allSameLowValue = goals.every((goal) => goal === goals[0]) && maxGoals <= 1;
+  return maxGoals > 1 && !allSameLowValue;
 }
 
 function renderTopScorersCard(scorers) {
@@ -686,7 +694,7 @@ function matchCard(match, variant = "") {
       </div>
       <div class="match-score-block">
         <strong>${score}</strong>
-        <small><span>${statusLabel}</span>${dateLabel ? ` ${escapeHtml(dateLabel)}` : ""}</small>
+        <small><span class="match-status-chip">${statusLabel}</span>${dateLabel ? `<em>${escapeHtml(dateLabel)}</em>` : ""}</small>
       </div>
       <div class="match-team right ${awayWon ? "winner" : ""}">
         <span>${escapeHtml(match.awayTeam?.name || "Bortalag")}</span>
@@ -702,6 +710,11 @@ function renderMatchColumn(container, matches, fallback, variant = "") {
     : emptyState(fallback);
 }
 
+function heroStatValue(value, fallback = "–") {
+  if (value === null || value === undefined || value === "" || Number.isNaN(value)) return fallback;
+  return value;
+}
+
 function renderHero(rows, fixtures) {
   const topTeams = rows.slice(0, 3);
   const liveMatches = fixtures.filter((match) => match.isLive).slice(0, 2);
@@ -714,15 +727,15 @@ function renderHero(rows, fixtures) {
     heroMiniStats.innerHTML = `
       <div>
         <span>Serieledare</span>
-        <strong>${leader ? escapeHtml(leader.teamName) : "Uppdateras"}</strong>
+        <strong>${leader ? escapeHtml(leader.teamName) : "–"}</strong>
       </div>
       <div>
         <span>Spelade matcher</span>
-        <strong>${Math.round(playedMatches)}</strong>
+        <strong>${heroStatValue(Math.round(playedMatches))}</strong>
       </div>
       <div>
         <span>Mål totalt</span>
-        <strong>${goals}</strong>
+        <strong>${heroStatValue(goals)}</strong>
       </div>
     `;
   }
@@ -732,6 +745,12 @@ function renderHero(rows, fixtures) {
       <span>${leagueLabel()} 2026</span>
       <strong>Ligapuls</strong>
     </div>
+
+    <a class="dashboard-ai-card" href="#fraga-ai">
+      <span>AI-insikt just nu</span>
+      <strong>AI:n analyserar tabell, matcher och form</strong>
+      <small>Fråga vad som helst om Allsvenskan.</small>
+    </a>
 
     <section class="dashboard-section next-match-feature hero-dashboard-main">
       <h3>Nästa match</h3>
@@ -770,9 +789,11 @@ function renderHero(rows, fixtures) {
           topTeams.length
             ? topTeams
                 .map(
-                  (team) => `
-                    <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="dashboard-team-row">
-                      <span>${team.position}. ${escapeHtml(team.teamName)}</span>
+                  (team, index) => `
+                    <a href="/team.html?id=${team.teamId}&league=${currentLeague}" class="dashboard-team-row ${index === 0 ? "leader" : ""}">
+                      <span class="dashboard-rank">${team.position}</span>
+                      ${teamLogoHtml(team, "dashboard-team-logo")}
+                      <span class="dashboard-team-name">${escapeHtml(team.teamName)}</span>
                       <strong>${team.points} p</strong>
                     </a>
                   `
