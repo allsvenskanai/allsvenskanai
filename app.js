@@ -680,7 +680,7 @@ function formatMatchDate(dateString) {
 function matchCard(match, variant = "") {
   const homeWon = match.hasScore && Number(match.homeScore) > Number(match.awayScore);
   const awayWon = match.hasScore && Number(match.awayScore) > Number(match.homeScore);
-  const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "vs";
+  const score = match.hasScore ? `${match.homeScore} - ${match.awayScore}` : "VS";
   const dateLabel = formatMatchDate(match.startingAt);
   const statusLabel = match.isLive ? "Live nu" : match.isFinished ? "Slut" : "Kommande";
   const href = match.id ? `#matcher` : "#matcher";
@@ -1029,16 +1029,9 @@ function renderFixtures(fixtures) {
     .filter((match) => match.isFinished)
     .sort(sortByKickoffDesc)
     .slice(0, 5);
-  const liveFallback = upcoming.slice(0, 3);
-
   liveMatchesContent.innerHTML = live.length
     ? live.map((match) => matchCard(match, "live")).join("")
-    : `
-      <div class="match-column-note">Nästa avspark</div>
-      ${liveFallback.length
-        ? liveFallback.map((match) => matchCard(match, "soon")).join("")
-        : emptyState("Inga matcher schemalagda just nu.")}
-    `;
+    : "";
   renderMatchColumn(upcomingMatchesContent, upcoming, "Inga kommande matcher hittades.");
   renderMatchColumn(recentResultsContent, recent, "Inga resultat tillgängliga ännu.");
 }
