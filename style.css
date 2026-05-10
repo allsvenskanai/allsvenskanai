@@ -1585,11 +1585,14 @@ body {
   }
 
   .home-league-toggle {
-    width: 100%;
+    width: min(100%, 420px);
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .home-league-toggle .league-btn {
     flex: 1;
+    min-height: 44px;
   }
 
   .section-heading {
@@ -2905,8 +2908,13 @@ body {
   padding-top: 18px;
 }
 
-.hero-section { order: 1; }
-.home-league-toggle { order: 2; }
+.home-league-toggle {
+  order: 1;
+  align-self: center;
+  margin: 0 auto 6px;
+}
+
+.hero-section { order: 2; }
 #tabell { order: 3; }
 #matcher { order: 4; }
 #fraga-ai { order: 5; }
