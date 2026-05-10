@@ -727,7 +727,6 @@ function renderHeroTable(rows) {
       <section class="hero-table-card">
         <div class="hero-table-heading">
           <span>Tabell</span>
-          <h2>Tabell Allsvenskan 2026</h2>
         </div>
         ${emptyState("Tabellen kunde inte laddas just nu.")}
       </section>
@@ -738,7 +737,6 @@ function renderHeroTable(rows) {
     <section class="hero-table-card">
       <div class="hero-table-heading">
         <span>Tabell</span>
-        <h2>Tabell Allsvenskan 2026</h2>
       </div>
       <div class="hero-table-wrap">
         <table class="hero-standings-table">
