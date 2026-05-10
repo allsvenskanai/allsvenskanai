@@ -102,10 +102,33 @@ function metricAliases(key) {
   const aliases = new Set([key]);
   if (key === "GOALS") aliases.add("GOALS_FOR");
   if (key === "BALL_POSSESSION") aliases.add("POSSESSION");
-  if (key === "PENALTIES") aliases.add("PENALTY_GOALS");
+  if (key === "PENALTIES") {
+    aliases.add("PENALTY_GOALS");
+    aliases.add("PENALTIES_SCORED");
+  }
   if (key === "FOULS") aliases.add("FOULS_COMMITTED");
   if (key === "YELLOWCARDS") aliases.add("YELLOW_CARDS");
   if (key === "REDCARDS") aliases.add("RED_CARDS");
+  if (key.includes("SHOT") && key.includes("TARGET")) {
+    aliases.add("SHOTS_ON_TARGET");
+    aliases.add("SHOTS_ON_GOAL");
+    aliases.add("ON_TARGET");
+  } else if (key.includes("SHOT") && (key.includes("OFF") || key.includes("OUTSIDE"))) {
+    aliases.add("SHOTS_OFF_TARGET");
+    aliases.add("SHOTS_OFF_GOAL");
+    aliases.add("OFF_TARGET");
+  } else if (key.includes("SHOT")) {
+    aliases.add("SHOTS");
+    aliases.add("TOTAL_SHOTS");
+    aliases.add("SHOTS_TOTAL");
+  }
+  if (key.includes("EXPECTED") && key.includes("GOAL") && !key.includes("AGAINST")) {
+    aliases.add("EXPECTED_GOALS");
+    aliases.add("XG");
+  }
+  if (key.includes("BIG") && key.includes("CHANCE") && key.includes("MISS")) aliases.add("BIG_CHANCES_MISSED");
+  if (key.includes("BIG") && key.includes("CHANCE") && !key.includes("MISS")) aliases.add("BIG_CHANCES");
+  if (key.includes("SET") && (key.includes("PIECE") || key.includes("PLAY")) && key.includes("GOAL")) aliases.add("SET_PIECE_GOALS");
   return Array.from(aliases);
 }
 
@@ -262,6 +285,7 @@ export default async function handler(req, res) {
   const seasonId = Number(req.query.season || (req.query.league === "damallsvenskan" ? 26782 : 26806));
   const includeStats = req.query.stats === "1" || req.query.stats === "true";
   const token = process.env.SPORTMONKS_API_TOKEN;
+  const debug = req.query.debug === "1" || process.env.NODE_ENV !== "production";
 
   if (!teamId) return res.status(400).json({ error: "Missing team id" });
   if (!token) return res.status(500).json({ error: "Missing SPORTMONKS_API_TOKEN" });
@@ -285,14 +309,14 @@ export default async function handler(req, res) {
           details: coverageResult.payload?.message || coverageResult.payload?.error || coverageResult.text
         });
       }
-      console.log("SEASON COVERAGE FLAGS:", { seasonId, coverage });
+      if (debug) console.log("SEASON COVERAGE FLAGS:", { seasonId, coverage });
     }
 
     let directStats = null;
     if (includeStats) {
       const directPath = `/statistics/seasons/teams/${encodeURIComponent(teamId)}?include=details.type&filters=teamStatisticSeasons:${encodeURIComponent(seasonId)}&per_page=50`;
       const direct = await sportmonksFetch(directPath, token);
-      console.log("TEAM STATS DIRECT RAW RESPONSE:", {
+      if (debug) console.log("TEAM STATS DIRECT RAW RESPONSE:", {
         teamId: Number(teamId),
         seasonId,
         path: directPath,
@@ -318,7 +342,7 @@ export default async function handler(req, res) {
             directStats = normalizeStatisticsRows(unfiltered.payload?.data, seasonId);
           }
         }
-        console.log("TEAM STATS DIRECT MAPPED METRICS:", {
+        if (debug) console.log("TEAM STATS DIRECT MAPPED METRICS:", {
           teamId: Number(teamId),
           seasonId,
           metrics: directStats.metrics,
@@ -337,7 +361,7 @@ export default async function handler(req, res) {
     }
 
     let { response, payload, text } = await sportmonksFetch(path, token);
-    console.log("TEAM ENDPOINT RAW RESPONSE:", {
+    if (debug) console.log("TEAM ENDPOINT RAW RESPONSE:", {
       teamId: Number(teamId),
       seasonId,
       path,
@@ -369,7 +393,7 @@ export default async function handler(req, res) {
     if (includeStats) {
       team.statistics = mergeStatistics(directStats, team.statistics);
       team.statistics.coverage = coverage;
-      console.log("TEAM STATS FINAL MAPPED METRICS:", {
+      if (debug) console.log("TEAM STATS FINAL MAPPED METRICS:", {
         teamId: Number(teamId),
         seasonId,
         metrics: team.statistics.metrics,
