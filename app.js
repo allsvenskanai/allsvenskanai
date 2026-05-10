@@ -990,6 +990,7 @@ function listCard(title, rows, valueGetter) {
 }
 
 function renderTeams(rows) {
+  if (!teamsGrid) return;
   teamsGrid.innerHTML = rows.length
     ? rows
         .map(
